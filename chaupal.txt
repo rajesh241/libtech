@@ -1,1 +1,3 @@
-This is the Chaupal file and I am using it only for testing
+This is the Chaupal file and I am using it only for testing.
+
+Checked out on server
