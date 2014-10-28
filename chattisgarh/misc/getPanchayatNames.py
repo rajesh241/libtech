@@ -32,5 +32,5 @@ for row in results:
     panchayatFullCode=getPanchayat[0]
     panchayatCode=panchayatFullCode[len(panchayatFullCode)-3:len(panchayatFullCode)]
     print panchayat+panchayatCode
-    query="insert into panchayats (stateCode,districtCode,blockCode,panchayatCode,name) values ('"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"','"+panchayat.upper()+"')"
+    query="insert into panchayats (stateCode,districtCode,blockCode,panchayatCode,name) values ('"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"','"+panchayat+"')"
     cur.execute(query)
