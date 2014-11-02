@@ -24,8 +24,8 @@ cur.execute(query)
 #muster Type list
 musterTypeList= ['10','11','13','14']
 #Some Constants 
-fullfinyear='2014-2015'
-finyear='15'
+fullfinyear='2013-2014'
+finyear='14'
 districtName="SURGUJA"
 #Query to get all the blocks
 query="select stateCode,districtCode,blockCode,name from blocks"
