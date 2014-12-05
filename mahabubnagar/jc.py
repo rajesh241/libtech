@@ -104,7 +104,6 @@ def dbInitialize():
   Connect to MySQL Database
   '''
   db = MySQLdb.connect(host="localhost", user="root", passwd="root123", db="mahabubnagar")
-  cur=db.cursor()
   db.autocommit(True)
   return db;
 
@@ -140,29 +139,10 @@ def wdTest(driver):
   driver.get("http://www.google.com")
   print driver.page_source.encode('utf-8')
 
-def main():
-  args = argsFetch()
-  logger = loggerFetch(args.get('log_level'))        # Mynk WTF is '_' doing here?
-  # loggerTest(logger)
-  logger.info('args: %s', str(args))
-
-  db = dbInitialize()
-  display = displayInitialize(args['visible'])
-  driver = driverInitialize(browser)
-
-  wdTest(driver)
-
-  driverFinalize(driver)
-  displayFinalize(display)
-  dbFinalize(db)
-  exit(0)
-
-if __name__ == '__main__':
-  main()
-
-def crawlJobcards(driver):
+def crawlJobcards(driver, db):
     
   driver.get(url)
+  cur=db.cursor()
 
   elem = driver.find_element_by_link_text("Wage Seekers")
   elem.send_keys(Keys.RETURN)
@@ -271,4 +251,27 @@ def crawlJobcards(driver):
 
 #  driver.back()
   time.sleep(delay)
+
+
+def main():
+  args = argsFetch()
+  logger = loggerFetch(args.get('log_level'))        # Mynk WTF is '_' doing here?
+  # loggerTest(logger)
+  logger.info('args: %s', str(args))
+
+  db = dbInitialize()
+  display = displayInitialize(args['visible'])
+  driver = driverInitialize(browser)
+
+#  wdTest(driver)
+
+  crawlJobcards(driver, db)
+
+  driverFinalize(driver)
+  displayFinalize(display)
+  dbFinalize(db)
+  exit(0)
+
+if __name__ == '__main__':
+  main()
 
