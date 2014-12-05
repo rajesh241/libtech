@@ -17,7 +17,6 @@ from selenium.webdriver.common.keys import Keys
 # Global Declarations
 #######################
 
-isVirtualDisplay = True;
 delay = 2
 url="http://www.nrega.telangana.gov.in/"
 browser="Firefox"
@@ -31,6 +30,29 @@ browser="Firefox"
 # Functions
 #############
 
+def argsFetch():
+  '''
+  Paser for the argument list that returns the args list
+  '''
+  import argparse
+  print "entered"
+
+  parser = argparse.ArgumentParser(description='Jobcard script for crawling, fetching & parsing')
+  parser.add_argument('-c', '--crawl', help='Crawl the jobcards numbers and populate database', required=False, action='store_const', const=True)
+  parser.add_argument('-f', '--fetch', help='Fetch the jobcards & musters for each jobcard ID', required=False, action='store_const', const=True)
+  parser.add_argument('-p', '--parse', help='Parse the jobcards & musters downloaded', required=False, action='store_const', const=True)
+  parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
+  parser.add_argument('-d', '--debug', help='Debug level (default=)', required=False)
+  parser.add_argument('-l', '--log-file', help='Log to the specified file', required=False)
+  parser.add_argument('-t', '--timeout', help='Time to wait before a page loads', required=False)
+
+  args = vars(parser.parse_args())
+  return args
+
+def parserFinalize(parser):
+  parser.close()
+
+
 def dbInitialize():
   '''
   Connect to MySQL Database
@@ -43,17 +65,15 @@ def dbInitialize():
 def dbFinalize(db):
   db.close()
 
-def displayInitialize(isVirtualDisplay=True):
-  if isVirtualDisplay:
-    from pyvirtualdisplay import Display
+def displayInitialize(isVisible=0):
+  from pyvirtualdisplay import Display
+  
+  display = Display(visible=isVisible, size=(600, 400))
+  display.start()
+  return display
 
-    display = Display(visible=1, size=(800, 600))
-    display.start()
-    return display
-
-def displayFinalize(display, isVirtualDisplay=True):
-  if isVirtualDisplay:
-    display.stop()
+def displayFinalize(display):
+  display.stop()
 
 def driverInitialize(browser="Firefox"):
   if browser == "Firefox":
@@ -72,29 +92,18 @@ def driverFinalize(driver):
 
 def main():
 
-  import argparse
-  print "entered"
-
-  parser = argparse.ArgumentParser(description='Jobcard script for crawling, download & parsing')
-  parser.add_argument('-c', '--crawl', help='Crawl the jobcards numbers and populate database', required=False, action='store_const', const=True)
-  parser.add_argument('-d', '--download', help='Download the jobcards & musters for each jobcard ID', required=False, action='store_const', const=True)
-  parser.add_argument('-p', '--parse', help='Parse the jobcards & musters downloaded', required=False, action='store_const', const=True)
-  parser.add_argument('-d', '--display', help='Display the browser', required=False, action='store_const', const=True)
-  parser.add_argument('-l', '--log-file', help='Log to the specified file', required=False)
-
-  args = vars(parser.parse_args())
+  args = argsFetch()
   print args
-  print args['crawl']
 
   db = dbInitialize()
-  display = displayInitialize(isVirtualDisplay)
+  display = displayInitialize(args['visible'])
   driver = driverInitialize(browser)
 
   driver.get("http://www.google.com")
   print driver.page_source.encode('utf-8')
 
   driverFinalize(driver)
-  displayFinalize(display, isVirtualDisplay)
+  displayFinalize(display)
   dbFinalize(db)
 
   exit(0)
