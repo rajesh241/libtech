@@ -5,6 +5,7 @@ import csv
 from bs4 import BeautifulSoup
 import requests
 
+import logging
 import MySQLdb
 import time
 import re
@@ -20,34 +21,79 @@ from selenium.webdriver.common.keys import Keys
 delay = 2
 url="http://www.nrega.telangana.gov.in/"
 browser="Firefox"
-
+logFile = 'jc.log'
+logLevel = logging.ERROR
+logFormat = '%(asctime)s:[%(name)s|%(levelname)s]: %(message)s'
 
 # Error File Defination
-# errorfile = open('./logs/'+__name__+'.log', 'w')
+# errorfile = open('./logs/jc.log', 'w')
 
 
 #############
 # Functions
 #############
 
+'''
+def logInitialize():
+  import logging
+  logging.basicConfig(filename=logFile, level=logLevel, format=logFormat) # Mynk
+'''
+
+def loggerFetch(level='ERROR'):
+  logger = logging.getLogger(__name__)
+
+  if level:                     # Mynk ???
+    numeric_level = getattr(logging, level.upper(), None)
+    if not isinstance(numeric_level, int):
+      raise ValueError('Invalid log level: %s' % level)
+    else:
+      logger.setLevel(numeric_level)
+  else:
+    logger.setLevel(logLevel)
+
+  # create console handler and set level to debug
+  ch = logging.StreamHandler()
+  ch.setLevel(logging.DEBUG)    # Mynk ???
+
+  # create formatter e.g - FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
+  formatter = logging.Formatter(logFormat)
+
+  # add formatter to ch
+  ch.setFormatter(formatter)
+
+  # add ch to logger
+  logger.addHandler(ch)
+
+  return logger
+
+def loggerTest(logger):
+  logger.debug('debug message')
+  logger.info('info message')
+  logger.warn('warn message')
+  logger.error('error message')
+  logger.critical('critical message')
+    
+
 def argsFetch():
   '''
   Paser for the argument list that returns the args list
   '''
   import argparse
-  print "entered"
 
-  parser = argparse.ArgumentParser(description='Jobcard script for crawling, fetching & parsing')
+  parser = argparse.ArgumentParser(description='Jobcard script for crawling, downloading & parsing')
   parser.add_argument('-c', '--crawl', help='Crawl the jobcards numbers and populate database', required=False, action='store_const', const=True)
-  parser.add_argument('-f', '--fetch', help='Fetch the jobcards & musters for each jobcard ID', required=False, action='store_const', const=True)
+  parser.add_argument('-d', '--download', help='Download the jobcards & musters for each jobcard ID', required=False, action='store_const', const=True)
   parser.add_argument('-p', '--parse', help='Parse the jobcards & musters downloaded', required=False, action='store_const', const=True)
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
-  parser.add_argument('-d', '--debug', help='Debug level (default=)', required=False)
-  parser.add_argument('-l', '--log-file', help='Log to the specified file', required=False)
+  #parser.add_argument('-d', '--debug', help='Debug level (default=)', required=False)
+  parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-t', '--timeout', help='Time to wait before a page loads', required=False)
+  parser.add_argument('-b', '--browser', help='Specify the browser to test with', required=False)
+  parser.add_argument('-u', '--url', help='Specify the url to crawl', required=False)
 
   args = vars(parser.parse_args())
   return args
+
 
 def parserFinalize(parser):
   parser.close()
@@ -90,22 +136,25 @@ def driverInitialize(browser="Firefox"):
 def driverFinalize(driver):
   driver.close()
 
-def main():
+def wdTest(driver):
+  driver.get("http://www.google.com")
+  print driver.page_source.encode('utf-8')
 
+def main():
   args = argsFetch()
-  print args
+  logger = loggerFetch(args.get('log_level'))        # Mynk WTF is '_' doing here?
+  # loggerTest(logger)
+  logger.info('args: %s', str(args))
 
   db = dbInitialize()
   display = displayInitialize(args['visible'])
   driver = driverInitialize(browser)
 
-  driver.get("http://www.google.com")
-  print driver.page_source.encode('utf-8')
+  wdTest(driver)
 
   driverFinalize(driver)
   displayFinalize(display)
   dbFinalize(db)
-
   exit(0)
 
 if __name__ == '__main__':
