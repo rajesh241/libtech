@@ -26,7 +26,7 @@ logLevel = logging.ERROR
 logFormat = '%(asctime)s:[%(name)s|%(levelname)s]: %(message)s'
 
 # Error File Defination
-# errorfile = open('./logs/jc.log', 'w')
+errorfile = open('./logs/jc.log', 'w')
 
 
 #############
@@ -135,14 +135,14 @@ def driverInitialize(browser="Firefox"):
 def driverFinalize(driver):
   driver.close()
 
+
 def wdTest(driver):
   driver.get("http://www.google.com")
   print driver.page_source.encode('utf-8')
 
-def crawlJobcards(driver, db):
-    
+
+def wdFetch(driver, logger):
   driver.get(url)
-  cur=db.cursor()
 
   elem = driver.find_element_by_link_text("Wage Seekers")
   elem.send_keys(Keys.RETURN)
@@ -164,10 +164,37 @@ def crawlJobcards(driver, db):
   #elem.click()
   time.sleep(delay)
 
+  return driver
+
+
+def dbFetch(db, logger):
   # Query to get all the blocks
   query="select stateCode,districtCode,blockCode,name from blocks"
+  logger.info('query: [%s]', query)
+  cur=db.cursor()
+  print "cur in DB Fetc:", cur
   cur.execute(query)
   results = cur.fetchall()
+  logger.info('results: [%s]', str(results))
+
+  return results
+
+
+def crawlJobcards(driver, db, logger):
+  '''
+  Crawl the page for the jobcards and update them in the database
+  '''
+  driver = wdFetch(driver, logger)
+
+  query="select stateCode,districtCode,blockCode,name from blocks"
+  logger.info('query: [%s]', query)
+  cur=db.cursor()
+  cur.execute(query)
+  results = cur.fetchall()
+  logger.info('results: [%s]', str(results))
+
+  # results = dbFetch(db, logger)
+
   for row in results:
     stateCode=row[0]
     districtCode=row[1]
@@ -243,13 +270,89 @@ def crawlJobcards(driver, db):
             errorfile.write(errormessage)
           continue
 
-        #exit(0)
-
-#driver.back()
-#    driver.back()
     time.sleep(delay)
 
-#  driver.back()
+  time.sleep(delay)
+
+
+def downloadJobcards(driver, db, logger):
+  '''
+  Crawl the page for the jobcards and update them in the database
+  '''
+  print "driver before:", str(driver)
+  wdFetch(driver, logger)
+  print "driver after", str(driver)
+
+  print "db before", str(db)
+  results = dbFetch(db, logger)
+  print "db after", str(db)
+  cur=db.cursor()
+  print "cur in dj:", cur
+
+  for row in results:
+    stateCode=row[0]
+    districtCode=row[1]
+    blockCode=row[2]
+    blockName=row[3]
+
+  query="select name,panchayatCode,id from panchayats where stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' "
+  print query
+  cur.execute(query)
+  panchresults = cur.fetchall()
+  print panchresults
+
+  for panchrow in panchresults:
+    panchayatName=panchrow[0]
+    panchayatCode=panchrow[1]
+    panchID=panchrow[2]
+    print stateCode+districtCode+blockCode+blockName+panchayatCode+panchayatName
+    elem = driver.find_element_by_name("Panchayat")
+    elem.send_keys(panchayatName)
+    elem.send_keys(Keys.RETURN)
+    #elem.click()
+    time.sleep(delay)
+
+    elem = driver.find_element_by_name("Go")
+    elem.send_keys(Keys.RETURN)
+    
+    curtime = time.strftime('%Y-%m-%d %H:%M:%S')
+    html_source = driver.page_source
+    htmlsoup=BeautifulSoup(html_source)
+    try:
+      table=htmlsoup.find('table',id="sortable")
+      rows = table.findAll('tr')
+      td = table.find('td')
+      print "DATA[", td.text, "]"
+     # #print rows
+      status=1
+    except:
+      status=0
+    # query="update panchayats set jobcardCrawlStatus="+str(status)+", jobcardCrawlDate='"+curtime+"' where id="+str(panchID) # Update downloadStatus at the end
+    # #print query
+    cur.execute(query)
+    if status==1:
+      for tr in rows:
+        td = tr.findNext('td')
+        print "DATA1[", td.text, "]"
+        td = td.findNext('td')
+        print "DATA2[", td.text, "]"
+        jcno = td.text.strip()
+        print "jcno", jcno
+        elem = driver.find_element_by_link_text(jcno)
+        elem.send_keys(Keys.RETURN)
+        time.sleep(1)
+        print driver.window_handles
+        parent_handle = driver.current_window_handle
+        driver.switch_to_window(driver.window_handles[-1])
+
+        errorfile.write(driver.page_source.encode('utf-8'))
+
+        driver.close()
+        driver.switch_to_window(parent_handle)
+        exit(0)                 # Mynk
+
+
+    time.sleep(delay)
   time.sleep(delay)
 
 
@@ -265,7 +368,11 @@ def main():
 
 #  wdTest(driver)
 
-  crawlJobcards(driver, db)
+  if args['crawl']:
+    crawlJobcards(driver, db, logger)
+  else:
+    downloadJobcards(driver, db, logger)
+#    wdTest(driver)
 
   driverFinalize(driver)
   displayFinalize(display)
