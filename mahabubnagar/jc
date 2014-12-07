@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 #This code will get the Oabcgatat Banes
+import os
 import csv
 from bs4 import BeautifulSoup
 import requests
@@ -122,14 +123,20 @@ def displayFinalize(display):
 
 def driverInitialize(browser="Firefox"):
   if browser == "Firefox":
-    profile = webdriver.FirefoxProfile()
-    profile.native_events_enabled = False
-    driver = webdriver.Firefox(profile)
+    fp = webdriver.FirefoxProfile()
+    fp.native_events_enabled = False
+    fp.set_preference("browser.download.folderList",2)
+    fp.set_preference("browser.download.manager.showWhenStarting",False)
+    fp.set_preference("browser.download.dir", os.getcwd())
+    fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.ms-excel")
+
+    driver = webdriver.Firefox(fp)
   elif browser == "PhantomJS":
     driver = webdriver.PhantomJS()
     driver.set_window_size(1120, 550)
   else:
     driver = webdriver.Chrome()
+
   return driver
 
 def driverFinalize(driver):
@@ -345,12 +352,17 @@ def downloadJobcards(driver, db, logger):
         parent_handle = driver.current_window_handle
         driver.switch_to_window(driver.window_handles[-1])
 
-        errorfile.write(driver.page_source.encode('utf-8'))
+        # Download the html file for parsing later
+        html_file = open('./musters/'+jcno+'.html', 'w') # Mynk
+        html_file.write(driver.page_source.encode('utf-8'))
+        html_file.close
+
+        # Download the muster details
+        driver.find_element_by_name("Go").click()
+        os.rename('Muster', './musters/'+jcno+'.xls')
 
         driver.close()
         driver.switch_to_window(parent_handle)
-        exit(0)                 # Mynk
-
 
     time.sleep(delay)
   time.sleep(delay)
