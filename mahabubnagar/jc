@@ -13,13 +13,17 @@ import re
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
 
 #######################
 # Global Declarations
 #######################
 
 delay = 2
+timeout = 10
 url="http://www.nrega.telangana.gov.in/"
 browser="Firefox"
 logFile = 'jc.log'
@@ -136,6 +140,8 @@ def driverInitialize(browser="Firefox"):
     driver.set_window_size(1120, 550)
   else:
     driver = webdriver.Chrome()
+
+  driver.implicitly_wait(10)
 
   return driver
 
@@ -342,41 +348,68 @@ def downloadJobcards(driver, db, logger):
         #print "DATA2[", td.text, "]"
         jcno = td.text.strip()
         #print "jcno", jcno
-        if jcno+'.xls' in jcDownloaded:
+        #if jcno+'.xls' in jcDownloaded:
+        #if jcno+'.html' in jcDownloaded:
+        if jcno+'.csv' in jcDownloaded:
           continue
 
         elem = driver.find_element_by_link_text(jcno)
         elem.send_keys(Keys.RETURN)
         time.sleep(1)
-        #print driver.window_handles
+
         parent_handle = driver.current_window_handle
         driver.switch_to_window(driver.window_handles[-1])
-        jc_html=driver.page_source.encode('utf-8')
+
+        #jc_html=driver.page_source.encode('utf-8')
         #jcsource = driver.page_source
 
-        # Download the muster details
-        driver.find_element_by_name("Go").click()
+#        os.rename('Muster*', './musters/')
 
-        # Download the html file for parsing later
-        html_file = open('./musters/'+jcno+'.html', 'w') # Mynk
-        html_file.write(jc_html)
-        html_file.close
+        # Download the muster details
+        try:
+          elem = WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((By.ID, "sortable"))
+          )
+          driver.find_element_by_name("Go").click()
+        except NoSuchElementException, TimeoutException:
+            logger.error("Failed to locate Muster Roll Button")
+            driver.save_screenshot('./logs/button_'+jcno+'.png')
+            driver.close()
+            driver.switch_to_window(parent_handle)
+            continue
+
+        if False:
+          # Download the html file for parsing later
+          html_file = open('./musters/'+jcno+'.html', 'w') # Mynk
+          html_file.write(jc_html)
+          html_file.close
 
         #myhtml = jcsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
         #htmlDump = myhtml.encode("UTF-8")
 
+        
         retries = 0
         while not os.path.isfile('Muster'):
           time.sleep(1)
           retries += 1
           if retries > 10:
             logger.error("Timed out waiting for Muster excel")
+            driver.save_screenshot('./logs/download_wait_'+jcno+'.png')
             driver.close()
             driver.switch_to_window(parent_handle)
             continue
 
-        os.rename('Muster', './musters/'+jcno+'.xls')
-
+        if False:
+          #os.rename('Muster', './musters/'+jcno+'.xls')
+          cmd = 'libreoffice --headless --convert-to csv Muster --outdir musters'
+          os.system(cmd)
+          os.rename('./musters/Muster.csv', './musters/'+jcno+'.xls')
+          os.system('rm Muster')
+        else:
+          cmd = 'ssconvert Muster ./musters/'+jcno+'.csv'
+          os.system(cmd)
+          os.system('rm Muster')
+        
         driver.close()
         driver.switch_to_window(parent_handle)
         '''
@@ -384,7 +417,7 @@ def downloadJobcards(driver, db, logger):
         query="insert into jobcardDump (jobcard, htmlDump) values ('"+jcno+"','"+jc_html+"')"
         cur.execute(query)
         '''
-        query="update jobcardRegister set isDownloaded=1 where jobcard='"+jcno+"'"
+        query="update jobcardRegister set isProcessed=1 where jobcard='"+jcno+"'"
         cur.execute(query)
 
     time.sleep(delay)
