@@ -16,6 +16,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 
 #######################
@@ -180,6 +181,136 @@ def wdFetch(driver, logger):
   return driver
 
 
+def wdFetchPanchayat(driver, cur, logger, panchayatName):
+  elem = driver.find_element_by_name("Go")
+  elem.send_keys(Keys.RETURN)
+
+  curtime = time.strftime('%Y-%m-%d %H:%M:%S')
+  html_source = driver.page_source
+  htmlsoup=BeautifulSoup(html_source)
+  try:
+    table=htmlsoup.find('table',id="sortable")
+    rows = table.findAll('tr')
+    td = table.find('td')
+    #print "DATA[", td.text, "]"
+   # #print rows
+    status=1
+  except:
+    status=0
+  # query="update panchayats set jobcardCrawlStatus="+str(status)+", jobcardCrawlDate='"+curtime+"' where id="+str(panchID) # Update downloadStatus at the end
+  # #print query
+  # cur.execute(query)
+
+  jcDownloaded = os.listdir('./musters')
+  
+  if status==1:
+    for tr in rows:
+      td = tr.findNext('td')
+      #print "DATA1[", td.text, "]"
+      td = td.findNext('td')
+      #print "DATA2[", td.text, "]"
+      jcno = td.text.strip()
+      #print "jcno", jcno
+      #if jcno+'.xls' in jcDownloaded:
+      #if jcno+'.html' in jcDownloaded:
+      if jcno+'.csv' in jcDownloaded:
+        continue
+
+      '''
+      try:
+        elem = WebDriverWait(driver, timeout).until(
+          EC.presence_of_element_located((By.LINK_TEXT, jcno))
+        )
+        #elem = WebDriverWait(driver, delay).until(EC.presence_of_element_located(driver.find_element_by_link_text(jcno)))
+        print "Page is ready!"
+        #except TimeoutException:
+      except NoSuchElementException, TimeoutException:
+        print "Loading took too much time!"
+        continue
+
+      #elem = driver.find_element_by_link_text(jcno)
+      #elem.send_keys(Keys.RETURN)
+      elem.click()
+      time.sleep(delay)
+      '''
+      
+      if True:
+        elem = driver.find_element_by_link_text(jcno)
+        elem.send_keys(Keys.RETURN)
+        time.sleep(1)
+
+      parent_handle = driver.current_window_handle
+      print "Handles : ", driver.window_handles, "Number : ", len(driver.window_handles)
+
+      
+
+      if len(driver.window_handles) == 2:
+        driver.switch_to_window(driver.window_handles[-1])
+      else:
+        logger.error("Handlers gone wrong [" + str(driver.window_handles) + "]")
+        driver.save_screenshot('./logs/button_'+jcno+'.png')
+        continue
+
+      #jc_html=driver.page_source.encode('utf-8')
+      #jcsource = driver.page_source
+
+      #os.rename('Muster*', './musters/')
+
+      # Download the muster details
+      try:
+        elem = WebDriverWait(driver, timeout).until(
+          EC.presence_of_element_located((By.ID, "sortable"))
+        )
+        driver.find_element_by_name("Go").click()
+      except NoSuchElementException, TimeoutException:
+          logger.error("Failed to locate Muster Roll Button")
+          driver.save_screenshot('./logs/button_'+jcno+'.png')
+          driver.close()
+          driver.switch_to_window(parent_handle)
+          continue
+
+      if False:
+        # Download the html file for parsing later
+        html_file = open('./musters/'+jcno+'.html', 'w') # Mynk
+        html_file.write(jc_html)
+        html_file.close
+
+      #myhtml = jcsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+      #htmlDump = myhtml.encode("UTF-8")
+
+      
+      retries = 0
+      while not os.path.isfile('Muster'):
+        time.sleep(delay)
+        retries += 1
+        if retries > 10:
+          logger.error("Timed out waiting for Muster excel")
+          driver.save_screenshot('./logs/download_wait_'+jcno+'.png')
+          driver.close()
+          driver.switch_to_window(parent_handle)
+          continue
+
+      if False:
+        #os.rename('Muster', './musters/'+jcno+'.xls')
+        cmd = 'libreoffice --headless --convert-to csv Muster --outdir musters'
+        os.system(cmd)
+        os.rename('./musters/Muster.csv', './musters/'+jcno+'.xls')
+        os.system('rm Muster')
+      else:
+        cmd = 'ssconvert Muster ./musters/'+jcno+'.csv'
+        os.system(cmd)
+        os.system('rm Muster')
+      
+      driver.close()
+      driver.switch_to_window(parent_handle)
+      '''
+      #print "HTML[", jc_html, "]"
+      query="insert into jobcardDump (jobcard, htmlDump) values ('"+jcno+"','"+jc_html+"')"
+      cur.execute(query)
+      '''
+      query="update jobcardRegister set isProcessed=1 where jobcard='"+jcno+"'"
+      cur.execute(query)
+
 def dbFetch(db, logger):
   # Query to get all the blocks
   query="select stateCode,districtCode,blockCode,name from blocks"
@@ -293,6 +424,64 @@ def downloadJobcards(driver, db, logger):
   '''
   wdFetch(driver, logger)
 
+  if False:
+    results = dbFetch(db, logger)
+    cur=db.cursor()
+
+  cur=db.cursor()
+
+  query="select j.stateCode,j.districtCode,j.blockCode,j.panchayatCode,p.name,b.name from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode and j.blockCode=b.blockCode and j.isProcessed=0 group by j.blockCode,j.panchayatCode"  # Mynk
+  print query
+  cur.execute(query)
+  print "count: ", cur.rowcount
+  if cur.rowcount:
+    results = cur.fetchall()
+    print "Data:", results
+    for row in results:
+      stateCode=row[0]
+      districtCode=row[1]
+      blockCode=row[2]
+      panchayatCode=row[3]
+      panchayatName=row[4]
+      blockName=row[5]
+      print panchayatName, blockName 
+
+      wdFetchPanchayat(driver, cur, logger, panchayatName)
+
+  if False:
+      query="select jobcard from jobcardRegister where isDownloaded=0 and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' and panchayatCode='"+panchayatCode+"' limit 50"
+      cur.execute(query)
+      jcresults = cur.fetchall()
+      for jcrow in jcresults:
+        jobcard=jcrow[0]
+        i=i+1
+        print str(i)+"  "+jobcard
+        elem = driver.find_element_by_link_text(jobcard)
+        elem.send_keys(Keys.RETURN)
+        time.sleep(5)
+        jcsource = driver.page_source
+        driver.back()
+        time.sleep(2)
+        myhtml=jcsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+        jcfilename=jcfilepath+blockName+"/"+panchayatName.upper()+"/jobcardRegister/"+jobcard.replace("/","_")+".html"
+        if not os.path.exists(os.path.dirname(jcfilename)):
+          os.makedirs(os.path.dirname(jcfilename))
+        myfile = open(jcfilename, "w")
+        myfile.write(myhtml.encode("UTF-8"))
+        query="update jobcardRegister set isDownloaded=1 where jobcard='"+jobcard+"'"
+        cur.execute(query)
+        # End of Dead IF
+
+      time.sleep(delay)
+  time.sleep(delay)
+
+
+def downloadJobcardsViaBruteForce(driver, db, logger):
+  '''
+  Crawl the page for the jobcards and update them in the database
+  '''
+  wdFetch(driver, logger)
+
   results = dbFetch(db, logger)
   cur=db.cursor()
 
@@ -313,112 +502,8 @@ def downloadJobcards(driver, db, logger):
     panchayatCode=panchrow[1]
     panchID=panchrow[2]
     #print stateCode+districtCode+blockCode+blockName+panchayatCode+panchayatName
-    elem = driver.find_element_by_name("Panchayat")
-    elem.send_keys(panchayatName)
-    elem.send_keys(Keys.RETURN)
-    #elem.click()
-    time.sleep(delay)
 
-    elem = driver.find_element_by_name("Go")
-    elem.send_keys(Keys.RETURN)
-
-    curtime = time.strftime('%Y-%m-%d %H:%M:%S')
-    html_source = driver.page_source
-    htmlsoup=BeautifulSoup(html_source)
-    try:
-      table=htmlsoup.find('table',id="sortable")
-      rows = table.findAll('tr')
-      td = table.find('td')
-      #print "DATA[", td.text, "]"
-     # #print rows
-      status=1
-    except:
-      status=0
-    # query="update panchayats set jobcardCrawlStatus="+str(status)+", jobcardCrawlDate='"+curtime+"' where id="+str(panchID) # Update downloadStatus at the end
-    # #print query
-    # cur.execute(query)
-
-    jcDownloaded = os.listdir('./musters')
-    
-    if status==1:
-      for tr in rows:
-        td = tr.findNext('td')
-        #print "DATA1[", td.text, "]"
-        td = td.findNext('td')
-        #print "DATA2[", td.text, "]"
-        jcno = td.text.strip()
-        #print "jcno", jcno
-        #if jcno+'.xls' in jcDownloaded:
-        #if jcno+'.html' in jcDownloaded:
-        if jcno+'.csv' in jcDownloaded:
-          continue
-
-        elem = driver.find_element_by_link_text(jcno)
-        elem.send_keys(Keys.RETURN)
-        time.sleep(1)
-
-        parent_handle = driver.current_window_handle
-        driver.switch_to_window(driver.window_handles[-1])
-
-        #jc_html=driver.page_source.encode('utf-8')
-        #jcsource = driver.page_source
-
-#        os.rename('Muster*', './musters/')
-
-        # Download the muster details
-        try:
-          elem = WebDriverWait(driver, timeout).until(
-            EC.presence_of_element_located((By.ID, "sortable"))
-          )
-          driver.find_element_by_name("Go").click()
-        except NoSuchElementException, TimeoutException:
-            logger.error("Failed to locate Muster Roll Button")
-            driver.save_screenshot('./logs/button_'+jcno+'.png')
-            driver.close()
-            driver.switch_to_window(parent_handle)
-            continue
-
-        if False:
-          # Download the html file for parsing later
-          html_file = open('./musters/'+jcno+'.html', 'w') # Mynk
-          html_file.write(jc_html)
-          html_file.close
-
-        #myhtml = jcsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
-        #htmlDump = myhtml.encode("UTF-8")
-
-        
-        retries = 0
-        while not os.path.isfile('Muster'):
-          time.sleep(1)
-          retries += 1
-          if retries > 10:
-            logger.error("Timed out waiting for Muster excel")
-            driver.save_screenshot('./logs/download_wait_'+jcno+'.png')
-            driver.close()
-            driver.switch_to_window(parent_handle)
-            continue
-
-        if False:
-          #os.rename('Muster', './musters/'+jcno+'.xls')
-          cmd = 'libreoffice --headless --convert-to csv Muster --outdir musters'
-          os.system(cmd)
-          os.rename('./musters/Muster.csv', './musters/'+jcno+'.xls')
-          os.system('rm Muster')
-        else:
-          cmd = 'ssconvert Muster ./musters/'+jcno+'.csv'
-          os.system(cmd)
-          os.system('rm Muster')
-        
-        driver.close()
-        driver.switch_to_window(parent_handle)
-        '''
-        #print "HTML[", jc_html, "]"
-        query="insert into jobcardDump (jobcard, htmlDump) values ('"+jcno+"','"+jc_html+"')"
-        cur.execute(query)
-        '''
-        query="update jobcardRegister set isProcessed=1 where jobcard='"+jcno+"'"
-        cur.execute(query)
+    wdFetchPanchayat(driver, cur, logger, panchayatName)
 
     time.sleep(delay)
   time.sleep(delay)
