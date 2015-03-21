@@ -508,6 +508,24 @@ def downloadJobcardsViaBruteForce(driver, db, logger):
     time.sleep(delay)
   time.sleep(delay)
 
+def extractJobcards(db):
+  cur=db.cursor()
+
+  query="select jobcard from jobcardRegister where panchayatCode=003"
+  print query
+  cur.execute(query)
+  jcs = cur.fetchall()
+  jobcards = map(list, jcs)
+  #print jobcards
+
+  for jc in jobcards:
+    jcno = str(jc).strip('[]')
+    print "Moving ", jc, jcno
+    #exit(-1)
+    cmd = 'cp -v ./musters/'+jcno+'.* ./musters/Thumalacheruvu/'
+    print cmd
+    os.system(cmd)
+
 
 def main():
   args = argsFetch()
@@ -525,7 +543,8 @@ def main():
     crawlJobcards(driver, db, logger)
   else:
     downloadJobcards(driver, db, logger)
-#    wdTest(driver)
+    # wdTest(driver)
+    # extractJobcards(driver, db, logger)
 
   driverFinalize(driver)
   displayFinalize(display)
