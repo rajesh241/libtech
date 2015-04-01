@@ -27,13 +27,9 @@ delay = 2
 timeout = 10
 url="http://www.nrega.telangana.gov.in/"
 browser="Firefox"
-logFile = 'jc.log'
+logFile = __file__+'.log'
 logLevel = logging.ERROR
 logFormat = '%(asctime)s:[%(name)s|%(levelname)s]: %(message)s'
-
-# Error File Defination
-errorfile = open('./logs/jc.log', 'w')
-
 
 #############
 # Functions
