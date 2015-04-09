@@ -3,7 +3,7 @@
 #This code will get the Oabcgatat Banes
 import os
 import csv
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 import requests
 
 import logging
@@ -141,60 +141,15 @@ def preText():
   '''
   Prefixing to the html file script
   '''
-  text = '''<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+  text = '''<!DOCTYPE html>
 <head>
 <title>:: Job Card Holders Information ::</title>
-<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-
-<script language="javascript">
-
-function muster()
-{
-	
-var url="/Nregs/FrontServlet?requestType=HouseholdInf_engRH&amp;actionVal=musterrolls&amp;hhid=141975706007010167&amp;type=Normal";
-  
-window.open(url, "newWin", "width=800,height=600,directories=yes,location=yes,menubar=yes,scrollbars=yes,status=yes,toolbar=yes,resizable=yes");   
-	
-}
-function doMenu(item) 
-{
- 	obj=document.getElementById(item);
- 	col=document.getElementById("x" + item);
- 	if (obj.style.display=="none") {
-  		obj.style.display="block";
-  		col.innerHTML="-";
- 	}
- 	else {
-  		obj.style.display="none";
-  		col.innerHTML="+";
- 	}
- 	
-}
-
-function doMenubody(item) 
-{
- obj1=document.getElementById('main1');
- obj2=document.getElementById('main2');
- obj3=document.getElementById('main3');
- obj4=document.getElementById('main4');
-
-
- obj1.style.display=item;
- obj2.style.display=item;
- obj3.style.display=item;
- obj4.style.display=item;
-}
-
-
- </script>   
+<meta charset="UTF-8">
 </head>
 
-<body onload="doMenubody('none');" style="position: relative; min-height: 100%; top: 0px;">
-<script>
-	window.resizeTo (screen.availWidth, screen.availHeight);
-	window.moveTo (0, 0);
-	window.history.forward(1);
-</script>
+<body style="position: relative; min-height: 100%; top: 5px;">
+
+<form action="./submit.php" method="POST">
 
 '''
   return text
@@ -205,36 +160,119 @@ def postText():
   '''
   text = '''
 
-<form action="./submit.php" method="POST">
-Complaint Number: 	<input name="complaintNumber" type="text"></br>
-Complaint Date: 	<input name="complaintDate" type="date" value="e.g 02-MAR-2014"></br>
-Additional Details: <input name="additionalDetails" type="text"></br>
+<table class="tbl_bg2" cellpadding="0" cellspacing="0" align="center" border="1" width="70%">
+  <tbody>
+    <tr>
+      <th colspan="2">Problem Details</th>
+    </tr>
 
-<p> NOTE: We can change the format as is necessary </p>
+    <tr>
+      <td>Complaint Number</td>
+      <td><input name="complaintNumber" type="text"></td>
+    </tr>
+    <tr>
+      <td>Complaint Date</td>
+      <td><input name="complaintDate" type="datetime" value="e.g 02-MAR-2014"></td>
+    </tr>
 
-Current Step: <select name="currentStep">
+    <tr>
+      <td>Service Type</td>
+      <td><select name="Service Type">
+<option value="1">NREGS</option>
+</select></td>
+    </tr>
+
+    <tr>
+      <td>Service Category:</td>
+      <td><select name="Service Category">
+<option value="1">Delay in payments(Wages)</option>
+</select></td>
+    </tr>
+
+    <tr>
+      <td>Problem Type:</td>
+      <td><select name="Problem Type">
+<option value="">--Select One--</option>
+<option value="1">Postoffice</option>
+<option value="2">Smartcard payments</option>
+<option value="3">how many weeks it is pending</option>
+<option value="4">Period in weeks</option>
+<option value="5">Number of weeks payment pending(ask days)</option>
+<option value="6">Since when</option>
+<option value="7">Post Office Biometric(Finger Prints Not Match)</option>
+<option value="8">Village Organizations(VO)</option>
+</select></td>
+    </tr>
+
+    <tr>
+      <td>Period in weeks:</td>
+      <td><input name="PeriodInWeeks" type="number"></td>
+    </tr>
+
+    <tr>
+      <td>Beneficiary Remarks:</td>
+      <td><textarea name="beneficiaryRemarks" cols="60" rows="10"></textarea></td>
+    </tr>
+
+    <tr>
+      <td>Current Step:</td>
+      <td><select name="currentStep">
 <option value="1">Not Reachable</option>
 <option value="1">Complaint Filed on Website</option>
 <option value="1">Complaint Closed on website</option>
 <option value="1">Closure Verfied Through Field</option>
-</select><br>
-Final Status: <select name="finalStatus">
+</select></td>
+    </tr>
+
+    <tr>
+      <td>Final Status:</td>
+      <td><select name="finalStatus">
 <option value="1">Open</option>
 <option value="2">Closed</option>
-</select><br>
-Reason for Complaint Closure: <select name="closureReason">
+</select></td>
+    </tr>
+
+    <tr>
+      <td>Reason for Complaint Closure:</td>
+      <td><select name="closureReason">
 <option value="1">Phone not reachable for a long time</option>
 <option value="2">Duplicate</option>
 <option value="3">Verfied that Complaint Successfully Resolved</option>
-</select><br>
+</select></td>
+    </tr>
 
-<button type="submit" >Submit</button>
+    <tr>
+      <td colspan="2" align="center">                    
+        <button type="submit">Submit</button>
+      </td>
+    </tr>
+
+  </tbody>
+</table>
+
+
 </form>
 
 </body>
 </html>
 '''
   return text
+
+def html_unescape(s):
+  """
+  Returns the ASCII decoded version of the given HTML string. This does
+  NOT remove normal HTML tags like <p>.
+  """
+  htmlCodes = (
+      ("'", '&#39;'),
+      ('"', '&quot;'),
+      ('>', '&gt;'),
+      ('<', '&lt;'),
+      ('&', '&amp;')
+    )
+  for code in htmlCodes:
+    s = s.replace(code[1], code[0])
+  return s
 
 def fetchJobcard(url, driver, logger, jobcard, dir="/root/libtech/ghattu/nrega/html"):
   '''
@@ -263,14 +301,41 @@ def fetchJobcard(url, driver, logger, jobcard, dir="/root/libtech/ghattu/nrega/h
     driver.save_screenshot('./logs/button_'+jcno+'.png')
 
   html_source = driver.page_source
-  # print driver.page_source.encode('utf-8')
-
   bs = BeautifulSoup(html_source)
-  # table = bs.find('table',id='sortable')
-  td = bs.find('td',attrs={'class':'rpt-bg'})
+  span = bs.find('span',attrs={'class':'rpt-hd-txt'})
+  main1 = bs.find('div',id='main1')
+  table1 = main1.find('table')
+  main3 = bs.find(id='main3')
+  table3 = main3.find('table')
+
+  hrow = table3.find('tr')
+  th = hrow.find('th')
+  heading = str(th).replace('Epayorder No:', 'Select')
+#  heading = '<th align="left" style="border-left:1px #b7b7b7 solid; border-right:1px #b7b7b7 solid; border-bottom:1px #b7b7b7 solid; border-top:1px #b7b7b7 solid;"><b>Select</b></th>'
+  hrow.insert(0, heading)
+
+  row = hrow.findNext('tr')
+
+  while True:
+    td = row.find('td')
+    epay_order_value = td.text
+    epay_order_number = epay_order_value.strip()
+
+    if len(epay_order_number) != 16:
+      break
+
+    checkbox = '<input type="checkbox" name="ePayOrder" value="'+ epay_order_number + '">'
+    value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
+    row.insert(0, value)
+    try:
+      row = row.findNext('tr')
+    except StopIteration:
+      break
 
   html_text = preText()
-  html_text += str(td)
+  html_text += '<div style="background-color: #86C0C0">' + str(span) + '</div> <br />'
+  html_text += '<div>' + str(table1) + '</div>'
+  html_text += '<div>' + html_unescape(str(table3)) + '</div> <br />'
   html_text += postText()
 
   with open(dir+'/'+str(jobcard)+'.html', 'w') as html_file:
@@ -290,7 +355,8 @@ def main():
 
   # wdTest(driver)
   # jobcard = 141975706007010167
-  fetchJobcard(url, driver, logger, args.get('jobcard'))
+  dir=args['directory']
+  fetchJobcard(url, driver, logger, args.get('jobcard'), dir)
 
   driverFinalize(driver)
   displayFinalize(display)
