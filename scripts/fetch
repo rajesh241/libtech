@@ -154,13 +154,35 @@ def preText():
 '''
   return text
 
+
+def jobcardDetails(jobcard):
+  '''
+  Adding the Jobcard for Verification
+  '''
+  jc_detail ='''
+<table cellpadding="0" cellspacing="0" align="center" border="1" width="70%">
+  <tbody>
+    <tr>
+      <th colspan="2">Jobcard Details</th>
+    </tr>
+    <tr>
+      <td>Jobcard Number: </td>
+      <td><input name="jobcardNumber" type="text" value="jc_number"></td>
+    </tr>
+  </tbody>
+</table>
+'''
+
+  return jc_detail.replace("jc_number", jobcard)
+
+
 def postText():
   '''
   Suffixing to the html file script
   '''
   text = '''
 
-<table class="tbl_bg2" cellpadding="0" cellspacing="0" align="center" border="1" width="70%">
+<table cellpadding="0" cellspacing="0" align="center" border="1" width="70%">
   <tbody>
     <tr>
       <th colspan="2">Problem Details</th>
@@ -324,7 +346,7 @@ def fetchJobcard(url, driver, logger, jobcard, dir="/root/libtech/ghattu/nrega/h
     if len(epay_order_number) != 16:
       break
 
-    checkbox = '<input type="checkbox" name="ePayOrder" value="'+ epay_order_number + '">'
+    checkbox = '<input type="checkbox" name="ePayOrderList[]" value="'+ epay_order_number + '">'
     value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
     row.insert(0, value)
     try:
@@ -333,6 +355,7 @@ def fetchJobcard(url, driver, logger, jobcard, dir="/root/libtech/ghattu/nrega/h
       break
 
   html_text = preText()
+  html_text += jobcardDetails(jobcard)
   html_text += '<div style="background-color: #86C0C0">' + str(span) + '</div> <br />'
   html_text += '<div>' + str(table1) + '</div>'
   html_text += '<div>' + html_unescape(str(table3)) + '</div> <br />'
@@ -356,7 +379,7 @@ def main():
   # wdTest(driver)
   # jobcard = 141975706007010167
   dir=args['directory']
-  fetchJobcard(url, driver, logger, args.get('jobcard'), dir)
+  fetchJobcard(url, driver, logger, args.get('jobcard'))
 
   driverFinalize(driver)
   displayFinalize(display)
