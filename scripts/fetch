@@ -88,7 +88,9 @@ def argsFetch():
   parser.add_argument('-t', '--timeout', help='Time to wait before a page loads', required=False)
   parser.add_argument('-b', '--browser', help='Specify the browser to test with', required=False)
   parser.add_argument('-u', '--url', help='Specify the url to crawl', required=False)
-  parser.add_argument('-j', '--jobcard', help='Specify the jobcard no to fetch', required=True)
+  parser.add_argument('-j', '--jobcard-number', help='Specify the jobcard no to fetch', required=True)
+  parser.add_argument('-m', '--mobile-number', help='Specify the mobile number', required=True)
+  parser.add_argument('-i', '--missed-call-id', help='Specify the ID of missed call', required=True)
   parser.add_argument('-d', '--directory', help='Specify directory to download html file to', required=False)
 
   args = vars(parser.parse_args())
@@ -155,25 +157,38 @@ def preText():
   return text
 
 
-def jobcardDetails(jobcard):
+def callDetails(jobcard_number, mobile_number, missed_call_id):
   '''
   Adding the Jobcard for Verification
   '''
-  jc_detail ='''
+  call_details ='''
 <table cellpadding="0" cellspacing="0" align="center" border="1" width="70%">
   <tbody>
     <tr>
-      <th colspan="2">Jobcard Details</th>
+      <th colspan="2">Call Details</th>
     </tr>
     <tr>
       <td>Jobcard Number: </td>
-      <td><input name="jobcardNumber" type="text" value="jc_number"></td>
+      <td><input name="jobcardNumber" type="text" value="jobcard_number"></td>
     </tr>
+
+    <tr>
+      <td>Mobile Number: </td>
+      <td><input name="mobileNumber" type="text" value="mobile_number"></td>
+    </tr>
+
+    <tr>
+      <td colspan="2"><input name="missedCallID" type="hidden" value="missed_call_id"></td>
+    </tr>
+
   </tbody>
 </table>
 '''
 
-  return jc_detail.replace("jc_number", jobcard)
+  call_details = call_details.replace("jobcard_number", jobcard_number)
+  call_details = call_details.replace("mobile_number", mobile_number)
+  return call_details.replace("missed_call_id", missed_call_id)
+
 
 
 def postText():
@@ -199,21 +214,21 @@ def postText():
 
     <tr>
       <td>Service Type</td>
-      <td><select name="Service Type">
+      <td><select name="serviceType">
 <option value="1">NREGS</option>
 </select></td>
     </tr>
 
     <tr>
       <td>Service Category:</td>
-      <td><select name="Service Category">
+      <td><select name="serviceCategory">
 <option value="1">Delay in payments(Wages)</option>
 </select></td>
     </tr>
 
     <tr>
       <td>Problem Type:</td>
-      <td><select name="Problem Type">
+      <td><select name="problemType">
 <option value="">--Select One--</option>
 <option value="1">Postoffice</option>
 <option value="2">Smartcard payments</option>
@@ -228,7 +243,7 @@ def postText():
 
     <tr>
       <td>Period in weeks:</td>
-      <td><input name="PeriodInWeeks" type="number"></td>
+      <td><input name="periodInWeeks" type="number"></td>
     </tr>
 
     <tr>
@@ -280,7 +295,7 @@ def postText():
 '''
   return text
 
-def html_unescape(s):
+def htmlUnescape(s):
   """
   Returns the ASCII decoded version of the given HTML string. This does
   NOT remove normal HTML tags like <p>.
@@ -296,80 +311,92 @@ def html_unescape(s):
     s = s.replace(code[1], code[0])
   return s
 
-def fetchJobcard(url, driver, logger, jobcard, dir="/root/libtech/ghattu/nrega/html"):
+def fetchJobcard(url, driver, logger, args, dir="/root/libtech/ghattu/nrega/html"):
   '''
   Fetch the html for the jobcard
   '''
-  #driver = wdFetch(driver, logger)
-  driver.get(url)
+  jobcard_number = args.get('jobcard_number')
+  mobile_number  = args.get('mobile_number') 
+  missed_call_id = args.get('missed_call_id')
+  filename = dir+'/'+str(jobcard_number)+'.html'
 
-  elem = driver.find_element_by_name("spl")
-  elem.send_keys("JobCard")
-  time.sleep(1)
+  if jobcard_number != "0":
+    driver.get(url)
 
-  elem = driver.find_element_by_name("input2")
-  elem.send_keys(jobcard)
+    elem = driver.find_element_by_name("spl")
+    elem.send_keys("JobCard")
+    time.sleep(1)
 
-  elem = driver.find_element_by_name("Go")
-  elem.send_keys(Keys.RETURN)
+    elem = driver.find_element_by_name("input2")
+    elem.send_keys(jobcard_number)
 
-  parent_handle = driver.current_window_handle
-  # print "Handles : ", driver.window_handles, "Number : ", len(driver.window_handles)
+    elem = driver.find_element_by_name("Go")
+    elem.send_keys(Keys.RETURN)
 
-  if len(driver.window_handles) == 2:
-    driver.switch_to_window(driver.window_handles[-1])
+    parent_handle = driver.current_window_handle
+    # print "Handles : ", driver.window_handles, "Number : ", len(driver.window_handles)
+
+    if len(driver.window_handles) == 2:
+      driver.switch_to_window(driver.window_handles[-1])
+    else:
+      logger.error("Handlers gone wrong [" + str(driver.window_handles) + "]")
+      driver.save_screenshot('./logs/button_'+jobcard_number+'.png')
+
+    html_source = driver.page_source
+    bs = BeautifulSoup(html_source)
+    span = bs.find('span',attrs={'class':'rpt-hd-txt'})
+    main1 = bs.find('div',id='main1')
+    table1 = main1.find('table')
+    main3 = bs.find(id='main3')
+    table3 = main3.find('table')
+
+    hrow = table3.find('tr')
+    th = hrow.find('th')
+    heading = str(th).replace('Epayorder No:', 'Select')
+  #  heading = '<th align="left" style="border-left:1px #b7b7b7 solid; border-right:1px #b7b7b7 solid; border-bottom:1px #b7b7b7 solid; border-top:1px #b7b7b7 solid;"><b>Select</b></th>'
+    hrow.insert(0, heading)
+
+    row = hrow.findNext('tr')
+
+    while True:
+      td = row.find('td')
+      epay_order_value = td.text
+      epay_order_number = epay_order_value.strip()
+
+      if len(epay_order_number) != 16:
+        break
+
+      checkbox = '<input type="checkbox" name="ePayOrderList[]" value="'+ epay_order_number + '">'
+      value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
+      row.insert(0, value)
+      try:
+        row = row.findNext('tr')
+      except StopIteration:
+        break
+
+      driver.close()
+      driver.switch_to_window(parent_handle)
+
   else:
-    logger.error("Handlers gone wrong [" + str(driver.window_handles) + "]")
-    driver.save_screenshot('./logs/button_'+jcno+'.png')
-
-  html_source = driver.page_source
-  bs = BeautifulSoup(html_source)
-  span = bs.find('span',attrs={'class':'rpt-hd-txt'})
-  main1 = bs.find('div',id='main1')
-  table1 = main1.find('table')
-  main3 = bs.find(id='main3')
-  table3 = main3.find('table')
-
-  hrow = table3.find('tr')
-  th = hrow.find('th')
-  heading = str(th).replace('Epayorder No:', 'Select')
-#  heading = '<th align="left" style="border-left:1px #b7b7b7 solid; border-right:1px #b7b7b7 solid; border-bottom:1px #b7b7b7 solid; border-top:1px #b7b7b7 solid;"><b>Select</b></th>'
-  hrow.insert(0, heading)
-
-  row = hrow.findNext('tr')
-
-  while True:
-    td = row.find('td')
-    epay_order_value = td.text
-    epay_order_number = epay_order_value.strip()
-
-    if len(epay_order_number) != 16:
-      break
-
-    checkbox = '<input type="checkbox" name="ePayOrderList[]" value="'+ epay_order_number + '">'
-    value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
-    row.insert(0, value)
-    try:
-      row = row.findNext('tr')
-    except StopIteration:
-      break
+    span = ""
+    table1 = ""
+    table3 = ""
+    filename = filename.replace("0.html", mobile_number + ".html")
 
   html_text = preText()
-  html_text += jobcardDetails(jobcard)
+  html_text += callDetails(jobcard_number, mobile_number, missed_call_id)
   html_text += '<div style="background-color: #86C0C0">' + str(span) + '</div> <br />'
   html_text += '<div>' + str(table1) + '</div>'
-  html_text += '<div>' + html_unescape(str(table3)) + '</div> <br />'
+  html_text += '<div>' + htmlUnescape(str(table3)) + '</div>'
   html_text += postText()
 
-  with open(dir+'/'+str(jobcard)+'.html', 'w') as html_file:
+  with open(filename, 'w') as html_file:
     html_file.write(html_text)
 
-  driver.close()
-  driver.switch_to_window(parent_handle)
 
 def main():
   args = argsFetch()
-  logger = loggerFetch(args.get('log_level'))        # Mynk WTF is '_' doing here?
+  logger = loggerFetch(args.get('log_level'))
   # loggerTest(logger)
   logger.info('args: %s', str(args))
 
@@ -378,8 +405,8 @@ def main():
 
   # wdTest(driver)
   # jobcard = 141975706007010167
-  dir=args['directory']
-  fetchJobcard(url, driver, logger, args.get('jobcard'))
+  # dir=args['directory']
+  fetchJobcard(url, driver, logger, args)
 
   driverFinalize(driver)
   displayFinalize(display)
