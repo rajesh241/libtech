@@ -347,6 +347,10 @@ def fetchJobcard(url, driver, logger, args, dir=None):
       driver.save_screenshot('./logs/button_'+jobcard_number+'.png')
 
     html_source = driver.page_source
+
+    driver.close()
+    driver.switch_to_window(parent_handle)
+
     bs = BeautifulSoup(html_source)
     span = bs.find('span',attrs={'class':'rpt-hd-txt'})
     main1 = bs.find('div',id='main1')
@@ -377,9 +381,6 @@ def fetchJobcard(url, driver, logger, args, dir=None):
         row = row.findNext('tr')
       except StopIteration:
         break
-
-      driver.close()
-      driver.switch_to_window(parent_handle)
 
   else:
     span = ""
