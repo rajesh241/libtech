@@ -112,41 +112,43 @@ def main():
   libtech_db = dbInitialize(host="localhost", user="libtech", passwd="lt123", db="libtech")
   mahabubnagar_db = dbInitialize(host="localhost", user="mahabubnagar", passwd="mn123", db="mahabubnagar") 
 
-  cur = libtech_db.cursor()
-  query = 'select id, phone, ctime, htmlgen from ghattuMissedCalls'
-  cur.execute(query)
-  missedCalls = cur.fetchall()
-  for  (id, phone, ctime, htmlgen) in missedCalls:
-    logger.info("id = %s, phone = %s, ctime = %s, htmlgen = %s" % (id, phone, ctime, htmlgen))
-    if "1400830" in phone:
+  libtech_cur = libtech_db.cursor()
+  query = 'select id, phone, ctime, htmlgen, currentStep from ghattuMissedCalls'
+  libtech_cur.execute(query)
+  missedCalls = libtech_cur.fetchall()
+  for  (id, phone, ctime, htmlgen, currentStep) in missedCalls:
+    logger.info("id = %s, phone = %s, ctime = %s, htmlgen = %s, currentStep = %s" % (id, phone, ctime, htmlgen, currentStep))
+    if htmlgen == "1" in phone:
       continue
+
+    # Remove the check eventually - Mynk
+    if False:
+      filename = dir + '/' + str(id) + '_' + str(phone) + '.html'
+      logger.info("filename[%s]" % filename)
+      if os.path.isfile(filename):
+        continue
     
     cur = mahabubnagar_db.cursor()
     query = "select jobcard from jobcardDetails where phone=" + phone
     logger.info("query[%s]" % query)
-    
+
+    jobcard = 0
     cur.execute(query)
     if cur.rowcount != 0:
       for jobcards in cur.fetchall():
         jobcard = jobcards[0]
         logger.info("jobcard[%s]" % jobcard)
 
-        filename = dir + '/' + str(id) + '_' + str(phone) + '.html'
-        logger.info("filename[%s]" % filename)
-        if os.path.isfile(filename):
-          continue
+    cmd = '~/libtech/scripts/fetch -j ' + str(jobcard) + ' -m ' + str(phone) + ' -i ' + str(id) + ' -d ' + dir
+    logger.info("cmd[%s]" % cmd)
+    os.system(cmd)
+    #Mynk - Switch to Module fetchJobcard(url, driver, logger, args, dir)
+    #Put error checks in place and only then update libtech DB
 
-        cmd = '~/libtech/scripts/fetch -j ' + jobcard + ' -m ' + phone + ' -i ' + str(id) + ' -d ' + dir
-        logger.info("cmd[%s]" % cmd)
-        os.system(cmd)
-
-    else:
-      cmd = '~/libtech/scripts/fetch -j 0 -m ' + phone + ' -i ' + str(id) + ' -d ' + dir
-      logger.info("cmd[%s]" % cmd)
-      os.system(cmd)
-
-  #fetchJobcard(url, driver, logger, args, dir)
-  
+    #libtech_cur = libtech_db.cursor()
+    query = 'update ghattuMissedCalls set htmlgen=1 where id=' + str(id)
+    logger.info("query[%s]" % query)
+    libtech_cur.execute(query)
 
   dbFinalize(libtech_db)
   exit(0)
