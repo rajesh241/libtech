@@ -255,9 +255,9 @@ def postText():
       <td>Current Step:</td>
       <td><select name="currentStep">
 <option value="1">Not Reachable</option>
-<option value="1">Complaint Filed on Website</option>
-<option value="1">Complaint Closed on website</option>
-<option value="1">Closure Verfied Through Field</option>
+<option value="2">Complaint Filed on Website</option>
+<option value="3">Complaint Closed on website</option>
+<option value="4">Closure Verfied Through Field</option>
 </select></td>
     </tr>
 
@@ -322,7 +322,7 @@ def fetchJobcard(url, driver, logger, args, dir=None):
   if dir == None:
     dir="/root/libtech/ghattu/nrega/html"
 
-  filename = dir+'/'+str(jobcard_number)+'.html'
+  filename = dir + '/' + str(missed_call_id) + '_' + str(mobile_number) + '.html'
 
   if jobcard_number != "0":
     driver.get(url)
@@ -386,7 +386,6 @@ def fetchJobcard(url, driver, logger, args, dir=None):
     span = ""
     table1 = ""
     table3 = ""
-    filename = filename.replace("0.html", mobile_number + ".html")
 
   html_text = preText()
   html_text += callDetails(jobcard_number, mobile_number, missed_call_id)
