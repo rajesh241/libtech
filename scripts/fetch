@@ -230,14 +230,14 @@ def postText():
       <td>Problem Type:</td>
       <td><select name="problemType">
 <option value="">--Select One--</option>
-<option value="1">Postoffice</option>
-<option value="2">Smartcard payments</option>
-<option value="3">how many weeks it is pending</option>
-<option value="4">Period in weeks</option>
-<option value="5">Number of weeks payment pending(ask days)</option>
-<option value="6">Since when</option>
-<option value="7">Post Office Biometric(Finger Prints Not Match)</option>
-<option value="8">Village Organizations(VO)</option>
+<option value="Postoffice">Postoffice</option>
+<option value="Smartcard payments">Smartcard payments</option>
+<option value="how many weeks it is pending">how many weeks it is pending</option>
+<option value="Period in weeks">Period in weeks</option>
+<option value="Number of weeks payment pending(ask days)">Number of weeks payment pending(ask days)</option>
+<option value="Since when">Since when</option>
+<option value="Post Office Biometric(Finger Prints Not Match)">Post Office Biometric(Finger Prints Not Match)</option>
+<option value="Village Organizations(VO)">Village Organizations(VO)</option>
 </select></td>
     </tr>
 
@@ -254,27 +254,32 @@ def postText():
     <tr>
       <td>Current Step:</td>
       <td><select name="currentStep">
-<option value="1">Not Reachable</option>
-<option value="2">Complaint Filed on Website</option>
-<option value="3">Complaint Closed on website</option>
-<option value="4">Closure Verfied Through Field</option>
+<option value="Call Pending">Trying to Call</option>
+<option value="Updated Jobcard Infortion">Updaing JobCard</option>
+<option value="Unable to reach callback requested">Request for Call Back</option>
+<option value="Form Filled with Basic Details">Form Filled with Basic Details</option>
+<option value="Form Finalized">Form Finalized</option>
+<option value="Complaint Filed">Filed the Complait</option>
+<option value="Complaint Resolved on Website">Resolved on Website</option>
+<option value="Resolved Verified on Field">Verified On Field</option>
 </select></td>
     </tr>
 
     <tr>
       <td>Final Status:</td>
       <td><select name="finalStatus">
-<option value="1">Open</option>
-<option value="2">Closed</option>
+<option value="Open">Open</option>
+<option value="Closed">Closed</option>
 </select></td>
     </tr>
 
     <tr>
       <td>Reason for Complaint Closure:</td>
       <td><select name="closureReason">
-<option value="1">Phone not reachable for a long time</option>
-<option value="2">Duplicate</option>
-<option value="3">Verfied that Complaint Successfully Resolved</option>
+<option value="Phone not Reachable">Phone not reachable for a long time</option>
+<option value="Duplicate">Duplicate</option>
+<option value="Not Nrega Worker">Not An Nrega Worker</option>
+<option value="Complaint Resolved Successfully">Verfied that Complaint Successfully Resolved</option>
 </select></td>
     </tr>
 
