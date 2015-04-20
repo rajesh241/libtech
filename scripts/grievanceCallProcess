@@ -172,7 +172,7 @@ def preText():
   return text
 
 
-def grievanceDetails(jobcard_number, mobile_number, missed_call_id, current_step):
+def grievanceDetails():
   '''
   Adding the Jobcard for Verification
   '''
@@ -198,16 +198,16 @@ def grievanceDetails(jobcard_number, mobile_number, missed_call_id, current_step
 
     <tr>
       <td>Complaint Number</td>
-      <td><input name="complaintNumber" type="text"></td>
+      <td><input name="complaintNumber" type="text" value="complaint_number"></td>
     </tr>
     <tr>
       <td>Complaint Date</td>
-      <td><input name="complaintDate" type="date" value=""></td>
+      <td><input name="complaintDate" type="date" value="complaint_date"></td>
     </tr>
     
     <tr>
       <td>Current Step:</td>
-      <td><select name="currentStep">
+      <td><select name="currentStep" value="current_step">
 <option value="Call Pending">Trying to Call</option>
 <option value="Updated Jobcard Infortion">Updaing JobCard</option>
 <option value="Unable to reach callback requested">Request for Call Back</option>
@@ -221,7 +221,7 @@ def grievanceDetails(jobcard_number, mobile_number, missed_call_id, current_step
 
     <tr>
       <td>Final Status:</td>
-      <td><select name="finalStatus">
+      <td><select name="finalStatus" value="final_status">
 <option value="Open">Open</option>
 <option value="Closed">Closed</option>
 </select></td>
@@ -229,7 +229,7 @@ def grievanceDetails(jobcard_number, mobile_number, missed_call_id, current_step
 
     <tr>
       <td>Reason for Complaint Closure:</td>
-      <td><select name="closureReason">
+      <td><select name="closureReason" value="closure_reason">
 <option value="Phone not Reachable">Phone not reachable for a long time</option>
 <option value="Duplicate">Duplicate</option>
 <option value="Not Nrega Worker">Not An Nrega Worker</option>
@@ -237,27 +237,6 @@ def grievanceDetails(jobcard_number, mobile_number, missed_call_id, current_step
 </select></td>
     </tr>
 
-    <tr>
-      <td>Beneficiary Remarks:</td>
-      <td><textarea name="beneficiaryRemarksReadonly" cols="60" rows="10" readonly>beneficiary_remarks</textarea></td>
-    </tr>
-
-  </tbody>
-</table>
-'''
-  
-  return details
-
-
-
-def postText():
-  '''
-  Suffixing to the html file script
-  '''
-  text = '''
-
-<table cellpadding="0" cellspacing="0" align="center" border="1" width="70%">
-  <tbody>
     <tr>
       <th colspan="2">Problem Details</th>
     </tr>
@@ -278,7 +257,7 @@ def postText():
 
     <tr>
       <td>Problem Type:</td>
-      <td><select name="problemType">
+      <td><select name="problemType" value="problem_type">
 <option value="">--Select One--</option>
 <option value="Postoffice">Postoffice</option>
 <option value="Smartcard payments">Smartcard payments</option>
@@ -293,15 +272,34 @@ def postText():
 
     <tr>
       <td>Period in weeks:</td>
-      <td><input name="periodInWeeks" type="number"></td>
+      <td><input name="periodInWeeks" type="number" value="period_in_weeks"></td>
     </tr>
 
+    <tr>
+      <td>Previous Remarks:</td>
+      <td><textarea name="beneficiaryRemarksReadonly" cols="60" rows="10" readonly>beneficiary_remarks</textarea></td>
+    </tr>
     <tr>
       <td>Beneficiary Remarks:</td>
       <td><textarea name="beneficiaryRemarks" cols="60" rows="10"></textarea></td>
     </tr>
 
+  </tbody>
+</table>
+'''
+  
+  return details
 
+
+
+def postText():
+  '''
+  Suffixing to the html file script
+  '''
+  text = '''
+
+<table cellpadding="0" cellspacing="0" align="center" border="1" width="70%">
+  <tbody>
     <tr>
       <td colspan="2" align="center">                    
         <button type="submit">Submit</button>
@@ -335,17 +333,65 @@ def htmlUnescape(s):
     s = s.replace(code[1], code[0])
   return s
 
-def htmlUpdate(html, db):
+def htmlUpdate(html, log_details):
   """
   Returns the ASCII decoded version of the given HTML string. This does
   NOT remove normal HTML tags like <p>.
   """
+  if False:
+    query = 'select missedCallID, phone, ts, jobcard, htmlgen, currentStep from ghattuMissedCallsLog where'
+    cur = db.cursor()
+    logger.info("query[%s]" % query)
+    cur.execute(query)
+    call_details = cur.fetchall()
+
+  missed_call_id = log_details[1]
+  mobile_number = log_details[2]
+  jobcard_number = log_details[4]
+  worker_id = log_details[5]
+  payOrderList = log_details[6]
+  name = log_details[7]
+  complaint_number = log_details[8]
+  complaint_date = log_details[9]
+  problem_type = log_details[10]
+  period_in_weeks = log_details[11]
+  beneficiary_remarks = log_details[12]
+  current_step = log_details[13]
+  final_status = log_details[14]
+  closure_reason = log_details[15]
+
+  html = html.replace('jobcard_number', jobcard_number)
+  html = html.replace('mobile_number', mobile_number)
+  html = html.replace('missed_call_id', str(missed_call_id))
+  html = html.replace('complaint_number', str(complaint_number))
+  html = html.replace('complaint_date', str(complaint_date))
+  html = html.replace('current_step', current_step)
+  html = html.replace('final_status', str(final_status))
+  html = html.replace('closure_reason', str(closure_reason))
+
+  worker_id = str(worker_id)
+  old_str = 'name="workerID" value="' + worker_id + '">'
+  new_str = 'name="workerID" value="' + worker_id + '" checked>'
+  html = html.replace(old_str, new_str)
+
+  for epay_order_number in payOrderList.split(','):
+    print("ePayOrderNumber=[%s] of List[%s]" % (epay_order_number, payOrderList))
+    old_str='name="ePayOrderList[]" value="'+ epay_order_number + '">'
+    new_str='name="ePayOrderList[]" value="'+ epay_order_number + '" checked>'
+    html = html.replace(old_str, new_str)
+    
+  html = html.replace('beneficiary_remarks', str(beneficiary_remarks))
+  html = html.replace('problem_type', str(problem_type))
+  html = html.replace('period_in_weeks', str(period_in_weeks))
+  
   return html
 
-def fetchJobcard(logger, driver, db, jobcard_number, mobile_number, missed_call_id, current_step, dir=None, url=None):
+def fetchJobcard(logger, driver, log_details, dir=None, url=None):
   '''
   Fetch the html for the jobcard
   '''
+  logger.info("LogDetails[%s] Directory[%s] URL[%s]" %
+              (log_details, dir, url))
 
   if dir == None:
     dir="/root/libtech/ghattu/nrega/html"
@@ -353,8 +399,13 @@ def fetchJobcard(logger, driver, db, jobcard_number, mobile_number, missed_call_
   if url == None:
     url="http://www.nrega.telangana.gov.in/"
 
-  logger.info("JocardNumber[%s] MobileNumber[%s] ID[%s] CurrentStep[%s] Directory[%s] URL[%s]" %
-              (jobcard_number, mobile_number, missed_call_id,  current_step, dir, url))
+  missed_call_id = log_details[1]
+  mobile_number = log_details[2]
+  jobcard_number = log_details[4]
+
+  logger.info("JocardNumber[%s] MobileNumber[%s] ID[%s] Directory[%s] URL[%s]" %
+              (jobcard_number, mobile_number, missed_call_id, dir, url))
+
 
   filename = dir + '/' + str(missed_call_id) + '_' + str(mobile_number) + '.html'
 
@@ -373,14 +424,16 @@ def fetchJobcard(logger, driver, db, jobcard_number, mobile_number, missed_call_
     elem.send_keys(Keys.RETURN)
 
     parent_handle = driver.current_window_handle
-    logger.info("Handles [%s] Number [%d]" % (driver.window_handles, len(driver.window_handles)))
+    logger.debug("Handles [%s] Number [%d]" % (driver.window_handles, len(driver.window_handles)))
 
     if len(driver.window_handles) == 2:
       driver.switch_to_window(driver.window_handles[-1])
-      logger.info("Switching to child [%s]" % driver.window_handles[-1])
+      logger.debug("Switching to child [%s]" % driver.window_handles[-1])
     else:
       logger.error("Handlers gone wrong [" + str(driver.window_handles) + "]")
       driver.save_screenshot('./button_'+jobcard_number+'.png')
+
+    time.sleep(5)
 
     html_source = driver.page_source
     logger.debug("HTML Fetched [%s]" % html_source)
@@ -389,22 +442,64 @@ def fetchJobcard(logger, driver, db, jobcard_number, mobile_number, missed_call_
     driver.switch_to_window(parent_handle)
     logger.debug("Switching to parent [%s]" % parent_handle)
 
+    if False:
+      with open(filename, 'w') as html_file:
+        html_file.write(html_source.encode('utf-8'))
+
     bs = BeautifulSoup(html_source)
     span = bs.find('span',attrs={'class':'rpt-hd-txt'})
     logger.debug("Span[%s]" % span)
     main1 = bs.find('div',id='main1')
     table1 = main1.find('table')
     logger.debug("Table1[%s]" % table1)
+
+    table1A = table1.find('table', id='sortable')
+    logger.debug("Table1A[%s]" % table1A)
+
+    table1B = table1A.findNext('table', id='sortable')
+    logger.debug("Table1B[%s]" % table1B)
+
+
+    rows = table1B.findAll('tr')
+    hrow = rows[0]
+    count = len(rows)
+    logger.debug("RowCount[%d]" % count)
+    th = str(hrow.find('th'))
+    heading = th.replace('S.No.', 'Select')
+    hrow.insert(len(hrow)+1, heading)
+    logger.debug("HeadRow[%s]" % hrow)
+    count = count-3
+
+    row = rows[3] # hrow.findNext('tr').findNext('tr').findNext('tr')
+    logger.debug("FirstRow[%s]" % row)
+
+    # Mynk logger.info("Cells[%s]"%row.findAll('td'))
+    while count != 0:  # Mynk Can change to for perhaps
+      count = count - 1
+      td = row.find('td')
+      td = td.findNext('td')
+      worker_id_value = td.text
+      worker_id = worker_id_value.strip()
+
+      checkbox = '<input type="checkbox" name="workerID" value="'+ worker_id + '">'
+      logger.debug("Checkbox[%s], WorkerIdValue[%s], WorkerID[%s]" % (checkbox, worker_id_value, worker_id))
+      value = str(td).replace(worker_id_value, checkbox).replace('align="right"', 'align="center"')
+      row.insert(len(row)+1, value)
+      try:
+        row = row.findNext('tr')
+      except StopIteration:
+        break
+   
     main3 = bs.find(id='main3')
     table3 = main3.find('table')
     logger.debug("Table2[%s]" % table3)
-
     hrow = table3.find('tr')
+
     th = str(hrow.find('th'))
     heading = th.replace('Epayorder No:', 'Select')
-    hrow.insert(0, heading)
+    hrow.insert(len(hrow)+1, heading)
     heading = th.replace('Epayorder No:', 'Muster Signed')
-    hrow.insert(0, heading)
+    hrow.insert(len(hrow)+1, heading)
 
     row = hrow.findNext('tr')
 
@@ -418,10 +513,12 @@ def fetchJobcard(logger, driver, db, jobcard_number, mobile_number, missed_call_
 
       checkbox = '<input type="checkbox" name="ePayOrderList[]" value="'+ epay_order_number + '">'
       value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
-      row.insert(0, value) # Mynk
-      checkbox = '<input type="checkbox" name="ePayOrderList[]" value="'+ epay_order_number + '">'
+      row.insert(len(row)+1, value)
+
+      checkbox = '<input type="checkbox" name="signedPayOrderList[]" value="signed_'+ epay_order_number + '">'
       value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
-      row.insert(0, value) # Mynk
+      row.insert(len(row)+1, value)
+
       try:
         row = row.findNext('tr')
       except StopIteration:
@@ -433,69 +530,53 @@ def fetchJobcard(logger, driver, db, jobcard_number, mobile_number, missed_call_
     table3 = ""
 
   html_text = preText()
-  html_text += grievanceDetails(jobcard_number, mobile_number, missed_call_id, current_step)
+  html_text += grievanceDetails()
   html_text += '<div style="background-color: #86C0C0">' + str(span) + '</div> <br />'
-  html_text += '<div>' + str(table1) + '</div>'
+  html_text += '<div>' + htmlUnescape(str(table1)) + '</div>'
   html_text += '<div>' + htmlUnescape(str(table3)) + '</div>'
   html_text += postText()
 
-  html_text = htmlUpdate(html_text, db)
+  html_text = htmlUpdate(html_text, log_details)
 
   with open(filename, 'w') as html_file:
     html_file.write(html_text)
+    logger.info("Written file [%s]" % filename)
+    logger.debug("File content [%s]" % html_text)
 
 
 def processMissedCalls(logger, driver, dir, url):
   '''
   Process any missed calls in the libtech DB
   '''
-  libtech_db = dbInitialize(host="localhost", user="libtech", passwd="lt123", db="libtech")
-  mahabubnagar_db = dbInitialize(host="localhost", user="mahabubnagar", passwd="mn123", db="mahabubnagar") 
+  db = dbInitialize(host="localhost", user="libtech", passwd="lt123", db="libtech")
 
-  cur = libtech_db.cursor()
-  query = 'select missedCallID, phone, ts, jobcard, htmlgen, currentStep from ghattuMissedCallsLog'
+  cur = db.cursor()
+  if False:
+    query = 'select id, missedCallID, phone, ts, jobcard, workerID, '
+    'payOrderList, name, complaintNumber, complaintDate, '
+    'problemType, periodInWeeks, remarks, currentStep, finalStatus, '
+    'closureReason' + 'from ghattuMissedCallsLog where htmlgen=0'
+
+  query = 'select * from ghattuMissedCallsLog where id=147' # Mynk htmlgen=0'
+
+  logger.info("query[%s]" % query)
+           
   cur.execute(query)
   missedCalls = cur.fetchall()
-  for  (id, phone, timestamp, jobcard, htmlgen, currentStep) in missedCalls:
-    logger.info("id = %s, phone = %s, timestamp = %s, htmlgen = %s, jobcard = %s" % (id, phone, timestamp, htmlgen, jobcard))
-    if htmlgen == 1:
-      logger.info("Skipping id=%s" % id)
-      continue
-
-    # Remove the check eventually - Mynk
-    if False:
-      filename = dir + '/' + str(id) + '_' + str(phone) + '.html'
-      logger.info("filename[%s]" % filename)
-      if os.path.isfile(filename):
-        continue
-    
-      cur = mahabubnagar_db.cursor()
-      query = "select jobcard from jobcardDetails where phone=" + phone
-      logger.info("query[%s]" % query)
-
-      jobcard = 0
-      cur.execute(query)
-      if cur.rowcount != 0:
-        jobcards = cur.fetchall()
-        for row in jobcards:
-          jobcard = row[0]
-          logger.info("jobcard[%s]" % jobcard)
-
-    if False:    
-      cmd = '~/libtech/scripts/fetch -j ' + str(jobcard) + ' -m ' + str(phone) + ' -i ' + str(id) + ' -d ' + dir
-      logger.info("cmd[%s]" % cmd)
-      os.system(cmd)
-
+  for  log_details in missedCalls:
     #Put error checks in place and only then update libtech DB
-    fetchJobcard(logger, driver, libtech_db, jobcard, phone, id, currentStep, dir, url)
+    fetchJobcard(logger, driver, log_details, dir, url)
 
-    query = 'update ghattuMissedCallsLog set htmlgen=1 where id=' + str(id)
-    cur = libtech_db.cursor()
-    logger.info("query[%s]" % query)
-    cur.execute(query)
+    missed_call_id = log_details[1]
+    query = 'update ghattuMissedCallsLog set htmlgen=1 where missedCallID=' + str(missed_call_id)
+    try:    
+#      cur = db.cursor() # Mynk
+      logger.info("query[%s]" % query)
+      cur.execute(query)
+    except Exception as e:
+      logger.info("query[%s] with exception[%s]" % (query, e))
 
-  dbFinalize(mahabubnagar_db)
-  dbFinalize(libtech_db)
+  dbFinalize(db)
   
 
 def main():
