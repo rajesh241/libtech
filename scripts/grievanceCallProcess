@@ -96,6 +96,7 @@ def argsFetch():
   #  parser.add_argument('-m', '--mobile-number', help='Specify the mobile number', required=True)
   #  parser.add_argument('-i', '--missed-call-id', help='Specify the ID of missed call', required=True)
   parser.add_argument('-d', '--directory', help='Specify directory to download html file to', required=False)
+  parser.add_argument('-q', '--query', help='Query to specify the workset, E.g ... where id=147', required=False)
 
   args = vars(parser.parse_args())
   return args
@@ -367,19 +368,7 @@ def htmlUpdate(html, log_details):
   html = html.replace('complaint_date', str(complaint_date))
   html = html.replace('current_step', current_step)
   html = html.replace('final_status', str(final_status))
-  html = html.replace('closure_reason', str(closure_reason))
-
-  worker_id = str(worker_id)
-  old_str = 'name="workerID" value="' + worker_id + '">'
-  new_str = 'name="workerID" value="' + worker_id + '" checked>'
-  html = html.replace(old_str, new_str)
-
-  for epay_order_number in payOrderList.split(','):
-    print("ePayOrderNumber=[%s] of List[%s]" % (epay_order_number, payOrderList))
-    old_str='name="ePayOrderList[]" value="'+ epay_order_number + '">'
-    new_str='name="ePayOrderList[]" value="'+ epay_order_number + '" checked>'
-    html = html.replace(old_str, new_str)
-    
+  html = html.replace('closure_reason', str(closure_reason))    
   html = html.replace('beneficiary_remarks', str(beneficiary_remarks))
   html = html.replace('problem_type', str(problem_type))
   html = html.replace('period_in_weeks', str(period_in_weeks))
@@ -394,10 +383,10 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
               (log_details, dir, url))
 
   if dir == None:
-    dir="/root/libtech/ghattu/nrega/html"
+    dir = "/root/libtech/ghattu/nrega/html"
 
   if url == None:
-    url="http://www.nrega.telangana.gov.in/"
+    url = "http://www.nrega.telangana.gov.in/"
 
   missed_call_id = log_details[1]
   mobile_number = log_details[2]
@@ -473,6 +462,7 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
     row = rows[3] # hrow.findNext('tr').findNext('tr').findNext('tr')
     logger.debug("FirstRow[%s]" % row)
 
+    worker_id_list = "" # Mynk log_details[5].split(',')
     # Mynk logger.info("Cells[%s]"%row.findAll('td'))
     while count != 0:  # Mynk Can change to for perhaps
       count = count - 1
@@ -481,8 +471,10 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
       worker_id_value = td.text
       worker_id = worker_id_value.strip()
 
-      checkbox = '<input type="checkbox" name="workerID" value="'+ worker_id + '">'
-      logger.debug("Checkbox[%s], WorkerIdValue[%s], WorkerID[%s]" % (checkbox, worker_id_value, worker_id))
+      checkbox = '<input type="checkbox" name="workerID[]" value="'+ worker_id + '">'
+      if worker_id in worker_id_list:
+        checkbox = checkbox.replace('">', '" checked>')
+      logger.info("Checkbox[%s], WorkerIdValue[%s], WorkerID[%s]" % (checkbox, worker_id_value, worker_id))
       value = str(td).replace(worker_id_value, checkbox).replace('align="right"', 'align="center"')
       row.insert(len(row)+1, value)
       try:
@@ -503,6 +495,7 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
 
     row = hrow.findNext('tr')
 
+    epay_order_list = log_details[6].split(',')
     while True:
       td = row.find('td')
       epay_order_value = td.text
@@ -512,6 +505,9 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
         break
 
       checkbox = '<input type="checkbox" name="ePayOrderList[]" value="'+ epay_order_number + '">'
+      if epay_order_number in epay_order_list:
+        checkbox = checkbox.replace('">', '" checked>')
+      logger.info("ePayOrder CheckBox[%s]" % checkbox)
       value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
       row.insert(len(row)+1, value)
 
@@ -544,7 +540,7 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
     logger.debug("File content [%s]" % html_text)
 
 
-def processMissedCalls(logger, driver, dir, url):
+def processMissedCalls(logger, driver, dir, url, query=None):
   '''
   Process any missed calls in the libtech DB
   '''
@@ -557,7 +553,8 @@ def processMissedCalls(logger, driver, dir, url):
     'problemType, periodInWeeks, remarks, currentStep, finalStatus, '
     'closureReason' + 'from ghattuMissedCallsLog where htmlgen=0'
 
-  query = 'select * from ghattuMissedCallsLog where id=147' # Mynk htmlgen=0'
+  if query == None:
+    query = 'select * from ghattuMissedCallsLog where htmlgen=0'
 
   logger.info("query[%s]" % query)
            
@@ -590,7 +587,7 @@ def main():
   outdir = args['directory']
   url = args['url']
   
-  processMissedCalls(logger, driver, outdir, url)
+  processMissedCalls(logger, driver, outdir, url, args['query'])
 
   driverFinalize(driver)
   displayFinalize(display)
