@@ -245,14 +245,14 @@ def grievanceDetails():
     <tr>
       <td>Service Type</td>
       <td><select name="serviceType">
-<option value="1">NREGS</option>
+<option value="1" selected>NREGS</option>
 </select></td>
     </tr>
 
     <tr>
       <td>Service Category:</td>
       <td><select name="serviceCategory">
-<option value="1">Delay in payments(Wages)</option>
+<option value="1" selected>Delay in payments(Wages)</option>
 </select></td>
     </tr>
 
@@ -334,11 +334,35 @@ def htmlUnescape(s):
     s = s.replace(code[1], code[0])
   return s
 
+def checkboxSet(html, name, checked_list):
+  '''
+  Sets the option as checked for the chosen checkbox
+  '''
+  for str in checked_list.split(','):
+    old_str = '<input type="checkbox" name="' + name + '" value=' + str + '">'
+    new_str = old_str.replace('">', '" checked>')
+    print("Old[%s] > New[%s]" %(old_str, new_str))
+    return html.replace(old_str, new_str)
+
+  return html
+
+def dropdownOptionSet(html, str):
+  '''
+  Sets the option as selected for the chosen dropdown
+  '''
+  if str != "":
+    old_str = '<option value="' + str + '">'
+    new_str = old_str.replace('">', '" selected>')
+    print("Old[%s] > New[%s]" %(old_str, new_str))    
+    return html.replace(old_str, new_str)
+  else:
+    return html
+
 def htmlUpdate(html, log_details):
-  """
+  '''
   Returns the ASCII decoded version of the given HTML string. This does
   NOT remove normal HTML tags like <p>.
-  """
+  '''
   if False:
     query = 'select missedCallID, phone, ts, jobcard, htmlgen, currentStep from ghattuMissedCallsLog where'
     cur = db.cursor()
@@ -349,8 +373,8 @@ def htmlUpdate(html, log_details):
   missed_call_id = log_details[1]
   mobile_number = log_details[2]
   jobcard_number = log_details[4]
-  worker_id = log_details[5]
-  payOrderList = log_details[6]
+  worker_id_list = log_details[5]
+  epay_order_list = log_details[6]
   name = log_details[7]
   complaint_number = log_details[8]
   complaint_date = log_details[9]
@@ -366,11 +390,16 @@ def htmlUpdate(html, log_details):
   html = html.replace('missed_call_id', str(missed_call_id))
   html = html.replace('complaint_number', str(complaint_number))
   html = html.replace('complaint_date', str(complaint_date))
-  html = html.replace('current_step', current_step)
-  html = html.replace('final_status', str(final_status))
-  html = html.replace('closure_reason', str(closure_reason))    
+
+  #html = checkboxSet(html, "workerID[]", worker_id_list)
+  #html = checkboxSet(html, "ePayOrderList[]", epay_order_list)
+
+  #html = dropdownOptionSet(html, current_step)
+  #html = dropdownOptionSet(html, final_status)
+  #html = dropdownOptionSet(html, closure_reason)
+  
   html = html.replace('beneficiary_remarks', str(beneficiary_remarks))
-  html = html.replace('problem_type', str(problem_type))
+  #html = dropdownOptionSet(html, problem_type)  
   html = html.replace('period_in_weeks', str(period_in_weeks))
   
   return html
