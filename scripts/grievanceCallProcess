@@ -172,15 +172,15 @@ def preText():
   return text
 
 
-def callDetails(jobcard_number, mobile_number, missed_call_id):
+def grievanceDetails(jobcard_number, mobile_number, missed_call_id, current_step):
   '''
   Adding the Jobcard for Verification
   '''
-  call_details ='''
+  details ='''
 <table cellpadding="0" cellspacing="0" align="center" border="1" width="70%">
   <tbody>
     <tr>
-      <th colspan="2">Call Details</th>
+      <th colspan="2">Grievance Details</th>
     </tr>
     <tr>
       <td>Jobcard Number: </td>
@@ -196,14 +196,57 @@ def callDetails(jobcard_number, mobile_number, missed_call_id):
       <td colspan="2"><input name="missedCallID" type="hidden" value="missed_call_id"></td>
     </tr>
 
+    <tr>
+      <td>Complaint Number</td>
+      <td><input name="complaintNumber" type="text"></td>
+    </tr>
+    <tr>
+      <td>Complaint Date</td>
+      <td><input name="complaintDate" type="date" value=""></td>
+    </tr>
+    
+    <tr>
+      <td>Current Step:</td>
+      <td><select name="currentStep">
+<option value="Call Pending">Trying to Call</option>
+<option value="Updated Jobcard Infortion">Updaing JobCard</option>
+<option value="Unable to reach callback requested">Request for Call Back</option>
+<option value="Form Filled with Basic Details">Form Filled with Basic Details</option>
+<option value="Form Finalized">Form Finalized</option>
+<option value="Complaint Filed">Filed the Complait</option>
+<option value="Complaint Resolved on Website">Resolved on Website</option>
+<option value="Resolved Verified on Field">Verified On Field</option>
+</select></td>
+    </tr>
+
+    <tr>
+      <td>Final Status:</td>
+      <td><select name="finalStatus">
+<option value="Open">Open</option>
+<option value="Closed">Closed</option>
+</select></td>
+    </tr>
+
+    <tr>
+      <td>Reason for Complaint Closure:</td>
+      <td><select name="closureReason">
+<option value="Phone not Reachable">Phone not reachable for a long time</option>
+<option value="Duplicate">Duplicate</option>
+<option value="Not Nrega Worker">Not An Nrega Worker</option>
+<option value="Complaint Resolved Successfully">Verfied that Complaint Successfully Resolved</option>
+</select></td>
+    </tr>
+
+    <tr>
+      <td>Beneficiary Remarks:</td>
+      <td><textarea name="beneficiaryRemarksReadonly" cols="60" rows="10" readonly>beneficiary_remarks</textarea></td>
+    </tr>
+
   </tbody>
 </table>
 '''
   
-  call_details = call_details.replace("jobcard_number", str(jobcard_number))
-  call_details = call_details.replace("mobile_number", str(mobile_number))
-  call_details = call_details.replace("missed_call_id", str(missed_call_id))
-  return call_details
+  return details
 
 
 
@@ -217,15 +260,6 @@ def postText():
   <tbody>
     <tr>
       <th colspan="2">Problem Details</th>
-    </tr>
-
-    <tr>
-      <td>Complaint Number</td>
-      <td><input name="complaintNumber" type="text"></td>
-    </tr>
-    <tr>
-      <td>Complaint Date</td>
-      <td><input name="complaintDate" type="date" value=""></td>
     </tr>
 
     <tr>
@@ -267,37 +301,6 @@ def postText():
       <td><textarea name="beneficiaryRemarks" cols="60" rows="10"></textarea></td>
     </tr>
 
-    <tr>
-      <td>Current Step:</td>
-      <td><select name="currentStep">
-<option value="Call Pending">Trying to Call</option>
-<option value="Updated Jobcard Infortion">Updaing JobCard</option>
-<option value="Unable to reach callback requested">Request for Call Back</option>
-<option value="Form Filled with Basic Details">Form Filled with Basic Details</option>
-<option value="Form Finalized">Form Finalized</option>
-<option value="Complaint Filed">Filed the Complait</option>
-<option value="Complaint Resolved on Website">Resolved on Website</option>
-<option value="Resolved Verified on Field">Verified On Field</option>
-</select></td>
-    </tr>
-
-    <tr>
-      <td>Final Status:</td>
-      <td><select name="finalStatus">
-<option value="Open">Open</option>
-<option value="Closed">Closed</option>
-</select></td>
-    </tr>
-
-    <tr>
-      <td>Reason for Complaint Closure:</td>
-      <td><select name="closureReason">
-<option value="Phone not Reachable">Phone not reachable for a long time</option>
-<option value="Duplicate">Duplicate</option>
-<option value="Not Nrega Worker">Not An Nrega Worker</option>
-<option value="Complaint Resolved Successfully">Verfied that Complaint Successfully Resolved</option>
-</select></td>
-    </tr>
 
     <tr>
       <td colspan="2" align="center">                    
@@ -332,13 +335,17 @@ def htmlUnescape(s):
     s = s.replace(code[1], code[0])
   return s
 
-def fetchJobcard(logger, driver, jobcard_number, mobile_number, missed_call_id, current_step, dir=None, url=None):
+def htmlUpdate(html, db):
+  """
+  Returns the ASCII decoded version of the given HTML string. This does
+  NOT remove normal HTML tags like <p>.
+  """
+  return html
+
+def fetchJobcard(logger, driver, db, jobcard_number, mobile_number, missed_call_id, current_step, dir=None, url=None):
   '''
   Fetch the html for the jobcard
   '''
-
-  logger.info("JocardNumber[%s] MobileNumber[%s] ID[%s] CurrentStep[%s] Directory[%s] URL[%s]" %
-              (jobcard_number, mobile_number, missed_call_id,  current_step, dir, url))
 
   if dir == None:
     dir="/root/libtech/ghattu/nrega/html"
@@ -346,10 +353,14 @@ def fetchJobcard(logger, driver, jobcard_number, mobile_number, missed_call_id, 
   if url == None:
     url="http://www.nrega.telangana.gov.in/"
 
+  logger.info("JocardNumber[%s] MobileNumber[%s] ID[%s] CurrentStep[%s] Directory[%s] URL[%s]" %
+              (jobcard_number, mobile_number, missed_call_id,  current_step, dir, url))
+
   filename = dir + '/' + str(missed_call_id) + '_' + str(mobile_number) + '.html'
 
-  if jobcard_number != 0:
+  if jobcard_number != "0":
     driver.get(url)
+    logger.info("Fetching...[%s]" % url)
 
     elem = driver.find_element_by_name("spl")
     elem.send_keys("JobCard")
@@ -362,30 +373,37 @@ def fetchJobcard(logger, driver, jobcard_number, mobile_number, missed_call_id, 
     elem.send_keys(Keys.RETURN)
 
     parent_handle = driver.current_window_handle
-    # print "Handles : ", driver.window_handles, "Number : ", len(driver.window_handles)
+    logger.info("Handles [%s] Number [%d]" % (driver.window_handles, len(driver.window_handles)))
 
     if len(driver.window_handles) == 2:
       driver.switch_to_window(driver.window_handles[-1])
+      logger.info("Switching to child [%s]" % driver.window_handles[-1])
     else:
       logger.error("Handlers gone wrong [" + str(driver.window_handles) + "]")
       driver.save_screenshot('./button_'+jobcard_number+'.png')
 
     html_source = driver.page_source
+    logger.debug("HTML Fetched [%s]" % html_source)
 
     driver.close()
     driver.switch_to_window(parent_handle)
+    logger.debug("Switching to parent [%s]" % parent_handle)
 
     bs = BeautifulSoup(html_source)
     span = bs.find('span',attrs={'class':'rpt-hd-txt'})
+    logger.debug("Span[%s]" % span)
     main1 = bs.find('div',id='main1')
     table1 = main1.find('table')
+    logger.debug("Table1[%s]" % table1)
     main3 = bs.find(id='main3')
     table3 = main3.find('table')
+    logger.debug("Table2[%s]" % table3)
 
     hrow = table3.find('tr')
-    th = hrow.find('th')
-    heading = str(th).replace('Epayorder No:', 'Select')
-  #  heading = '<th align="left" style="border-left:1px #b7b7b7 solid; border-right:1px #b7b7b7 solid; border-bottom:1px #b7b7b7 solid; border-top:1px #b7b7b7 solid;"><b>Select</b></th>'
+    th = str(hrow.find('th'))
+    heading = th.replace('Epayorder No:', 'Select')
+    hrow.insert(0, heading)
+    heading = th.replace('Epayorder No:', 'Muster Signed')
     hrow.insert(0, heading)
 
     row = hrow.findNext('tr')
@@ -400,7 +418,10 @@ def fetchJobcard(logger, driver, jobcard_number, mobile_number, missed_call_id, 
 
       checkbox = '<input type="checkbox" name="ePayOrderList[]" value="'+ epay_order_number + '">'
       value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
-      row.insert(0, value)
+      row.insert(0, value) # Mynk
+      checkbox = '<input type="checkbox" name="ePayOrderList[]" value="'+ epay_order_number + '">'
+      value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
+      row.insert(0, value) # Mynk
       try:
         row = row.findNext('tr')
       except StopIteration:
@@ -412,11 +433,13 @@ def fetchJobcard(logger, driver, jobcard_number, mobile_number, missed_call_id, 
     table3 = ""
 
   html_text = preText()
-  html_text += callDetails(jobcard_number, mobile_number, missed_call_id)
+  html_text += grievanceDetails(jobcard_number, mobile_number, missed_call_id, current_step)
   html_text += '<div style="background-color: #86C0C0">' + str(span) + '</div> <br />'
   html_text += '<div>' + str(table1) + '</div>'
   html_text += '<div>' + htmlUnescape(str(table3)) + '</div>'
   html_text += postText()
+
+  html_text = htmlUpdate(html_text, db)
 
   with open(filename, 'w') as html_file:
     html_file.write(html_text)
@@ -429,12 +452,12 @@ def processMissedCalls(logger, driver, dir, url):
   libtech_db = dbInitialize(host="localhost", user="libtech", passwd="lt123", db="libtech")
   mahabubnagar_db = dbInitialize(host="localhost", user="mahabubnagar", passwd="mn123", db="mahabubnagar") 
 
-  libtech_cur = libtech_db.cursor()
-  query = 'select id, phone, ctime, htmlgen, currentStep from ghattuMissedCalls'
-  libtech_cur.execute(query)
-  missedCalls = libtech_cur.fetchall()
-  for  (id, phone, ctime, htmlgen, currentStep) in missedCalls:
-    logger.info("id = %s, phone = %s, ctime = %s, htmlgen = %s, currentStep = %s" % (id, phone, ctime, htmlgen, currentStep))
+  cur = libtech_db.cursor()
+  query = 'select missedCallID, phone, ts, jobcard, htmlgen, currentStep from ghattuMissedCallsLog'
+  cur.execute(query)
+  missedCalls = cur.fetchall()
+  for  (id, phone, timestamp, jobcard, htmlgen, currentStep) in missedCalls:
+    logger.info("id = %s, phone = %s, timestamp = %s, htmlgen = %s, jobcard = %s" % (id, phone, timestamp, htmlgen, jobcard))
     if htmlgen == 1:
       logger.info("Skipping id=%s" % id)
       continue
@@ -446,17 +469,17 @@ def processMissedCalls(logger, driver, dir, url):
       if os.path.isfile(filename):
         continue
     
-    cur = mahabubnagar_db.cursor()
-    query = "select jobcard from jobcardDetails where phone=" + phone
-    logger.info("query[%s]" % query)
+      cur = mahabubnagar_db.cursor()
+      query = "select jobcard from jobcardDetails where phone=" + phone
+      logger.info("query[%s]" % query)
 
-    jobcard = 0
-    cur.execute(query)
-    if cur.rowcount != 0:
-      jc_list = cur.fetchall()
-      for jobcards in jc_list:
-        jobcard = jobcards[0]
-        logger.info("jobcard[%s]" % jobcard)
+      jobcard = 0
+      cur.execute(query)
+      if cur.rowcount != 0:
+        jobcards = cur.fetchall()
+        for row in jobcards:
+          jobcard = row[0]
+          logger.info("jobcard[%s]" % jobcard)
 
     if False:    
       cmd = '~/libtech/scripts/fetch -j ' + str(jobcard) + ' -m ' + str(phone) + ' -i ' + str(id) + ' -d ' + dir
@@ -464,10 +487,9 @@ def processMissedCalls(logger, driver, dir, url):
       os.system(cmd)
 
     #Put error checks in place and only then update libtech DB
-    fetchJobcard(logger, driver, jobcard, phone, id, currentStep, dir, url)
+    fetchJobcard(logger, driver, libtech_db, jobcard, phone, id, currentStep, dir, url)
 
-    #libtech_cur = libtech_db.cursor()
-    query = 'update ghattuMissedCalls set htmlgen=1 where id=' + str(id)
+    query = 'update ghattuMissedCallsLog set htmlgen=1 where id=' + str(id)
     cur = libtech_db.cursor()
     logger.info("query[%s]" % query)
     cur.execute(query)
