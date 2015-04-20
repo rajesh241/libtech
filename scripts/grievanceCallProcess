@@ -418,11 +418,10 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
     if len(driver.window_handles) == 2:
       driver.switch_to_window(driver.window_handles[-1])
       logger.debug("Switching to child [%s]" % driver.window_handles[-1])
+      time.sleep(5)
     else:
       logger.error("Handlers gone wrong [" + str(driver.window_handles) + "]")
       driver.save_screenshot('./button_'+jobcard_number+'.png')
-
-    time.sleep(5)
 
     html_source = driver.page_source
     logger.debug("HTML Fetched [%s]" % html_source)
@@ -462,7 +461,12 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
     row = rows[3] # hrow.findNext('tr').findNext('tr').findNext('tr')
     logger.debug("FirstRow[%s]" % row)
 
-    worker_id_list = "" # Mynk log_details[5].split(',')
+    workderIDs = log_details[5]
+    if workderIDs == None:
+      worker_id_list = ""
+    else:
+      worker_id_list = workderIDs.split(',')
+      
     # Mynk logger.info("Cells[%s]"%row.findAll('td'))
     while count != 0:  # Mynk Can change to for perhaps
       count = count - 1
@@ -474,7 +478,7 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
       checkbox = '<input type="checkbox" name="workerID[]" value="'+ worker_id + '">'
       if worker_id in worker_id_list:
         checkbox = checkbox.replace('">', '" checked>')
-      logger.info("Checkbox[%s], WorkerIdValue[%s], WorkerID[%s]" % (checkbox, worker_id_value, worker_id))
+      logger.debug("Checkbox[%s], WorkerIdValue[%s], WorkerID[%s]" % (checkbox, worker_id_value, worker_id))
       value = str(td).replace(worker_id_value, checkbox).replace('align="right"', 'align="center"')
       row.insert(len(row)+1, value)
       try:
@@ -495,7 +499,12 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
 
     row = hrow.findNext('tr')
 
-    epay_order_list = log_details[6].split(',')
+    payOrderList = log_details[6]
+    if payOrderList == None:
+      epay_order_list = ""
+    else:
+      epay_order_list = payOrderList.split(',')
+      
     while True:
       td = row.find('td')
       epay_order_value = td.text
@@ -507,7 +516,7 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
       checkbox = '<input type="checkbox" name="ePayOrderList[]" value="'+ epay_order_number + '">'
       if epay_order_number in epay_order_list:
         checkbox = checkbox.replace('">', '" checked>')
-      logger.info("ePayOrder CheckBox[%s]" % checkbox)
+      logger.debug("ePayOrder CheckBox[%s]" % checkbox)
       value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
       row.insert(len(row)+1, value)
 
@@ -548,13 +557,13 @@ def processMissedCalls(logger, driver, dir, url, query=None):
 
   cur = db.cursor()
   if False:
-    query = 'select id, missedCallID, phone, ts, jobcard, workerID, '
-    'payOrderList, name, complaintNumber, complaintDate, '
-    'problemType, periodInWeeks, remarks, currentStep, finalStatus, '
-    'closureReason' + 'from ghattuMissedCallsLog where htmlgen=0'
+    query = 'select * from ghattuMissedCallsLog where htmlgen=0'
 
   if query == None:
-    query = 'select * from ghattuMissedCallsLog where htmlgen=0'
+    query = '''select id, missedCallID, phone, ts, jobcard, workerID,
+    payOrderList, name, complaintNumber, complaintDate,
+    problemType, periodInWeeks, remarks, currentStep, finalStatus,
+    closureReason from ghattuMissedCallsLog where htmlgen=0'''
 
   logger.info("query[%s]" % query)
            
@@ -564,8 +573,8 @@ def processMissedCalls(logger, driver, dir, url, query=None):
     #Put error checks in place and only then update libtech DB
     fetchJobcard(logger, driver, log_details, dir, url)
 
-    missed_call_id = log_details[1]
-    query = 'update ghattuMissedCallsLog set htmlgen=1 where missedCallID=' + str(missed_call_id)
+    id = log_details[0]
+    query = 'update ghattuMissedCallsLog set htmlgen=1 where id=' + str(id)
     try:    
 #      cur = db.cursor() # Mynk
       logger.info("query[%s]" % query)
