@@ -394,12 +394,12 @@ def htmlUpdate(html, log_details):
   #html = checkboxSet(html, "workerID[]", worker_id_list)
   #html = checkboxSet(html, "ePayOrderList[]", epay_order_list)
 
-  #html = dropdownOptionSet(html, current_step)
-  #html = dropdownOptionSet(html, final_status)
-  #html = dropdownOptionSet(html, closure_reason)
+  html = dropdownOptionSet(html, current_step)
+  html = dropdownOptionSet(html, final_status)
+  html = dropdownOptionSet(html, closure_reason)
   
   html = html.replace('beneficiary_remarks', str(beneficiary_remarks))
-  #html = dropdownOptionSet(html, problem_type)  
+  html = dropdownOptionSet(html, problem_type)  
   html = html.replace('period_in_weeks', str(period_in_weeks))
   
   return html
@@ -490,11 +490,7 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
     row = rows[3] # hrow.findNext('tr').findNext('tr').findNext('tr')
     logger.debug("FirstRow[%s]" % row)
 
-    workderIDs = log_details[5]
-    if workderIDs == None:
-      worker_id_list = ""
-    else:
-      worker_id_list = workderIDs.split(',')
+    worker_id_list = log_details[5].split(',')
       
     # Mynk logger.info("Cells[%s]"%row.findAll('td'))
     while count != 0:  # Mynk Can change to for perhaps
@@ -528,11 +524,7 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
 
     row = hrow.findNext('tr')
 
-    payOrderList = log_details[6]
-    if payOrderList == None:
-      epay_order_list = ""
-    else:
-      epay_order_list = payOrderList.split(',')
+    epay_order_list = log_details[6].split(',')
       
     while True:
       td = row.find('td')
