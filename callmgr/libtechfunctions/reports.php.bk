@@ -1,0 +1,55 @@
+<?php
+
+function ftorejectedreport($mydbcon,$panchayatcode,$panchayatname){
+$file = fopen("fto.csv","r");
+$fileName="/tmp/".$panchayatname."_rejected_transaction.csv";
+if (file_exists($fileName)) {
+        $fp = fopen($fileName, 'w+') ;
+}
+else {
+        $fp = fopen($fileName, 'x+') ;
+}
+$i=0;
+$writetofile="i,panchayatname,jobcard,name,phone,amount,transactiondate,processeddate,accountno,fto_no,refno\n";	
+fwrite($fp,$writetofile);
+	echo $writetofile;
+  echo "</br>";
+while((! feof($file)) && ($i < 5000))
+  {
+	$i = $i +1;
+  $oneline = fgetcsv($file);
+	$jobcard=$oneline[0];
+  $i=(int)$oneline[1];
+  $refno=$oneline[3];
+  $query = "use GovernanceDelivery";
+  $result = mysqli_query($mydbcon,$query);
+  $query= "select * from  fto_transaction_details where reference_no='".$refno."';";
+  $result = mysqli_query($mydbcon,$query);
+	$row=mysqli_fetch_array($result);
+	$jobcard=$row['job_card_no'];
+	$fto_no=$row['fto_no'];
+	$name=$row['name_of_primary_account_holder'];
+  $amount=$row['amount_to_be_credited'];
+	$processeddate=$row['processed_date'];
+	$reason=$row['rejection_reason'];
+	$accountno=$row['account_no'];
+  $transactiondate=$row['transaction_date'];
+	$code=substr($jobcard,10,3);
+  $query = "use libtech";
+  $result = mysqli_query($mydbcon,$query);
+	$query="select phone from addressbook where jobcard='".$jobcard."';";
+  $result = mysqli_query($mydbcon,$query);
+	$row=mysqli_fetch_array($result);
+	$phone=$row['phone'];
+	$writetofile=$i.",".$panchayatname.",".$jobcard.",".$name.",".$phone.",".$amount.",".$transactiondate.",".$processeddate.",".$accountno.",".$fto_no.",".$refno."\n";	
+	if($code==$panchayatcode){		
+	fwrite($fp,$writetofile);
+	}
+	echo $writetofile;
+  echo "</br>";
+
+	
+  }
+ 
+}
+?>
