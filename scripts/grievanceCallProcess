@@ -235,6 +235,7 @@ def grievanceDetails():
 <option value="Duplicate">Duplicate</option>
 <option value="Not Nrega Worker">Not An Nrega Worker</option>
 <option value="Complaint Resolved Successfully">Verfied that Complaint Successfully Resolved</option>
+<option value="Closed and Not Verified on Field">Closed and Not Verified on Field</option>
 </select></td>
     </tr>
 
