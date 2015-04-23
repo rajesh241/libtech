@@ -148,6 +148,7 @@ def driverInitialize(browser="Firefox"):
 
 def driverFinalize(driver):
   driver.close()
+  driver.quit()
 
 
 def wdTest(driver):
