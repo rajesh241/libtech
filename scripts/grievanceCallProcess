@@ -1,0 +1,629 @@
+#! /usr/bin/env python
+
+#This code will get the Oabcgatat Banes
+import os
+import csv
+from bs4 import BeautifulSoup, Tag
+import requests
+
+import logging
+import MySQLdb
+import time
+import re
+
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.by import By
+
+#######################
+# Global Declarations
+#######################
+
+delay = 2
+timeout = 10
+browser="Firefox"
+logFile = __file__+'.log'
+logLevel = logging.ERROR
+logFormat = '%(asctime)s:[%(name)s|%(module)s|%(funcName)s|%(lineno)s|%(levelname)s]: %(message)s' #  %(asctime)s %(module)s:%(lineno)s %(funcName)s %(message)s"
+
+#############
+# Functions
+#############
+
+'''
+def logInitialize():
+  import logging
+  logging.basicConfig(filename=logFile, level=logLevel, format=logFormat) # Mynk
+  logging.basicConfig(
+    filename = fileName,
+    format = "%(levelname) -10s %(asctime)s %(module)s:%(lineno)s %(funcName)s %(message)s",
+    level = logging.DEBUG
+)
+'''
+
+def loggerFetch(level=None):
+  logger = logging.getLogger(__name__)
+
+  if level:
+    numeric_level = getattr(logging, level.upper(), None)
+    if not isinstance(numeric_level, int):
+      raise ValueError('Invalid log level: %s' % level)
+    else:
+      logger.setLevel(numeric_level)
+  else:
+    logger.setLevel(logLevel)
+
+  # create console handler and set level to debug
+  ch = logging.StreamHandler()
+  ch.setLevel(logging.DEBUG)    # Mynk ???
+
+  # create formatter e.g - FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
+  formatter = logging.Formatter(logFormat)
+
+  # add formatter to ch
+  ch.setFormatter(formatter)
+
+  # add ch to logger
+  logger.addHandler(ch)
+
+  return logger
+
+def loggerTest(logger):
+  logger.debug('debug message')
+  logger.info('info message')
+  logger.warn('warn message')
+  logger.error('error message')
+  logger.critical('critical message')
+    
+
+def argsFetch():
+  '''
+  Paser for the argument list that returns the args list
+  '''
+  import argparse
+
+  parser = argparse.ArgumentParser(description='Jobcard script for crawling, downloading & parsing')
+  parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
+  parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
+  parser.add_argument('-t', '--timeout', help='Time to wait before a page loads', required=False)
+  parser.add_argument('-b', '--browser', help='Specify the browser to test with', required=False)
+  parser.add_argument('-u', '--url', help='Specify the url to crawl', required=False)
+  #  parser.add_argument('-j', '--jobcard-number', help='Specify the jobcard no to fetch', required=True)
+  #  parser.add_argument('-m', '--mobile-number', help='Specify the mobile number', required=True)
+  #  parser.add_argument('-i', '--missed-call-id', help='Specify the ID of missed call', required=True)
+  parser.add_argument('-d', '--directory', help='Specify directory to download html file to', required=False)
+  parser.add_argument('-q', '--query', help='Query to specify the workset, E.g ... where id=147', required=False)
+
+  args = vars(parser.parse_args())
+  return args
+
+def parserFinalize(parser):
+  parser.close()
+
+def dbInitialize(host="localhost", user="root", passwd="root123", db="libtech"):
+  '''
+  Connect to MySQL Database
+  '''
+  db = MySQLdb.connect(host=host, user=user, passwd=passwd, db=db)
+  db.autocommit(True)
+  return db;
+
+def dbFinalize(db):
+  db.close()
+
+
+def displayInitialize(isVisible=0):
+  from pyvirtualdisplay import Display
+  
+  display = Display(visible=isVisible, size=(600, 400))
+  display.start()
+  return display
+
+def displayFinalize(display):
+  display.stop()
+
+def driverInitialize(browser="Firefox"):
+  if browser == "Firefox":
+    fp = webdriver.FirefoxProfile()
+    fp.native_events_enabled = False
+    fp.set_preference("browser.download.folderList",2)
+    fp.set_preference("browser.download.manager.showWhenStarting",False)
+    fp.set_preference("browser.download.dir", os.getcwd())
+    fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.ms-excel")
+
+    driver = webdriver.Firefox(fp)
+  elif browser == "PhantomJS":
+    driver = webdriver.PhantomJS()
+    driver.set_window_size(1120, 550)
+  else:
+    driver = webdriver.Chrome()
+
+  driver.implicitly_wait(10)
+
+  return driver
+
+def driverFinalize(driver):
+  driver.close()
+
+
+def wdTest(driver):
+  driver.get("http://www.google.com")
+  print driver.page_source.encode('utf-8')
+
+
+def preText():
+  '''
+  Prefixing to the html file script
+  '''
+  text = '''<!DOCTYPE html>
+<head>
+<title>:: Job Card Holders Information ::</title>
+<meta charset="UTF-8">
+</head>
+
+<body style="position: relative; min-height: 100%; top: 5px;">
+
+<form action="./submit.php" method="POST">
+
+'''
+  return text
+
+
+def grievanceDetails():
+  '''
+  Adding the Jobcard for Verification
+  '''
+  details ='''
+<table cellpadding="0" cellspacing="0" align="center" border="1" width="70%">
+  <tbody>
+    <tr>
+      <th colspan="2">Grievance Details</th>
+    </tr>
+    <tr>
+      <td>Jobcard Number: </td>
+      <td><input name="jobcardNumber" type="text" value="jobcard_number"></td>
+    </tr>
+
+    <tr>
+      <td>Mobile Number: </td>
+      <td><input name="mobileNumber" type="text" value="mobile_number"></td>
+    </tr>
+
+    <tr>
+      <td colspan="2"><input name="missedCallID" type="hidden" value="missed_call_id"></td>
+    </tr>
+
+    <tr>
+      <td>Complaint Number</td>
+      <td><input name="complaintNumber" type="text" value="complaint_number"></td>
+    </tr>
+    <tr>
+      <td>Complaint Date</td>
+      <td><input name="complaintDate" type="date" value="complaint_date"></td>
+    </tr>
+    
+    <tr>
+      <td>Current Step:</td>
+      <td><select name="currentStep" value="current_step">
+<option value="Call Pending">Trying to Call</option>
+<option value="Updated Jobcard Infortion">Updaing JobCard</option>
+<option value="Unable to reach callback requested">Request for Call Back</option>
+<option value="Form Filled with Basic Details">Form Filled with Basic Details</option>
+<option value="Form Finalized">Form Finalized</option>
+<option value="Complaint Filed">Filed the Complait</option>
+<option value="Complaint Resolved on Website">Resolved on Website</option>
+<option value="Resolved Verified on Field">Verified On Field</option>
+</select></td>
+    </tr>
+
+    <tr>
+      <td>Final Status:</td>
+      <td><select name="finalStatus" value="final_status">
+<option value="Open">Open</option>
+<option value="Closed">Closed</option>
+</select></td>
+    </tr>
+
+    <tr>
+      <td>Reason for Complaint Closure:</td>
+      <td><select name="closureReason" value="closure_reason">
+<option value="Phone not Reachable">Phone not reachable for a long time</option>
+<option value="Duplicate">Duplicate</option>
+<option value="Not Nrega Worker">Not An Nrega Worker</option>
+<option value="Complaint Resolved Successfully">Verfied that Complaint Successfully Resolved</option>
+<option value="Closed and Not Verified on Field">Closed and Not Verified on Field</option>
+</select></td>
+    </tr>
+
+    <tr>
+      <th colspan="2">Problem Details</th>
+    </tr>
+
+    <tr>
+      <td>Service Type</td>
+      <td><select name="serviceType">
+<option value="1" selected>NREGS</option>
+</select></td>
+    </tr>
+
+    <tr>
+      <td>Service Category:</td>
+      <td><select name="serviceCategory">
+<option value="1" selected>Delay in payments(Wages)</option>
+</select></td>
+    </tr>
+
+    <tr>
+      <td>Problem Type:</td>
+      <td><select name="problemType" value="problem_type">
+<option value="">--Select One--</option>
+<option value="Postoffice">Postoffice</option>
+<option value="Smartcard payments">Smartcard payments</option>
+<option value="how many weeks it is pending">how many weeks it is pending</option>
+<option value="Period in weeks">Period in weeks</option>
+<option value="Number of weeks payment pending(ask days)">Number of weeks payment pending(ask days)</option>
+<option value="Since when">Since when</option>
+<option value="Post Office Biometric(Finger Prints Not Match)">Post Office Biometric(Finger Prints Not Match)</option>
+<option value="Village Organizations(VO)">Village Organizations(VO)</option>
+</select></td>
+    </tr>
+
+    <tr>
+      <td>Period in weeks:</td>
+      <td><input name="periodInWeeks" type="number" value="period_in_weeks"></td>
+    </tr>
+
+    <tr>
+      <td>Previous Remarks:</td>
+      <td><textarea name="beneficiaryRemarksReadonly" cols="60" rows="10" readonly>beneficiary_remarks</textarea></td>
+    </tr>
+    <tr>
+      <td>Beneficiary Remarks:</td>
+      <td><textarea name="beneficiaryRemarks" cols="60" rows="10"></textarea></td>
+    </tr>
+
+  </tbody>
+</table>
+'''
+  
+  return details
+
+
+
+def postText():
+  '''
+  Suffixing to the html file script
+  '''
+  text = '''
+
+<table cellpadding="0" cellspacing="0" align="center" border="1" width="70%">
+  <tbody>
+    <tr>
+      <td colspan="2" align="center">                    
+        <button type="submit">Submit</button>
+      </td>
+    </tr>
+
+  </tbody>
+</table>
+
+
+</form>
+
+</body>
+</html>
+'''
+  return text
+
+def htmlUnescape(s):
+  """
+  Returns the ASCII decoded version of the given HTML string. This does
+  NOT remove normal HTML tags like <p>.
+  """
+  htmlCodes = (
+      ("'", '&#39;'),
+      ('"', '&quot;'),
+      ('>', '&gt;'),
+      ('<', '&lt;'),
+      ('&', '&amp;')
+    )
+  for code in htmlCodes:
+    s = s.replace(code[1], code[0])
+  return s
+
+def checkboxSet(html, name, checked_list):
+  '''
+  Sets the option as checked for the chosen checkbox
+  '''
+  for str in checked_list.split(','):
+    old_str = '<input type="checkbox" name="' + name + '" value=' + str + '">'
+    new_str = old_str.replace('">', '" checked>')
+    print("Old[%s] > New[%s]" %(old_str, new_str))
+    return html.replace(old_str, new_str)
+
+  return html
+
+def dropdownOptionSet(html, str):
+  '''
+  Sets the option as selected for the chosen dropdown
+  '''
+  if str != "":
+    old_str = '<option value="' + str + '">'
+    new_str = old_str.replace('">', '" selected>')
+    print("Old[%s] > New[%s]" %(old_str, new_str))    
+    return html.replace(old_str, new_str)
+  else:
+    return html
+
+def htmlUpdate(html, log_details):
+  '''
+  Returns the ASCII decoded version of the given HTML string. This does
+  NOT remove normal HTML tags like <p>.
+  '''
+  if False:
+    query = 'select missedCallID, phone, ts, jobcard, htmlgen, currentStep from ghattuMissedCallsLog where'
+    cur = db.cursor()
+    logger.info("query[%s]" % query)
+    cur.execute(query)
+    call_details = cur.fetchall()
+
+  missed_call_id = log_details[1]
+  mobile_number = log_details[2]
+  jobcard_number = log_details[4]
+  worker_id_list = log_details[5]
+  epay_order_list = log_details[6]
+  name = log_details[7]
+  complaint_number = log_details[8]
+  complaint_date = log_details[9]
+  problem_type = log_details[10]
+  period_in_weeks = log_details[11]
+  beneficiary_remarks = log_details[12]
+  current_step = log_details[13]
+  final_status = log_details[14]
+  closure_reason = log_details[15]
+
+  html = html.replace('jobcard_number', jobcard_number)
+  html = html.replace('mobile_number', mobile_number)
+  html = html.replace('missed_call_id', str(missed_call_id))
+  html = html.replace('complaint_number', str(complaint_number))
+  html = html.replace('complaint_date', str(complaint_date))
+
+  #html = checkboxSet(html, "workerID[]", worker_id_list)
+  #html = checkboxSet(html, "ePayOrderList[]", epay_order_list)
+
+  html = dropdownOptionSet(html, current_step)
+  html = dropdownOptionSet(html, final_status)
+  html = dropdownOptionSet(html, closure_reason)
+  
+  html = html.replace('beneficiary_remarks', str(beneficiary_remarks))
+  html = dropdownOptionSet(html, problem_type)  
+  html = html.replace('period_in_weeks', str(period_in_weeks))
+  
+  return html
+
+def fetchJobcard(logger, driver, log_details, dir=None, url=None):
+  '''
+  Fetch the html for the jobcard
+  '''
+  logger.info("LogDetails[%s] Directory[%s] URL[%s]" %
+              (log_details, dir, url))
+
+  if dir == None:
+    dir = "/root/libtech/ghattu/nrega/html"
+
+  if url == None:
+    url = "http://www.nrega.telangana.gov.in/"
+
+  missed_call_id = log_details[1]
+  mobile_number = log_details[2]
+  jobcard_number = log_details[4]
+
+  logger.info("JocardNumber[%s] MobileNumber[%s] ID[%s] Directory[%s] URL[%s]" %
+              (jobcard_number, mobile_number, missed_call_id, dir, url))
+
+
+  filename = dir + '/' + str(missed_call_id) + '_' + str(mobile_number) + '.html'
+
+  if jobcard_number != "0":
+    driver.get(url)
+    logger.info("Fetching...[%s]" % url)
+
+    elem = driver.find_element_by_name("spl")
+    elem.send_keys("JobCard")
+    time.sleep(1)
+
+    elem = driver.find_element_by_name("input2")
+    elem.send_keys(jobcard_number)
+
+    elem = driver.find_element_by_name("Go")
+    elem.send_keys(Keys.RETURN)
+
+    parent_handle = driver.current_window_handle
+    logger.debug("Handles [%s] Number [%d]" % (driver.window_handles, len(driver.window_handles)))
+
+    if len(driver.window_handles) == 2:
+      driver.switch_to_window(driver.window_handles[-1])
+      logger.debug("Switching to child [%s]" % driver.window_handles[-1])
+      time.sleep(5)
+    else:
+      logger.error("Handlers gone wrong [" + str(driver.window_handles) + "]")
+      driver.save_screenshot('./button_'+jobcard_number+'.png')
+
+    html_source = driver.page_source
+    logger.debug("HTML Fetched [%s]" % html_source)
+
+    driver.close()
+    driver.switch_to_window(parent_handle)
+    logger.debug("Switching to parent [%s]" % parent_handle)
+
+    if False:
+      with open(filename, 'w') as html_file:
+        html_file.write(html_source.encode('utf-8'))
+
+    bs = BeautifulSoup(html_source)
+    span = bs.find('span',attrs={'class':'rpt-hd-txt'})
+    logger.debug("Span[%s]" % span)
+    main1 = bs.find('div',id='main1')
+    table1 = main1.find('table')
+    logger.debug("Table1[%s]" % table1)
+
+    table1A = table1.find('table', id='sortable')
+    logger.debug("Table1A[%s]" % table1A)
+
+    table1B = table1A.findNext('table', id='sortable')
+    logger.debug("Table1B[%s]" % table1B)
+
+
+    rows = table1B.findAll('tr')
+    hrow = rows[0]
+    count = len(rows)
+    logger.debug("RowCount[%d]" % count)
+    th = str(hrow.find('th'))
+    heading = th.replace('S.No.', 'Select')
+    hrow.insert(len(hrow)+1, heading)
+    logger.debug("HeadRow[%s]" % hrow)
+    count = count-3
+
+    row = rows[3] # hrow.findNext('tr').findNext('tr').findNext('tr')
+    logger.debug("FirstRow[%s]" % row)
+
+    worker_id_list = log_details[5].split(',')
+      
+    # Mynk logger.info("Cells[%s]"%row.findAll('td'))
+    while count != 0:  # Mynk Can change to for perhaps
+      count = count - 1
+      td = row.find('td')
+      td = td.findNext('td')
+      worker_id_value = td.text
+      worker_id = worker_id_value.strip()
+
+      checkbox = '<input type="checkbox" name="workerID[]" value="'+ worker_id + '">'
+      if worker_id in worker_id_list:
+        checkbox = checkbox.replace('">', '" checked>')
+      logger.debug("Checkbox[%s], WorkerIdValue[%s], WorkerID[%s]" % (checkbox, worker_id_value, worker_id))
+      value = str(td).replace(worker_id_value, checkbox).replace('align="right"', 'align="center"')
+      row.insert(len(row)+1, value)
+      try:
+        row = row.findNext('tr')
+      except StopIteration:
+        break
+   
+    main3 = bs.find(id='main3')
+    table3 = main3.find('table')
+    logger.debug("Table2[%s]" % table3)
+    hrow = table3.find('tr')
+
+    th = str(hrow.find('th'))
+    heading = th.replace('Epayorder No:', 'Select')
+    hrow.insert(len(hrow)+1, heading)
+    heading = th.replace('Epayorder No:', 'Muster Signed')
+    hrow.insert(len(hrow)+1, heading)
+
+    row = hrow.findNext('tr')
+
+    epay_order_list = log_details[6].split(',')
+      
+    while True:
+      td = row.find('td')
+      epay_order_value = td.text
+      epay_order_number = epay_order_value.strip()
+
+      if len(epay_order_number) != 16:
+        break
+
+      checkbox = '<input type="checkbox" name="ePayOrderList[]" value="'+ epay_order_number + '">'
+      if epay_order_number in epay_order_list:
+        checkbox = checkbox.replace('">', '" checked>')
+      logger.debug("ePayOrder CheckBox[%s]" % checkbox)
+      value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
+      row.insert(len(row)+1, value)
+
+      checkbox = '<input type="checkbox" name="signedPayOrderList[]" value="signed_'+ epay_order_number + '">'
+      value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
+      row.insert(len(row)+1, value)
+
+      try:
+        row = row.findNext('tr')
+      except StopIteration:
+        break
+
+  else:
+    span = ""
+    table1 = ""
+    table3 = ""
+
+  html_text = preText()
+  html_text += grievanceDetails()
+  html_text += '<div style="background-color: #86C0C0">' + str(span) + '</div> <br />'
+  html_text += '<div>' + htmlUnescape(str(table1)) + '</div>'
+  html_text += '<div>' + htmlUnescape(str(table3)) + '</div>'
+  html_text += postText()
+
+  html_text = htmlUpdate(html_text, log_details)
+
+  with open(filename, 'w') as html_file:
+    html_file.write(html_text)
+    logger.info("Written file [%s]" % filename)
+    logger.debug("File content [%s]" % html_text)
+
+
+def processMissedCalls(logger, driver, dir, url, query=None):
+  '''
+  Process any missed calls in the libtech DB
+  '''
+  db = dbInitialize(host="localhost", user="libtech", passwd="lt123", db="libtech")
+
+  cur = db.cursor()
+  if False:
+    query = 'select * from ghattuMissedCallsLog where htmlgen=0'
+
+  if query == None:
+    query = '''select id, missedCallID, phone, ts, jobcard, workerID,
+    payOrderList, name, complaintNumber, complaintDate,
+    problemType, periodInWeeks, remarks, currentStep, finalStatus,
+    closureReason from ghattuMissedCallsLog where htmlgen=0'''
+
+  logger.info("query[%s]" % query)
+           
+  cur.execute(query)
+  missedCalls = cur.fetchall()
+  for  log_details in missedCalls:
+    #Put error checks in place and only then update libtech DB
+    fetchJobcard(logger, driver, log_details, dir, url)
+
+    id = log_details[0]
+    query = 'update ghattuMissedCallsLog set htmlgen=1 where id=' + str(id)
+    try:    
+#      cur = db.cursor() # Mynk
+      logger.info("query[%s]" % query)
+      cur.execute(query)
+    except Exception as e:
+      logger.info("query[%s] with exception[%s]" % (query, e))
+
+  dbFinalize(db)
+  
+
+def main():
+  args = argsFetch()
+  logger = loggerFetch(args.get('log_level'))
+  logger.info('args: %s', str(args))
+
+  display = displayInitialize(args['visible'])
+  driver = driverInitialize(browser)
+
+  outdir = args['directory']
+  url = args['url']
+  
+  processMissedCalls(logger, driver, outdir, url, args['query'])
+
+  driverFinalize(driver)
+  displayFinalize(display)
+
+  exit(0)
+
+if __name__ == '__main__':
+  main()
