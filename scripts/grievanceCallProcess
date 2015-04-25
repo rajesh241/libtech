@@ -588,16 +588,14 @@ def processMissedCalls(logger, driver, dir, url, query=None):
   Process any missed calls in the libtech DB
   '''
   db = dbInitialize(host="localhost", user="libtech", passwd="lt123", db="libtech")
-
   cur = db.cursor()
-  if False:
-    query = 'select * from ghattuMissedCallsLog where htmlgen=0'
 
   if query == None:
-    query = '''select id, missedCallID, phone, ts, jobcard, workerID,
+    query = '''select id, missedCallID, phone, max(ts), jobcard, workerID,
     payOrderList, name, complaintNumber, complaintDate,
     problemType, periodInWeeks, remarks, currentStep, finalStatus,
-    closureReason from ghattuMissedCallsLog where htmlgen=0'''
+    closureReason from ghattuMissedCallsLog where htmlgen=0
+    group by missedCallID order by missedCallID'''
 
   logger.info("query[%s]" % query)
            
@@ -620,7 +618,7 @@ def processMissedCalls(logger, driver, dir, url, query=None):
     id = log_details[0]
     query = 'update ghattuMissedCallsLog set htmlgen=1 where id=' + str(id)
     try:    
-#      cur = db.cursor() # Mynk
+#      cur = db.cursor() # Mynk it it times out need to use this
       logger.info("query[%s]" % query)
       cur.execute(query)
     except Exception as e:
