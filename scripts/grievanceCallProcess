@@ -429,6 +429,8 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
 
   filename = dir + '/' + str(missed_call_id) + '_' + str(mobile_number) + '.html'
 
+  fetched = 1
+  
   if jobcard_number != "0":
     driver.get(url)
     logger.info("Fetching...[%s]" % url)
@@ -449,7 +451,6 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
     if len(driver.window_handles) == 2:
       driver.switch_to_window(driver.window_handles[-1])
       logger.debug("Switching to child [%s]" % driver.window_handles[-1])
-      time.sleep(5)
     else:
       logger.error("Handlers gone wrong [" + str(driver.window_handles) + "]")
       driver.save_screenshot('./button_'+jobcard_number+'.png')
@@ -463,96 +464,104 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
 
     if False:
       with open(filename, 'w') as html_file:
+        logger.info("Writing Prematurely[%s]" % filename)
         html_file.write(html_source.encode('utf-8'))
 
     bs = BeautifulSoup(html_source)
     span = bs.find('span',attrs={'class':'rpt-hd-txt'})
     logger.debug("Span[%s]" % span)
     main1 = bs.find('div',id='main1')
-    table1 = main1.find('table')
-    logger.debug("Table1[%s]" % table1)
+    logger.debug("Main1[%s]" % main1)
+    
+    if main1 != None:
+      table1 = main1.find('table')
+      logger.debug("Table1[%s]" % table1)
 
-    table1A = table1.find('table', id='sortable')
-    logger.debug("Table1A[%s]" % table1A)
+      table1A = table1.find('table', id='sortable')
+      logger.debug("Table1A[%s]" % table1A)
 
-    table1B = table1A.findNext('table', id='sortable')
-    logger.debug("Table1B[%s]" % table1B)
+      table1B = table1A.findNext('table', id='sortable')
+      logger.debug("Table1B[%s]" % table1B)
 
+      rows = table1B.findAll('tr')
+      hrow = rows[0]
+      count = len(rows)
+      logger.debug("RowCount[%d]" % count)
+      th = str(hrow.find('th'))
+      heading = th.replace('S.No.', 'Select')
+      hrow.insert(len(hrow)+1, heading)
+      logger.debug("HeadRow[%s]" % hrow)
+      count = count-3
 
-    rows = table1B.findAll('tr')
-    hrow = rows[0]
-    count = len(rows)
-    logger.debug("RowCount[%d]" % count)
-    th = str(hrow.find('th'))
-    heading = th.replace('S.No.', 'Select')
-    hrow.insert(len(hrow)+1, heading)
-    logger.debug("HeadRow[%s]" % hrow)
-    count = count-3
+      row = rows[3] # hrow.findNext('tr').findNext('tr').findNext('tr')
+      logger.debug("FirstRow[%s]" % row)
 
-    row = rows[3] # hrow.findNext('tr').findNext('tr').findNext('tr')
-    logger.debug("FirstRow[%s]" % row)
+      worker_id_list = log_details[5].split(',')
 
-    worker_id_list = log_details[5].split(',')
-      
-    # Mynk logger.info("Cells[%s]"%row.findAll('td'))
-    while count != 0:  # Mynk Can change to for perhaps
-      count = count - 1
-      td = row.find('td')
-      td = td.findNext('td')
-      worker_id_value = td.text
-      worker_id = worker_id_value.strip()
+      # Mynk logger.info("Cells[%s]"%row.findAll('td'))
+      while count != 0:  # Mynk Can change to for perhaps
+        count = count - 1
+        td = row.find('td')
+        td = td.findNext('td')
+        worker_id_value = td.text
+        worker_id = worker_id_value.strip()
 
-      checkbox = '<input type="checkbox" name="workerID[]" value="'+ worker_id + '">'
-      if worker_id in worker_id_list:
-        checkbox = checkbox.replace('">', '" checked>')
-      logger.debug("Checkbox[%s], WorkerIdValue[%s], WorkerID[%s]" % (checkbox, worker_id_value, worker_id))
-      value = str(td).replace(worker_id_value, checkbox).replace('align="right"', 'align="center"')
-      row.insert(len(row)+1, value)
-      try:
-        row = row.findNext('tr')
-      except StopIteration:
-        break
-   
-    main3 = bs.find(id='main3')
-    table3 = main3.find('table')
-    logger.debug("Table2[%s]" % table3)
-    hrow = table3.find('tr')
+        checkbox = '<input type="checkbox" name="workerID[]" value="'+ worker_id + '">'
+        if worker_id in worker_id_list:
+          checkbox = checkbox.replace('">', '" checked>')
+        logger.debug("Checkbox[%s], WorkerIdValue[%s], WorkerID[%s]" % (checkbox, worker_id_value, worker_id))
+        value = str(td).replace(worker_id_value, checkbox).replace('align="right"', 'align="center"')
+        row.insert(len(row)+1, value)
+        try:
+          row = row.findNext('tr')
+        except StopIteration:
+          break
 
-    th = str(hrow.find('th'))
-    heading = th.replace('Epayorder No:', 'Select')
-    hrow.insert(len(hrow)+1, heading)
-    heading = th.replace('Epayorder No:', 'Muster Signed')
-    hrow.insert(len(hrow)+1, heading)
+      main3 = bs.find(id='main3')
+      table3 = main3.find('table')
+      logger.debug("Table2[%s]" % table3)
+      hrow = table3.find('tr')
 
-    row = hrow.findNext('tr')
+      th = str(hrow.find('th'))
+      heading = th.replace('Epayorder No:', 'Select')
+      hrow.insert(len(hrow)+1, heading)
+      heading = th.replace('Epayorder No:', 'Muster Signed')
+      hrow.insert(len(hrow)+1, heading)
 
-    epay_order_list = log_details[6].split(',')
-      
-    while True:
-      td = row.find('td')
-      epay_order_value = td.text
-      epay_order_number = epay_order_value.strip()
+      row = hrow.findNext('tr')
 
-      if len(epay_order_number) != 16:
-        break
+      epay_order_list = log_details[6].split(',')
 
-      checkbox = '<input type="checkbox" name="ePayOrderList[]" value="'+ epay_order_number + '">'
-      if epay_order_number in epay_order_list:
-        checkbox = checkbox.replace('">', '" checked>')
-      logger.debug("ePayOrder CheckBox[%s]" % checkbox)
-      value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
-      row.insert(len(row)+1, value)
+      while True:
+        td = row.find('td')
+        epay_order_value = td.text
+        epay_order_number = epay_order_value.strip()
 
-      checkbox = '<input type="checkbox" name="signedPayOrderList[]" value="signed_'+ epay_order_number + '">'
-      value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
-      row.insert(len(row)+1, value)
+        if len(epay_order_number) != 16:
+          break
 
-      try:
-        row = row.findNext('tr')
-      except StopIteration:
-        break
+        checkbox = '<input type="checkbox" name="ePayOrderList[]" value="'+ epay_order_number + '">'
+        if epay_order_number in epay_order_list:
+          checkbox = checkbox.replace('">', '" checked>')
+        logger.debug("ePayOrder CheckBox[%s]" % checkbox)
+        value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
+        row.insert(len(row)+1, value)
+
+        checkbox = '<input type="checkbox" name="signedPayOrderList[]" value="signed_'+ epay_order_number + '">'
+        value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
+        row.insert(len(row)+1, value)
+
+        try:
+          row = row.findNext('tr')
+        except StopIteration:
+          break
+    else:
+      fetched = 0
 
   else:
+    fetched = 0
+
+  if fetched == 0:  
     span = ""
     table1 = ""
     table3 = ""
@@ -594,7 +603,17 @@ def processMissedCalls(logger, driver, dir, url, query=None):
   missedCalls = cur.fetchall()
   for  log_details in missedCalls:
     #Put error checks in place and only then update libtech DB
-    fetchJobcard(logger, driver, log_details, dir, url)
+
+    if True:
+      fetchJobcard(logger, driver, log_details, dir, url)
+    else:
+      id = log_details[1]
+      phone = log_details[2]
+      jobcard = log_details[4]
+    
+      cmd = '/home/mayank/libtech/scripts/fetch -j ' + str(jobcard) + ' -m ' + str(phone) + ' -i ' + str(id) + ' -d ' + dir
+      logger.info("cmd[%s]" % cmd)
+      os.system(cmd)    
 
     id = log_details[0]
     query = 'update ghattuMissedCallsLog set htmlgen=1 where id=' + str(id)
