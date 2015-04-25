@@ -215,7 +215,7 @@ def grievanceDetails():
 <option value="Unable to reach callback requested">Request for Call Back</option>
 <option value="Form Filled with Basic Details">Form Filled with Basic Details</option>
 <option value="Form Finalized">Form Finalized</option>
-<option value="Complaint Filed">Filed the Complait</option>
+<option value="Complaint Filed">Filed the Complaint</option>
 <option value="Complaint Resolved on Website">Resolved on Website</option>
 <option value="Resolved Verified on Field">Verified On Field</option>
 </select></td>
@@ -486,36 +486,38 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
       rows = table1B.findAll('tr')
       hrow = rows[0]
       count = len(rows)
-      logger.debug("RowCount[%d]" % count)
-      th = str(hrow.find('th'))
-      heading = th.replace('S.No.', 'Select')
-      hrow.insert(len(hrow)+1, heading)
-      logger.debug("HeadRow[%s]" % hrow)
-      count = count-3
+      logger.info("RowCount[%d]" % count)
+      logger.debug("Row[%s]" % rows)
+      if count > 2:
+        th = str(hrow.find('th'))
+        heading = th.replace('S.No.', 'Select')
+        hrow.insert(len(hrow)+1, heading)
+        logger.debug("HeadRow[%s]" % hrow)
+        count = count-3
 
-      row = rows[3] # hrow.findNext('tr').findNext('tr').findNext('tr')
-      logger.debug("FirstRow[%s]" % row)
+        row = rows[3] # hrow.findNext('tr').findNext('tr').findNext('tr')
+        logger.debug("FirstRow[%s]" % row)
 
-      worker_id_list = log_details[5].split(',')
+        worker_id_list = log_details[5].split(',')
 
-      # Mynk logger.info("Cells[%s]"%row.findAll('td'))
-      while count != 0:  # Mynk Can change to for perhaps
-        count = count - 1
-        td = row.find('td')
-        td = td.findNext('td')
-        worker_id_value = td.text
-        worker_id = worker_id_value.strip()
+        # Mynk logger.info("Cells[%s]"%row.findAll('td'))
+        while count != 0:  # Mynk Can change to for perhaps
+          count = count - 1
+          td = row.find('td')
+          td = td.findNext('td')
+          worker_id_value = td.text
+          worker_id = worker_id_value.strip()
 
-        checkbox = '<input type="checkbox" name="workerID[]" value="'+ worker_id + '">'
-        if worker_id in worker_id_list:
-          checkbox = checkbox.replace('">', '" checked>')
-        logger.debug("Checkbox[%s], WorkerIdValue[%s], WorkerID[%s]" % (checkbox, worker_id_value, worker_id))
-        value = str(td).replace(worker_id_value, checkbox).replace('align="right"', 'align="center"')
-        row.insert(len(row)+1, value)
-        try:
-          row = row.findNext('tr')
-        except StopIteration:
-          break
+          checkbox = '<input type="checkbox" name="workerID[]" value="'+ worker_id + '">'
+          if worker_id in worker_id_list:
+            checkbox = checkbox.replace('">', '" checked>')
+          logger.debug("Checkbox[%s], WorkerIdValue[%s], WorkerID[%s]" % (checkbox, worker_id_value, worker_id))
+          value = str(td).replace(worker_id_value, checkbox).replace('align="right"', 'align="center"')
+          row.insert(len(row)+1, value)
+          try:
+            row = row.findNext('tr')
+          except StopIteration:
+            break
 
       main3 = bs.find(id='main3')
       table3 = main3.find('table')
