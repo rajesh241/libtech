@@ -446,11 +446,11 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
     elem.send_keys(Keys.RETURN)
 
     parent_handle = driver.current_window_handle
-    logger.debug("Handles [%s] Number [%d]" % (driver.window_handles, len(driver.window_handles)))
+    logger.info("Handles [%s] Number [%d]" % (driver.window_handles, len(driver.window_handles)))
 
-    if len(driver.window_handles) == 2:
+    if True: # len(driver.window_handles) == 2:
       driver.switch_to_window(driver.window_handles[-1])
-      logger.debug("Switching to child [%s]" % driver.window_handles[-1])
+      logger.info("Switching to child [%s]" % driver.window_handles[-1])
     else:
       logger.error("Handlers gone wrong [" + str(driver.window_handles) + "]")
       driver.save_screenshot('./button_'+jobcard_number+'.png')
@@ -590,12 +590,18 @@ def processMissedCalls(logger, driver, dir, url, query=None):
   db = dbInitialize(host="localhost", user="libtech", passwd="lt123", db="libtech")
   cur = db.cursor()
 
+  logger.info("BEGIN PROCESSING...")
+  
   if query == None:
-    query = '''select id, missedCallID, phone, max(ts), jobcard, workerID,
-    payOrderList, name, complaintNumber, complaintDate,
-    problemType, periodInWeeks, remarks, currentStep, finalStatus,
-    closureReason from ghattuMissedCallsLog where htmlgen=0
-    group by missedCallID order by missedCallID'''
+    query = '''SELECT log.id, log.missedCallID, log.phone, log.ts, log.jobcard, log.workerID,
+    log.payOrderList, log.name, log.complaintNumber, log.complaintDate, log.problemType,
+    log.periodInWeeks, log.remarks, log.currentStep, log.finalStatus, log.closureReason
+    FROM ghattuMissedCallsLog AS log
+    RIGHT JOIN(
+       SELECT missedCallID, max(ts) AS ts FROM ghattuMissedCallsLog
+          WHERE htmlgen=0 GROUP BY missedCallID
+             ) AS filter
+    ON (log.missedCallID = filter.missedCallID and log.ts = filter.ts)'''
 
   logger.info("query[%s]" % query)
            
@@ -625,6 +631,7 @@ def processMissedCalls(logger, driver, dir, url, query=None):
       logger.info("query[%s] with exception[%s]" % (query, e))
 
   dbFinalize(db)
+  logger.info("...END PROCESSING")
   
 
 def main():
