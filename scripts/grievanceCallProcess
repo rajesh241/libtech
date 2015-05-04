@@ -423,6 +423,9 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
   mobile_number = log_details[2]
   jobcard_number = log_details[4]
 
+  if jobcard_number == None or jobcard_number == "":
+    jobcard_number = "0"
+
   logger.info("JocardNumber[%s] MobileNumber[%s] ID[%s] Directory[%s] URL[%s]" %
               (jobcard_number, mobile_number, missed_call_id, dir, url))
 
@@ -607,8 +610,11 @@ def processMissedCalls(logger, driver, dir, url, query=None):
            
   cur.execute(query)
   missedCalls = cur.fetchall()
+  logger.debug("missedCalls[%s]" % str(missedCalls))
   for  log_details in missedCalls:
     #Put error checks in place and only then update libtech DB
+
+    logger.info("log_details[%s]" % str(log_details))
 
     if True:
       fetchJobcard(logger, driver, log_details, dir, url)
