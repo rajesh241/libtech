@@ -122,6 +122,19 @@ def exotelFetch(logger, query=None):
   cur.execute(query)
   mobile_numbers = cur.fetchall()
   logger.debug("mobile_numbers[%s]" % str(mobile_numbers))
+
+  # Enable if you want to ignore already fetched numbers
+  if False:
+    query = 'select PhoneNumber from exotelDetails'
+    cur.execute(query)
+    stored_numbers = cur.fetchall()
+
+    logger.info("mobile_numbers[%d]" % len(str(mobile_numbers)))
+    logger.info("stored_numbers[%d]" % len(str(stored_numbers)))
+    logger.info("mobile_numbers[%s]" % set(mobile_numbers))    
+    mobile_numbers = list(set(mobile_numbers) - set(stored_numbers))
+#    logger.info("mobile_numbers[%s]" % str(stored_numbers))    
+    logger.info("mobile_numbers[%s]" % str(mobile_numbers))
   
   for row in mobile_numbers:
     #Put error checks in place and only then update libtech DB
@@ -149,7 +162,7 @@ def exotelFetch(logger, query=None):
       OperatorName = number.find('OperatorName').text
       DND = number.find('DND').text
 
-      assert(PhoneNumber == '0' + mobile)
+      # assert(PhoneNumber[1:] == mobile)
       logger.info("PhoneNumber[%s] == Mobile[0%s]" % (PhoneNumber, mobile))
       PhoneNumber = mobile      # Mynk
       
