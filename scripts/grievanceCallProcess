@@ -423,7 +423,10 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
   mobile_number = log_details[2]
   jobcard_number = log_details[4]
 
-  if jobcard_number == None or jobcard_number == "":
+  logger.info("JocardNumber[%s] MobileNumber[%s] ID[%s] Directory[%s] URL[%s]" %
+              (jobcard_number, mobile_number, missed_call_id, dir, url))
+
+  if jobcard_number == None or jobcard_number == "" or len(jobcard_number) != 18:
     jobcard_number = "0"
 
   logger.info("JocardNumber[%s] MobileNumber[%s] ID[%s] Directory[%s] URL[%s]" %
