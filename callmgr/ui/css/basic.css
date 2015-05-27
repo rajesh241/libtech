@@ -1,0 +1,18 @@
+table, th, td {
+   border: 2px solid #097054;
+   border-collapse: collapse;
+   }
+  table {
+     margin-bottom: 20px
+    }
+  td{
+      padding:10px
+    }
+    h3{
+            color:red
+    }
+    h4{
+            color:blue
+    }
+
+
