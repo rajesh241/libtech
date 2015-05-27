@@ -20,8 +20,8 @@ function test($mydbcon,$gid,$bid,$tid,$vid,$tfileid,$minhour,$maxhour){
 
 function chattis_weekly_broadcast($mydbcon,$gid,$bid,$tid,$vid,$tfileid,$minhour,$maxhour){
     ltecho("Inside Chattis Weekly Broadcast".$tfileid);
-    #$callparams='&fileid1='.$tfileid.'&fileid2=27503&fileid3=27503&fileid4=27503&fileid5=27503&ivrid=1';
-    $callparams='&fileid1=37655&fileid2='.$tfileid.'&fileid3=27503&fileid4=27503&fileid5=27503&ivrid=1';
+    $callparams='&fileid1='.$tfileid.'&fileid2=27503&fileid3=27503&fileid4=27503&fileid5=27503&ivrid=1';
+  #  $callparams='&fileid1=37655&fileid2='.$tfileid.'&fileid3=27503&fileid4=27503&fileid5=27503&ivrid=1';
 		$query="select phone,successrate from chattis_ab group by phone";
     #$query="select phone,successrate from addressbook where panchayat='test' or panchayat='Chodeya' or panchayat='losanga' or panchayat='tirrkela' or panchayat='lipingi' or panchayat='pondi' group by phone";
 		$result = mysqli_query($mydbcon,$query);
@@ -67,6 +67,8 @@ function anekapalli_weekly_broadcast($mydbcon,$gid,$bid,$tid,$vid,$tfileid,$minh
     ltecho("Inside ghattu weekly Broadcasts".$tfileid);
     $callparams='&fileid1='.$tfileid.'&fileid2=27503&fileid3=27503&fileid4=27503&fileid5=27503&ivrid=1';
 		$query="select phone,successrate from anekapalli_ab";
+  #  $query="select  phone,successrate from anekapalli_ab where block='Anakapalle';";
+    $query="select phone,successrate from anekapalli_ab where block='Anantagiri' or block='Araku' or block='Chintapalli' or block='G.Madugula' or block='G.K. Veedhi' or block='Hukumpeta' or block='Koyyuru' or block='Munchingputtu' or block='Paderu' or block='Pedabayalu';";
     #$query="select phone,successrate from anekapalli_ab where block='Nathavaram';";
 		#$query="select phone,successrate from ghattu_ab where panchayat='Yallamdoddi' or panchayat='test' or panchayat='aloor' or panchayat='ghattu'";
 		$result = mysqli_query($mydbcon,$query);
@@ -111,8 +113,8 @@ function ghattu_weekly_broadcast($mydbcon,$gid,$bid,$tid,$vid,$tfileid,$minhour,
 		$query="select phone,successrate from ghattu_ab";
     #$query="select phone,successrate from ghattu_ab where panchayat='thummalapalli' or panchayat='mittadoddi' or panchayat='balgera' or panchayat='macherla' or panchayat='Yallamdoddi' or panchayat='chintalakunta' or panchayat='Chagadona' or panchayat='Mallampalli' or panchayat='test';";
 		#$query="select phone,successrate from ghattu_ab where panchayat='Yallamdoddi' or panchayat='test' or panchayat='aloor' or panchayat='ghattu'";
-		#$query="select phone,successrate from ghattu_ab where panchayat='test' or panchayat='Aloor';";
-    $result = mysqli_query($mydbcon,$query);
+#    $query="select phone,successrate from ghattu_ab where panchayat='test' or panchayat='Chagadona' or panchayat='Lingapuram';";
+   $result = mysqli_query($mydbcon,$query);
 		while ($row = mysqli_fetch_array($result)){
 	  $phone=$row['phone'];
 		$successrate=$row['successrate'];

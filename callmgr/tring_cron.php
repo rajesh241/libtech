@@ -16,14 +16,15 @@ $mydbcon = ltopendb();
 ltecho("First will check the status of previous placed calls");
 ltecho(" ");
 
-$query="select vendorcallid,bid,cid,phone,tid,retry,callparams from ToCall where inprogress=1 AND vid=".$vid;
+$query="select vendorcallid,bid,cid,phone,tid,retry,callparams,TIMESTAMPDIFF(MINUTE, callRequestTime, now()) tdiff from ToCall where inprogress=1 AND vid=".$vid;
 ltecho($query);
 $result = mysqli_query($mydbcon,$query);
 while($row = mysqli_fetch_array($result)) {
 		$bid=$row['bid'];
 		$callparams=$row['callparams'];
 		$vendorcid=$row['vendorcallid'];
-    ltecho("CID=".$row['cid']."VENDORCALLID=".$row['vendorcallid']);
+		$timediff=$row['tdiff'];
+    ltecho("TIME DIFF=".$timediff."CID=".$row['cid']."VENDORCALLID=".$row['vendorcallid']);
     $tringlog=file_get_contents($tringstatusurl.$row['vendorcallid']);
     $tringlogarray=explode("|",$tringlog);
     $tringstatus=$tringlogarray[5];
@@ -37,6 +38,8 @@ while($row = mysqli_fetch_array($result)) {
 		//First of all from Tring Status we need to find out if call has been completed or not
 		if( preg_match('(COMPLETE|INCOMPLETE)', $tringstatus)){
 			$callinprogress = "NO";
+#		}else if(($timediff > 30 ) && ($tringstatus == "CONNECTED") ){//If the time difference since the call was initialted is greater than 1 hour then mark the call as error
+#			$callinprogress ="UNKNOWN";
 		}else if( preg_match('(NEW CALL|CALL INITIATED|DIALING|CONNECTED|SCHEDULED)', $tringstatus)){
 			$callinprogress ="YES";
 		}else{
@@ -60,7 +63,7 @@ while($row = mysqli_fetch_array($result)) {
     ltecho("Call SUCCESS ".$success);
 	  //Now lets us update ToCall, if call inprogress is yes then we dont have to update to call
     if($callinprogress != "YES"){
-			if($success==0){
+			if( ($success==0) || ($success==3)){
       $insquery="update ToCall set inprogress=0,debug='".$debug."',success=".$success." where cid=".$row['cid'];
       ltecho($insquery);
       $insresult = mysqli_query($mydbcon,$insquery);
@@ -142,11 +145,13 @@ while($row = mysqli_fetch_array($result)) {
     $tringurl='http://hostedivr.in/netobd/NewCall_Schedule.php?uid=523&pwd=golani123&pno='.$row['phone'].$row['callparams'];
     ltecho($tringurl); 
     $vendorcallid = file_get_contents($tringurl);
+    if(preg_match("/[0-9]/", $vendorcallid)) {
     $retry=$row['retry'] -1;
-    $insquery="update ToCall set inprogress=1,retry=".$retry.",vendorcallid=".$vendorcallid." where cid=".$row['cid'];
+    $insquery="update ToCall set inprogress=1,callRequestTime=NOW(),retry=".$retry.",vendorcallid=".$vendorcallid." where cid=".$row['cid'];
     ltecho($insquery);
     $insresult = mysqli_query($mydbcon,$insquery);
-  }
+    }//If PREG Match
+  }//While Loop
 }//if TIME
 
 ltecho("");

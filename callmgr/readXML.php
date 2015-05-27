@@ -59,6 +59,8 @@ foreach ($files as $onefile){
             $query="insert into ghattuMissedCallsLog ".rtrim($keystring, ",").") values ".rtrim($keyvaluestring,",").");";
             $result = mysqli_query($mydbcon,$query);
             echo $query;
+            $query="delete from ghattuMissedCallsLog where missedCallID=0";
+            $result = mysqli_query($mydbcon,$query);
             echo "\n\n\n\n";
           } 
        }//If mysqli rows is equal to zero

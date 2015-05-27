@@ -21,16 +21,16 @@ def main():
     ctime=row[2]
     query="update ghattuMissedCalls set processed=1 where id="+str(missedCallID)
     cur.execute(query)
-    query="use mahabubnagar"
-    cur.execute(query)
-    query="select jobcard from jobcardDetails where phone='"+phone+"' limit 1"
+    #query="use mahabubnagar"
+    #cur.execute(query)
+    query="select job_card from ghattu_ab where phone='"+phone+"' limit 1"
     cur.execute(query)
     jobcard=0
     if(cur.rowcount == 1):
       row1=cur.fetchone()
       jobcard=row1[0]
-    query="use libtech"
-    cur.execute(query)
+   # query="use libtech"
+   # cur.execute(query)
     query="insert into ghattuMissedCallsLog (missedCallID,phone,ctime,ts,jobcard,htmlgen,currentStep) values ("+str(missedCallID)+",'"+phone+"','"+str(ctime)+"',"+str(ts)+",'"+str(jobcard)+"',0,'Call Pending');"
     print query
     cur.execute(query)
