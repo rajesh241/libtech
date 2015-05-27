@@ -9,7 +9,7 @@ ltconsoleecho("EXECUTING BROADCAST CRON");
 ltconsoleecho("-------------------");
 $mydbcon = ltopendb();
 
-$resultBC = mysqli_query($mydbcon,"SELECT * FROM Broadcasts WHERE processed=0 and startDate <= CURDATE();");
+$resultBC = mysqli_query($mydbcon,"SELECT * FROM Broadcasts WHERE processed=0 and vid=10 and startDate <= CURDATE();");
 while($rowBC = mysqli_fetch_array($resultBC)) {
   ltconsoleecho("gid for broadcast: ".$rowBC['tid']);
   $gid=$rowBC['gid'];
