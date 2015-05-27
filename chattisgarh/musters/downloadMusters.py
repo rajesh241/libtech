@@ -10,7 +10,7 @@ import sys
 inblock=sys.argv[1]
 print inblock
 #Connect to MySQL Database
-db = MySQLdb.connect(host="localhost", user="root", passwd="golani123", db="surguja",charset='utf8')
+db = MySQLdb.connect(host="localhost", user="root", passwd="ccmpProject**", db="surguja",charset='utf8')
 cur=db.cursor()
 db.autocommit(True)
 #Query to set up Database to read Hindi Characters
@@ -21,7 +21,7 @@ regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
 
 #File Path where all the Downloaded FTOs would be placed
 districtName="SURGUJA"
-musterfilepath="/home/goli/libtech/data/CHATTISGARH/"+districtName+"/"
+musterfilepath="/home/libtech/data/CHATTISGARH/"+districtName+"/"
 query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.isDownloaded=0 ;"
 query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.isDownloaded=0 and m.musterType='10' and m.blockCode='"+inblock+"';"
 print query
@@ -50,13 +50,15 @@ for row in results:
   datefromstring = str(dateFrom)
  
   #print stateCode+districtCode+blockCode+blockName
-  if finyear=='15':
+  if finyear=='16':
+    fullfinyear='2015-2016'
+  elif finyear=='15':
     fullfinyear='2014-2015'
   else:
     fullfinyear='2013-2014'
   musterurl="http://164.100.112.66/netnrega/citizen_html/musternew.aspx?lflag=eng&id=1&state_name=CHHATTISGARH&district_name="+districtName+"&block_name="+blockName+"&panchayat_name="+panchayatName+"&block_code="+fullBlockCode+"&msrno="+musterNo+"&finyear="+fullfinyear+"&workcode="+workCode+"&dtfrm="+datefromstring+"&dtto="+datetostring+"&wn="+worknameplus
   #print workName+"  "+workCode
-  #print musterurl
+  print musterurl
   print str(musterid)+"  "+str(musterNo)+"  "+blockName+"  "+panchayatName
   r=requests.get(musterurl)
   mustersource=r.text
@@ -71,10 +73,12 @@ for row in results:
   except:
     errorflag=1
   if errorflag==0:
+    print "error is zero"
     musterfilename=musterfilepath+blockName+"/"+panchayatName.upper()+"/MUSTERS/"+fullfinyear+"/"+musterNo+".html"
     if not os.path.exists(os.path.dirname(musterfilename)):
       os.makedirs(os.path.dirname(musterfilename))
     f = open(musterfilename, 'w')
     f.write(myhtml1.encode("UTF-8"))
     query="update musters set isDownloaded=1 where id="+str(musterid)
+    print query
     cur.execute(query)

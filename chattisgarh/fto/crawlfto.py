@@ -5,15 +5,15 @@ import MySQLdb
 import os
 import time
 #Error File Defination
-errorfile = open('/home/goli/libtech/logs/crawlfto.log', 'w')
+errorfile = open('/tmp/crawlfto.log', 'w')
 #Connect to MySQL Database
-db = MySQLdb.connect(host="localhost", user="root", passwd="golani123", db="surguja")
+db = MySQLdb.connect(host="localhost", user="root", passwd="ccmpProject**", db="surguja")
 cur=db.cursor()
 db.autocommit(True)
 #File Path where all the Downloaded FTOs would be placed
 districtName="SURGUJA"
-finyear="2014-2015"
-finyeardb="15"
+finyear="2015-2016"
+finyeardb="16"
 ftofilepath="/home/goli/libtech/data/CHATTISGARH/"+districtName+"/"
 #Query to get all the blocks
 query="select stateCode,districtCode,blockCode,name from blocks"

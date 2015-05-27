@@ -29,7 +29,7 @@ url="http://khadya.cg.nic.in/pdsonline/cgfsa/Report/FrmRation_Patra_Allot_Verifi
 browser="Firefox"
 logFile = __file__+'.log'
 logLevel = logging.ERROR
-logFormat = '%(asctime)s:[%(name)s|%(module)s|%(funcName)s|%(lineno)s|%(levelname)s]: %(message)s' #  %(asctime)s %(module)s:%(lineno)s %(funcName)s %(message)s"
+logFormat = '%(asctime)s:[%(name)s|%(levelname)s]: %(message)s'
 
 
 #############
@@ -42,10 +42,10 @@ def logInitialize():
   logging.basicConfig(filename=logFile, level=logLevel, format=logFormat) # Mynk
 '''
 
-def loggerFetch(level=None):
+def loggerFetch(level='ERROR'):
   logger = logging.getLogger(__name__)
 
-  if level:
+  if level:                     # Mynk ???
     numeric_level = getattr(logging, level.upper(), None)
     if not isinstance(numeric_level, int):
       raise ValueError('Invalid log level: %s' % level)
@@ -68,7 +68,6 @@ def loggerFetch(level=None):
   logger.addHandler(ch)
 
   return logger
-
 
 def loggerTest(logger):
   logger.debug('debug message')
@@ -113,7 +112,6 @@ def dbInitialize():
 
 def dbFinalize(db):
   db.close()
-  db.quit()
 
 def displayInitialize(isVisible=0):
   from pyvirtualdisplay import Display
@@ -147,7 +145,6 @@ def driverInitialize(browser="Firefox"):
 
 def driverFinalize(driver):
   driver.close()
-  driver.quit()
 
 
 def dbFetch(db, logger):
@@ -182,7 +179,7 @@ def pdsFetch(driver, db, logger):
       logger.info("Skipped [%s]" % filename)
       continue
 
-    logger.info('Block Name:[%s] Shop Code:[%s]' % (blockName, shopCode))
+    logger.error('Block Name:[%s] Shop Code:[%s]' % (blockName, shopCode))
     url="http://khadya.cg.nic.in/pdsonline/cgfsa/Report/FrmRation_Patra_Allot_VerificationDistWise_Aug14.aspx"
     logger.info('URL: [%s]', url)
     driver.get(url)

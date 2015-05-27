@@ -4,13 +4,15 @@ import requests
 import MySQLdb
 import os
 #Connect to MySQL Database
-db = MySQLdb.connect(host="localhost", user="root", passwd="golani123", db="surguja")
+db = MySQLdb.connect(host="localhost", user="root", passwd="ccmpProject**", db="surguja")
 cur=db.cursor()
 db.autocommit(True)
 #File Path where all the Downloaded FTOs would be placed
 districtName="SURGUJA"
-ftofilepath="/home/goli/libtech/data/CHATTISGARH/"+districtName+"/"
+ftofilepath="/home/libtech/data/CHATTISGARH/"+districtName+"/"
+#ftofilepath="/home/libtech/libtechdata/CHATTISGARH/"+districtName+"/"
 query="select b.name,f.ftoNo,f.stateCode,f.districtCode,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where f.isDownloaded=0 and f.blockCode=b.blockCode and f.stateCode=b.stateCode and f.districtCode=b.districtCode ;"
+query="select b.name,f.ftoNo,f.stateCode,f.districtCode,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where f.isDownloaded=0 and f.blockCode=b.blockCode and f.stateCode=b.stateCode and f.districtCode=b.districtCode and b.blockCode='003';"
 cur.execute(query)
 results = cur.fetchall()
 for row in results:
@@ -24,7 +26,9 @@ for row in results:
   fullBlockCode=stateCode+districtCode+blockCode
   fullDistrictCode=stateCode+districtCode
   print stateCode+districtCode+blockCode+blockName
-  if finyear=='15':
+  if finyear=='16':
+    fullfinyear='2015-2016'
+  elif finyear=='15':
     fullfinyear='2014-2015'
   else:
     fullfinyear='2013-2014'

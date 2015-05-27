@@ -12,9 +12,9 @@ regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
 
 
 #Error File Defination
-errorfile = open('/home/goli/libtech/logs/crawlJobcards.log', 'w')
+errorfile = open('/tmp/crawlJobcards.log', 'w')
 #Connect to MySQL Database
-db = MySQLdb.connect(host="localhost", user="root", passwd="golani123", db="surguja",charset='utf8')
+db = MySQLdb.connect(host="localhost", user="root", passwd="ccmpProject**", db="surguja",charset='utf8')
 cur=db.cursor()
 db.autocommit(True)
 #Query to set up Database to read Hindi Characters
@@ -24,8 +24,8 @@ cur.execute(query)
 #muster Type list
 musterTypeList= ['10','11','13','14']
 #Some Constants 
-fullfinyear='2013-2014'
-finyear='14'
+fullfinyear='2015-2016'
+finyear='16'
 districtName="SURGUJA"
 #Query to get all the blocks
 query="select stateCode,districtCode,blockCode,name from blocks"
@@ -37,7 +37,7 @@ for row in results:
   districtCode=row[1]
   blockCode=row[2]
   blockName=row[3]
-  query="select name,panchayatCode,id from panchayats where stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' "
+  query="select name,panchayatCode,id from panchayats where isSurvey=1 and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' "
   cur.execute(query)
   panchresults = cur.fetchall()
   for panchrow in panchresults:
@@ -91,5 +91,10 @@ for row in results:
             workCode='3305'+worknameworkcodearray.groups()[1]
             print emusterno+" "+datefromstring+"  "+datetostring+"  "+workCode
             query="insert into musters (musterNo,stateCode,districtCode,blockCode,panchayatCode,musterType,finyear,workCode,workName,dateFrom,dateTo) values ('"+emusterno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"','"+musterType+"','"+finyear+"','"+workCode+"','"+workName+"','"+datefrom+"','"+dateto+"')"
-            cur.execute(query)
+            try:
+              cur.execute(query)
+            except MySQLdb.IntegrityError,e:
+              errormessage=(time.strftime("%d/%m/%Y %H:%M:%S "))+str(e)+"\n"
+              errorfile.write(errormessage)
+              continue
              
