@@ -37,22 +37,22 @@ if (!$mydbcon){
                     $allNumbers=$_POST['phoneNumbers'];
                     $phoneArray = preg_split('/\s+/', $allNumbers);
                     $i=0;
-                    $uniquePhoneAdded=0;
                     $addedToGroup=0;
                     foreach($phoneArray as $phone){
-                      $query="insert into addressbook (phone) values ('".$phone."');";
-                      mysqli_query($mydbcon,$query);
-                      $uniquePhoneAdded=mysqli_affected_rows($mydbcon)+$uniquePhoneAdded;
-                      $namepattern="~".$name."~";
-                      $query="update addressbook set groups=concat(ifnull(groups,''),'".$namepattern."') where phone='".$phone."' and groups not like '%".$namepattern."%';";
-                      mysqli_query($mydbcon,$query);
-                      $addedToGroup=mysqli_affected_rows($mydbcon)+$addedToGroup;
-                      $query="update addressbook set groups='".$namepattern."' where phone='".$phone."' and groups is NULL";
-                      mysqli_query($mydbcon,$query);
-                      $addedToGroup=mysqli_affected_rows($mydbcon)+$addedToGroup;
-                      #print $query;
-                      $i=$i+1;
-                      #print $i."   ".$phone;
+                      if((preg_match("/[0-9]/", $phone)) && (strlen($phone) == 10)){
+                        $query="insert into addressbook (phone) values ('".$phone."');";
+                        mysqli_query($mydbcon,$query);
+                        $namepattern="~".$name."~";
+                        $query="update addressbook set groups=concat(ifnull(groups,''),'".$namepattern."') where phone='".$phone."' and groups not like '%".$namepattern."%';";
+                        mysqli_query($mydbcon,$query);
+                        $addedToGroup=mysqli_affected_rows($mydbcon)+$addedToGroup;
+                        $query="update addressbook set groups='".$namepattern."' where phone='".$phone."' and groups is NULL";
+                        mysqli_query($mydbcon,$query);
+                        $addedToGroup=mysqli_affected_rows($mydbcon)+$addedToGroup;
+                        #print $query;
+                        $i=$i+1;
+                        #print $i."   ".$phone;
+                      }
                     }//For Each Loop
                     print "<h4> Phone Number Added ".$addedToGroup."</h4>";
                   } 

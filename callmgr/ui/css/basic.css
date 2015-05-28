@@ -14,5 +14,9 @@ table, th, td {
     h4{
             color:blue
     }
+ .hidden {
+      display: none;
+      }
+
 
 
