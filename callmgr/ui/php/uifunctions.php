@@ -22,6 +22,7 @@ while($row=mysqli_fetch_array($results)){
   $options.='<div id="'.$name.'-options" class="hidden"><select multiple name="panchayat[]">';
   $query="select name from panchayats where isActive=1 and blockCode='".$blockCode."';";
   $panchresults=mysqli_query($mydbcon,$query);
+  $options.='<option value="all">All</option>';
   while($panchrow=mysqli_fetch_array($panchresults)){
     $panchayat=strtolower($panchrow['name']);
     $options.='<option value="'.$panchayat.'">'.$panchayat.'</option>';

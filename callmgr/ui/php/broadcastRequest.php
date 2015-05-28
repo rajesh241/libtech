@@ -12,10 +12,33 @@ $mydbcon = mysqli_connect("localhost",$dbuser,$dbpasswd);
 if (!$mydbcon){
   print '<h3>ERROR ERROR Could not connect to DB ! Please contact webadmin</h3>';
 }else{
-        $blocks=$_POST['block'];
+        $query="use libtech";
+        mysqli_query($mydbcon,$query);
+        $name=$_POST['name'];
+        $type=$_POST['broadcastType'];
+        $tfileid=$_POST['tfileid'];
+        $fileid=$_POST['fileid'];
+        $block=$_POST['block'];
         $panchayats=$_POST['panchayat'];
         $groups=$_POST['groups'];
-        print_r($blocks);
-        print_r($panchayats);
-        print_r($groups);
+        $startDate=$_POST['startDate'];
+        $endDate=$_POST['endDate'];
+        $minhour=$_POST['minhour']; 
+        $maxhour=$_POST['maxhour'];
+        $groupString='';
+        if($type == 'group'){
+          foreach($groups as $group){
+             $groupString.=$group.",";
+          }
+        }elseif($type =='geosurguja'){
+          foreach($panchayats as $panchayat){
+            $panchayatString.=$panchayat.",";
+          }
+        }
+        
+        $query="insert into broadcasts (name,type,startDate,endDate,minhour,maxhour,tfileid,fileid,groups,blocks,panchayats) values ('".$name."','".$type."','".$startDate."','".$endDate."',".$minhour.",".$maxhour.",'".$tfileid."','".$fileid."','".$groupString."','".$block."','".$panchayatString."');";
+        mysqli_query($mydbcon,$query);
+        $id=mysqli_insert_id($mydbcon);
+        print "<h4>Congratulations !! Broadcast ".$name." added with ID ".$id."</h4>";
+        
 }

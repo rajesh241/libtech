@@ -72,7 +72,7 @@ $panchayatOptions=panchayatOptions($mydbcon);
                                 <tr>
                                   <td>Type of Broadcast
                                   </td>
-                                  <td><select name="broadcast-type" id="broadcast-options">
+                                  <td><select name="broadcastType" id="broadcast-options">
                                 <option value="group" selected>Group</option>
                                 <option value="geosurguja">Location Specific Chattisgarh</option>
                                   </td>
@@ -180,7 +180,7 @@ $panchayatOptions=panchayatOptions($mydbcon);
                                 <td>Maximum Hour (Calls will not go after this hour) 
                                 </td>
                                 <td>
-                                        <select name="minhour">
+                                        <select name="maxhour">
                                                 <option value="6" >06 </option>
                                                 <option value="7" >07 </option>
                                                 <option value="8" >08 </option>
