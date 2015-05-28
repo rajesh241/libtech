@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+          <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+          <link rel="stylesheet" type="text/css" href="../css/basic.css">
+  </head>
+        <body>
+         <h1>File Upload Page</h1>
+         <h4>Please note that you can upload only wav file. If you have file in any other format please convert it to wav. You can do this with Audacity software, or you can do it online by going to site <a href="http://media.io"> media.io</a></h4>
+
+                <form action="./../php/libtechAudioUpload.php" method="post" enctype="multipart/form-data">
+                            Select File to upload:
+                                <input type="file" name="fileToUpload" id="fileToUpload">
+                                    <input type="submit" value="Upload Image" name="submit">
+                            </form>
+
+                    </body>
+            </html>
