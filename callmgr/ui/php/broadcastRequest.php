@@ -7,7 +7,7 @@ $htmlheader='
 </head>
 ';
 print $htmlheader;
-include ("/Users/goli/params.php");
+include ("./params.php");
 $mydbcon = mysqli_connect("localhost",$dbuser,$dbpasswd);
 if (!$mydbcon){
   print '<h3>ERROR ERROR Could not connect to DB ! Please contact webadmin</h3>';

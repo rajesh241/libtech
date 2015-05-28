@@ -1,6 +1,6 @@
 <?php
 
-include ("/Users/goli/params.php");
+include ("./params.php");
 require_once(dirname(__FILE__).'/uifunctions.php');
 $operation=$_POST['operation'];
 $mydbcon = mysqli_connect("localhost",$dbuser,$dbpasswd);

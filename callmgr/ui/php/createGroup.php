@@ -6,7 +6,7 @@ $htmlheader='
 </head>
 ';
 print $htmlheader;
-include ("/Users/goli/params.php");
+include ("./params.php");
 $operation=$_POST['operation'];
 $mydbcon = mysqli_connect("localhost",$dbuser,$dbpasswd);
 if (!$mydbcon){

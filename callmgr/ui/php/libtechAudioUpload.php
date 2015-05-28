@@ -6,7 +6,7 @@ $htmlheader='
 </head>
 ';
 print $htmlheader;
-include ("/Users/goli/params.php");
+include ("./params.php");
 $mydbcon = mysqli_connect("localhost",$dbuser,$dbpasswd);
 $query="use libtech";
 mysqli_query($mydbcon,$query);
