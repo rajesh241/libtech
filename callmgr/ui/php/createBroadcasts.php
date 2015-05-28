@@ -57,7 +57,7 @@ $panchayatOptions=panchayatOptions($mydbcon);
                                 <td>Name of Broadcast 
                                 </td>
                                 <td>
-                                        <input name="name" type="text" size="50"></input>
+                                        <input required name="name" type="text" size="50"></input>
                                 </td>
                         </tr>        
                         <tr>
@@ -66,7 +66,6 @@ $panchayatOptions=panchayatOptions($mydbcon);
                                 <td>
                                         <select name="operation">
                                                 <option value="new" selected>New Broadcast </option>
-                                                <option value="edit" >Edit Existing Broadcast </option>
                                         </select>
                                 </td>
                                 </tr>    	  
@@ -126,6 +125,80 @@ $panchayatOptions=panchayatOptions($mydbcon);
                            </tr>
                            
 
+                        <tr>
+                                <td>Tringo File ID (You can give multiple file IDs seperated by comma) 
+                                </td>
+                                <td>
+                                        <input required name="tfileid" type="text" size="50"></input>
+                                </td>
+                        </tr>        
+                        <tr>
+                                <td>Libtech File ID (You can give multiple file IDs seperated by comma)
+                                </td>
+                                <td>
+                                        <input required name="fileid" type="text" size="50"></input>
+                                </td>
+                        </tr>        
+                        <tr>
+                                <td>Start Date (The Date on which you want to start Broadcast)  
+                                </td>
+                                <td>
+                                        <input required name="startDate" type="date" ></input>
+                                </td>
+                        </tr>
+                        <tr>
+                                <td>End Date  (System will keep trying to deliver the message till this date)
+                                </td>
+                                <td>
+                                        <input required name="endDate" type="date" ></input>
+                                </td>
+                        </tr>
+                        <tr>
+                                <td>Minimum Hour (Calls will not go before this hour) 
+                                </td>
+                                <td>
+                                        <select name="minhour">
+                                                <option value="6" >06 </option>
+                                                <option value="7" >07 </option>
+                                                <option value="8" selected>08 </option>
+                                                <option value="9" >09 </option>
+                                                <option value="10" >10 </option>
+                                                <option value="11" >11 </option>
+                                                <option value="12" >12 </option>
+                                                <option value="13" >13 </option>
+                                                <option value="14" >14 </option>
+                                                <option value="15" >15 </option>
+                                                <option value="16" >16 </option>
+                                                <option value="17" >17 </option>
+                                                <option value="18" >18 </option>
+                                                <option value="19" >19 </option>
+                                                <option value="20" >20 </option>
+                                        </select>
+                                </td>
+                        </tr>
+                        <tr>
+                                <td>Maximum Hour (Calls will not go after this hour) 
+                                </td>
+                                <td>
+                                        <select name="minhour">
+                                                <option value="6" >06 </option>
+                                                <option value="7" >07 </option>
+                                                <option value="8" >08 </option>
+                                                <option value="9" >09 </option>
+                                                <option value="10" >10 </option>
+                                                <option value="11" >11 </option>
+                                                <option value="12" >12 </option>
+                                                <option value="13" >13 </option>
+                                                <option value="14" >14 </option>
+                                                <option value="15" >15 </option>
+                                                <option value="16" >16 </option>
+                                                <option value="17" >17 </option>
+                                                <option value="18" >18 </option>
+                                                <option value="19" >19 </option>
+                                                <option value="20" selected>20 </option>
+                                        </select>
+                                </td>
+                        </tr>
                            <tr>
                              <td colspan="2" align="center">
                                <button type="submit">Submit</button>
