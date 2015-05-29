@@ -20,7 +20,7 @@ def main():
   results = cur.fetchall()
   for row in results:
     phone=row[0]
-    #print phone
+    print phone
     url = 'https://%s:%s@twilix.exotel.in/v1/Accounts/%s/Numbers/%s' % (sid, token, sid, phone)
     r = requests.get(url)
     #print r.content
@@ -33,6 +33,10 @@ def main():
       Operator = number.find('Operator').text
       OperatorName = number.find('OperatorName').text
       DND = number.find('DND').text
+      if Circle is  None:
+        Circle='00';
+      if OperatorName is  None:
+        OperatorName='unknown';
       query="update addressbook set dnd='"+DND.lower()+"',circle='"+Circle+"',operatorName='"+OperatorName+"' where phone='"+phone+"';"
       cur.execute(query)
     #print '\n'
