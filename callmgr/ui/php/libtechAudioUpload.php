@@ -28,7 +28,7 @@ $id=mysqli_insert_id($mydbcon);
 $fileName=$id."_".$filteredFileName.".wav";
 
 $target_file=$target_dir.$fileName;
-print $target_file;
+#print $target_file;
 if (file_exists($target_file)) {
         echo "Sorry, file already exists.";
         $uploadOk = 0;
