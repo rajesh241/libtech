@@ -18,5 +18,15 @@ table, th, td {
       display: none;
       }
 
+      .broadcastsmain  li{
+              margin-bottom: 10px;
+      }
+      .broadcastsmain a{
+              color: #6f0025;
+              text-decoration: none;
+              font-weight: bold;
+      }
+ 
+
 
 
