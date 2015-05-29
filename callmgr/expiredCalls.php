@@ -7,7 +7,7 @@ $maxretry=10;
 ltecho("Marking Expired Calls");
 ltecho("-------------------");
 $mydbcon = ltopendb();
-$query="select tc.vid,tc.bid,tc.cid,tc.callparams,tc.phone,tc.tid,tc.retry from ToCall tc, Broadcasts b where tc.bid=b.bid and b.endDate < CURDATE()  and tc.success=0 AND tc.inprogress=0  ;";
+$query="select tc.vid,tc.bid,tc.cid,tc.callparams,tc.phone,tc.tid,tc.retry from ToCall tc, Broadcasts b where tc.bid=b.bid and b.endDate < CURDATE()   AND tc.inprogress=0  ;";
 ltecho($query);
 $result = mysqli_query($mydbcon,$query);
 while($row = mysqli_fetch_array($result)) {

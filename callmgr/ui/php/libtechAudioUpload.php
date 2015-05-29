@@ -11,7 +11,8 @@ $mydbcon = mysqli_connect("localhost",$dbuser,$dbpasswd);
 $query="use libtech";
 mysqli_query($mydbcon,$query);
 
-$target_dir = "/Users/goli/Sites/libtech/a/";
+$target_dir = "/tmp/";
+$target_dir = $_SERVER["DOCUMENT_ROOT"]."/audio/";
 $target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
 $uploadOk = 1;
 $imageFileType = pathinfo($target_file,PATHINFO_EXTENSION);
