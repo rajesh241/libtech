@@ -26,8 +26,6 @@ mysqli_query($mydbcon,$query);
 $id=mysqli_insert_id($mydbcon);
 #print $id."</br>";
 $fileName=$id."_".$filteredFileName.".wav";
-$query="update audioLibrary set filename='".$fileName."' where id=".$id;
-mysqli_query($mydbcon,$query);
 
 $target_file=$target_dir.$fileName;
 
@@ -49,12 +47,18 @@ if($imageFileType != "wav"   ) {
 // Check if $uploadOk is set to 0 by an error
 if ($uploadOk == 0) {
             echo "Sorry, your file was not uploaded.";
+           $query="delete from audioLibrary where id=".$id;
+           mysqli_query($mydbcon,$query);
 } else {
   if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
      print "<h4>The file ". basename( $_FILES["fileToUpload"]["name"]). " has been uploaded.</h4>";
      print "<h4>Your File ID is   ". $id.  " </h4>";
+     $query="update audioLibrary set filename='".$fileName."' where id=".$id;
+     mysqli_query($mydbcon,$query);
   } else {
       echo "Sorry, there was an error uploading your file.";
+           $query="delete from audioLibrary where id=".$id;
+           mysqli_query($mydbcon,$query);
    }
 }
      print '<h2><a href="./../html/broadcastsMain.html">Return to Main Broadcast Page</a></h2>';
