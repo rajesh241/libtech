@@ -42,3 +42,5 @@ if (!$mydbcon){
         print "<h4>Congratulations !! Broadcast ".$name." added with ID ".$id."</h4>";
         
 }
+
+print '<h2><a href="./../html/broadcastsMain.html">Return to Main Broadcast Page</a></h2>';

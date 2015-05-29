@@ -56,4 +56,5 @@ if ($uploadOk == 0) {
       echo "Sorry, there was an error uploading your file.";
    }
 }
+     print '<h2><a href="./../html/broadcastsMain.html">Return to Main Broadcast Page</a></h2>';
 ?>

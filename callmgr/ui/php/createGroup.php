@@ -62,5 +62,6 @@ if (!$mydbcon){
         }else{
                 print "<h3>The name can contain only letters and numbers, no special characters allowed Please try again</h3>";
         }
+print '<h2><a href="./../html/broadcastsMain.html">Return to Main Broadcast Page</a></h2>';
 }
 
