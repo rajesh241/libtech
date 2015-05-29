@@ -28,16 +28,16 @@ $id=mysqli_insert_id($mydbcon);
 $fileName=$id."_".$filteredFileName.".wav";
 
 $target_file=$target_dir.$fileName;
-
+print $target_file;
 if (file_exists($target_file)) {
         echo "Sorry, file already exists.";
         $uploadOk = 0;
 }
 // Check file size
-if ($_FILES["fileToUpload"]["size"] > 500000) {
-            echo "Sorry, your file is too large.";
-                $uploadOk = 0;
-}
+#if ($_FILES["fileToUpload"]["size"] > 500000) {
+#            echo "Sorry, your file is too large.";
+#                $uploadOk = 0;
+#}
 
 // Allow certain file formats
 if($imageFileType != "wav"   ) {
