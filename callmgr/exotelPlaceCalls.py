@@ -6,7 +6,7 @@ import requests
 import xml.etree.ElementTree as ET
 
 def connect_customer(sid, token,
-                     customer_no, exotel_no, callerid, url,
+                     customer_no, customField,exotel_no="08033545179", callerid="08033545179", url="http://my.exotel.in/exoml/start/44458",
                      timelimit=None, timeout=None, calltype="trans",
                      callback_url=None):
     return requests.post('https://twilix.exotel.in/v1/Accounts/{sid}/Calls/connect'.format(sid=sid),
@@ -19,7 +19,7 @@ def connect_customer(sid, token,
             'TimeLimit': timelimit,
             'TimeOut': timeout,
             'CallType': calltype,
-            'CustomField': 123,
+            'CustomField': customField,
             'StatusCallback': callback_url
         })
 
@@ -36,7 +36,7 @@ def main():
   cur.execute(query)
   query="use libtech"
   cur.execute(query)
-  query="select c.id,c.phone from callQueue c,broadcasts b where c.vendor='exotel' and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() order by c.minhour limit 1"
+  query="select c.id,c.phone from callQueue c,broadcasts b where c.vendor='exotel' and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 order by c.minhour limit 1"
   cur.execute(query)
   results = cur.fetchall()
   print "curhour is "+curhour
@@ -47,13 +47,8 @@ def main():
     r = connect_customer(
         sid, token,
         customer_no=phone,
-        exotel_no="08033545179",
-        callerid="08033545179",
-        url="http://my.exotel.in/exoml/start/44458",
-        timelimit="<time-in-seconds>",  # This is optional
-        timeout="<time-in-seconds>",  # This is also optional
-        calltype="trans",  # Can be "trans" for transactional and "promo" for promotional content
-        callback_url="<http//: your company URL>"  # This is also also optional
+        customField=callid
+
         )
     print r.status_code
     if (r.status_code == 200):
