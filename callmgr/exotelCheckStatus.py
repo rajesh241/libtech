@@ -5,14 +5,56 @@ from settings import dbhost,dbuser,dbpasswd,sid,token
 import requests
 import xml.etree.ElementTree as ET
 #callstatuscode="""
-#The "Status" parameter can take one of the following values: 
+#The "status" parameter from exotelcan take one of the following values: 
 #       - queued
 #       - in-progress
 #       - completed
 #       - failed
 #       - busy
 #       - no-answer"""
+
+
+#Our Status codes
+#vendorstatus is the raw status as got from vendor
+#callstatus   has values success,fail,error
+#finalCallStatus has values success,maxRetryFailed,expired
+
+def exotelCallStatus (sid,token,callsid):
+  url="https://"+sid+":"+token+"@twilix.exotel.in/v1/Accounts/"+sid+"/Calls/"+callsid
+  r = requests.get(url)
+  print "Request Status"+str(r.status_code)
+  callinprogress=1
+  if (r.status_code == 200):
+     print r.content
+     callpass=0
+     callfail=0
+     root = ET.fromstring(r.content)
+     for Call in root.findall('Call'):
+       callsid = Call.find('Sid').text
+       status = Call.find('Status').text
+       callStartTime = Call.find('StartTime').text
+       duration = Call.find('Duration').text
+     if(status == "completed"):
+       callinprogress=0
+       callpass=1
+       print "The Call has been completed Successfully"
+       if duration is None:
+         duration=0
+         callinprogress=1 #Make call in progress1 if the duration field is not updated. That means the duration field will get updated in sometime
+     elif(status == "busy" or status=="no-answer" or status=="failed"):
+       callinprogress=0
+       callfail=1
+       print "The Call has failed"
+  return callinprogress,callpass,callfail,callStartTime,duration,status 
+
+
 def main():
+#Setting some Default Values
+  minduration = 10
+  maxretry=3
+  durationpass=0
+  isMaxRetry=0
+
   todaydate=datetime.date.today().strftime("%d%B%Y")
   now = datetime.datetime.now()
   curhour = str(now.hour)
@@ -33,33 +75,42 @@ def main():
     bid=str(row[2])
     callRequestTime=str(row[3])
     phone=str(row[4])
-    retry=str(row[5]+1)
+    retry=row[5]+1
     audio=row[6]
-    url="https://"+sid+":"+token+"@twilix.exotel.in/v1/Accounts/"+sid+"/Calls/"+callsid
-    r = requests.get(url)
-    print r.content
-    root = ET.fromstring(r.content)
-    for Call in root.findall('Call'):
-      callsid = Call.find('Sid').text
-      status = Call.find('Status').text
-      callStartTime = Call.find('StartTime').text
-      duration = Call.find('Duration').text
-    if duration is None:
-      duration=0
-    print status
-    callinprogress=1
-    query="insert into callLogs (vendor,bid,sid,phone,retry,callRequestTime,callStartTime,duration,status,audio) values ('exotel',"+bid+",'"+callsid+"','"+phone+"',"+retry+",'"+callRequestTime+"','"+callStartTime+"',"+str(duration)+",'"+status+"','"+audio+"');"
-    cur.execute(query)
-    print query
-    if(status == "completed"):
-      callinprogress=0
-      success=1
-      print "The Call has been completed Successfully"
-    elif(status == "busy" or status=="no-answer" or status=="failed"):
-      callinprogress=0
-      print "The Call has failed"
+
+    callinprogress,callpass,callfail,callStartTime,duration,vendorCallStatus = exotelCallStatus(sid,token,callsid)
+
+    finalCallSuccess=0
+    finalCallmaxRetryFail=0
+    finalCallExpired=0
+
+    ###Now we have all the variables to implement our logic
     if(callinprogress == 0):
-      query="insert into callLogs (vendor,bid,sid,phone,retry,callRequestTime,callStartTime,duration,status,audio) values ('exotel',"+bid+",'"+callsid+"','"+phone+"',"+retry+",'"+callRequestTime+"','"+callStartTime+"',"+str(duration)+",'"+status+"','"+audio+"');"
+      if(retry >= maxretry):
+        isMaxRetry=1
+      if((callpass == 1) and (int(duration) > minduration)):
+        durationpass =1
+      if( (durationpass == 1) or (isMaxRetry == 1)):
+        #We need to remove this entry from callQueue
+        query="delete from callQueue where id="+callid
+        cur.execute(query)
+        if(durationpass ==1):
+          curCallStatus = "pass"
+          finalCallSuccess=1
+        else:
+          curCallStatus = "fail"
+          finalCallmaxRetryFail=1
+        query="insert into callStatus (bid,attempts,success,maxRetryFail,expired,phone) values ("+bid+","+str(retry)+","+str(finalCallSuccess)+","+str(finalCallmaxRetryFail)+","+str(finalCallExpired)+",'"+phone+"');"
+        print query
+        cur.execute(query)
+      else:
+      #We need to update callQueue with new retry count and inprogress=0
+        query="update callQueue set sid='',retry="+str(retry)+",inprogress=0 where id="+callid
+        print query
+        cur.execute(query)
+        curCallStatus = "fail"
+
+      query="insert into callLogs (vendor,bid,sid,phone,retry,callRequestTime,callStartTime,duration,status,audio,vendorCallStatus) values ('exotel',"+bid+",'"+callsid+"','"+phone+"',"+str(retry)+",'"+callRequestTime+"','"+callStartTime+"',"+str(duration)+",'"+curCallStatus+"','"+audio+"','"+vendorCallStatus+"');"
       cur.execute(query)
       print query
 

@@ -37,6 +37,7 @@ def main():
   query="use libtech"
   cur.execute(query)
   query="select c.id,c.phone from callQueue c,broadcasts b where c.vendor='exotel' and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 order by c.minhour limit 1"
+  print query
   cur.execute(query)
   results = cur.fetchall()
   print "curhour is "+curhour
