@@ -12,7 +12,7 @@ def singleRowQuery(cur,query):
 
 
 def connect_customer(sid, token,
-                     customer_no, customField,exotel_no="08033545179", callerid="08033545179", url="http://my.exotel.in/exoml/start/44458",
+                     customer_no, customField,exotel_no="02233814264", callerid="02233814264", url="http://my.exotel.in/exoml/start/44458",
                      timelimit=None, timeout=None, calltype="trans",
                      callback_url=None):
     return requests.post('https://twilix.exotel.in/v1/Accounts/{sid}/Calls/connect'.format(sid=sid),
