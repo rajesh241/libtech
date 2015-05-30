@@ -5,6 +5,12 @@ from settings import dbhost,dbuser,dbpasswd,sid,token
 import requests
 import xml.etree.ElementTree as ET
 
+def singleRowQuery(cur,query):
+  cur.execute(query)
+  result=cur.fetchone()
+  return result[0]
+
+
 def connect_customer(sid, token,
                      customer_no, customField,exotel_no="08033545179", callerid="08033545179", url="http://my.exotel.in/exoml/start/44458",
                      timelimit=None, timeout=None, calltype="trans",
@@ -26,6 +32,7 @@ def connect_customer(sid, token,
 
 
 def main():
+  maxTringoCallQueue=5 #This is the maximum number of calls that can be queued with Tringo
   todaydate=datetime.date.today().strftime("%d%B%Y")
   now = datetime.datetime.now()
   curhour = str(now.hour)
@@ -61,8 +68,31 @@ def main():
       print query
       cur.execute(query)
 
-
-
-
+  #Here below we will write the code to place calls through tringo
+  query="select count(*) from callQueue where inprogress=1 and vendor='tringo'"
+  curQueue=singleRowQuery(cur,query)
+  print "Current Queued Calls in Tringo is "+str(curQueue)
+  if(curQueue < maxTringoCallQueue):
+    query="select c.id,c.phone,c.audio from callQueue c,broadcasts b where c.vendor='tringo' and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 order by c.minhour limit 1"
+    print query
+    cur.execute(query)
+    results = cur.fetchall()
+    for row in results:
+      callid=str(row[0])
+      phone=row[1]
+      audio=row[2]
+      print callid+"  "+phone
+      tringurl='http://hostedivr.in/netobd/NewCall_Schedule.php?uid=523&pwd=golani123&pno=%s%s&ivrid=2' % (phone,audio)
+      print tringurl
+      r = requests.get(tringurl)
+      tringsid=r.content
+      sid1=tringsid.strip()
+      print "Tringo SID is "+sid1
+      if (sid1.isdigit()):
+        print "sid1 contains only digits"
+        query="update callQueue set sid='"+sid1+"',callRequestTime=NOW(),inprogress=1 where id="+callid
+        print query
+        cur.execute(query)
+      
 if __name__ == '__main__':
   main()
