@@ -30,6 +30,19 @@ def main():
     print "Broadcast ID"+str(bid)
     broadcastType=row[1]
     if (broadcastType == "group"):
+      #Lets get audio File names for tringo
+      tringofilelist=row[4].rstrip(',')
+      tringoArray=tringofilelist.split(',')
+      noOfFiles=len(tringoArray)
+      i=0
+      tringoaudio=''
+      while(i<20):
+        curFileID='27503'
+        if(i < noOfFiles):
+          curFileID=tringoArray[i]
+        i=i+1
+        tringoaudio+="&fileid"+str(i)+"="+curFileID
+      print "Tringo audio is "+tringoaudio;
       #Lets first get the audioFileNames
       filelist=row[5].rstrip(',')
       filelistArray=filelist.split(',')
@@ -66,6 +79,16 @@ def main():
           print phone
           query="insert into callQueue (vendor,bid,minhour,maxhour,phone,audio) values ('exotel',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"');"
           cur.execute(query)
+        query="select phone from addressbook where ("+groupMatchString+") and dnd !='no'"
+        cur.execute(query)
+        results1 = cur.fetchall()
+        for r in results1:
+          phone=r[0]
+          print phone
+          query="insert into callQueue (vendor,bid,minhour,maxhour,phone,audio) values ('tringo',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+tringoaudio+"');"
+          cur.execute(query)
+              
+        
         query="update broadcasts set processed=1 where bid="+bid
         cur.execute(query)
       else:
