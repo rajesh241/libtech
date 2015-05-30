@@ -32,7 +32,7 @@ def connect_customer(sid, token,
 
 
 def main():
-  maxTringoCallQueue=5 #This is the maximum number of calls that can be queued with Tringo
+  maxTringoCallQueue=15 #This is the maximum number of calls that can be queued with Tringo
   todaydate=datetime.date.today().strftime("%d%B%Y")
   now = datetime.datetime.now()
   curhour = str(now.hour)
@@ -73,7 +73,7 @@ def main():
   curQueue=singleRowQuery(cur,query)
   print "Current Queued Calls in Tringo is "+str(curQueue)
   if(curQueue < maxTringoCallQueue):
-    query="select c.id,c.phone,c.audio from callQueue c,broadcasts b where c.vendor='tringo' and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 order by c.minhour limit 1"
+    query="select c.id,c.phone,c.audio from callQueue c,broadcasts b where c.vendor='tringo' and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 order by c.minhour "
     print query
     cur.execute(query)
     results = cur.fetchall()
