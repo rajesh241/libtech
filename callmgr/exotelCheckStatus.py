@@ -33,7 +33,7 @@ def tringoCallStatus (sid,token,callsid):
   callfail=0
   duration=0
   callStartTime=''
-  if (lenArray == 8):
+  if (lenArray == 9):
     print "Length of Status is "+str(lenArray)
     status=statusArray[5]
     callStartTime=statusArray[2]
@@ -87,8 +87,6 @@ def main():
 #Setting some Default Values
   minduration = 10
   maxretry=10
-  durationpass=0
-  isMaxRetry=0
 
   todaydate=datetime.date.today().strftime("%d%B%Y")
   now = datetime.datetime.now()
@@ -105,6 +103,8 @@ def main():
   results = cur.fetchall()
   print "curhour is "+curhour
   for row in results:
+    durationpass=0
+    isMaxRetry=0
     callid=str(row[0])
     callsid=row[1]
     bid=str(row[2])
@@ -121,12 +121,16 @@ def main():
     finalCallSuccess=0
     finalCallmaxRetryFail=0
     finalCallExpired=0
-
+    print "status received from exotel is "+vendorCallStatus
+    print "Duration of the call is "+str(duration)
+    print "call pass "+str(callpass)+"callfail ="+str(callfail)
     ###Now we have all the variables to implement our logic
     if(callinprogress == 0):
       if(retry >= maxretry):
+        print "Max Retry is 1\n"
         isMaxRetry=1
       if((callpass == 1) and (int(duration) > minduration)):
+        print "Duration Pass is 1\n"
         durationpass =1
       if( (durationpass == 1) or (isMaxRetry == 1)):
         #We need to remove this entry from callQueue
