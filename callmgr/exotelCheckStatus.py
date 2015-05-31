@@ -76,6 +76,7 @@ def exotelCallStatus (sid,token,callsid):
          duration=0
          callinprogress=1 #Make call in progress1 if the duration field is not updated. That means the duration field will get updated in sometime
      elif(status == "busy" or status=="no-answer" or status=="failed"):
+       duration=0
        callinprogress=0
        callfail=1
        print "The Call has failed"
@@ -85,7 +86,7 @@ def exotelCallStatus (sid,token,callsid):
 def main():
 #Setting some Default Values
   minduration = 10
-  maxretry=3
+  maxretry=10
   durationpass=0
   isMaxRetry=0
 
@@ -99,7 +100,7 @@ def main():
   cur.execute(query)
   query="use libtech"
   cur.execute(query)
-  query="select id,sid,bid,callRequestTime,phone,retry,audio,vendor from callQueue where inprogress=1 limit 1"
+  query="select id,sid,bid,callRequestTime,phone,retry,audio,vendor from callQueue where inprogress=1 "
   cur.execute(query)
   results = cur.fetchall()
   print "curhour is "+curhour
@@ -130,6 +131,7 @@ def main():
       if( (durationpass == 1) or (isMaxRetry == 1)):
         #We need to remove this entry from callQueue
         query="delete from callQueue where id="+callid
+        print query
         cur.execute(query)
         if(durationpass ==1):
           curCallStatus = "pass"
@@ -148,8 +150,8 @@ def main():
         curCallStatus = "fail"
 
       query="insert into callLogs (vendor,bid,sid,phone,retry,callRequestTime,callStartTime,duration,status,audio,vendorCallStatus) values ('"+vendor+"',"+bid+",'"+callsid+"','"+phone+"',"+str(retry)+",'"+callRequestTime+"','"+callStartTime+"',"+str(duration)+",'"+curCallStatus+"','"+audio+"','"+vendorCallStatus+"');"
-      cur.execute(query)
       print query
+      cur.execute(query)
 
 
 if __name__ == '__main__':
