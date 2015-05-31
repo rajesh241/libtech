@@ -48,7 +48,7 @@ def main():
   curQueue=singleRowQuery(cur,query)
   print "Current Queued Calls in Tringo is "+str(curQueue)
   if(curQueue < maxExotelCallQueue):
-    query="select c.id,c.phone from callQueue c,broadcasts b where c.vendor='exotel' and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 order by c.minhour limit 10"
+    query="select c.id,c.phone from callQueue c,broadcasts b where b.bid=c.bid and c.vendor='exotel' and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 order by retry limit 2"
     print query
     cur.execute(query)
     results = cur.fetchall()
@@ -78,7 +78,7 @@ def main():
   curQueue=singleRowQuery(cur,query)
   print "Current Queued Calls in Tringo is "+str(curQueue)
   if(curQueue < maxTringoCallQueue):
-    query="select c.id,c.phone,c.audio from callQueue c,broadcasts b where c.vendor='tringo' and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 order by c.minhour "
+    query="select c.id,c.phone,c.audio from callQueue c,broadcasts b where c.bid=b.bid and c.vendor='tringo' and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 order by retry limit 2"
     print query
     cur.execute(query)
     results = cur.fetchall()
