@@ -34,9 +34,25 @@ def main():
       OperatorName = number.find('OperatorName').text
       DND = number.find('DND').text
       if Circle is  None:
-        Circle='00';
+        Circle='00'
       if OperatorName is  None:
-        OperatorName='unknown';
+        OperatorName='unknown'
+      if (Circle == "AP"):
+        exophone="04030911001"
+      elif (Circle =="MH"):
+        exophone="02233814264"
+      elif (Circle =="MU"):
+        exophone="02233814264"
+      else:
+        exophone="08033545179"
+      query="update addressbook set dnd='"+DND.lower()+"',circle='"+Circle+"',operatorName='"+OperatorName+"',exophone='"+exophone+"' where phone='"+phone+"';"
+      cur.execute(query)
+    #print '\n'
+
+
+ 
+if __name__ == '__main__':
+  main()
       query="update addressbook set dnd='"+DND.lower()+"',circle='"+Circle+"',operatorName='"+OperatorName+"' where phone='"+phone+"';"
       cur.execute(query)
     #print '\n'

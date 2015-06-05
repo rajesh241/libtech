@@ -71,13 +71,14 @@ def main():
         print '\n'
       groupMatchString=groupMatchString[:-2]
       if (error == 0):
-        query="select phone from addressbook where ("+groupMatchString+") and dnd='no'"
+        query="select phone,exophone from addressbook where ("+groupMatchString+") and dnd='no'"
         cur.execute(query)
         results1 = cur.fetchall()
         for r in results1:
           phone=r[0]
+          exophone=r[1]
           print phone
-          query="insert into callQueue (vendor,bid,minhour,maxhour,phone,audio) values ('exotel',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"');"
+          query="insert into callQueue (vendor,bid,minhour,maxhour,phone,audio,exophone) values ('exotel',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+exophone+"');"
           cur.execute(query)
         query="select phone from addressbook where ("+groupMatchString+") and dnd !='no'"
         cur.execute(query)
