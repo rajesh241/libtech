@@ -84,10 +84,9 @@ def argsFetch():
   #  parser.add_argument('-j', '--jobcard-number', help='Specify the jobcard no to fetch', required=True)
   #  parser.add_argument('-m', '--mobile-number', help='Specify the mobile number', required=True)
   #  parser.add_argument('-i', '--missed-call-id', help='Specify the ID of missed call', required=True)
-  parser.add_argument('-d', '--directory', help='Specify directory to download html file to', required=False)
-  #  parser.add_argument('-q', '--query', help='Query to specify the workset, E.g ... where id=147', required=False)
+  parser.add_argument('-d', '--directory', help='Specify directory to write xml file to', required=False)
   parser.add_argument('-c', '--csv', help='Specify the CSV file to convert', required=True)
-  parser.add_argument('-x', '--xml', help='Specify the XML file to convert to', required=True)
+  parser.add_argument('-x', '--xml', help='Specify the XML file to convert to', required=False)
 
   args = vars(parser.parse_args())
   return args
@@ -114,28 +113,25 @@ def preText():
   '''
   text = '''<?xml version="1.0"?>
 <chaupal>
-  <addressbookEntry>
-
 '''
   return text
 
 
-def addressBookEntry(ab_details):
+def addressBookEntry(ab_entry):
   '''
   For adding the Address Book Entry
   '''
   entry ='''
+  <addressbookEntry>
     <formType>addressbookEntry</formType>
     <block>block_name</block>
     <panchayat>panchayat_name</panchayat>
     <jobcard>jobcard_number</jobcard>
     <phone>phone_number</phone>
     <pdsno>pds_number</pdsno>
+  </addressbookEntry>
 '''
-  xmlUpdate(entry, ab_details)
-  
-  return entry
-
+  return xmlUpdate(entry, ab_entry)
 
 
 def postText():
@@ -143,38 +139,18 @@ def postText():
   Suffixing to the html file script
   '''
   text = '''
-  </addressbookEntry>
 </chaupal>
 '''
   return text
 
-def htmlUnescape(s):
-  """
-  Returns the ASCII decoded version of the given HTML string. This does
-  NOT remove normal HTML tags like <p>.
-  """
-  htmlCodes = (
-      ("'", '&#39;'),
-      ('"', '&quot;'),
-      ('>', '&gt;'),
-      ('<', '&lt;'),
-      ('&', '&amp;')
-    )
-  for code in htmlCodes:
-    s = s.replace(code[1], code[0])
-  return s
-
-def xmlUpdate(entry, ab_details):
+def xmlUpdate(entry, ab_entry):
   '''
   Returns the ASCII decoded version of the given HTML string. This does
   NOT remove normal HTML tags like <p>.
   '''
 
-  block = ab_details[0]
-  panchayat = ab_details[1]
-  jobcard = ab_details[2]
-  phone = ab_details[3]
-  
+  (block, panchayat, jobcard, phone) = ab_entry
+
   entry = entry.replace("block_name", str(block))
   entry = entry.replace("panchayat_name", str(panchayat))
   entry = entry.replace("jobcard_number", str(jobcard))
@@ -182,43 +158,29 @@ def xmlUpdate(entry, ab_details):
   
   return entry
 
-def list2xml(logger, ab_details, dir=None, url=None, convert_function=None):
+def list2xml(logger, addressbook, dir=None, xml_file=None):
   '''
   Convert the list to xml
   '''
-  logger.info("Address Book[%s] Directory[%s] URL[%s]" %
-              (ab_details, dir, url))
+  logger.info("Directory[%s] XML[%s]" % (dir, xml_file))
 
   if dir == None:
-    dir = "./xml"
-
-  block = ab_details[0]
-  panchayat = ab_details[1]
-  jobcard = ab_details[2]
-  phone = ab_details[3]
-  
-  logger.info("block[%s], panchayat[%s], jobcard[%s], phone[%s]" % (block, panchayat, jobcard, phone))
-
-  filename = dir + '/' + str(block) + '.xml'
-
-  if jobcard == "0":
-    logger.info("Fetching...[%s]" % url)
-
-    logger.info("Handles [%s] Number [%d]" % (driver.window_handles, len(driver.window_handles)))
+    dir = "."
     
-    logger.debug("HTML Fetched [%s]" % html_source)
-
-    if flase:
-      with open(filename, 'w') as html_file:
-        logger.info("Writing Prematurely[%s]" % filename)
-        html_file.write(html_source.encode('utf-8'))
-
+  filename = dir + '/' + xml_file
 
   xml_text = preText()
-  xml_text += addressBookEntry(ab_details)
+
+  for ab_entry in addressbook:
+    (block, panchayat, jobcard, phone) = ab_entry
+    logger.info("block[%s], panchayat[%s], jobcard[%s], phone[%s]" % (block, panchayat, jobcard, phone))
+
+    xml_entry = addressBookEntry(ab_entry)
+    xml_text += xml_entry
+
+    
   xml_text += postText()
 
-  xml_text = xmlUpdate(xml_text, ab_details)
 
   with open(filename, 'w') as xml_file:
     xml_file.write(xml_text)
@@ -233,11 +195,8 @@ def csv2xml(logger, dir=None, csv_file=None, xml_file=None):
 
   logger.info("BEGIN PROCESSING...")
 
-  if dir == None:
-    dir = "./"
-  
   if xml_file == None:
-    xml_file = "./crap"
+    xml_file = csv_file.replace("csv", "xml")
 
   logger.info("dir[%s]" % dir)
   logger.info("csv[%s]" % csv_file)
@@ -247,22 +206,7 @@ def csv2xml(logger, dir=None, csv_file=None, xml_file=None):
     addressbook = list(csv.reader(csv_handle))
 
   logger.debug("addressbook[%s]" % str(addressbook))
-  for  ab_details in addressbook:
-    #Put error checks in place and only then update libtech DB
-
-    logger.info("ab_details[%s]" % str(ab_details))
-    
-    if True:
-      list2xml(logger, ab_details, dir)
-      break
-    else:
-      block = ab_details[0]
-      panchayat = ab_details[1]
-      jobcard = ab_details[2]
-      phone = ab_details[3]
-      
-      logger.info("block[%s], panchayat[%s], jobcard[%s], phone[%s]" % (block, panchayat, jobcard, phone))
-      # os.system(cmd)    
+  list2xml(logger, addressbook, dir, xml_file)
 
   logger.info("...END PROCESSING")
   
