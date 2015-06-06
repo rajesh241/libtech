@@ -146,7 +146,7 @@ def main():
           finalCallmaxRetryFail=1
           finalCallStatus='failMaxRetry'
         query="insert into callStatus (bid,attempts,success,maxRetryFail,expired,phone,vendor,duration) values ("+bid+","+str(retry)+","+str(finalCallSuccess)+","+str(finalCallmaxRetryFail)+","+str(finalCallExpired)+",'"+phone+"','"+vendor+"',"+str(duration)+");"
-        query="update callStatus set status='"+finalCallStatus+"',attempts="+str(retry)+",vendor='"+vendor+"',duration="+str(duration)+" where  bid="+bid+" and phone='"+phone+"';"
+        query="update callStatus set status='"+finalCallStatus+"',attempts="+str(retry)+",vendor='"+vendor+"',duration="+str(duration)+",callStartTime='"+callStartTime+"' where  bid="+bid+" and phone='"+phone+"';"
         print query
         cur.execute(query)
       else:
