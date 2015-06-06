@@ -15,6 +15,15 @@ def gethtmlheader():
     border: 2px solid #097054;
     border-collapse: collapse;
     }
+    td,th {
+     padding-left:5px;
+     padding-right:5px;
+     padding-top:2px;
+     padding-bottom:2px;
+}
+    .tdwhite{
+    background=#FF0000;
+}
     table {
      margin-bottom: 20px
    }
@@ -79,13 +88,20 @@ def getstring(a):
   else:
     return str(a)
  
-def arrayToHTMLLine(tableArray):
+def arrayToHTMLLine(tdtype,tableArray):
   htmlLine="<tr>"
+  i =0
   for a in tableArray:
-    if isinstance(a, basestring):
-      htmlLine+="<td>"+a+"</td>"
+    if(i ==0 ):
+      i =1
+      tdclass='#FFFFFF'
     else:
-      htmlLine+="<td>"+str(a)+"</td>"
+      i=0
+      tdclass='#CCCCCC'
+    if isinstance(a, basestring):
+      htmlLine+='<'+tdtype+' bgcolor="'+tdclass+'">'+a+'</'+tdtype+'>'
+    else:
+      htmlLine+='<'+tdtype+'  bgcolor="'+tdclass+'">'+str(a)+'</'+tdtype+'>'
   htmlLine+="</tr>"
   return htmlLine
 def libtechSendMail(sender,receiver,subject,messagehtml):
