@@ -98,7 +98,7 @@ def main():
   cur.execute(query)
   query="use libtech"
   cur.execute(query)
-  query="select id,sid,bid,callRequestTime,phone,retry,audio,curVendor,tringoaudio from callQueue where inprogress=1 "
+  query="select id,sid,bid,callRequestTime,phone,retry,audio,curVendor,tringoaudio,isTest from callQueue where inprogress=1 "
   cur.execute(query)
   results = cur.fetchall()
   print "curhour is "+curhour
@@ -114,6 +114,7 @@ def main():
     audio=row[6]
     vendor=row[7]
     tringoaudio=row[8]
+    isTest=row[9]
     if(vendor == 'exotel'):
       callinprogress,callpass,callfail,callStartTime,duration,vendorCallStatus = exotelCallStatus(sid,token,callsid)
     elif(vendor == 'tringo'):
@@ -149,7 +150,8 @@ def main():
         query="insert into callStatus (bid,attempts,success,maxRetryFail,expired,phone,vendor,duration) values ("+bid+","+str(retry)+","+str(finalCallSuccess)+","+str(finalCallmaxRetryFail)+","+str(finalCallExpired)+",'"+phone+"','"+vendor+"',"+str(duration)+");"
         query="update callStatus set status='"+finalCallStatus+"',attempts="+str(retry)+",vendor='"+vendor+"',duration="+str(duration)+",callStartTime='"+callStartTime+"' where  bid="+bid+" and phone='"+phone+"';"
         print query
-        cur.execute(query)
+        if(isTest == 0):
+          cur.execute(query)
       else:
       #We need to update callQueue with new retry count and inprogress=0
         query="update callQueue set curVendor='',sid='',retry="+str(retry)+",inprogress=0 where id="+callid
