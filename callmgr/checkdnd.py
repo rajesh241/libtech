@@ -37,6 +37,7 @@ def main():
         Circle='00'
       if OperatorName is  None:
         OperatorName='unknown'
+
       if (Circle == "AP"):
         exophone="04030911001"
       elif (Circle =="MH"):
@@ -45,19 +46,13 @@ def main():
         exophone="02233814264"
       else:
         exophone="08033545179"
+
       query="update addressbook set dnd='"+DND.lower()+"',circle='"+Circle+"',operatorName='"+OperatorName+"',exophone='"+exophone+"' where phone='"+phone+"';"
       cur.execute(query)
     #print '\n'
 
 
  
-if __name__ == '__main__':
-  main()
-      query="update addressbook set dnd='"+DND.lower()+"',circle='"+Circle+"',operatorName='"+OperatorName+"' where phone='"+phone+"';"
-      cur.execute(query)
-    #print '\n'
-
-
  
 if __name__ == '__main__':
   main()

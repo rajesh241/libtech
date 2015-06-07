@@ -78,7 +78,10 @@ def main():
           phone=r[0]
           exophone=r[1]
           print phone
-          query="insert into callQueue (vendor,bid,minhour,maxhour,phone,audio,exophone) values ('exotel',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+exophone+"');"
+          query="insert into callQueue (vendor,bid,minhour,maxhour,phone,audio,tringoaudio,exophone) values ('any',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
+          cur.execute(query)
+          query="insert into callStatus (bid,phone) values ("+bid+",'"+phone+"');"
+          print query
           cur.execute(query)
         query="select phone from addressbook where ("+groupMatchString+") and dnd !='no'"
         cur.execute(query)
@@ -86,8 +89,10 @@ def main():
         for r in results1:
           phone=r[0]
           print phone
-          query="insert into callQueue (vendor,bid,minhour,maxhour,phone,audio) values ('tringo',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+tringoaudio+"');"
+          query="insert into callQueue (vendor,bid,minhour,maxhour,phone,tringoaudio) values ('tringo',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+tringoaudio+"');"
           cur.execute(query)
+          query="insert into callStatus (bid,phone) values ("+bid+",'"+phone+"');"
+          print query
               
         
         query="update broadcasts set processed=1 where bid="+bid
