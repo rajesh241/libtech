@@ -51,12 +51,13 @@ def main():
   tableArray=['Broadcast ID', 'Broadcast Name','Start Date','Total','Pending','Success','Fail','Expired','Success %','Detail Report'] 
   myhtml+=arrayToHTMLLine('th',tableArray)
   print myhtml
-  query="select bid from broadcasts where bid>1000 and completed=0 and processed=1 order by bid DESC"
+  query="select bid,completed from broadcasts where bid>1000 order by bid DESC"
   print query
   cur.execute(query)
   results = cur.fetchall()
   for row in results:
     bid=row[0]
+    completed=row[1]
     print "Current Bid is"+str(bid)
     updateBroadcastTable(cur,bid)
     query="select name,DATE_FORMAT(startDate,'%d-%M-%Y'),total,pending,success,fail,expired from broadcasts where bid="+str(bid)
@@ -78,7 +79,8 @@ def main():
     #write csv report
     csvname=broadcastReportFilePath+str(bid)+"_"+name.strip()+".csv"
     query="select phone,DATE_FORMAT(callStartTime,'%d-%M-%Y') callTime,status,attempts,duration from callStatus where bid="+str(bid)
-    writecsv(cur,query,csvname)
+    if(completed == 0):
+      writecsv(cur,query,csvname)
   myhtml+="</table>"
   myhtml+=gethtmlfooter()
   filename="./ui/html/broadcastReports.html"

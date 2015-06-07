@@ -9,6 +9,37 @@ def singleRowQuery(cur,query):
   cur.execute(query)
   result=cur.fetchone()
   return result[0]
+def gettringoaudio(rawlist):
+  tringofilelist=rawlist.rstrip(',')
+  tringoArray=tringofilelist.split(',')
+  noOfFiles=len(tringoArray)
+  i=0
+  tringoaudio=''
+  while(i<20):
+    curFileID='27503'
+    if(i < noOfFiles):
+      curFileID=tringoArray[i]
+    i=i+1
+    tringoaudio+="&fileid"+str(i)+"="+curFileID
+  return tringoaudio
+
+def getaudio(cur,rawlist):
+  error=0
+  filelist=rawlist.rstrip(',')
+  filelistArray=filelist.split(',')
+  audio=''
+  for audioFileID in filelistArray:
+    query="select count(*) from audioLibrary where id="+audioFileID
+    audioExists=singleRowQuery(cur,query)
+    if (audioExists == 1):
+      query="select filename from audioLibrary where id="+audioFileID
+#      print query
+      audio+=singleRowQuery(cur,query)
+    else:
+      error=1
+    audio+=','
+  audio=audio.rstrip(',')
+  return audio,error
 
 def main():
   todaydate=datetime.date.today().strftime("%d%B%Y")
@@ -26,39 +57,14 @@ def main():
     bid=str(row[0])
     minhour=str(row[2])
     maxhour=str(row[3])
-    error=0
+    tringoaudio=gettringoaudio(row[4])
+    audio,error=getaudio(cur,row[5])
     print "Broadcast ID"+str(bid)
+    print "Tringo audio is "+tringoaudio;
+    print "audiolist"+audio
     broadcastType=row[1]
     if (broadcastType == "group"):
-      #Lets get audio File names for tringo
-      tringofilelist=row[4].rstrip(',')
-      tringoArray=tringofilelist.split(',')
-      noOfFiles=len(tringoArray)
-      i=0
-      tringoaudio=''
-      while(i<20):
-        curFileID='27503'
-        if(i < noOfFiles):
-          curFileID=tringoArray[i]
-        i=i+1
-        tringoaudio+="&fileid"+str(i)+"="+curFileID
-      print "Tringo audio is "+tringoaudio;
       #Lets first get the audioFileNames
-      filelist=row[5].rstrip(',')
-      filelistArray=filelist.split(',')
-      audio=''
-      for audioFileID in filelistArray:
-        query="select count(*) from audioLibrary where id="+audioFileID
-        audioExists=singleRowQuery(cur,query)
-        if (audioExists == 1):
-          query="select filename from audioLibrary where id="+audioFileID
-          print query
-          audio+=singleRowQuery(cur,query)
-        else:
-          error=1
-        audio+=','
-      audio=audio.rstrip(',')
-      print "audiolist"+audio
          
       groups=row[6].rstrip(',')
       groupArray=groups.split(',')
