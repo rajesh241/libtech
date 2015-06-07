@@ -24,6 +24,10 @@ def gethtmlheader():
     .tdwhite{
     background=#FF0000;
 }
+   th{
+    background-color:  #097054;
+     color: #FFFFFF;
+}
     table {
      margin-bottom: 20px
    }
@@ -47,6 +51,21 @@ def getcountquery(cur,query):
   cur.execute(query)
   countrow=cur.fetchone()
   return countrow[0]
+
+def writecsv(cur,query,filename):
+  f=open(filename,"w");
+  writer = csv.writer(f)
+  cur.execute(query)
+  headerlist=[];
+  #writer.writerow( ('Block', 'Panchayat', 'jobcard','HeadOfFamily','Caste','Issue Date','Village','Applicant No','Applicant Name', 'Age','Gender','Account No','Bank Name') )
+  for header in cur.description:
+    headerlist.append(header[0])
+  writer.writerow(headerlist)
+  results = cur.fetchall()
+  for row in results:
+    writer.writerow(row) 
+  f.close()
+ # print str(cur.description())
 
 def gen2colOptions(inputlabel,inputname,optionArray,curvalue):
   myhtml=""

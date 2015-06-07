@@ -14,8 +14,8 @@ import libtechFunctions
 import globalSettings
 from libtechFunctions import gethtmlheader 
 from libtechFunctions import gethtmlfooter 
-from libtechFunctions import singleRowQuery,arrayToHTMLLine 
-from globalSettings import broadcastsReportFile
+from libtechFunctions import singleRowQuery,arrayToHTMLLine,writecsv 
+from globalSettings import broadcastsReportFile,broadcastReportFilePath
 
 def updateBroadcastTable(cur,bid):
   query="select count(*) from callStatus where status='success' and bid="+str(bid)
@@ -72,9 +72,13 @@ def main():
     successPercentage=0
     if (total > 0):
       successPercentage=math.trunc(success*100/total)
-    reportLink='Download'
+    reportLink='<a href="./'+str(bid)+'_'+name.strip()+'.csv">Download</a>'
     tableArray=[bid,name,startDate,total,pending,success,fail,expired,successPercentage,reportLink] 
     myhtml+=arrayToHTMLLine('td',tableArray)
+    #write csv report
+    csvname=broadcastReportFilePath+str(bid)+"_"+name.strip()+".csv"
+    query="select phone,DATE_FORMAT(callStartTime,'%d-%M-%Y') callTime,status,attempts,duration from callStatus where bid="+str(bid)
+    writecsv(cur,query,csvname)
   myhtml+="</table>"
   myhtml+=gethtmlfooter()
   filename="./ui/html/broadcastReports.html"
