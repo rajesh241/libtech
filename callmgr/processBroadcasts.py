@@ -93,6 +93,7 @@ def main():
           cur.execute(query)
           query="insert into callStatus (bid,phone) values ("+bid+",'"+phone+"');"
           print query
+          cur.execute(query)
               
         
         query="update broadcasts set processed=1 where bid="+bid
