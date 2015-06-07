@@ -44,11 +44,11 @@ def main():
   cur.execute(query)
   query="use libtech"
   cur.execute(query)
-  query="select count(*) from callQueue where inprogress=1 and vendor='exotel'"
+  query="select count(*) from callQueue where inprogress=1 and curVendor='exotel'"
   curQueue=singleRowQuery(cur,query)
   print "Current Queued Calls in Tringo is "+str(curQueue)
   if(curQueue < maxExotelCallQueue):
-    query="select c.id,c.phone,c.exophone from callQueue c,broadcasts b where b.bid=c.bid and c.vendor='exotel' and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 order by retry limit 32"
+    query="select c.id,c.phone,c.exophone from callQueue c,broadcasts b where b.bid=c.bid and (c.vendor='exotel' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 order by retry limit 32"
     print query
     cur.execute(query)
     results = cur.fetchall()
@@ -72,16 +72,16 @@ def main():
         root = ET.fromstring(r.content)
         for Call in root.findall('Call'):
           sid1 = Call.find('Sid').text
-        query="update callQueue set sid='"+sid1+"',callRequestTime=NOW(),inprogress=1 where id="+callid
+        query="update callQueue set sid='"+sid1+"',callRequestTime=NOW(),curVendor='exotel',inprogress=1 where id="+callid
         print query
         cur.execute(query)
 
   #Here below we will write the code to place calls through tringo
-  query="select count(*) from callQueue where inprogress=1 and vendor='tringo'"
+  query="select count(*) from callQueue where inprogress=1 and curVendor='tringo'"
   curQueue=singleRowQuery(cur,query)
   print "Current Queued Calls in Tringo is "+str(curQueue)
   if(curQueue < maxTringoCallQueue):
-    query="select c.id,c.phone,c.audio from callQueue c,broadcasts b where c.bid=b.bid and c.vendor='tringo' and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 order by retry limit 15"
+    query="select c.id,c.phone,c.tringoaudio from callQueue c,broadcasts b where c.bid=b.bid and c.vendor='tringo' and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 order by retry limit 15"
     print query
     cur.execute(query)
     results = cur.fetchall()
@@ -98,7 +98,7 @@ def main():
       print "Tringo SID is "+sid1
       if (sid1.isdigit()):
         print "sid1 contains only digits"
-        query="update callQueue set sid='"+sid1+"',callRequestTime=NOW(),inprogress=1 where id="+callid
+        query="update callQueue set sid='"+sid1+"',callRequestTime=NOW(),curVendor='tringo',inprogress=1 where id="+callid
         print query
         cur.execute(query)
       
