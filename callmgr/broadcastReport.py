@@ -8,8 +8,8 @@ from settings import dbhost,dbuser,dbpasswd,sid,token
 import requests
 import xml.etree.ElementTree as ET
 import sys
-
-sys.path.insert(0, '../includes/')
+fileDir=os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, fileDir+'/../includes/')
 import libtechFunctions
 import globalSettings
 from libtechFunctions import gethtmlheader 
