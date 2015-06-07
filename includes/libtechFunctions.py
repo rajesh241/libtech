@@ -12,7 +12,7 @@ def gethtmlheader():
      <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
      <style>
     table, th, td {
-    border: 2px solid #097054;
+    border: 2px solid #613318;
     border-collapse: collapse;
     }
     td,th {
@@ -25,12 +25,14 @@ def gethtmlheader():
     background=#FF0000;
 }
    th{
-    background-color:  #097054;
+    background-color:  #855723;
      color: #FFFFFF;
 }
     table {
      margin-bottom: 20px
    }
+     a{
+       color:#8F3B1B
 
     </style>
     </head>
@@ -116,7 +118,7 @@ def arrayToHTMLLine(tdtype,tableArray):
       tdclass='#FFFFFF'
     else:
       i=0
-      tdclass='#CCCCCC'
+      tdclass='#B99C6B'
     if isinstance(a, basestring):
       htmlLine+='<'+tdtype+' bgcolor="'+tdclass+'">'+a+'</'+tdtype+'>'
     else:
