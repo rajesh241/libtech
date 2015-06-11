@@ -65,47 +65,62 @@ def main():
     broadcastType=row[1]
     if (broadcastType == "group"):
       #Lets first get the audioFileNames
-      print "Broadcast Type is Group" 
+         
       groups=row[6].rstrip(',')
       groupArray=groups.split(',')
-      groupMatchString=''
+      queryMatchString='( '
       for group in groupArray:
         query="select name from groups where id="+group
         groupName=singleRowQuery(cur,query)
         print group+groupName
-        groupMatchString+="  groups like '%~"+groupName+"~%' or"
+        queryMatchString+="  groups like '%~"+groupName+"~%' or"
         print '\n'
-      groupMatchString=groupMatchString[:-2]
-      if (error == 0):
-        query="select phone,exophone from addressbook where ("+groupMatchString+") and dnd='no'"
-        cur.execute(query)
-        results1 = cur.fetchall()
-        for r in results1:
-          phone=r[0]
-          exophone=r[1]
-          print phone
-          query="insert into callQueue (vendor,bid,minhour,maxhour,phone,audio,tringoaudio,exophone) values ('any',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
-          cur.execute(query)
-          query="insert into callStatus (bid,phone) values ("+bid+",'"+phone+"');"
-          print query
-          cur.execute(query)
-        query="select phone from addressbook where ("+groupMatchString+") and dnd !='no'"
-        cur.execute(query)
-        results1 = cur.fetchall()
-        for r in results1:
-          phone=r[0]
-          print phone
-          query="insert into callQueue (vendor,bid,minhour,maxhour,phone,tringoaudio) values ('tringo',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+tringoaudio+"');"
-          cur.execute(query)
-          query="insert into callStatus (bid,phone) values ("+bid+",'"+phone+"');"
-          print query
-          cur.execute(query)
-              
-        
-        query="update broadcasts set processed=1 where bid="+bid
-        cur.execute(query)
+      queryMatchString=queryMatchString[:-2]
+      queryMatchString+=")"
+    elif (broadcastType == "geosurguja"):
+      district='surguja'
+      blocks=row[7].rstrip(',')
+      panchayats=row[8].rstrip(',')
+      panchayatArray=panchayats.split(',')
+      #First we need to check if panchayat name contains all then we dont need to loop through all panchayats
+      if 'all' in panchayatArray:
+        queryMatchString="district='"+district+"' and block='"+blocks+"' "
       else:
-        query="update broadcasts set error=1 where bid="+bid
+        queryMatchString="district='"+district+"' and block='"+blocks+"' and ("
+        for panchayat in panchayatArray:
+          if (panchayat != '0'):
+            queryMatchString+=" panchayat ='"+panchayat+"' or" 
+        queryMatchString=queryMatchString[:-2]
+        queryMatchString+=")"
+      print "We are on Geo Surguja"
+      print queryMatchString
+    else:
+      error=1
+    if (error == 0):
+      query="select phone,exophone,dnd from addressbook where "+queryMatchString+" "
+      print query
+      cur.execute(query)
+      results1 = cur.fetchall()
+      for r in results1:
+        phone=r[0]
+        exophone=r[1]
+        dnd=r[2]
+        if(dnd == 'no'):
+          vendor='exotel'
+        else:
+          vendor='any'
+        #print phone
+        query="insert into callQueue (vendor,bid,minhour,maxhour,phone,audio,tringoaudio,exophone) values ('"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
         cur.execute(query)
+        query="insert into callStatus (bid,phone) values ("+bid+",'"+phone+"');"
+        #print query
+        cur.execute(query)
+            
+      
+      query="update broadcasts set processed=1 where bid="+bid
+      #cur.execute(query)
+    else:
+      query="update broadcasts set error=1 where bid="+bid
+      cur.execute(query)
 if __name__ == '__main__':
   main()
