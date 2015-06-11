@@ -16,31 +16,6 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `Broadcasts`
---
-
-DROP TABLE IF EXISTS `Broadcasts`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `Broadcasts` (
-  `bid` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) DEFAULT NULL,
-  `lid` int(11) DEFAULT '0',
-  `gid` int(11) DEFAULT '0',
-  `tid` int(11) DEFAULT '0',
-  `vid` int(11) DEFAULT '0',
-  `processed` tinyint(1) DEFAULT '0',
-  `tfileid` int(11) DEFAULT NULL,
-  `minhour` int(11) DEFAULT NULL,
-  `maxhour` int(11) DEFAULT NULL,
-  `startDate` datetime DEFAULT NULL,
-  `endDate` datetime DEFAULT NULL,
-  `completed` tinyint(1) DEFAULT '0',
-  PRIMARY KEY (`bid`)
-) ENGINE=InnoDB AUTO_INCREMENT=211 DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `CompletedCalls`
 --
 
@@ -162,7 +137,7 @@ CREATE TABLE `ToCall` (
   `maxhour` int(11) DEFAULT NULL,
   `callRequestTime` datetime DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`cid`)
-) ENGINE=InnoDB AUTO_INCREMENT=38366 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=38374 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -223,16 +198,20 @@ DROP TABLE IF EXISTS `addressbook`;
 CREATE TABLE `addressbook` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `phone` varchar(10) NOT NULL,
-  `region` varchar(10) NOT NULL,
   `district` varchar(40) DEFAULT NULL,
   `block` varchar(40) DEFAULT NULL,
   `panchayat` varchar(40) DEFAULT NULL,
   `jobcard` varchar(40) DEFAULT NULL,
   `pdsno` varchar(40) DEFAULT NULL,
   `ts` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `groups` blob,
+  `dnd` varchar(10) DEFAULT 'unknown',
+  `circle` varchar(10) DEFAULT NULL,
+  `operatorName` varchar(20) DEFAULT NULL,
+  `exophone` varchar(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `phone` (`phone`)
-) ENGINE=InnoDB AUTO_INCREMENT=2243 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=24030 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -329,8 +308,98 @@ CREATE TABLE `audioLibrary` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(64) NOT NULL,
   `ts` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `filename` varchar(72) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=1028 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `broadcasts`
+--
+
+DROP TABLE IF EXISTS `broadcasts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `broadcasts` (
+  `bid` int(11) NOT NULL AUTO_INCREMENT,
+  `ts` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `name` varchar(255) DEFAULT NULL,
+  `type` varchar(30) DEFAULT NULL,
+  `vid` varchar(20) DEFAULT 'any',
+  `startDate` datetime DEFAULT NULL,
+  `endDate` datetime DEFAULT NULL,
+  `minhour` tinyint(4) DEFAULT '8',
+  `maxhour` tinyint(4) DEFAULT '21',
+  `tfileid` varchar(1024) DEFAULT NULL,
+  `fileid` varchar(1024) DEFAULT NULL,
+  `groups` varchar(2048) DEFAULT NULL,
+  `blocks` varchar(40) DEFAULT NULL,
+  `panchayats` varchar(2048) DEFAULT NULL,
+  `approved` tinyint(1) DEFAULT '0',
+  `processed` tinyint(1) DEFAULT '0',
+  `completed` tinyint(1) DEFAULT '0',
+  `error` tinyint(1) DEFAULT '0',
+  `total` int(11) DEFAULT '0',
+  `pending` int(11) DEFAULT '0',
+  `success` int(11) DEFAULT '0',
+  `fail` int(11) DEFAULT '0',
+  `expired` int(11) DEFAULT '0',
+  PRIMARY KEY (`bid`)
+) ENGINE=InnoDB AUTO_INCREMENT=1016 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `callLogs`
+--
+
+DROP TABLE IF EXISTS `callLogs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `callLogs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `ts` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `bid` int(11) DEFAULT NULL,
+  `vendor` varchar(20) DEFAULT 'NULL',
+  `phone` varchar(10) DEFAULT NULL,
+  `retry` tinyint(4) DEFAULT '0',
+  `sid` varchar(50) DEFAULT NULL,
+  `callRequestTime` datetime DEFAULT NULL,
+  `callStartTime` datetime DEFAULT NULL,
+  `duration` smallint(6) DEFAULT '0',
+  `status` varchar(20) DEFAULT NULL,
+  `audio` varchar(1024) DEFAULT NULL,
+  `vendorCallStatus` varchar(30) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=27980 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `callQueue`
+--
+
+DROP TABLE IF EXISTS `callQueue`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `callQueue` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `ts` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `bid` int(11) DEFAULT NULL,
+  `vendor` varchar(20) DEFAULT 'NULL',
+  `phone` varchar(10) DEFAULT NULL,
+  `minhour` tinyint(4) DEFAULT '8',
+  `maxhour` tinyint(4) DEFAULT '21',
+  `wait` tinyint(4) DEFAULT '0',
+  `audio` varchar(1024) DEFAULT NULL,
+  `retry` tinyint(4) DEFAULT '0',
+  `sid` varchar(50) DEFAULT NULL,
+  `inprogress` tinyint(1) DEFAULT '0',
+  `isTest` tinyint(1) DEFAULT '0',
+  `callRequestTime` datetime DEFAULT NULL,
+  `exophone` varchar(11) DEFAULT NULL,
+  `tringoaudio` varchar(1024) DEFAULT NULL,
+  `curVendor` varchar(20) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=11520 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -348,8 +417,12 @@ CREATE TABLE `callStatus` (
   `phone` varchar(10) DEFAULT NULL,
   `maxRetryFail` tinyint(1) DEFAULT '0',
   `attempts` int(11) DEFAULT '0',
+  `vendor` varchar(20) DEFAULT NULL,
+  `duration` smallint(6) DEFAULT '0',
+  `status` varchar(20) DEFAULT 'pending',
+  `callStartTime` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=480782 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=492598 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -424,7 +497,7 @@ CREATE TABLE `ghattuMissedCalls` (
   `ctime` datetime DEFAULT NULL,
   `processed` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=325 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=333 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -455,7 +528,7 @@ CREATE TABLE `ghattuMissedCallsLog` (
   `isUpdate` tinyint(1) DEFAULT '0',
   `finalStatus` varchar(10) DEFAULT 'open',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=42901 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=72259 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -475,6 +548,48 @@ CREATE TABLE `ghattu_ab` (
   `successrate` int(11) DEFAULT '100',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3142 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `groups`
+--
+
+DROP TABLE IF EXISTS `groups`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `groups` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) DEFAULT NULL,
+  `description` varchar(256) DEFAULT NULL,
+  `isActive` tinyint(1) DEFAULT '1',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=1011 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `oldbroadcasts`
+--
+
+DROP TABLE IF EXISTS `oldbroadcasts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `oldbroadcasts` (
+  `bid` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) DEFAULT NULL,
+  `lid` int(11) DEFAULT '0',
+  `gid` int(11) DEFAULT '0',
+  `tid` int(11) DEFAULT '0',
+  `vid` int(11) DEFAULT '0',
+  `processed` tinyint(1) DEFAULT '0',
+  `tfileid` int(11) DEFAULT NULL,
+  `minhour` int(11) DEFAULT NULL,
+  `maxhour` int(11) DEFAULT NULL,
+  `startDate` datetime DEFAULT NULL,
+  `endDate` datetime DEFAULT NULL,
+  `completed` tinyint(1) DEFAULT '0',
+  PRIMARY KEY (`bid`)
+) ENGINE=InnoDB AUTO_INCREMENT=211 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -660,4 +775,4 @@ CREATE TABLE `tring_ap_numbers` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2015-05-27 17:46:23
+-- Dump completed on 2015-06-11  8:35:03
