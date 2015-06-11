@@ -65,7 +65,7 @@ def main():
     broadcastType=row[1]
     if (broadcastType == "group"):
       #Lets first get the audioFileNames
-         
+      print "Broadcast Type is Group" 
       groups=row[6].rstrip(',')
       groupArray=groups.split(',')
       groupMatchString=''
