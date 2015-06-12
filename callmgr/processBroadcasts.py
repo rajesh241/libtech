@@ -104,21 +104,25 @@ def main():
       for r in results1:
         phone=r[0]
         exophone=r[1]
+        if exophone is None:
+          exophone="08033545179"
         dnd=r[2]
         if(dnd == 'no'):
           vendor='exotel'
         else:
           vendor='any'
-        #print phone
-        query="insert into callQueue (vendor,bid,minhour,maxhour,phone,audio,tringoaudio,exophone) values ('"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
-        cur.execute(query)
-        query="insert into callStatus (bid,phone) values ("+bid+",'"+phone+"');"
-        #print query
-        cur.execute(query)
+        print phone
+        if len(phone) == 10 and phone.isdigit():
+          query="insert into callQueue (vendor,bid,minhour,maxhour,phone,audio,tringoaudio,exophone) values ('"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
+          print query
+          cur.execute(query)
+          query="insert into callStatus (bid,phone) values ("+bid+",'"+phone+"');"
+          print query
+          cur.execute(query)
             
       
       query="update broadcasts set processed=1 where bid="+bid
-      #cur.execute(query)
+      cur.execute(query)
     else:
       query="update broadcasts set error=1 where bid="+bid
       cur.execute(query)
