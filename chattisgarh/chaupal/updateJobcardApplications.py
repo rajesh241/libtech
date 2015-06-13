@@ -24,14 +24,15 @@ for file in os.listdir(xmldir):
     xmlname=xmldir+"/"+file
     r=open(xmlname,'r').read()
     root = ET.fromstring(r)
-    for entity in root.findall('newJobcardApplication'):
-      block = entity.find('block').text
-      panchayat = entity.find('panchayat').text
-      applicantName = entity.find('applicantName').text
-      relationName = entity.find('relationName').text
-      applicationDate = entity.find('applicationDate').text
-      print applicationDate
-      query="insert into jobcardApplications (ts,block,panchayat,applicantName,relationName,applicationDate) values ("+ts+",'"+block+"','"+panchayat+"','"+applicantName+"','"+relationName+"','"+applicationDate+"');"
+    for entity in root.findall('newJobcardApplicationUpdate'):
+      jid = entity.find('id').text
+     # remarks = entity.find('remarks').text
+      status = entity.find('status').text
+     # if remarks is None:
+      remarks='None';
+      #query="insert into jobcardApplications (ts,block,panchayat,applicantName,relationName,applicationDate) values ("+ts+",'"+block+"','"+panchayat+"','"+applicantName+"','"+relationName+"','"+applicationDate+"');"
+      query="update jobcardApplications set status='"+status+"',remarks='"+remarks+"' where id="+str(jid)
+      print query
       try:
         cur.execute(query)
       except MySQLdb.IntegrityError,e:
