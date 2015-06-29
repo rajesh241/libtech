@@ -1,4 +1,5 @@
 <?php
+$target_dir = $_SERVER["DOCUMENT_ROOT"]."/audio/";
 $htmlheader='
   <html>
   <head>
@@ -17,13 +18,14 @@ if (!$mydbcon){
 }else{
   $query="use libtech";
   mysqli_query($mydbcon,$query);
-  $query="select id,name from audioLibrary order by ts desc";
+  $query="select id,name,filename from audioLibrary order by ts desc";
   $results=mysqli_query($mydbcon,$query);
   print "<table>";
   print "<tr><th>File ID</th><th>File Name</th></tr>";
   while($row = mysqli_fetch_array($results)){
           print "<tr>";
-    print "<td>".$row['id']."</td><td>".$row['name']."</td>";
+    $audioLink='<a href="'.$target_dir.$row["filename"].'">Download></a>';
+    print "<td>".$row['id']."</td><td>".$row['name']."</td><td>".$audioLink."</td>";
     print "</tr>";
   }
   print "</table>";
