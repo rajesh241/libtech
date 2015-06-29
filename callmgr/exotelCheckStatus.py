@@ -98,7 +98,7 @@ def main():
   cur.execute(query)
   query="use libtech"
   cur.execute(query)
-  query="select id,sid,bid,callRequestTime,phone,retry,audio,curVendor,tringoaudio,isTest from callQueue where inprogress=1 "
+  query="select id,sid,bid,callRequestTime,phone,retry,audio,curVendor,tringoaudio,isTest,TIMESTAMPDIFF(HOUR, callRequestTime, now())  from callQueue where inprogress=1 "
   cur.execute(query)
   results = cur.fetchall()
   print "curhour is "+curhour
@@ -115,6 +115,7 @@ def main():
     vendor=row[7]
     tringoaudio=row[8]
     isTest=row[9]
+    timeDiff=row[10]
     if(vendor == 'exotel'):
       callinprogress,callpass,callfail,callStartTime,duration,vendorCallStatus = exotelCallStatus(sid,token,callsid)
     elif(vendor == 'tringo'):
@@ -163,7 +164,11 @@ def main():
       query="insert into callLogs (vendor,bid,sid,phone,retry,callRequestTime,callStartTime,duration,status,audio,vendorCallStatus) values ('"+vendor+"',"+bid+",'"+callsid+"','"+phone+"',"+str(retry)+",'"+callRequestTime+"','"+callStartTime+"',"+str(duration)+",'"+curCallStatus+"','"+audio+"','"+vendorCallStatus+"');"
       print query
       cur.execute(query)
-
-
+    else:
+      if(timeDiff > 48):
+        curCallStatus='Error';
+        query="insert into callLogs (vendor,sid,bid,phone,retry,callRequestTime,status) values ('"+vendor+"',"+bid+",'"+callsid+"','"+phone+"',"+str(retry)+",'"+callRequestTime+"','"+curCallStatus+"');"
+        print query
+        
 if __name__ == '__main__':
   main()
