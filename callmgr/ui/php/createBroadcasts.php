@@ -19,7 +19,7 @@ while($row=mysqli_fetch_array($results)){
 
 <html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en">
 <head>
-	<title>Multiple Select Boxes</title>
+	<title>Libtech Create Broadcasts</title>
   <link rel="stylesheet" type="text/css" href="../css/basic.css">
 	<script type="text/javascript" src="../scripts/jquery-1.4.2.js"></script>
 	<script type="text/javascript">

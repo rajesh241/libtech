@@ -66,7 +66,7 @@ if (!$mydbcon){
           $error=1;
         }
         if($error == 0){ 
-        $query="insert into broadcasts (name,type,startDate,endDate,minhour,maxhour,tfileid,fileid,groups,district,blocks,panchayats) values ('".$name."','".$type."','".$startDate."','".$endDate."',".$minhour.",".$maxhour.",'".$tfileid."','".$fileid."','".$groupString."','".$district."','".$block."','".$panchayatString."');";
+        $query="insert into broadcasts (name,type,vendor,startDate,endDate,minhour,maxhour,tfileid,fileid,groups,district,blocks,panchayats) values ('".$name."','".$vendor."','".$type."','".$startDate."','".$endDate."',".$minhour.",".$maxhour.",'".$tfileid."','".$fileid."','".$groupString."','".$district."','".$block."','".$panchayatString."');";
         mysqli_query($mydbcon,$query);
         $id=mysqli_insert_id($mydbcon);
         print "<h4>Congratulations !! Broadcast ".$name." added with ID ".$id."</h4>";

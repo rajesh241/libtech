@@ -50,7 +50,7 @@ def main():
   cur.execute(query)
   query="use libtech"
   cur.execute(query)
-  query="select bid,type,minhour,maxhour,tfileid,fileid,groups,blocks,panchayats from broadcasts where approved=1 and processed=0 and startDate <= CURDATE();"
+  query="select bid,type,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats from broadcasts where approved=1 and processed=0 and startDate <= CURDATE();"
   cur.execute(query)
   results = cur.fetchall()
   for row in results:
@@ -59,6 +59,7 @@ def main():
     maxhour=str(row[3])
     tringoaudio=gettringoaudio(row[4])
     audio,error=getaudio(cur,row[5])
+    vendor=row[7]
     print "Broadcast ID"+str(bid)
     print "Tringo audio is "+tringoaudio;
     print "audiolist"+audio
@@ -79,8 +80,8 @@ def main():
       queryMatchString+=")"
     elif (broadcastType == "geosurguja"):
       district='surguja'
-      blocks=row[7].rstrip(',')
-      panchayats=row[8].rstrip(',')
+      blocks=row[9].rstrip(',')
+      panchayats=row[10].rstrip(',')
       panchayatArray=panchayats.split(',')
       #First we need to check if panchayat name contains all then we dont need to loop through all panchayats
       if 'all' in panchayatArray:
@@ -107,12 +108,14 @@ def main():
         if exophone is None:
           exophone="08033545179"
         dnd=r[2]
+        skip=0
         if(dnd == 'yes'):
-          vendor='tringo'
+          if( (vendor == "any") or (vendor =="tringo"))
+            vendor='tringo'
         else:
-          vendor='any'
+          skip=1 
         print phone
-        if len(phone) == 10 and phone.isdigit():
+        if len(phone) == 10 and phone.isdigit() and skip == 0:
           query="insert into callQueue (vendor,bid,minhour,maxhour,phone,audio,tringoaudio,exophone) values ('"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
           print query
           cur.execute(query)
