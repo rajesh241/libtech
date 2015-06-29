@@ -166,9 +166,14 @@ def main():
       cur.execute(query)
     else:
       if(timeDiff > 48):
-        curCallStatus='Error';
-        query="insert into callLogs (vendor,sid,bid,phone,retry,callRequestTime,status) values ('"+vendor+"',"+bid+",'"+callsid+"','"+phone+"',"+str(retry)+",'"+callRequestTime+"','"+curCallStatus+"');"
+        curCallStatus='error';
+        print "I am in Expired Loop"
+        query="insert into callLogs (vendor,bid,sid,phone,retry,callRequestTime,status) values ('"+vendor+"',"+bid+",'"+callsid+"','"+phone+"',"+str(retry)+",'"+callRequestTime+"','"+curCallStatus+"');"
         print query
+        cur.execute(query)
+        query="delete from callQueue where id="+callid
+        print query
+        cur.execute(query)
         
 if __name__ == '__main__':
   main()
