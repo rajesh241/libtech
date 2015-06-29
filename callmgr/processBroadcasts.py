@@ -107,8 +107,8 @@ def main():
         if exophone is None:
           exophone="08033545179"
         dnd=r[2]
-        if(dnd == 'no'):
-          vendor='exotel'
+        if(dnd == 'yes'):
+          vendor='tringo'
         else:
           vendor='any'
         print phone
