@@ -21,10 +21,10 @@ if (!$mydbcon){
   $query="select id,name,filename from audioLibrary order by ts desc";
   $results=mysqli_query($mydbcon,$query);
   print "<table>";
-  print "<tr><th>File ID</th><th>File Name</th></tr>";
+  print "<tr><th>File ID</th><th>File Name</th><th>Download Link </th></tr>";
   while($row = mysqli_fetch_array($results)){
           print "<tr>";
-    $audioLink='<a href="'.$target_dir.$row["filename"].'">Download></a>';
+    $audioLink='<a href="'."/audio/".$row["filename"].'">Download</a>';
     print "<td>".$row['id']."</td><td>".$row['name']."</td><td>".$audioLink."</td>";
     print "</tr>";
   }
