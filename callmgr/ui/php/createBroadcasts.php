@@ -14,44 +14,61 @@ while($row=mysqli_fetch_array($results)){
         #$groupoption.='<option value="'.$row["id"].'" >'.$row["name"].'</option>';
         $groupoption.='<input type="checkbox" name="groups[]" value="'.$row["id"].'">'.$row["name"].'<br>';
 }//While loop ends
-//Getting Surguja Block and Panchayat Names
-$query="select name from blocks where isActive=1";
-$surgujaBlockOptions=fetchOptions($mydbcon,$query,"surguja");
-$panchayatOptions=panchayatOptions($mydbcon);
 ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<html>
-  <head>
-          <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-          <link rel="stylesheet" type="text/css" href="../css/basic.css">
-          <script src="../scripts/jquery.min.js">
-          </script>
-    
-          <script language="javascript" type="text/javascript">
-            $(function(){
-        
-              $("#broadcast-options").on("change", function() {
-            
-                $("#"+$(this).val()+"-table").removeClass("hidden").siblings("table").addClass("hidden")
-            
-              })
-            
-              $("#block-options").on("change", function() {
-            
-                $("#"+$(this).val()+"-options").removeClass("hidden").siblings("div").addClass("hidden")
-        
-              })
-        
-            });
-          </script>
-          <title>
-            Create Edit Broadcasts 
-          </title>
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en">
+<head>
+	<title>Multiple Select Boxes</title>
+  <link rel="stylesheet" type="text/css" href="../css/basic.css">
+	<script type="text/javascript" src="../scripts/jquery-1.4.2.js"></script>
+	<script type="text/javascript">
 
-  </head>
-        <h1> Create or Edit Broadcasts </h1>
-        <form action="./../php/broadcastRequest.php" method="POST">
-        <table  >
+		$(document).ready(function() {
+		$('#loader').hide();
+	
+		$('#district').change(function(){
+
+			$('#block').fadeOut();
+			$('#loader').show();
+
+			$.post("./ajax_block.php", {
+				district: $('#district').val()
+			}, function(response){
+				setTimeout("finishAjax('block', '"+escape(response)+"')", 400);
+			});
+			return false;
+		});
+
+		$('#block').change(function(){
+
+			$('#panchayat').fadeOut();
+			$('#loader').show();
+
+			$.post("./ajax_panchayat.php", {
+				district: $('#district').val(),
+				block: $('#block').val()
+			}, function(response){
+				setTimeout("finishAjax('panchayat', '"+escape(response)+"')", 400);
+			});
+			return false;
+		});
+
+		});
+
+		function finishAjax(id, response){
+	 	 $('#loader').hide();
+	 	 $('#'+id).html(unescape(response));
+	 	 $('#'+id).fadeIn();
+		}
+	</script>
+</head>
+<body>
+<div id="loader"><strong>Loading...</strong></div>
+<h1> Create or Edit Broadcasts </h1>
+<form name="theform" id="form" method="POST" action="./../php/br.php">
+
+<table  >
                 <tbody>
                         <tr>
                                 <td>Name of Broadcast 
@@ -74,69 +91,31 @@ $panchayatOptions=panchayatOptions($mydbcon);
                                   </td>
                                   <td><select name="broadcastType" id="broadcast-options">
                                 <option value="group" selected>Group</option>
-                                <option value="geosurguja">Location Specific Chattisgarh</option>
+                                <option value="location">Location </option>
                                   </td>
                           </tr>
                           <tr>
-                           <td colspan="2">
-                             <table id="group-table">
-                               <tbody>
-                                <tr>
-                                  <td>
-                                    Group Name
+                                  <td>Select Vendor
                                   </td>
-                                  <td>
-                                           <?php print $groupoption ?>
-
+                                  <td><select name="vendor" >
+                                <option value="any" selected>Any</option>
+                                <option value="tringo" >Tringo</option>
+                                <option value="exotel" >exotel</option>
                                   </td>
-                                </tr>
-                              </tbody>
-                      
-                              </table>
-                              
-                              <table id="geosurguja-table" class="hidden">
-                             	<tbody>
-                             	  <tr>
-                             	    <td>Block Name
-                             	    </td>
-                             	    <td><select  name="block" id="block-options" >
-			                             <option value="0" selected>--Select-One--</option>
-                                <?php print $surgujaBlockOptions ?>
-                             	      </select>
-                             	    </td>
-                             	  </tr>
-                                <tr>
-		                              <td>Panchayat Name: पंचायत का नाम
-		                              </td>
-		                              <td>
-		                                   <div id="panchayat-options" >
-			                                   <select multiple name="panchayat[]" id="Default">
-			                                     <option value="0" selected>--Select-One--</option>
-			                                   </select>
-                                      </div>
-                                        <?php print $panchayatOptions ?>
-		                                  </div>
-		                                </td>
-                                </tr>
+                          </tr>
 
-                              	</tbody>
-                                    </table>
-                             </td>  
-                           </tr>
-                           
-
-                        <tr>
+                <tr>
                                 <td>Tringo File ID (You can give multiple file IDs seperated by comma) 
                                 </td>
                                 <td>
-                                        <input required name="tfileid" type="text" size="50"></input>
+                                        <input  name="tfileid" type="text" size="50"></input>
                                 </td>
                         </tr>        
                         <tr>
                                 <td>Libtech File ID (You can give multiple file IDs seperated by comma)
                                 </td>
                                 <td>
-                                        <input required name="fileid" type="text" size="50"></input>
+                                        <input  name="fileid" type="text" size="50"></input>
                                 </td>
                         </tr>        
                         <tr>
@@ -199,14 +178,58 @@ $panchayatOptions=panchayatOptions($mydbcon);
                                         </select>
                                 </td>
                         </tr>
+                        <tr>
+                                  <td>Select the Groups (THIS FIELD IS VALID ONLY IF BROADCAST TYPE IS GROUP)
+                                  </td>
+                                  <td>
+                                           <?php print $groupoption ?>
+                                  </td>
+                          </tr>
                            <tr>
+                                <td>District (THIS FIELD IS VALID ONLY IF BROADCAST TYPE IS LOCATION)
+
+                                </td>
+                             <td >
+		<select id="district" name="district">
+			<option value="">-- Select District --</option>
+			<?php
+	      $query="SELECT district FROM districts ORDER BY district ASC";
+        $q=mysqli_query($mydbcon,$query);
+				while($row = mysqli_fetch_array($q))
+				{
+					echo '<option value="'.$row['district'].'">'.$row['district'].'</option>';
+				}
+			?>
+    </select>
+</td>
+                        </tr>
+<tr>
+                                <td>Block  (THIS FIELD IS VALID ONLY IF BROADCAST TYPE IS LOCATION)
+                                </td>
+<td>
+		<select id="block" name="block">
+			<option value="">-- Select Block --</option>
+    </select>
+</td>
+                        </tr>
+<tr>
+                                <td>Panchayat  (THIS FIELD IS VALID ONLY IF BROADCAST TYPE IS LOCATION)
+                                </td>
+<td>
+
+		<select multiple name="panchayat[]" id="panchayat">
+			<option value="">-- Select panchayat --</option>
+		</select>
+</td>
+</tr>
+           <tr>
                              <td colspan="2" align="center">
                                <button type="submit">Submit</button>
                              </td>
                      </tr>
+
              </tbody>               
       </table>
-    </form>
-
-    
+</form>
+</body>
 </html>
