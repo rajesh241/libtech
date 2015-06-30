@@ -1,14 +1,18 @@
 import MySQLdb
 import datetime
 import os
+import sys
 
-
+fileDir=os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, fileDir+'/../includes/')
+import libtechFunctions
+import globalSettings
+import settings
 from settings import dbhost,dbuser,dbpasswd,sid,token
+from libtechFunctions import gethtmlheader 
+from libtechFunctions import gethtmlfooter 
+from libtechFunctions import singleRowQuery,arrayToHTMLLine,writecsv 
 
-def singleRowQuery(cur,query):
-  cur.execute(query)
-  result=cur.fetchone()
-  return result[0]
 def gettringoaudio(rawlist):
   tringofilelist=rawlist.rstrip(',')
   tringoArray=tringofilelist.split(',')
@@ -22,6 +26,38 @@ def gettringoaudio(rawlist):
     i=i+1
     tringoaudio+="&fileid"+str(i)+"="+curFileID
   return tringoaudio
+def getGroupQueryMatchString(cur,rawgroup):
+  groups=rawgroup.rstrip(',')
+  groupArray=groups.split(',')
+  queryMatchString='( '
+  for group in groupArray:
+    query="select name from groups where id="+group
+    #print query
+    groupName=singleRowQuery(cur,query)
+    #print group+groupName
+    queryMatchString+="  groups like '%~"+groupName+"~%' or"
+    #print '\n'
+  queryMatchString=queryMatchString[:-2]
+  queryMatchString+=")"
+  return queryMatchString
+def getLocationQueryMatchString(rawdistrict,rawblock,rawpanchayat):
+  district=rawdistrict
+  blocks=rawblock
+  panchayats=rawpanchayat
+  panchayatArray=panchayats.split(',')
+  #First we need to check if panchayat name contains all then we dont need to loop through all panchayats
+  if 'all' in panchayatArray:
+    queryMatchString="district='"+district+"' and block='"+blocks+"' "
+  else:
+    queryMatchString="district='"+district+"' and block='"+blocks+"' and ("
+    for panchayat in panchayatArray:
+      if (panchayat != '0'):
+        queryMatchString+=" panchayat ='"+panchayat+"' or" 
+    queryMatchString=queryMatchString[:-2]
+    queryMatchString+=")"
+  #print "We are in Location" 
+  #print queryMatchString
+  return queryMatchString
 
 def getaudio(cur,rawlist):
   error=0
@@ -63,40 +99,18 @@ def main():
     print "Broadcast ID"+str(bid)
     print "Tringo audio is "+tringoaudio;
     print "audiolist"+audio
+    print "Broadcast Type "+broadcastType
+    print "QueryMatchString "+queryMatchString
     broadcastType=row[1]
     if (broadcastType == "group"):
       #Lets first get the audioFileNames
-         
-      groups=row[6].rstrip(',')
-      groupArray=groups.split(',')
-      queryMatchString='( '
-      for group in groupArray:
-        query="select name from groups where id="+group
-        groupName=singleRowQuery(cur,query)
-        print group+groupName
-        queryMatchString+="  groups like '%~"+groupName+"~%' or"
-        print '\n'
-      queryMatchString=queryMatchString[:-2]
-      queryMatchString+=")"
-    elif (broadcastType == "geosurguja"):
-      district='surguja'
-      blocks=row[9].rstrip(',')
-      panchayats=row[10].rstrip(',')
-      panchayatArray=panchayats.split(',')
-      #First we need to check if panchayat name contains all then we dont need to loop through all panchayats
-      if 'all' in panchayatArray:
-        queryMatchString="district='"+district+"' and block='"+blocks+"' "
-      else:
-        queryMatchString="district='"+district+"' and block='"+blocks+"' and ("
-        for panchayat in panchayatArray:
-          if (panchayat != '0'):
-            queryMatchString+=" panchayat ='"+panchayat+"' or" 
-        queryMatchString=queryMatchString[:-2]
-        queryMatchString+=")"
-      print "We are on Geo Surguja"
-      print queryMatchString
+      queryMatchString=getGroupQueryMatchString(cur,row[6]) 
+    elif (broadcastType == "location"):
+      queryMatchString=getLocationQueryMatchString(row[8],row[9],row[10])
     else:
       error=1
+
+
     if (error == 0):
       query="select phone,exophone,dnd from addressbook where "+queryMatchString+" "
       print query
@@ -110,7 +124,7 @@ def main():
         dnd=r[2]
         skip=0
         if(dnd == 'yes'):
-          if( (vendor == "any") or (vendor =="tringo"))
+          if( (vendor == "any") or (vendor =="tringo")):
             vendor='tringo'
         else:
           skip=1 

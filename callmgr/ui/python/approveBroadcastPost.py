@@ -41,6 +41,10 @@ def main():
     query="update broadcasts set approved=1 where bid="+str(bid)
     cur.execute(query)
     myhtml+='<h3>Broadcast %s Approved</h3>' %(str(bid))
+  elif(formType == 'error'):
+    query="update broadcasts set error=1 where bid="+str(bid)
+    cur.execute(query)
+    myhtml+='<h3>Broadcast %s has been market as Error</h3>' %(str(bid))
   else:
     phone=form["phone"].value
     query="select fileid,tfileid from broadcasts where bid="+str(bid)
