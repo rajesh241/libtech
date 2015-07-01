@@ -155,7 +155,7 @@ def main():
           cur.execute(query)
       else:
       #We need to update callQueue with new retry count and inprogress=0
-        query="update callQueue set curVendor='',sid='',retry="+str(retry)+",inprogress=0 where id="+callid
+        query="update callQueue set curVendor='',sid='',retry="+str(retry)+",inprogress=0,preference=0 where id="+callid
         print query
         cur.execute(query)
         curCallStatus = "fail"
