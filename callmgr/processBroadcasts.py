@@ -87,6 +87,7 @@ def main():
   query="use libtech"
   cur.execute(query)
   query="select bid,type,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats from broadcasts where approved=1 and processed=0 and startDate <= CURDATE();"
+  print query
   cur.execute(query)
   results = cur.fetchall()
   for row in results:
@@ -96,11 +97,7 @@ def main():
     tringoaudio=gettringoaudio(row[4])
     audio,error=getaudio(cur,row[5])
     vendor=row[7]
-    print "Broadcast ID"+str(bid)
-    print "Tringo audio is "+tringoaudio;
-    print "audiolist"+audio
-    print "Broadcast Type "+broadcastType
-    print "QueryMatchString "+queryMatchString
+    print "Vendor "+vendor
     broadcastType=row[1]
     if (broadcastType == "group"):
       #Lets first get the audioFileNames
@@ -111,6 +108,12 @@ def main():
       error=1
 
 
+    print "Broadcast ID"+str(bid)
+    print "Tringo audio is "+tringoaudio;
+    print "audiolist"+audio
+    print "Broadcast Type "+broadcastType
+    print "QueryMatchString "+queryMatchString
+    print "Vendor "+vendor
     if (error == 0):
       query="select phone,exophone,dnd from addressbook where "+queryMatchString+" "
       print query
@@ -126,9 +129,12 @@ def main():
         if(dnd == 'yes'):
           if( (vendor == "any") or (vendor =="tringo")):
             vendor='tringo'
+          else:
+            vendor="any"
+            skip=1 
         else:
-          skip=1 
-        print phone
+          vendor='any';
+        print "phone "+phone+" skip"+str(skip)+"vendor "+vendor
         if len(phone) == 10 and phone.isdigit() and skip == 0:
           query="insert into callQueue (vendor,bid,minhour,maxhour,phone,audio,tringoaudio,exophone) values ('"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
           print query

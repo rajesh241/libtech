@@ -66,7 +66,7 @@ while($row=mysqli_fetch_array($results)){
 <body>
 <div id="loader"><strong>Loading...</strong></div>
 <h1> Create or Edit Broadcasts </h1>
-<form name="theform" id="form" method="POST" action="./../php/br.php">
+<form name="theform" id="form" method="POST" action="./../php/broadcastRequest.php">
 
 <table  >
                 <tbody>
