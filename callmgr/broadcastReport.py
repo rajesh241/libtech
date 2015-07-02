@@ -48,7 +48,7 @@ def main():
   myhtml=gethtmlheader()
   myhtml+="<h1>Summary of Broadcasts</h1>"
   myhtml+="<table>"
-  tableArray=['Broadcast ID', 'Broadcast Name','Start Date','Total','Pending','Success','Fail','Expired','Success %','Detail Report'] 
+  tableArray=['Broadcast ID', 'Broadcast Name','Start Date','retry','Total','Pending','Success','Fail','Expired','Success %','Detail Report'] 
   myhtml+=arrayToHTMLLine('th',tableArray)
   print myhtml
   query="select bid,completed from broadcasts where bid>1000 order by bid DESC"
@@ -60,6 +60,12 @@ def main():
     completed=row[1]
     print "Current Bid is"+str(bid)
     updateBroadcastTable(cur,bid)
+    minretry = ''
+    if (completed == 0):
+      query="select min(retry) from callQueue where bid="+str(bid)
+      cur.execute(query)
+      row1=cur.fetchone()
+      minretry=row1[0]
     query="select name,DATE_FORMAT(startDate,'%d-%M-%Y'),total,pending,success,fail,expired from broadcasts where bid="+str(bid)
     cur.execute(query)
     row1=cur.fetchone()
@@ -74,7 +80,7 @@ def main():
     if (total > 0):
       successPercentage=math.trunc(success*100/total)
     reportLink='<a href="./'+str(bid)+'_'+name.strip()+'.csv">Download</a>'
-    tableArray=[bid,name,startDate,total,pending,success,fail,expired,successPercentage,reportLink] 
+    tableArray=[bid,name,startDate,minretry,total,pending,success,fail,expired,successPercentage,reportLink] 
     myhtml+=arrayToHTMLLine('td',tableArray)
     #write csv report
     csvname=broadcastReportFilePath+str(bid)+"_"+name.strip()+".csv"

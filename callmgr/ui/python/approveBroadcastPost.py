@@ -32,7 +32,6 @@ def main():
   cur.execute(query)
   query="use libtech"
   cur.execute(query)
-  #print "Printing Broadcast reports"
   myhtml=gethtmlheader()
   form = cgi.FieldStorage()
   formType=form["formType"].value
@@ -60,11 +59,13 @@ def main():
       maxhour='23'
       exophone='02233814264'
       vendor=formType
-      query="insert into callQueue (isTest,vendor,bid,minhour,maxhour,phone,audio,tringoaudio,exophone) values (1,'"+vendor+"',"+str(bid)+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
+      query="insert into callQueue (isTest,priority,vendor,bid,minhour,maxhour,phone,audio,tringoaudio,exophone) values (1,20,'"+vendor+"',"+str(bid)+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
       #print query 
       cur.execute(query)
       myhtml+="<h3>Test Call Placed on number %s</h3>" %(phone)
       myhtml+="<p>Please Note that it may take about 5-10 minutes to get the test call based on system load. Please sit back and relax for sometime and ensure that your phone is not on silent</p>"
+    else:
+      print "<h4> Some error has occured. Probably the fileID is not correct</h4>";
   #myhtml+="<h1> Thank You for Doing %s</h1>" %(formType) 
   myhtml+='<h3><a href="./approveBroadcast.py"> Return to Approve Broadcast Page</a></h3>'
   myhtml+='<h3><a href="./../html/broadcastsMain.html"> Return to Main Broadcast Page </a></h3>'
