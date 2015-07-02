@@ -122,7 +122,7 @@ def main():
       callinprogress,callpass,callfail,callStartTime,duration,vendorCallStatus = tringoCallStatus(sid,token,callsid)
     #Here we need to put additional check to see if the call has errred or not. If the difference between the callRequest time and now() is created that 48 hours then we shall mark the calls as errors 
     callError=0
-    if((timeDiff > 48) and (callinprogress == 1)):
+    if((timeDiff > 8) and (callinprogress == 1)):
       callinprogress=0
       callError=1
       duration=0
