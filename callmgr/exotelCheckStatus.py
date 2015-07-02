@@ -120,7 +120,12 @@ def main():
       callinprogress,callpass,callfail,callStartTime,duration,vendorCallStatus = exotelCallStatus(sid,token,callsid)
     elif(vendor == 'tringo'):
       callinprogress,callpass,callfail,callStartTime,duration,vendorCallStatus = tringoCallStatus(sid,token,callsid)
-
+    #Here we need to put additional check to see if the call has errred or not. If the difference between the callRequest time and now() is created that 48 hours then we shall mark the calls as errors 
+    callError=0
+    if((timeDiff > 48) and (callinprogress == 1)):
+      callinprogress=0
+      callError=1
+      duration=0
     finalCallSuccess=0
     finalCallmaxRetryFail=0
     finalCallExpired=0
@@ -148,7 +153,6 @@ def main():
           curCallStatus = "fail"
           finalCallmaxRetryFail=1
           finalCallStatus='failMaxRetry'
-        query="insert into callStatus (bid,attempts,success,maxRetryFail,expired,phone,vendor,duration) values ("+bid+","+str(retry)+","+str(finalCallSuccess)+","+str(finalCallmaxRetryFail)+","+str(finalCallExpired)+",'"+phone+"','"+vendor+"',"+str(duration)+");"
         query="update callStatus set status='"+finalCallStatus+"',attempts="+str(retry)+",vendor='"+vendor+"',duration="+str(duration)+",callStartTime='"+callStartTime+"' where  bid="+bid+" and phone='"+phone+"';"
         print query
         if(isTest == 0):
@@ -159,21 +163,13 @@ def main():
         print query
         cur.execute(query)
         curCallStatus = "fail"
+        if(callError ==1):
+          curCallStatus='error'
       if(vendor == 'tringo'):
         audio=tringoaudio
       query="insert into callLogs (vendor,bid,sid,phone,retry,callRequestTime,callStartTime,duration,status,audio,vendorCallStatus) values ('"+vendor+"',"+bid+",'"+callsid+"','"+phone+"',"+str(retry)+",'"+callRequestTime+"','"+callStartTime+"',"+str(duration)+",'"+curCallStatus+"','"+audio+"','"+vendorCallStatus+"');"
       print query
       cur.execute(query)
-    else:
-      if(timeDiff > 48):
-        curCallStatus='error';
-        print "I am in Expired Loop"
-        query="insert into callLogs (vendor,bid,sid,phone,retry,callRequestTime,status) values ('"+vendor+"',"+bid+",'"+callsid+"','"+phone+"',"+str(retry)+",'"+callRequestTime+"','"+curCallStatus+"');"
-        print query
-        cur.execute(query)
-        query="delete from callQueue where id="+callid
-        print query
-        cur.execute(query)
         
 if __name__ == '__main__':
   main()

@@ -51,7 +51,7 @@ def main():
   tableArray=['Broadcast ID', 'Broadcast Name','Start Date','retry','Total','Pending','Success','Fail','Expired','Success %','Detail Report'] 
   myhtml+=arrayToHTMLLine('th',tableArray)
   print myhtml
-  query="select bid,completed from broadcasts where bid>1000 order by bid DESC"
+  query="select bid,completed from broadcasts where bid>1000 and error=0 order by bid DESC"
   print query
   cur.execute(query)
   results = cur.fetchall()
