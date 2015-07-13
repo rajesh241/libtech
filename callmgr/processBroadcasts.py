@@ -86,7 +86,7 @@ def main():
   cur.execute(query)
   query="use libtech"
   cur.execute(query)
-  query="select bid,type,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats from broadcasts where error=0 and approved=1 and processed=0 and startDate <= CURDATE();"
+  query="select bid,type,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats,priority from broadcasts where error=0 and approved=1 and processed=0 and startDate <= CURDATE();"
   print query
   cur.execute(query)
   results = cur.fetchall()
@@ -97,6 +97,7 @@ def main():
     tringoaudio=gettringoaudio(row[4])
     audio,error=getaudio(cur,row[5])
     vendor=row[7]
+    priority=row[11]
     print "Vendor "+vendor
     broadcastType=row[1]
     if (broadcastType == "group"):
@@ -136,7 +137,7 @@ def main():
           vendor='any';
         print "phone "+phone+" skip"+str(skip)+"vendor "+vendor
         if len(phone) == 10 and phone.isdigit() and skip == 0:
-          query="insert into callQueue (vendor,bid,minhour,maxhour,phone,audio,tringoaudio,exophone) values ('"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
+          query="insert into callQueue (priority,vendor,bid,minhour,maxhour,phone,audio,tringoaudio,exophone) values ("+str(priority)+",'"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
           print query
           cur.execute(query)
           query="insert into callStatus (bid,phone) values ("+bid+",'"+phone+"');"

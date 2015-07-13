@@ -62,7 +62,7 @@ def main():
     updateBroadcastTable(cur,bid)
     minretry = ''
     if (completed == 0):
-      query="select min(retry) from callQueue where bid="+str(bid)
+      query="select max(retry) from callQueue where bid="+str(bid)
       cur.execute(query)
       row1=cur.fetchone()
       minretry=row1[0]

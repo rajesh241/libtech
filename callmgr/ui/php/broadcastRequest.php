@@ -25,6 +25,7 @@ if (!$mydbcon){
         $groups=$_POST['groups'];
         $startDate=$_POST['startDate'];
         $endDate=$_POST['endDate'];
+        $priority=$_POST['priority']; 
         $minhour=$_POST['minhour']; 
         $maxhour=$_POST['maxhour'];
         $groupString='';
@@ -66,7 +67,7 @@ if (!$mydbcon){
           $error=1;
         }
         if($error == 0){ 
-        $query="insert into broadcasts (name,vendor,type,startDate,endDate,minhour,maxhour,tfileid,fileid,groups,district,blocks,panchayats) values ('".$name."','".$vendor."','".$type."','".$startDate."','".$endDate."',".$minhour.",".$maxhour.",'".$tfileid."','".$fileid."','".$groupString."','".$district."','".$block."','".$panchayatString."');";
+        $query="insert into broadcasts (priority,name,vendor,type,startDate,endDate,minhour,maxhour,tfileid,fileid,groups,district,blocks,panchayats) values (".$priority.",'".$name."','".$vendor."','".$type."','".$startDate."','".$endDate."',".$minhour.",".$maxhour.",'".$tfileid."','".$fileid."','".$groupString."','".$district."','".$block."','".$panchayatString."');";
         mysqli_query($mydbcon,$query);
         $id=mysqli_insert_id($mydbcon);
         print "<h4>Congratulations !! Broadcast ".$name." added with ID ".$id."</h4>";

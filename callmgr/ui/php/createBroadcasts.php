@@ -132,6 +132,25 @@ while($row=mysqli_fetch_array($results)){
                                         <input required name="endDate" type="date" ></input>
                                 </td>
                         </tr>
+                             <tr>
+                                <td>Priority (You can set the priority of the call, 1 is default, 10 is highest, For general Broadcasts 1 is a good value, for meeting request you can set it to 5. For extremely urgent Broadcasts you can set it to 10
+                                </td>
+                                <td>
+                                        <select name="priority">
+                                                <option value="1" selected >1 </option>
+                                                <option value="2" >2 </option>
+                                                <option value="3" >3 </option>
+                                                <option value="4" >4 </option>
+                                                <option value="5" >5 </option>
+                                                <option value="6" >6 </option>
+                                                <option value="7" >7 </option>
+                                                <option value="8" >8 </option>
+                                                <option value="9" >9 </option>
+                                                <option value="10" >10 </option>
+                                        </select>
+                                </td>
+                        </tr>
+
                         <tr>
                                 <td>Minimum Hour (Calls will not go before this hour) 
                                 </td>
