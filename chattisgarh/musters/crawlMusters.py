@@ -28,7 +28,7 @@ fullfinyear='2015-2016'
 finyear='16'
 districtName="SURGUJA"
 #Query to get all the blocks
-query="select stateCode,districtCode,blockCode,name from blocks"
+query="select stateCode,districtCode,blockCode,name from blocks where isActive=1"
 #query="select stateCode,districtCode,blockCode,name from blocks where blockCode='002'"
 cur.execute(query)
 results = cur.fetchall()

@@ -6,11 +6,15 @@ import os
 import time
 import re
 import sys
+fileDir=os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, fileDir+'/../../includes/')
+from settings import dbhost,dbuser,dbpasswd,sid,token
+from globalSettings import datadir
 #Getting the block code
-inblock=sys.argv[1]
-print inblock
+#inblock=sys.argv[1]
+#print inblock
 #Connect to MySQL Database
-db = MySQLdb.connect(host="localhost", user="root", passwd="ccmpProject**", db="surguja",charset='utf8')
+db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, db="surguja",charset='utf8')
 cur=db.cursor()
 db.autocommit(True)
 #Query to set up Database to read Hindi Characters
@@ -21,9 +25,9 @@ regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
 
 #File Path where all the Downloaded FTOs would be placed
 districtName="SURGUJA"
-musterfilepath="/home/libtech/data/CHATTISGARH/"+districtName+"/"
-query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.isDownloaded=0 ;"
-query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.isDownloaded=0 and m.musterType='10' and m.blockCode='"+inblock+"';"
+musterfilepath=datadir+"/CHATTISGARH/"+districtName+"/"
+query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isActive=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isSurvey=1 and m.finyear='16' and m.isDownloaded=0 and m.musterType='10';"
+#query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.isDownloaded=0 and m.musterType='10' and m.blockCode='"+inblock+"';"
 print query
 cur.execute(query)
 results = cur.fetchall()
@@ -79,6 +83,6 @@ for row in results:
       os.makedirs(os.path.dirname(musterfilename))
     f = open(musterfilename, 'w')
     f.write(myhtml1.encode("UTF-8"))
-    query="update musters set isDownloaded=1 where id="+str(musterid)
+    query="update musters set isDownloaded=1,downloadDate=NOW() where id="+str(musterid)
     print query
     cur.execute(query)

@@ -44,6 +44,11 @@ def main():
     query="update broadcasts set error=1 where bid="+str(bid)
     cur.execute(query)
     myhtml+='<h3>Broadcast %s has been market as Error</h3>' %(str(bid))
+  elif(formType == 'vendor'):
+    vendor = form["vendorName"].value
+    query="update broadcasts set vendor='" + vendor + "' where bid=" +  str(bid)
+    cur.execute(query)
+    myhtml+='<h3>Vendor has been updated for %s</h3>' %(str(bid))
   else:
     phone=form["phone"].value
     query="select fileid,tfileid from broadcasts where bid="+str(bid)

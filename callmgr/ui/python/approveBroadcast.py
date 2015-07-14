@@ -22,9 +22,22 @@ from libtechFunctions import gethtmlheader
 from libtechFunctions import gethtmlfooter 
 from libtechFunctions import singleRowQuery,arrayToHTMLLine,writecsv 
 from globalSettings import broadcastsReportFile,broadcastReportFilePath
-def getform(bid,formtype,inputType,buttonText):
-  formhtml='<form action="./approveBroadcastPost.py" method="POST"><input name="bid" value="%s" type="hidden"><input name="formType" value="%s" type="hidden"></input><input name="phone" type="%s" size="10" ></input><button type="submit">%s</button></form>' %(bid,formtype,inputType,buttonText)
+def getform(bid,formtype,inputElement,buttonText):
+  formhtml='<br /><form action="./approveBroadcastPost.py" method="POST"><input name="bid" value="%s" type="hidden"><input name="formType" value="%s" type="hidden"></input>%s<button type="submit">%s</button></form>' %(bid,formtype,inputElement,buttonText)
   return formhtml
+
+def dropdownOptionSet(html, str):
+  '''
+  Sets the option as selected for the chosen dropdown
+  '''
+  if str != "":
+    old_str = '<option value="' + str + '">'
+    new_str = old_str.replace('">', '" selected>')
+    return html.replace(old_str, new_str)
+  else:
+    return html
+
+
 def main():
   print 'Content-type: text/html'
   print 
@@ -50,7 +63,17 @@ def main():
   for row in results:
     bid=row[0]
     name=row[1]
-    vendor=row[7]
+    vendor_value=row[7]
+    vendor = '''
+<select name="vendorName">
+  <option value="any">Any</option>
+  <option value="tringo">Tringo</option>
+  <option value="exotel">Exotel</option>
+</select>
+    '''
+    vendor = dropdownOptionSet(vendor, vendor_value)
+    vendorhtml = getform(str(bid),'vendor', vendor,'Update Vendor')
+    
     #print "BID for Broadcast is "+str(bid)
     broadcastType=row[2]
     if (broadcastType == "group"):
@@ -70,11 +93,12 @@ def main():
 
    # print "Current Bid is"+str(bid)
     #updateBroadcastTable(cur,bid)
-    exotelhtml=getform(str(bid),'exotel','text','Test Exotel')
-    tringohtml=getform(str(bid),'tringo','text','Test Tringo')
-    approvehtml=getform(str(bid),'approve','hidden','Approve')
-    errorhtml=getform(str(bid),'error','hidden','Mark Error')
-    tableArray=[bid,name,vendor,exotelhtml,tringohtml,notes,approvehtml,errorhtml] 
+    formElement = '<input name="phone" type="text" size="10" ></input>'
+    exotelhtml=getform(str(bid),'exotel',formElement,'Test Exotel')
+    tringohtml=getform(str(bid),'tringo',formElement,'Test Tringo')
+    approvehtml=getform(str(bid),'approve',' ','Approve')
+    errorhtml=getform(str(bid),'error',' ','Mark Error')
+    tableArray=[bid,name,vendorhtml,exotelhtml,tringohtml,notes,approvehtml,errorhtml] 
     myhtml+=arrayToHTMLLine('td',tableArray)
     #write csv report
   myhtml+="</table>"

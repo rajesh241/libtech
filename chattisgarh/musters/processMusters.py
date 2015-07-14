@@ -7,6 +7,10 @@ import re
 import os
 import sys
 import os.path
+fileDir=os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, fileDir+'/../../includes/')
+from settings import dbhost,dbuser,dbpasswd,sid,token
+from globalSettings import datadir
 
 #It has two </td> Tags in HTML 
 regex=re.compile(r'</td></font></td>',re.DOTALL)
@@ -15,20 +19,20 @@ errorfile = open('/tmp/processMusters.log', 'a')
 testfile = open('/tmp/f.html', 'w')
 #File Path where all the Downloaded FTOs would be placed
 districtName="SURGUJA"
-musterfilepath="/home/libtech/data/CHATTISGARH/"+districtName+"/"
+musterfilepath=datadir+"/CHATTISGARH/"+districtName+"/"
 #Connect to MySQL Database
-db = MySQLdb.connect(host="localhost", user="root", passwd="ccmpProject**", db="surguja",charset='utf8')
+db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, db="surguja",charset='utf8')
 cur=db.cursor()
 db.autocommit(True)
 #Query to set up Database to read Hindi Characters
 query="SET NAMES utf8"
 cur.execute(query)
 
-inblock=sys.argv[1]
-print inblock
+#inblock=sys.argv[1]
+#print inblock
 #Query to get the Musters 
 query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.isProcessed=0 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.blockCode='002' limit 1;"
-query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.isProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.blockCode='"+inblock+"' ;"
+query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.isProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.finyear='16' limit 1;"
 cur.execute(query)
 if cur.rowcount:
   results = cur.fetchall()
@@ -41,13 +45,13 @@ if cur.rowcount:
     workCode=row[5]
     if finyear=='16':
       fullfinyear='2015-2016'
-    if finyear=='15':
+    elif finyear=='15':
       fullfinyear='2014-2015'
     else:
       fullfinyear='2013-2014'
     print str(musterID)+"  "+fullfinyear+"  "+musterNo+"  "+blockName+"  "+panchayatName
     musterfilename=musterfilepath+blockName+"/"+panchayatName+"/MUSTERS/"+fullfinyear+"/"+musterNo+".html"
-    
+    print musterfilename 
     if (os.path.isfile(musterfilename)): 
       musterhtml1=open(musterfilename,'r').read()
       musterhtml=re.sub(regex,"</font></td>",musterhtml1)
