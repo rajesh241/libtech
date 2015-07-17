@@ -35,6 +35,7 @@ def tringoCallStatus (sid,token,callsid):
   callpass=0
   callfail=0
   duration=0
+  price=0
   callStartTime=''
   if (lenArray == 9):
     print "Length of Status is "+str(lenArray)
@@ -51,10 +52,18 @@ def tringoCallStatus (sid,token,callsid):
       duration=int(callEndTimeEpoch)-int(callStartTimeEpoch)
       #print str(callStartTimeEpoch)+"\n"
       #print str(callEndTimeEpoch)+"\n"
+      price=statusArray[6]
+       
+      price = float(price.strip(' "'))
+
     if(status == "INCOMPLETE"):
       callfail=1
       callinprogress=0
-  return callinprogress,callpass,callfail,callStartTime,duration,status 
+      
+    cost=price*100   # Store in paise
+    print( "Cost[%s]" % cost)
+
+    return callinprogress,callpass,callfail,callStartTime,duration,cost,status
 
 def exotelCallStatus (sid,token,callsid):
   url="https://"+sid+":"+token+"@twilix.exotel.in/v1/Accounts/"+sid+"/Calls/"+callsid
@@ -71,11 +80,15 @@ def exotelCallStatus (sid,token,callsid):
        status = Call.find('Status').text
        callStartTime = Call.find('StartTime').text
        duration = Call.find('Duration').text
+       price = Call.find('Price').text
+         
      if(status == "completed"):
        callinprogress=0
        callpass=1
        print "The Call has been completed Successfully"
-       if duration is None:
+       print("Cost[%s]" % cost)
+       
+       if (duration is None) or (price is None):
          duration=0
          callinprogress=1 #Make call in progress1 if the duration field is not updated. That means the duration field will get updated in sometime
      elif(status == "busy" or status=="no-answer" or status=="failed"):
@@ -83,7 +96,14 @@ def exotelCallStatus (sid,token,callsid):
        callinprogress=0
        callfail=1
        print "The Call has failed"
-  return callinprogress,callpass,callfail,callStartTime,duration,status 
+
+     if price == None:
+       price="0"
+
+     price = float(price.strip(' "'))  
+     cost=price*100   # Store in paise
+     
+  return callinprogress,callpass,callfail,callStartTime,duration,cost,status
 
 
 def main():
@@ -120,9 +140,9 @@ def main():
     isTest=row[9]
     timeDiff=row[10]
     if(vendor == 'exotel'):
-      callinprogress,callpass,callfail,callStartTime,duration,vendorCallStatus = exotelCallStatus(sid,token,callsid)
+      callinprogress,callpass,callfail,callStartTime,duration,cost,vendorCallStatus = exotelCallStatus(sid,token,callsid)
     elif(vendor == 'tringo'):
-      callinprogress,callpass,callfail,callStartTime,duration,vendorCallStatus = tringoCallStatus(sid,token,callsid)
+      callinprogress,callpass,callfail,callStartTime,duration,cost,vendorCallStatus = tringoCallStatus(sid,token,callsid)
     #Here we need to put additional check to see if the call has errred or not. If the difference between the callRequest time and now() is created that 48 hours then we shall mark the calls as errors 
     callError=0
     if((timeDiff > 8) and (callinprogress == 1)):
@@ -134,6 +154,7 @@ def main():
     finalCallExpired=0
     print "status received from exotel is "+vendorCallStatus
     print "Duration of the call is "+str(duration)
+    print "Cost of the call is " + str(cost)
     print "call pass "+str(callpass)+"callfail ="+str(callfail)
     ###Now we have all the variables to implement our logic
     if(callinprogress == 0):
@@ -170,7 +191,7 @@ def main():
           curCallStatus='error'
       if(vendor == 'tringo'):
         audio=tringoaudio
-      query="insert into callLogs (vendor,bid,sid,phone,retry,callRequestTime,callStartTime,duration,status,audio,vendorCallStatus) values ('"+vendor+"',"+bid+",'"+callsid+"','"+phone+"',"+str(retry)+",'"+callRequestTime+"','"+callStartTime+"',"+str(duration)+",'"+curCallStatus+"','"+audio+"','"+vendorCallStatus+"');"
+      query="insert into callLogs (vendor,bid,sid,phone,retry,callRequestTime,callStartTime,duration,cost,status,audio,vendorCallStatus) values ('"+vendor+"',"+bid+",'"+callsid+"','"+phone+"',"+str(retry)+",'"+callRequestTime+"','"+callStartTime+"',"+str(duration)+","+str(cost)+",'"+curCallStatus+"','"+audio+"','"+vendorCallStatus+"');"
       print query
       cur.execute(query)
         
