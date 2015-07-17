@@ -2,6 +2,8 @@ import MySQLdb
 import datetime
 import os
 import time
+fileDir=os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, fileDir+'/../includes/')
 from settings import dbhost,dbuser,dbpasswd,sid,token
 import requests
 import xml.etree.ElementTree as ET
