@@ -84,7 +84,12 @@ def main():
     else:
       queryMatchString=" district='abcd'"
       error=1
-    query="select count(*) from addressbook where "+queryMatchString+" "
+    #Additional parameters for eliminating DND numbers while selecting vendor
+    if vendor_value == 'exotel':
+      additionalQuery=" dnd = 'no' and "
+    else:
+      additionalQuery=''
+    query="select count(*) from addressbook where "+additionalQuery+queryMatchString+" "
     #print query
     cur.execute(query)
     row1=cur.fetchone()

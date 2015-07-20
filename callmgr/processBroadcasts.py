@@ -96,9 +96,9 @@ def main():
     maxhour=str(row[3])
     tringoaudio=gettringoaudio(row[4])
     audio,error=getaudio(cur,row[5])
-    vendor=row[7]
+    requestedVendor=row[7]
     priority=row[11]
-    print "Vendor "+vendor
+    print "Vendor "+requestedVendor
     broadcastType=row[1]
     if (broadcastType == "group"):
       #Lets first get the audioFileNames
@@ -114,7 +114,7 @@ def main():
     print "audiolist"+audio
     print "Broadcast Type "+broadcastType
     print "QueryMatchString "+queryMatchString
-    print "Vendor "+vendor
+    print "Vendor "+requestedVendor
     if (error == 0):
       query="select phone,exophone,dnd from addressbook where "+queryMatchString+" "
       print query
@@ -128,13 +128,13 @@ def main():
         dnd=r[2]
         skip=0
         if(dnd == 'yes'):
-          if( (vendor == "any") or (vendor =="tringo")):
+          if( (requestedVendor == "any") or (requestedVendor =="tringo")):
             vendor='tringo'
           else:
             vendor="any"
             skip=1 
         else:
-          vendor='any';
+          vendor=requestedVendor;
         print "phone "+phone+" skip"+str(skip)+"vendor "+vendor
         if len(phone) == 10 and phone.isdigit() and skip == 0:
           query="insert into callQueue (priority,vendor,bid,minhour,maxhour,phone,audio,tringoaudio,exophone) values ("+str(priority)+",'"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
