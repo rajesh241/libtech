@@ -86,7 +86,6 @@ def exotelCallStatus (sid,token,callsid):
        callinprogress=0
        callpass=1
        print "The Call has been completed Successfully"
-       print("Cost[%s]" % cost)
        
        if (duration is None) or (price is None):
          duration=0
@@ -102,6 +101,7 @@ def exotelCallStatus (sid,token,callsid):
 
      price = float(price.strip(' "'))  
      cost=price*100   # Store in paise
+     print("Cost[%s]" % cost)
      
   return callinprogress,callpass,callfail,callStartTime,duration,cost,status
 
