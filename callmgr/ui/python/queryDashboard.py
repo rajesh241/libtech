@@ -24,6 +24,8 @@ from libtechFunctions import gethtmlfooter
 from libtechFunctions import singleRowQuery,arrayToHTMLLine,writecsv 
 from globalSettings import broadcastsReportFile,broadcastReportFilePath
 
+def getCenterAligned(text):
+  return '<div align="center">%s</div>' % text
 
 def htmlWrapper(title = None, head = None, body = None):
   html_text = '''
@@ -115,9 +117,6 @@ def getTableHtml(cur, query, query_caption=None, field_names=None, extra=None):
     table_html += "</tr>"
 
   table_html += '''
-      <tr>
-        <td colspan="colspan_value"><div align=center><a href="#"><h5>Top</h5></a></div></td>
-      </tr>
     </tbody>
   </table>
 </div>
@@ -232,7 +231,7 @@ def queryDB():
     query_caption = '<div id=query%d>Query: #%d <a name=query%d></a></div>' % (qid, qid, qid)
 #    query_caption = 'Query <a href="#%d">#%d</a>' % (qid, qid)
     myhtml += getTableHtml(cur,query, query_caption)
-    myhtml += "<br />"
+    myhtml += getCenterAligned('<a href="#"><h5>Top</h5></a></div>') + '<br />'
   
   myhtml=htmlWrapper(title="Query Dashboard", head='<h1 aling="center"><a href="./queryDashboard.py">Query Dashboard</a></h1>', body=myhtml)
   return myhtml
