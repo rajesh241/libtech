@@ -24,7 +24,7 @@ from libtechFunctions import gethtmlfooter
 from libtechFunctions import singleRowQuery,arrayToHTMLLine,writecsv 
 from globalSettings import broadcastsReportFile,broadcastReportFilePath
 
-from queryDashboard import queryDB,getTableHtml,htmlWrapper, getForm, getQueryTable
+from queryDashboard import queryDB,getTableHtml,htmlWrapper, getForm, getQueryTable, getCenterAligned
 
 def main():
   print 'Content-type: text/html'
@@ -47,7 +47,7 @@ def main():
     query = form["query"].value
     
   if query[0:7] != "select ":
-    myhtml+='<h3 style="color:red"> ERROR: Tried [%s]. Only "select ...." queries allowed</h3>' % (query)
+    myhtml+= '<br />' + getCenterAligned('<h5 style="color:red"> ERROR: Tried [%s]. Only "select ...." queries allowed</h5>' % (query))
   elif(formType == 'queryMake'):
     myhtml+=getTableHtml(cur,query)
     #myhtml += getForm(0, 'queryMake', 'Go', query)
@@ -55,15 +55,15 @@ def main():
   elif(formType == 'queryAdd'):
     cur.execute('insert into queryDB (query) VALUES ("%s")' % query)
     myhtml+=getQueryTable(cur)
-    myhtml+='<h3>Query [%s] Added</h3>' % form["query"].value
+    myhtml+= '<br />' + getCenterAligned('<h5 style="color:green">Query [%s] Added</h5>' % query)
   elif(formType == 'queryDelete'):
     query='delete from queryDB where qid=' +  str(qid)
     cur.execute(query)
     myhtml+='<h3>Vendor has been updated for %s</h3>' %(str(bid))
   else:
-    myhtml+="<h1> Error Tried %s</h1>" % (formType) 
+    myhtml+= getCenterAligned('<h5> Error Tried %s</h5>' % (formType)) 
 
-  myhtml+='<h4>Return to the <a href="./queryDashboard.py">Query Dashboard</a></h4>'
+  myhtml+= '<br />' + getCenterAligned('<h5>Return to the <a href="./queryDashboard.py">Query Dashboard</a></h5>')
 
   myhtml=htmlWrapper(title="Query Dashboard", head='<h1 aling="center"><a href="./queryDashboard.py">Query Dashboard</a></h1>', body=myhtml)
   print myhtml
