@@ -32,7 +32,7 @@ cur.execute(query)
 #print inblock
 #Query to get the Musters 
 query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.isProcessed=0 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.blockCode='002' limit 1;"
-query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.isProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.finyear='16' limit 1;"
+query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.isProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.finyear='16' limit 10;"
 cur.execute(query)
 if cur.rowcount:
   results = cur.fetchall()
@@ -66,7 +66,7 @@ if cur.rowcount:
     else:
       htmlsoup=BeautifulSoup(musterhtml)
       try:
-        table=htmlsoup.find('table',bordercolor="#458CC0")
+        table=htmlsoup.find('table',id="ctl00_ContentPlaceHolder1_grdShowRecords")
         rows = table.findAll('tr')
         errorflag=0
       except:

@@ -1,7 +1,8 @@
 while true
 do 
     date 
-    python downloadMusters.py $1 
-    sleep 1
+    python downloadMusters.py  
+    rm -rf /tmp/tmp*
+    sleep 10
 done
 

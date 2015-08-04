@@ -94,6 +94,15 @@ while($row=mysqli_fetch_array($results)){
                                 <option value="location">Location </option>
                                   </td>
                           </tr>
+       <tr>
+                                  <td>Broadcast Template
+                                  </td>
+                                  <td><select name="broadcastTemplate" >
+                                <option value="general" selected>General Broadcast</option>
+                                <option value="feedback">Feedback Broadcast </option>
+                                  </td>
+                          </tr>
+
                           <tr>
                                   <td>Select Vendor
                                   </td>

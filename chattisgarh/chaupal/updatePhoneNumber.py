@@ -47,6 +47,15 @@ for file in os.listdir(xmldir):
       jobcard = entity.find('jobcard').text
       phone = entity.find('phone').text
       if (phone is not None):
+        ###Updating Jobcard
+        query="select count(*) from jobcardPhone where jobcard='"+jobcard+"';"
+        count=singleRowQuery(cur,query)
+        if(count ==0):
+          query="insert into jobcardPhone (jobcard,phone) values ('"+jobcard+"','"+phone+"');"
+        else:
+          query="update jobcardPhone set phone='"+phone+"' where jobcard='"+jobcard+"'"
+        cur.execute(query)
+
         query="select count(*) from addressbook where phone='"+phone+"';"
         print query
         count=singleRowQuery(cur,query)

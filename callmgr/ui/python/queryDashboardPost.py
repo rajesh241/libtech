@@ -24,7 +24,8 @@ from libtechFunctions import gethtmlfooter
 from libtechFunctions import singleRowQuery,arrayToHTMLLine,writecsv 
 from globalSettings import broadcastsReportFile,broadcastReportFilePath
 
-from queryDashboard import queryDB,getTableHtml,htmlWrapper, getForm, getQueryTable, getCenterAligned
+from bootstrap_utils import bsQuery2Html, htmlWrapper, getForm, getCenterAligned
+from queryDashboard import getQueryTable, queryDB
 
 def main():
   print 'Content-type: text/html'
@@ -49,9 +50,9 @@ def main():
   if query[0:7] != "select ":
     myhtml+= '<br />' + getCenterAligned('<h5 style="color:red"> ERROR: Tried [%s]. Only "select ...." queries allowed</h5>' % (query))
   elif(formType == 'queryMake'):
-    myhtml+=getTableHtml(cur,query)
-    #myhtml += getForm(0, 'queryMake', 'Go', query)
-    myhtml += getForm(0, 'queryAdd', 'Add', query)
+    myhtml+=bsQuery2Html(cur,query)
+    #myhtml += getForm(0, './queryDashboardPost.py', 'queryMake', 'Go', query)
+    myhtml += getForm(0, './queryDashboardPost.py', 'queryAdd', 'Add', query)
   elif(formType == 'queryAdd'):
     cur.execute('insert into queryDB (query) VALUES ("%s")' % query)
     myhtml+=getQueryTable(cur)
