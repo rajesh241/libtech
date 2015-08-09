@@ -46,9 +46,13 @@ def main():
   cur.execute(query)
   query="use surguja"
   cur.execute(query)
+  query="select name from blocks where blockCode='%s'" % blockCode
+  blockName=singleRowQuery(cur,query)
+  myhtml=''
   #blockCode='003'
   query="select blockCode BlockCode,panchayatCode PanchayatCode,name Panchayats,totalJobcards TotalJobcards,totalWorkers TotalWorkers,totalMobiles TotalMobiles from panchayats where isSurvey=1 and blockCode="+blockCode
-  myhtml = getQueryTable(cur, query)
+  myhtml+=  getCenterAligned('<h2 style="color:blue"> %s</h2>' % (blockName.upper()))
+  myhtml+= getQueryTable(cur, query)
 
   myhtml += getCenterAligned('<a href="#"><h5>Top</h5></a></div>') + '<br />'
   

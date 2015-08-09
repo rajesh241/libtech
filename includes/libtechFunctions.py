@@ -5,6 +5,13 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
+import re
+
+def getjcNumber(jobcard):
+  jobcardArray=jobcard.split('/')
+#  print jobcardArray[1]
+  jcNumber=re.sub("[^0-9]", "", jobcardArray[1])
+  return jcNumber
 
 def gmailSendMail(recipient,subject,body):
   # The below code never changes, though obviously those variables need values.

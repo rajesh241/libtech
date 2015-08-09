@@ -31,8 +31,18 @@ def main():
   form = cgi.FieldStorage()
   blockCode=form["blockCode"].value
   panchayatCode=form["panchayatCode"].value
+  query="select name from blocks where blockCode='%s'" % blockCode
+  cur.execute(query)
+  row=cur.fetchone()
+  blockName=row[0]
+  query="select name from panchayats where blockCode='%s' and panchayatCode='%s'" % (blockCode,panchayatCode)
+  cur.execute(query)
+  row=cur.fetchone()
+  panchayatName=row[0]
+
+
   query='''
-select surguja.jobcardRegister.jobcard jobcard,Group_CONCAT(surguja.jobcardDetails.applicantName ) names, libtech.jobcardPhone.phone phone,surguja.jobcardRegister.caste,surguja.jobcardRegister.village from surguja.jobcardDetails,surguja.jobcardRegister left join libtech.jobcardPhone on surguja.jobcardRegister.jobcard=libtech.jobcardPhone.jobcard where surguja.jobcardRegister.blockCode='%s' and surguja.jobcardRegister.panchayatCode='%s' and surguja.jobcardDetails.jobcard=surguja.jobcardRegister.jobcard group by surguja.jobcardRegister.jobcard; 
+select surguja.jobcardRegister.jobcard jobcard,Group_CONCAT(surguja.jobcardDetails.applicantName ) names, libtech.jobcardPhone.phone phone,surguja.jobcardRegister.caste,surguja.jobcardRegister.village from surguja.jobcardDetails,surguja.jobcardRegister left join libtech.jobcardPhone on surguja.jobcardRegister.jobcard=libtech.jobcardPhone.jobcard where surguja.jobcardRegister.blockCode='%s' and surguja.jobcardRegister.panchayatCode='%s' and surguja.jobcardDetails.jobcard=surguja.jobcardRegister.jobcard  group by surguja.jobcardRegister.jobcard order by surguja.jobcardRegister.jcNumber; 
   '''% (blockCode,panchayatCode)
 
   section_html = getButtonV2('./chaupalAddPhone.py', 'editContact', 'Edit')
@@ -43,11 +53,27 @@ select surguja.jobcardRegister.jobcard jobcard,Group_CONCAT(surguja.jobcardDetai
   #myhtml = getQueryTable(cur, query)
 
   #myhtml += getCenterAligned('<a href="#"><h5>Top</h5></a></div>') + '<br />'
+  query="use libtech"
+  cur.execute(query)
+  query="select count(*) from addressbook where district='surguja' and block='%s' and panchayat='%s'" % (blockName.lower(),panchayatName.lower())
+  cur.execute(query)
+  row=cur.fetchone()
+  totalNumbers=row[0]
+
   myhtml=""
+  myhtml+=  getCenterAligned('<h2 style="color:blue"> %s-%s</h2>' % (blockName.upper(),panchayatName.upper()))
+  myhtml+=  getCenterAligned('<h5 style="color:purple"> Total Numbers - %s</h5>' % (str(totalNumbers)))
+  myhtml+=  getCenterAligned('<h3 style="color:green"> Jobcard List</h3>' )
   #myhtml+= '<br />' + getCenterAligned('<h5 style="color:green">Jobcard [%s] </h5>' % blockCode)
   #myhtml+= '<br />' + getCenterAligned('<h5 style="color:blue">Block [%s] </h5>' % panchayatCode)
   myhtml+=query_table
-  myhtml=htmlWrapper(title="AddressBook Update", head='<h1 aling="center">Jobcard List</h1>', body=myhtml)
+  myhtml+=  getCenterAligned('<h3 style="color:green"> Phone Numbers Without Jobcards</h3>' )
+  query="select phone,block,panchayat from addressbook where phone not in (select phone from jobcardPhone) and district='surguja' and block='%s' and panchayat='%s'" % (blockName.lower(),panchayatName.lower())
+  query_table = "<br />"
+  query_table += bsQuery2HtmlV2(cur, query)
+  myhtml+=query_table
+
+  myhtml=htmlWrapper(title="AddressBook Update", head='<h1 aling="center">Address Book</h1>', body=myhtml)
   print myhtml.encode('UTF-8')
 
 if __name__ == '__main__':
