@@ -13,6 +13,8 @@ import sys
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../../includes/')
 sys.path.insert(0, fileDir+'/../../')
+import libtechFunctions
+from libtechFunctions import singleRowQuery,addJobcardPhone,addPhoneAddressBook,deletePhoneAddressBook
 import settings
 from settings import dbhost,dbuser,dbpasswd,sid,token
 import chaupalAddPhone
@@ -29,55 +31,52 @@ def main():
   cur.execute(query)
   query="use libtech"
   cur.execute(query)
+  myhtml=""
   form = cgi.FieldStorage()
   blockCode=form["blockCode"].value
   panchayatCode=form["panchayatCode"].value
-  blockName=form["blockName"].value
-  panchayatName=form["panchayatName"].value
-  jobcard=form["jobcard"].value
-  oldphone=form["oldphone"].value
-  jobcardListForm=gotoJobcardListForm(blockCode,panchayatCode,'Go Back To Jobcard List')
-  myhtml=""
-  try:
+  formType=form["formType"].value
+  if(formType == 'updateNumber'):
+    blockCode=form["blockCode"].value
+    panchayatCode=form["panchayatCode"].value
+    blockName=form["blockName"].value
+    panchayatName=form["panchayatName"].value
+    jobcard=form["jobcard"].value
+    oldphone=form["oldphone"].value
+    try:
+      phone=form["phone"].value
+    except:
+      phone='Invalid'
+   
+    if len(phone) == 10:
+      myhtml+= '<br />' + getCenterAligned('<h5 style="color:green">Jobcard [%s] </h5>' % jobcard)
+      myhtml+= '<br />' + getCenterAligned('<h5 style="color:blue">Block [%s] </h5>' % blockName)
+      myhtml+= '<br />' + getCenterAligned('<h5 style="color:blue">Panchayat [%s] </h5>' % panchayatName)
+      myhtml+= '<br />' + getCenterAligned('<h5 style="color:blue">phone [%s] </h5>' % phone)
+      myhtml+= '<br />' + getCenterAligned('<h5 style="color:blue">Old Phone  [%s] </h5>' % oldphone)
+      
+      query="delete from addressbook where phone='%s'" % oldphone
+      myhtml+= '<br />' + getCenterAligned('<h5 style="color:red"> %s</h5>' % query )
+      cur.execute(query)
+   
+   
+      if(jobcard== "NoJobCard"):
+        status=addPhoneAddressBook(cur,phone,'surguja',blockName,panchayatName)
+      else:
+        status=addJobcardPhone(cur,phone,jobcard)
+   
+      myhtml+= '<br />' + getCenterAligned('<h2 style="color:green">AddressBook Update %s' % status)
+   
+   
+    else:
+      myhtml+= '<br />' + getCenterAligned('<h5 style="color:red"> Invalid Phone Entered</h5>' )
+
+  elif(formType == 'deleteNumber'):
     phone=form["phone"].value
-  except:
-    phone='Invalid'
+    status=deletePhoneAddressBook(cur,phone)
+    myhtml+= '<br />' + getCenterAligned('<h5 style="color:red"> Phone Number Delete Successfully</h5>' )
 
-  if len(phone) == 10:
-    myhtml+= '<br />' + getCenterAligned('<h5 style="color:green">Jobcard [%s] </h5>' % jobcard)
-    myhtml+= '<br />' + getCenterAligned('<h5 style="color:blue">Block [%s] </h5>' % blockName)
-    myhtml+= '<br />' + getCenterAligned('<h5 style="color:blue">Panchayat [%s] </h5>' % panchayatName)
-    myhtml+= '<br />' + getCenterAligned('<h5 style="color:blue">phone [%s] </h5>' % phone)
-    myhtml+= '<br />' + getCenterAligned('<h5 style="color:blue">Old Phone  [%s] </h5>' % oldphone)
-    
-    query="delete from addressbook where phone='%s'" % oldphone
-    myhtml+= '<br />' + getCenterAligned('<h5 style="color:red"> %s</h5>' % query )
-    cur.execute(query)
-
-    query="select id from addressbook where phone='"+phone+"'"
-    cur.execute(query)
-    if (cur.rowcount == 0):
-      query="insert into addressbook (district,block,panchayat,phone) values ('surguja','%s','%s','%s');" %(blockName.lower(),panchayatName.lower(),phone)
-    else:
-      query="update addressbook set district='surguja',block='%s',panchayat='%s' where phone='%s'" %(blockName.lower(),panchayatName.lower(),phone)
-    myhtml+= '<br />' + getCenterAligned('<h5 style="color:red"> %s</h5>' % query )
-
-    cur.execute(query)
-
-    query="select id from jobcardPhone where jobcard='"+jobcard+"'"
-    #myhtml+= '<br />' + getCenterAligned('<h5 style="color:red"> %s</h5>' % query )
-    cur.execute(query)
-    if (cur.rowcount == 0):
-      query="insert into jobcardPhone (jobcard,phone) values ('%s','%s')" % (jobcard,phone)
-    else:
-      query="update jobcardPhone set phone='%s' where jobcard='%s'" %(phone,jobcard)
-   # myhtml+= '<br />' + getCenterAligned('<h5 style="color:red"> %s</h5>' % query )
-    cur.execute(query)
-    myhtml+= '<br />' + getCenterAligned('<h2 style="color:green">AddressBook Updated' )
-  else:
-    myhtml+= '<br />' + getCenterAligned('<h5 style="color:red"> Invalid Phone Entered</h5>' )
-
-
+  jobcardListForm=gotoJobcardListForm(blockCode,panchayatCode,'Go Back To Jobcard List')
   myhtml+=getCenterAligned(jobcardListForm)
   myhtml=htmlWrapper(title="Update Address Book", head='<h1 align="center">Update Phone Number</h1>', body=myhtml)
   print myhtml.encode('UTF-8')

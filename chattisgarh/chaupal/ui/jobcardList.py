@@ -46,6 +46,9 @@ select surguja.jobcardRegister.jobcard jobcard,Group_CONCAT(surguja.jobcardDetai
   '''% (blockCode,panchayatCode)
 
   section_html = getButtonV2('./chaupalAddPhone.py', 'editContact', 'Edit')
+  addNumberForm = getButtonV2('./chaupalAddPhone.py', 'addNumbers', 'Add Numbers without Jobcards')
+  addNumberFormExtraInputs='<input type="hidden" name="blockCode" value="%s"><input type="hidden" name="panchayatCode" value="%s">' % (blockCode,panchayatCode)
+  addNumberForm = addNumberForm.replace('extrainputs',addNumberFormExtraInputs)
   hiddenNames=['jobcard'] 
   hiddenValues=[0]
   query_table = "<br />"
@@ -63,6 +66,7 @@ select surguja.jobcardRegister.jobcard jobcard,Group_CONCAT(surguja.jobcardDetai
   myhtml=""
   myhtml+=  getCenterAligned('<h2 style="color:blue"> %s-%s</h2>' % (blockName.upper(),panchayatName.upper()))
   myhtml+=  getCenterAligned('<h5 style="color:purple"> Total Numbers - %s</h5>' % (str(totalNumbers)))
+  myhtml+=  getCenterAligned(addNumberForm)
   myhtml+=  getCenterAligned('<h3 style="color:green"> Jobcard List</h3>' )
   #myhtml+= '<br />' + getCenterAligned('<h5 style="color:green">Jobcard [%s] </h5>' % blockCode)
   #myhtml+= '<br />' + getCenterAligned('<h5 style="color:blue">Block [%s] </h5>' % panchayatCode)

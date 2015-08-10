@@ -13,6 +13,7 @@ def getjcNumber(jobcard):
   jcNumber=re.sub("[^0-9]", "", jobcardArray[1])
   return jcNumber
 
+
 def gmailSendMail(recipient,subject,body):
   # The below code never changes, though obviously those variables need values.
   session = smtplib.SMTP('smtp.gmail.com', 587)
@@ -176,3 +177,52 @@ def libtechSendMail(sender,receiver,subject,messagehtml):
   # sendmail function takes 3 arguments: sender's address, recipient's address
   # and message to send - here it is sent as one string.
   s.sendmail(sender, receiver, msg.as_string())
+
+def getBlockName(cur,blockCode):
+  query="select surguja.blocks.name from surguja.blocks where surguja.blocks.blockCode='%s'" % blockCode
+  return singleRowQuery(cur,query)
+def getPanchayatName(cur,blockCode,panchayatCode):
+  query="select surguja.panchayats.name from surguja.panchayats where surguja.panchayats.blockCode='%s' and surguja.panchayats.panchayatCode='%s'" % (blockCode,panchayatCode)
+  return singleRowQuery(cur,query)
+
+def addPhoneAddressBook(cur,phone,district,block,panchayat):
+  if(len(phone) == 10):
+    query="select id from addressbook where phone='"+phone+"'"
+    cur.execute(query)
+    if (cur.rowcount == 0):
+      query="insert into addressbook (district,block,panchayat,phone) values ('%s','%s','%s','%s');" %(district.lower(),block.lower(),panchayat.lower(),phone)
+    else:
+      query="update addressbook set district='%s',block='%s',panchayat='%s' where phone='%s'" %(district.lower(),block.lower(),panchayat.lower(),phone)
+    cur.execute(query)
+    return 'success'
+  else:
+    return 'fail'
+  
+def deletePhoneAddressBook(cur,phone):
+  query="delete from addressbook where phone='%s'" % phone
+  cur.execute(query)
+  query="delete from jobcardPhone where phone='%s'" % phone
+  cur.execute(query)
+  query="insert into addressbook (phone) value ('%s')" % phone
+  cur.execute(query)
+def addJobcardPhone(cur,phone,jobcard):
+  if(len(phone) == 10):
+    blockCode=jobcard[6:9]
+    panchayatCode=jobcard[10:13]
+    blockName=getBlockName(cur,blockCode)
+    panchayatName=getPanchayatName(cur,blockCode,panchayatCode)
+    addPhoneAddressBook(cur,phone,'surguja',blockName,panchayatName)
+    if (jobcard != "NoJobCard"):
+      query="select id from jobcardPhone where jobcard='"+jobcard+"'"
+      #myhtml+= '<br />' + getCenterAligned('<h5 style="color:red"> %s</h5>' % query )
+      cur.execute(query)
+      if (cur.rowcount == 0):
+        query="insert into jobcardPhone (jobcard,phone) values ('%s','%s')" % (jobcard,phone)
+      else:
+        query="update jobcardPhone set phone='%s' where jobcard='%s'" %(phone,jobcard)
+     # myhtml+= '<br />' + getCenterAligned('<h5 style="color:red"> %s</h5>' % query )
+      cur.execute(query)
+    return "success"
+  else:
+    return "fail"
+
