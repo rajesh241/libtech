@@ -49,9 +49,13 @@ def main():
   query="select name from blocks where blockCode='%s'" % blockCode
   blockName=singleRowQuery(cur,query)
   myhtml=''
+  addNumberFormExtraInputs='<input type="hidden" name="blockCode" value="%s">' % (blockCode)
+  goBackBlock = getButtonV2('./index.py', 'blockList', 'Go Back To Block List')
+  goBackBlock = goBackBlock.replace('extrainputs',addNumberFormExtraInputs)
   #blockCode='003'
   query="select blockCode BlockCode,panchayatCode PanchayatCode,name Panchayats,totalJobcards TotalJobcards,totalWorkers TotalWorkers,totalMobiles TotalMobiles from panchayats where isSurvey=1 and blockCode="+blockCode
   myhtml+=  getCenterAligned('<h2 style="color:blue"> %s</h2>' % (blockName.upper()))
+  myhtml+=  getCenterAligned('<h2 style="color:blue"> %s</h2>' % goBackBlock) 
   myhtml+= getQueryTable(cur, query)
 
   myhtml += getCenterAligned('<a href="#"><h5>Top</h5></a></div>') + '<br />'

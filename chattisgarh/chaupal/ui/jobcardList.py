@@ -62,9 +62,12 @@ select surguja.jobcardRegister.jobcard jobcard,Group_CONCAT(surguja.jobcardDetai
   cur.execute(query)
   row=cur.fetchone()
   totalNumbers=row[0]
+  goBackPanchayat = getButtonV2('./panchayatList.py', 'panchayatList', 'Panchayat List')
+  goBackPanchayat = goBackPanchayat.replace('extrainputs',addNumberFormExtraInputs)
 
   myhtml=""
   myhtml+=  getCenterAligned('<h2 style="color:blue"> %s-%s</h2>' % (blockName.upper(),panchayatName.upper()))
+  myhtml+=  getCenterAligned('<h2 style="color:blue"> %s</h2>' % goBackPanchayat) 
   myhtml+=  getCenterAligned('<h5 style="color:purple"> Total Numbers - %s</h5>' % (str(totalNumbers)))
   myhtml+=  getCenterAligned(addNumberForm)
   myhtml+=  getCenterAligned('<h3 style="color:green"> Jobcard List</h3>' )
@@ -73,8 +76,13 @@ select surguja.jobcardRegister.jobcard jobcard,Group_CONCAT(surguja.jobcardDetai
   myhtml+=query_table
   myhtml+=  getCenterAligned('<h3 style="color:green"> Phone Numbers Without Jobcards</h3>' )
   query="select phone,block,panchayat from addressbook where phone not in (select phone from jobcardPhone) and district='surguja' and block='%s' and panchayat='%s'" % (blockName.lower(),panchayatName.lower())
+  deleteNumberForm = getButtonV2('./chaupalUpdatePhone.py', 'deleteNumber', 'Delete Number')
+  deleteNumberForm = deleteNumberForm.replace('extrainputs','extrainputs'+addNumberFormExtraInputs)
+  hiddenNames=['phone'] 
+  hiddenValues=[0]
   query_table = "<br />"
-  query_table += bsQuery2HtmlV2(cur, query)
+  query_table += bsQuery2HtmlV2(cur, query, query_caption="",extraLabel='Edit',extra=deleteNumberForm,hiddenNames=hiddenNames,hiddenValues=hiddenValues)
+  # 
   myhtml+=query_table
 
   myhtml=htmlWrapper(title="AddressBook Update", head='<h1 aling="center">Address Book</h1>', body=myhtml)
