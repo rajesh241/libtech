@@ -61,7 +61,7 @@ def queryDB():
     myhtml += getCenterAligned('<a href="#"><h5>Top</h5></a></div>') + '<br />'
   
   myhtml=htmlWrapper(title="Query Dashboard", head='<h1 aling="center"><a href="./queryDashboard.py">Query Dashboard</a></h1>', body=myhtml)
-  return myhtml
+  return myhtml.encode('UTF-8')
 
 
 def main():

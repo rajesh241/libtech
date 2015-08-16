@@ -67,6 +67,6 @@ def main():
   myhtml+= '<br />' + getCenterAligned('<h5>Return to the <a href="./queryDashboard.py">Query Dashboard</a></h5>')
 
   myhtml=htmlWrapper(title="Query Dashboard", head='<h1 aling="center"><a href="./queryDashboard.py">Query Dashboard</a></h1>', body=myhtml)
-  print myhtml
+  print myhtml.encode('UTF-8')
 if __name__ == '__main__':
   main()
