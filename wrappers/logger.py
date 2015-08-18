@@ -29,14 +29,15 @@ def logFinalize():
 def loggerFetch(level=None):
   logger = logging.getLogger(__name__)
 
+  if not level:
+    level = logLevel
+  
   if level:
     numeric_level = getattr(logging, level.upper(), None)
     if not isinstance(numeric_level, int):
       raise ValueError('Invalid log level: %s' % level)
     else:
       logger.setLevel(numeric_level)
-  else:
-    logger.setLevel(logLevel)
 
   # create console handler and set level to debug
   ch = logging.StreamHandler()
