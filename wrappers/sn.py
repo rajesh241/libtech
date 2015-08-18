@@ -8,7 +8,9 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 
-from logger import loggerFetch
+import sys
+sys.path.insert(0, '../')
+from wrappers.logger import loggerFetch
 
 
 #######################
