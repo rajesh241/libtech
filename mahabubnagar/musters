@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 from bs4 import BeautifulSoup
 
 import sys
@@ -110,22 +112,19 @@ def main():
   logger = loggerFetch(args.get('log_level'))
   logger.info('args: %s', str(args))
 
-  #display = displayInitialize(args['visible'])
+  display = displayInitialize(args['visible'])
   driver = driverInitialize(args['browser'])
 
   outdir = args['directory']
   url = args['url']
 
-#  dates = ['02/04/2015',]
-#dates = [ '01/04/2015', '02/04/2015', '03/04/2015', '04/04/2015', '05/04/2015', '05/04/2015', '06/04/2015', ]
-
-  start_date = date(2015, 4, 1)
-  end_date = date(2015, 4, 5)
+  start_date = date(2015, 5, 1)
+  end_date = date(2015, 8, 19)
   for day in daterange(start_date, end_date):
     crawlMusters(logger, driver, "CRAWLING", outdir, url, day.strftime("%d/%m/%Y"))
 
   driverFinalize(driver)
-  #displayFinalize(display)
+  displayFinalize(display)
 
   exit(0)
 
