@@ -50,7 +50,7 @@ def daterange(start_date, end_date):
   for n in range(int ((end_date - start_date).days)):
     yield start_date + timedelta(n)
     
-def crawlMusters(logger, driver, cmd=None, dir=None, url=None, date=None):
+def downloadDibsursementReport(logger, driver, cmd=None, dir=None, url=None, date=None):
   '''
   Crawl the html for the musters
   '''
@@ -118,10 +118,10 @@ def main():
   outdir = args['directory']
   url = args['url']
 
-  start_date = date(2015, 5, 1)
+  start_date = date(2015, 4, 1)
   end_date = date(2015, 8, 19)
   for day in daterange(start_date, end_date):
-    crawlMusters(logger, driver, "CRAWLING", outdir, url, day.strftime("%d/%m/%Y"))
+    downloadDibsursementReport(logger, driver, "CRAWLING", outdir, url, day.strftime("%d/%m/%Y"))
 
   driverFinalize(driver)
   displayFinalize(display)
