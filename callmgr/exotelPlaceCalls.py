@@ -48,7 +48,7 @@ def main():
   curQueue=singleRowQuery(cur,query)
   print "Current Queued Calls in Tringo is "+str(curQueue)
   if(curQueue < maxExotelCallQueue):
-    query="select c.id,c.phone,c.exophone from callQueue c,broadcasts b where b.bid=c.bid and (c.vendor='exotel' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry limit 32"
+    query="select c.id,c.phone,c.exophone,c.template from callQueue c,broadcasts b where b.bid=c.bid and (c.vendor='exotel' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry limit 32"
     print query
     cur.execute(query)
     results = cur.fetchall()
@@ -57,10 +57,15 @@ def main():
       callid=str(row[0])
       phone=row[1]
       exophone=str(row[2])
+      template=str(row[3])
+      exotelURL='http://my.exotel.in/exoml/start/44458'
+      if (template == 'feedback'):
+        exotelURL='http://my.exotel.in/exoml/start/50053'
       print callid+"  "+phone
       r = connect_customer(
           sid, token,
           exotel_no=exophone,
+          url=exotelURL,
           callerid=exophone, 
           customer_no=phone,
           customField=callid

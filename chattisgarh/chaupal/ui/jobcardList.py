@@ -74,6 +74,13 @@ select surguja.jobcardRegister.jobcard jobcard,Group_CONCAT(surguja.jobcardDetai
   #myhtml+= '<br />' + getCenterAligned('<h5 style="color:green">Jobcard [%s] </h5>' % blockCode)
   #myhtml+= '<br />' + getCenterAligned('<h5 style="color:blue">Block [%s] </h5>' % panchayatCode)
   myhtml+=query_table
+  myhtml+=  getCenterAligned('<h3 style="color:red">Phone Numbers with Multiple jobcards</h3>' )
+  query="select phone,count(*) count, GROUP_CONCAT(jobcard SEPARATOR ',') jobcards from jobcardPhone where jobcard like '%CH-05-"+blockCode+"-"+panchayatCode+"%' group by phone having count(*) > 1;" 
+  query_table = "<br />"
+  query_table += bsQuery2HtmlV2(cur, query, query_caption="")
+  myhtml+=query_table
+
+
   myhtml+=  getCenterAligned('<h3 style="color:green"> Phone Numbers Without Jobcards</h3>' )
   query="select phone,block,panchayat from addressbook where phone not in (select phone from jobcardPhone) and district='surguja' and block='%s' and panchayat='%s'" % (blockName.lower(),panchayatName.lower())
   deleteNumberForm = getButtonV2('./chaupalUpdatePhone.py', 'deleteNumber', 'Delete Number')

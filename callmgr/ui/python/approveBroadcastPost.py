@@ -51,21 +51,24 @@ def main():
     myhtml+='<h3>Vendor has been updated for %s</h3>' %(str(bid))
   else:
     phone=form["phone"].value
-    query="select fileid,tfileid from broadcasts where bid="+str(bid)
+    query="select fileid,tfileid,fileid2,template from broadcasts where bid="+str(bid)
     cur.execute(query)
     result=cur.fetchone()
     fileid=result[0]
+ #   fileid1=result[2]
+    template=result[3]
     tfileid=result[1]
     tringoaudio=gettringoaudio(tfileid)
     audio,error=getaudio(cur,fileid)
+  #  audio1,error1=getaudio(cur,fileid1)
     if(error == 0):
       #print audio+tringoaudio 
       minhour='6'
       maxhour='23'
       exophone='02233814264'
       vendor=formType
-      query="insert into callQueue (isTest,priority,vendor,bid,minhour,maxhour,phone,audio,tringoaudio,exophone) values (1,20,'"+vendor+"',"+str(bid)+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
-      #print query 
+      query="insert into callQueue (isTest,priority,vendor,bid,minhour,maxhour,phone,audio,audio1,template,tringoaudio,exophone) values (1,20,'"+vendor+"',"+str(bid)+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+audio+"','"+template+"','"+tringoaudio+"','"+exophone+"');"
+      print query 
       cur.execute(query)
       myhtml+="<h3>Test Call Placed on number %s</h3>" %(phone)
       myhtml+="<p>Please Note that it may take about 5-10 minutes to get the test call based on system load. Please sit back and relax for sometime and ensure that your phone is not on silent</p>"

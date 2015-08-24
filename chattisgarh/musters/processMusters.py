@@ -32,7 +32,7 @@ cur.execute(query)
 #print inblock
 #Query to get the Musters 
 query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.isProcessed=0 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.blockCode='002' limit 1;"
-query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode from musters m,blocks b,panchayats p where m.isError=0 and m.isDownloaded=1 and m.isProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.finyear='16' ;"
+query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode,m.blockCode,p.panchayatCode from musters m,blocks b,panchayats p where m.isError=0 and m.isDownloaded=1 and m.isProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.finyear='16' ;"
 #query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.isProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.finyear='16' and m.musterNo=1296"
 cur.execute(query)
 if cur.rowcount:
@@ -44,6 +44,8 @@ if cur.rowcount:
     panchayatName=row[3].upper()
     finyear=row[1]
     workCode=row[5]
+    blockCode=row[6]
+    panchayatCode=row[7]
     if finyear=='16':
       fullfinyear='2015-2016'
     elif finyear=='15':
@@ -117,15 +119,20 @@ if cur.rowcount:
               creditedDate = time.strptime(creditedDatestring, '%d/%m/%Y')
               creditedDate = time.strftime('%Y-%m-%d %H:%M:%S', creditedDate)
               query="insert into musterTransactionDetails (musterNo,finyear,workCode,musterIndex,name,jobcard,daysWorked,dayWage,totalWage,accountNo,bankNameOrPOName,branchNameOrPOAddress,branchCodeOrPOCode,wagelistNo,status,creditedDate) values ('"+musterNo+"','"+finyear+"','"+workCode+"',"+str(musterIndex)+",'"+name+"','"+jobcard+"',"+str(daysWorked)+","+str(dayWage)+","+str(totalWage)+",'"+str(accountNo)+"','"+bankNameOrPOName+"','"+branchNameOrPOAddress+"','"+branchCodeOrPOCode+"','"+wagelistNo+"','"+status+"','"+creditedDate+"')"
+              creditedDateQueryString="creditedDate='%s'" %creditedDate
             else:
               query="insert into musterTransactionDetails (musterNo,finyear,workCode,musterIndex,name,jobcard,daysWorked,dayWage,totalWage,accountNo,bankNameOrPOName,branchNameOrPOAddress,branchCodeOrPOCode,wagelistNo,status,creditedDate) values ('"+musterNo+"','"+finyear+"','"+workCode+"',"+str(musterIndex)+",'"+name+"','"+jobcard+"',"+str(daysWorked)+","+str(dayWage)+","+str(totalWage)+",'"+str(accountNo)+"','"+bankNameOrPOName+"','"+branchNameOrPOAddress+"','"+branchCodeOrPOCode+"','"+wagelistNo+"','"+status+"',NULL)"
-            #print query 
+              creditedDateQueryString="creditedDate=NULL"
+
+            query1="update musterTransactionDetails set daysWorked=%s,dayWage=%s,totalWage=%s,accountNo='%s',bankNameOrPOName='%s',branchNameOrPOAddress='%s',branchCodeOrPOCode='%s',wagelistNo='%s',status='%s',blockCode='%s',panchayatCode='%s',%s where  musterNo=%s and jobcard='%s' and musterIndex=%s and finyear='%s'" %(str(daysWorked),str(dayWage),str(totalWage),str(accountNo),bankNameOrPOName,branchNameOrPOAddress,branchCodeOrPOCode,wagelistNo,status,blockCode,panchayatCode,creditedDateQueryString,str(musterNo),jobcard,str(musterIndex),finyear )
+            #print query.encode("UTF-8")
             try:
               cur.execute(query)
             except MySQLdb.IntegrityError,e:
               errormessage=(time.strftime("%d/%m/%Y %H:%M:%S "))+str(e)+"\n"
               errorfile.write(errormessage)
-              continue
+            #print query1 
+            cur.execute(query1)
       curtime = time.strftime('%Y-%m-%d %H:%M:%S')
       query="update musters set isProcessed=1,isComplete="+str(iscomplete)+",lastProcessDate='"+curtime+"' where id="+str(musterID);
       #print query

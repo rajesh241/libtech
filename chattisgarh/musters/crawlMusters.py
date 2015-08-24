@@ -90,7 +90,7 @@ for row in results:
             workName=worknameworkcodearray.groups()[0]
             workCode='3305'+worknameworkcodearray.groups()[1]
             print emusterno+" "+datefromstring+"  "+datetostring+"  "+workCode
-            query="insert into musters (musterNo,stateCode,districtCode,blockCode,panchayatCode,musterType,finyear,workCode,workName,dateFrom,dateTo) values ('"+emusterno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"','"+musterType+"','"+finyear+"','"+workCode+"','"+workName+"','"+datefrom+"','"+dateto+"')"
+            query="insert into musters (musterNo,stateCode,districtCode,blockCode,panchayatCode,musterType,finyear,workCode,workName,dateFrom,dateTo,crawlDate) values ('"+emusterno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"','"+musterType+"','"+finyear+"','"+workCode+"','"+workName+"','"+datefrom+"','"+dateto+"',NOW())"
             try:
               cur.execute(query)
             except MySQLdb.IntegrityError,e:

@@ -1,11 +1,18 @@
 import os
 import csv
 import smtplib
+import MySQLdb
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
 import re
+
+import requests
+import xml.etree.ElementTree as ET
+
+import settings
+from settings import dbhost,dbuser,dbpasswd,sid,token
 
 def getjcNumber(jobcard):
   jobcardArray=jobcard.split('/')
@@ -226,3 +233,102 @@ def addJobcardPhone(cur,phone,jobcard):
   else:
     return "fail"
 
+def checkDND(phone):
+  url = 'https://%s:%s@twilix.exotel.in/v1/Accounts/%s/Numbers/%s' % (sid, token, sid, phone)
+  r = requests.get(url)
+  #print r.content
+  root = ET.fromstring(r.content)
+  for number in root.findall('Numbers'):
+    PhoneNumber = number.find('PhoneNumber').text
+    Circle = number.find('Circle').text
+    CircleName = number.find('CircleName').text
+    Type = number.find('Type').text
+    Operator = number.find('Operator').text
+    OperatorName = number.find('OperatorName').text
+    DND = number.find('DND').text
+    if Circle is  None:
+      Circle='00'
+    if OperatorName is  None:
+      OperatorName='unknown'
+  
+    if (Circle == "AP"):
+      exophone="04030911001"
+    elif (Circle =="MH"):
+      exophone="02233814264"
+    elif (Circle =="MU"):
+      exophone="02233814264"
+    else:
+      exophone="08033545179"
+  return DND.lower(),exophone 
+   
+
+def gettringoaudio(rawlist):
+  tringofilelist=rawlist.rstrip(',')
+  tringoArray=tringofilelist.split(',')
+  noOfFiles=len(tringoArray)
+  i=0
+  tringoaudio=''
+  while(i<20):
+    curFileID='27503'
+    if(i < noOfFiles):
+      curFileID=tringoArray[i]
+    i=i+1
+    tringoaudio+="&fileid"+str(i)+"="+curFileID
+  return tringoaudio
+
+def getaudio(cur,rawlist):
+  error=0
+  filelist=rawlist.rstrip(',')
+  filelistArray=filelist.split(',')
+  audio=''
+  for audioFileID in filelistArray:
+    query="select count(*) from audioLibrary where id="+audioFileID
+    audioExists=singleRowQuery(cur,query)
+    if (audioExists == 1):
+      query="select filename from audioLibrary where id="+audioFileID
+#      print query
+      audio+=singleRowQuery(cur,query)
+    else:
+      error=1
+    audio+=','
+  audio=audio.rstrip(',')
+  return audio,error
+
+
+def scheduleTransactionCall(cur,bid,phone):
+  query="select bid,type,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats,priority from broadcasts where bid=%s;" % bid
+  cur.execute(query)
+  row= cur.fetchone()
+  bid=str(row[0])
+  minhour=str(row[2])
+  maxhour=str(row[3])
+  tringoaudio=gettringoaudio(row[4])
+  audio,error=getaudio(cur,row[5])
+  requestedVendor=row[7]
+  priority=row[11]
+  broadcastType=row[1]
+  dnd,exophone=checkDND(phone)
+  print dnd+exophone
+  if (error == 0):
+    skip=0
+    if(dnd == 'yes'):
+      if( (requestedVendor == "any") or (requestedVendor =="tringo")):
+        vendor='tringo'
+      else:
+        vendor="any"
+        skip=1 
+    else:
+      vendor=requestedVendor;
+    print "phone "+phone+" skip"+str(skip)+"vendor "+vendor
+    if len(phone) == 10 and phone.isdigit() and skip == 0:
+      query="insert into callQueue (priority,vendor,bid,minhour,maxhour,phone,audio,tringoaudio,exophone) values ("+str(priority)+",'"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
+     # print query
+      cur.execute(query)
+      query="insert into callStatus (bid,phone) values ("+bid+",'"+phone+"');"
+     # print query
+      cur.execute(query)
+  
+def getBlockCodeFromJobcard(jobcard):
+  return  jobcard[6:9]
+def getPanchayatCodeFromJobcard(jobcard):
+  return jobcard[10:13]
