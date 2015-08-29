@@ -1,80 +1,39 @@
 #! /usr/bin/env python
 
-#This code will get the Oabcgatat Banes
-import os
-import csv
 from bs4 import BeautifulSoup
-import requests
+# Mynk from time import strftime,strptime
+from MySQLdb import IntegrityError
 
-import logging
-import MySQLdb
+import sys
+sys.path.insert(0, '../')
+
+from wrappers.logger import loggerFetch
+from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize
+from wrappers.db import dbInitialize,dbFinalize
+from includes.settings_default import dbhost,dbuser,dbpasswd
+
 import time
 import re
-
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.by import By
 
 #######################
 # Global Declarations
 #######################
 
-delay = 2
-timeout = 10
-url="http://www.nrega.telangana.gov.in/"
-browser="Firefox"
-logFile = __file__+'.log'
-logLevel = logging.ERROR
-logFormat = '%(asctime)s:[%(name)s|%(levelname)s]: %(message)s'
+# delay = 10
+class Context():
+  def __init__(self):
+    self.url = "http://www.nrega.telangana.gov.in/"
+#    self.logger = None
+#    self.args = None
+    self.display = None
+    self.driver = None
+
+
+
 
 #############
 # Functions
 #############
-
-'''
-def logInitialize():
-  import logging
-  logging.basicConfig(filename=logFile, level=logLevel, format=logFormat) # Mynk
-'''
-
-def loggerFetch(level='ERROR'):
-  logger = logging.getLogger(__name__)
-
-  if level:                     # Mynk ???
-    numeric_level = getattr(logging, level.upper(), None)
-    if not isinstance(numeric_level, int):
-      raise ValueError('Invalid log level: %s' % level)
-    else:
-      logger.setLevel(numeric_level)
-  else:
-    logger.setLevel(logLevel)
-
-  # create console handler and set level to debug
-  ch = logging.StreamHandler()
-  ch.setLevel(logging.DEBUG)    # Mynk ???
-
-  # create formatter e.g - FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
-  formatter = logging.Formatter(logFormat)
-
-  # add formatter to ch
-  ch.setFormatter(formatter)
-
-  # add ch to logger
-  logger.addHandler(ch)
-
-  return logger
-
-def loggerTest(logger):
-  logger.debug('debug message')
-  logger.info('info message')
-  logger.warn('warn message')
-  logger.error('error message')
-  logger.critical('critical message')
-    
 
 def argsFetch():
   '''
@@ -96,64 +55,7 @@ def argsFetch():
   args = vars(parser.parse_args())
   return args
 
-
-def parserFinalize(parser):
-  parser.close()
-
-
-def dbInitialize():
-  '''
-  Connect to MySQL Database
-  '''
-  db = MySQLdb.connect(host="localhost", user="root", passwd="root123", db="mahabubnagar")
-  db.autocommit(True)
-  return db;
-
-def dbFinalize(db):
-  db.close()
-
-def displayInitialize(isVisible=0):
-  from pyvirtualdisplay import Display
-  
-  display = Display(visible=isVisible, size=(600, 400))
-  display.start()
-  return display
-
-def displayFinalize(display):
-  display.stop()
-
-def driverInitialize(browser="Firefox"):
-  if browser == "Firefox":
-    fp = webdriver.FirefoxProfile()
-    fp.native_events_enabled = False
-    fp.set_preference("browser.download.folderList",2)
-    fp.set_preference("browser.download.manager.showWhenStarting",False)
-    fp.set_preference("browser.download.dir", os.getcwd())
-    fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.ms-excel")
-
-    driver = webdriver.Firefox(fp)
-  elif browser == "PhantomJS":
-    driver = webdriver.PhantomJS()
-    driver.set_window_size(1120, 550)
-  else:
-    driver = webdriver.Chrome()
-
-  driver.implicitly_wait(10)
-
-  return driver
-
-def driverFinalize(driver):
-  driver.close()
-
-
-def wdTest(driver):
-  driver.get("http://www.google.com")
-  print driver.page_source.encode('utf-8')
-
-
-def wdFetch(driver, logger):
-  driver.get(url)
-
+def oldWdFetch():
   elem = driver.find_element_by_link_text("Wage Seekers")
   elem.send_keys(Keys.RETURN)
   time.sleep(1)
@@ -173,6 +75,32 @@ def wdFetch(driver, logger):
   elem.send_keys(Keys.RETURN)
   #elem.click()
   time.sleep(delay)
+
+
+def wdFetch(driver, logger, url):
+  driver.get(url)
+
+  driver.find_element_by_link_text("Wage Seekers").click()
+  driver.find_element_by_link_text("Job Card Holders Information").click()
+  #time.sleep(1)
+
+  elem = driver.find_element_by_name("District")
+  elem.send_keys("Mahabubnagar")
+  elem.click()
+  #time.sleep(delay)
+
+  elem = driver.find_element_by_name("Mandal")
+  elem.send_keys("Ghattu")
+  #elem.send_keys(Keys.RETURN)
+  elem.click()
+  #time.sleep(delay)
+
+#  (driver.find_element_by_name("District").send_keys("Mahabubnagar")).click()
+#  time.sleep(delay)
+
+
+ # driver.find_element_by_name("Mandal").send_keys("Ghattu").click()
+# time.sleep(delay)
 
   return driver
 
@@ -319,11 +247,11 @@ def dbFetch(db, logger):
   return results
 
 
-def crawlJobcards(driver, db, logger):
+def crawlJobcards(driver, db, logger, url):
   '''
   Crawl the page for the jobcards and update them in the database
   '''
-  driver = wdFetch(driver, logger)
+  driver = wdFetch(driver, logger, url)
 
   query="select stateCode,districtCode,blockCode,name from blocks"
   logger.info('query: [%s]', query)
@@ -332,24 +260,18 @@ def crawlJobcards(driver, db, logger):
   results = cur.fetchall()
   logger.info('results: [%s]', str(results))
 
-  # results = dbFetch(db, logger)
-
-  for row in results:
-    stateCode=row[0]
-    districtCode=row[1]
-    blockCode=row[2]
-    blockName=row[3]
+  (stateCode, districtCode, blockCode, blockName) = results[0]
 
   query="select name,panchayatCode,id from panchayats where jobcardCrawlStatus=0 and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' "
   cur.execute(query)
   panchresults = cur.fetchall()
-  #print panchresults
+  logger.info("panchresults[%s]", panchresults)
 
   for panchrow in panchresults:
     panchayatName=panchrow[0]
     panchayatCode=panchrow[1]
     panchID=panchrow[2]
-    #print stateCode+districtCode+blockCode+blockName+panchayatCode+panchayatName
+    logger.info("stateCode[%s],districtCode[%s],blockCode[%s],blockName[%s],panchayatCode[%s],panchayatName[%s]" % (stateCode,districtCode,blockCode,blockName,panchayatCode,panchayatName))
     elem = driver.find_element_by_name("Panchayat")
     elem.send_keys(panchayatName)
     elem.send_keys(Keys.RETURN)
@@ -409,9 +331,9 @@ def crawlJobcards(driver, db, logger):
             errorfile.write(errormessage)
           continue
 
-    time.sleep(delay)
+ #   time.sleep(delay)
 
-  time.sleep(delay)
+#  time.sleep(delay)
 
 
 def downloadJobcards(driver, db, logger):
@@ -522,29 +444,63 @@ def extractJobcards(db):
     print cmd
     os.system(cmd)
 
+def contextFinalize(self):
+  logger = self.logger
+  if self.db:
+    dbFinalize(self.db)
+    self.db = None
+    
+  if self.display:
+    displayFinalize(self.display)
+    self.display = None
+    
+  if self.driver:
+    #driverFinalize(self.driver)
+    self.driver.quit() # Mynk
+    self.driver = None
+  logger.info("Context Finalized")
+
+def contextCleanup(context):
+  logger = context.logger
+  logger.info("Context Cleanup...")
+  contextFinalize(context)
+  logger.info("Context Cleanup...")
+
+
+def contextRegister(context):
+  import atexit
+  atexit.register(contextCleanup, context)
+  context.logger.info("Context Initialized")  
+
+def contextInitialize(self, logger, args):
+  self.logger = logger
+  self.db = dbInitialize(host=dbhost, user=dbuser, passwd=dbpasswd, db="mahabubnagar")
+  self.display = displayInitialize(args['visible'])
+  self.driver = driverInitialize(args['browser'])
+  # contextRegister(self)
+  logger.info("Context Initialized")
+
 
 def main():
   args = argsFetch()
-  logger = loggerFetch(args.get('log_level'))        # Mynk WTF is '_' doing here?
-  # loggerTest(logger)
+  logger = loggerFetch(args.get('log_level'))
   logger.info('args: %s', str(args))
 
-  db = dbInitialize()
-  display = displayInitialize(args['visible'])
-  driver = driverInitialize(browser)
+  logger.info("BEGIN PROCESSING...")
 
-#  wdTest(driver)
+  context = Context()
+  contextInitialize(context, logger, args)
 
   if args['crawl']:
-    crawlJobcards(driver, db, logger)
+    crawlJobcards(context.driver, context.db, context.logger, context.url)
   else:
     downloadJobcards(driver, db, logger)
-    # wdTest(driver)
     # extractJobcards(driver, db, logger)
 
-  driverFinalize(driver)
-  displayFinalize(display)
-  dbFinalize(db)
+  contextFinalize(context)
+
+  logger.info("...END PROCESSING")
+
   exit(0)
 
 if __name__ == '__main__':
