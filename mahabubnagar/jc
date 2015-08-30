@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
 from bs4 import BeautifulSoup
-# Mynk from time import strftime,strptime
 from MySQLdb import IntegrityError
 
 import sys
@@ -19,22 +18,34 @@ import re
 # Global Declarations
 #######################
 
-# delay = 10
+delay = 5
+
 class Context():
   def __init__(self):
     self.url = "http://www.nrega.telangana.gov.in/"
-#    self.logger = None
-#    self.args = None
+    self.logger = None
     self.display = None
     self.driver = None
-
-
 
 
 #############
 # Functions
 #############
 
+def jobcardList(logger, db, filter=None):
+  if filter:
+    filter = ' ' + filter
+  else:
+    filter = ' '
+
+  query = "select jobcard from jobcardRegister" + filter
+  logger.info('Executing query: [%s]', query)
+  cur = db.cursor()
+  cur.execute(query)
+  jobcard_array = list(cur.fetchall())
+  jobcards = [ x[0] for x in jobcard_array ]
+  return jobcards
+  
 def argsFetch():
   '''
   Paser for the argument list that returns the args list
@@ -46,7 +57,6 @@ def argsFetch():
   parser.add_argument('-d', '--download', help='Download the jobcards & musters for each jobcard ID', required=False, action='store_const', const=True)
   parser.add_argument('-p', '--parse', help='Parse the jobcards & musters downloaded', required=False, action='store_const', const=True)
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
-  #parser.add_argument('-d', '--debug', help='Debug level (default=)', required=False)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-t', '--timeout', help='Time to wait before a page loads', required=False)
   parser.add_argument('-b', '--browser', help='Specify the browser to test with', required=False)
@@ -55,59 +65,29 @@ def argsFetch():
   args = vars(parser.parse_args())
   return args
 
-def oldWdFetch():
-  elem = driver.find_element_by_link_text("Wage Seekers")
-  elem.send_keys(Keys.RETURN)
-  time.sleep(1)
-
-  elem = driver.find_element_by_link_text("Job Card Holders Information")
-  elem.send_keys(Keys.RETURN)
-  time.sleep(1)
-
-  elem = driver.find_element_by_name("District")
-  elem.send_keys("Mahabubnagar")
-  elem.send_keys(Keys.RETURN)
-  #elem.click()
-  time.sleep(delay)
-
-  elem = driver.find_element_by_name("Mandal")
-  elem.send_keys("Ghattu")
-  elem.send_keys(Keys.RETURN)
-  #elem.click()
-  time.sleep(delay)
-
 
 def wdFetch(driver, logger, url):
   driver.get(url)
 
   driver.find_element_by_link_text("Wage Seekers").click()
   driver.find_element_by_link_text("Job Card Holders Information").click()
-  #time.sleep(1)
 
   elem = driver.find_element_by_name("District")
   elem.send_keys("Mahabubnagar")
   elem.click()
-  #time.sleep(delay)
+  time.sleep(delay)
 
   elem = driver.find_element_by_name("Mandal")
   elem.send_keys("Ghattu")
-  #elem.send_keys(Keys.RETURN)
   elem.click()
-  #time.sleep(delay)
-
-#  (driver.find_element_by_name("District").send_keys("Mahabubnagar")).click()
-#  time.sleep(delay)
-
-
- # driver.find_element_by_name("Mandal").send_keys("Ghattu").click()
-# time.sleep(delay)
+  time.sleep(delay)
 
   return driver
 
 
 def wdFetchPanchayat(driver, cur, logger, panchayatName):
   elem = driver.find_element_by_name("Go")
-  elem.send_keys(Keys.RETURN)
+  elem.click()
 
   curtime = time.strftime('%Y-%m-%d %H:%M:%S')
   html_source = driver.page_source
@@ -116,51 +96,28 @@ def wdFetchPanchayat(driver, cur, logger, panchayatName):
     table=htmlsoup.find('table',id="sortable")
     rows = table.findAll('tr')
     td = table.find('td')
-    #print "DATA[", td.text, "]"
-   # #print rows
+    logger.info("DATA[", td.text, "]")
+    logger.debug(rows)
     status=1
   except:
     status=0
-  # query="update panchayats set jobcardCrawlStatus="+str(status)+", jobcardCrawlDate='"+curtime+"' where id="+str(panchID) # Update downloadStatus at the end
-  # #print query
-  # cur.execute(query)
 
   jcDownloaded = os.listdir('./musters')
   
   if status==1:
     for tr in rows:
       td = tr.findNext('td')
-      #print "DATA1[", td.text, "]"
+      logger.debgu("DATA1[" + td.text + "]")
       td = td.findNext('td')
-      #print "DATA2[", td.text, "]"
+      logger.debug("DATA2[" + td.text + "]")
       jcno = td.text.strip()
-      #print "jcno", jcno
-      #if jcno+'.xls' in jcDownloaded:
-      #if jcno+'.html' in jcDownloaded:
+      logger.info("jcno [%s]", jcno)
       if jcno+'.csv' in jcDownloaded:
         continue
-
-      '''
-      try:
-        elem = WebDriverWait(driver, timeout).until(
-          EC.presence_of_element_located((By.LINK_TEXT, jcno))
-        )
-        #elem = WebDriverWait(driver, delay).until(EC.presence_of_element_located(driver.find_element_by_link_text(jcno)))
-        print "Page is ready!"
-        #except TimeoutException:
-      except NoSuchElementException, TimeoutException:
-        print "Loading took too much time!"
-        continue
-
-      #elem = driver.find_element_by_link_text(jcno)
-      #elem.send_keys(Keys.RETURN)
-      elem.click()
-      time.sleep(delay)
-      '''
       
       if True:
         elem = driver.find_element_by_link_text(jcno)
-        elem.send_keys(Keys.RETURN)
+        elem.click()
         time.sleep(1)
 
       parent_handle = driver.current_window_handle
@@ -174,11 +131,6 @@ def wdFetchPanchayat(driver, cur, logger, panchayatName):
         logger.error("Handlers gone wrong [" + str(driver.window_handles) + "]")
         driver.save_screenshot('./logs/button_'+jcno+'.png')
         continue
-
-      #jc_html=driver.page_source.encode('utf-8')
-      #jcsource = driver.page_source
-
-      #os.rename('Muster*', './musters/')
 
       # Download the muster details
       try:
@@ -199,10 +151,6 @@ def wdFetchPanchayat(driver, cur, logger, panchayatName):
         html_file.write(jc_html)
         html_file.close
 
-      #myhtml = jcsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
-      #htmlDump = myhtml.encode("UTF-8")
-
-      
       retries = 0
       while not os.path.isfile('Muster'):
         time.sleep(delay)
@@ -215,7 +163,6 @@ def wdFetchPanchayat(driver, cur, logger, panchayatName):
           continue
 
       if False:
-        #os.rename('Muster', './musters/'+jcno+'.xls')
         cmd = 'libreoffice --headless --convert-to csv Muster --outdir musters'
         os.system(cmd)
         os.rename('./musters/Muster.csv', './musters/'+jcno+'.xls')
@@ -227,11 +174,6 @@ def wdFetchPanchayat(driver, cur, logger, panchayatName):
       
       driver.close()
       driver.switch_to_window(parent_handle)
-      '''
-      #print "HTML[", jc_html, "]"
-      query="insert into jobcardDump (jobcard, htmlDump) values ('"+jcno+"','"+jc_html+"')"
-      cur.execute(query)
-      '''
       query="update jobcardRegister set isProcessed=1 where jobcard='"+jcno+"'"
       cur.execute(query)
 
@@ -253,87 +195,172 @@ def crawlJobcards(driver, db, logger, url):
   '''
   driver = wdFetch(driver, logger, url)
 
+  jobcards = jobcardList(logger, db)
+  logger.debug("jobcards[%s]" % str(jobcards))
+
   query="select stateCode,districtCode,blockCode,name from blocks"
-  logger.info('query: [%s]', query)
+  logger.info('Executing query: [%s]', query)
   cur=db.cursor()
   cur.execute(query)
-  results = cur.fetchall()
-  logger.info('results: [%s]', str(results))
+  block_details = cur.fetchall()
+  logger.info('block_details: [%s]', str(block_details))
 
-  (stateCode, districtCode, blockCode, blockName) = results[0]
+  (stateCode, districtCode, blockCode, blockName) = block_details[0]
 
   query="select name,panchayatCode,id from panchayats where jobcardCrawlStatus=0 and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' "
+  logger.info("Executing query[%s]", query)
   cur.execute(query)
   panchresults = cur.fetchall()
   logger.info("panchresults[%s]", panchresults)
 
-  for panchrow in panchresults:
-    panchayatName=panchrow[0]
-    panchayatCode=panchrow[1]
-    panchID=panchrow[2]
+  for panchayat_details in panchresults:
+    (panchayatName, panchayatCode, panchID)=panchayat_details
     logger.info("stateCode[%s],districtCode[%s],blockCode[%s],blockName[%s],panchayatCode[%s],panchayatName[%s]" % (stateCode,districtCode,blockCode,blockName,panchayatCode,panchayatName))
     elem = driver.find_element_by_name("Panchayat")
     elem.send_keys(panchayatName)
-    elem.send_keys(Keys.RETURN)
-    #elem.click()
+    elem.click()
     time.sleep(delay)
 
     elem = driver.find_element_by_name("Go")
-    elem.send_keys(Keys.RETURN)
+    elem.click()
     
     curtime = time.strftime('%Y-%m-%d %H:%M:%S')
     html_source = driver.page_source
     htmlsoup=BeautifulSoup(html_source)
+    filename = './panchayats/' + panchayatName + '.html'
+    with open(filename, 'w') as html_file:
+      logger.info("Writing [%s]" % filename)
+      html_file.write(driver.page_source.encode('utf-8'))
+    
+    try:
+      table=htmlsoup.find('table',id="sortable")
+      rows = table.findAll('tr')
+#Mynk      td = table.find('td')
+#Mynk      logger.debug("Sl No[" + td.text + "]")
+      logger.debug(rows)
+      status=1
+    except:
+      logger.warning("There was an exception")
+      status=0
+
+    query="update panchayats set jobcardCrawlStatus="+str(status)+", jobcardCrawlDate='"+curtime+"' where id="+str(panchID) 
+    logger.info("Executing query[%s]", query)
+    cur.execute(query)
+
+    if status==1:
+      for tr in rows:
+        td = tr.findNext('td')
+        logger.info("Sl No[" + td.text + "]")
+        td = td.findNext('td')
+        logger.debug("Jobcard ID[" + td.text + "]")
+        jcno = td.text.strip()
+        logger.info("jobcard[%s]" % jcno)
+        td = td.findNext('td')
+        logger.debug("Govt of India Jobcard ID[" + td.text + "]")
+        gjcno = td.text.strip()
+        logger.debug("gjcno[%s]", gjcno)
+        td = td.findNext('td')
+        logger.debug("Head of the family[" + td.text + "]")
+        hof = td.text
+        logger.debug("HOF[%s]" % hof)
+        td = td.findNext('td')
+        regDate = td.text
+        logger.debug("Registration Date[%s]" % regDate)
+        issueDate = "STR_TO_DATE('"+regDate+"','"+"%d/%m/%Y')"
+        logger.debug("issueDate[%s]" % issueDate)
+        td = td.findNext('td')
+        caste = td.text
+        logger.debug("Caste[%s]" % caste)
+                        
+        if jcno in jobcards:
+          pass
+          # query='update jobcardRegister set govtJobcard="%s",stateCode="%s",headOfFamily="%s",issueDate="%s",caste="%s",districtCode="%s",blockCode="%s",panchayatCode="%s" where jobcard="%s")' % (gjcno, stateCode, hof, issueDate, caste, districtCode, blockCode, panchayatCode, jcno)
+        else:          
+          query="insert into jobcardRegister (jobcard,govtJobcard,stateCode,headOfFamily,issueDate,caste,districtCode,blockCode,panchayatCode) values ('"+jcno+"','"+gjcno+"','"+stateCode+"','"+hof+"',"+issueDate+",'"+caste+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"')"
+          
+        logger.info("Executing query[%s]", query)
+        try:
+          cur.execute(query)
+        except IntegrityError,e:
+          logger.error("Attempting to insert duplicate [%s]" % e)
+
+        continue  # Mynk
+
+def crawlJobcards2(driver, db, logger, url):
+  '''
+  Crawl the page for the jobcards and update them in the database
+  '''
+
+  for panchayat_details in panchresults:
+    (panchayatName, panchayatCode, panchID)=panchayat_details
+    logger.info("stateCode[%s],districtCode[%s],blockCode[%s],blockName[%s],panchayatCode[%s],panchayatName[%s]" % (stateCode,districtCode,blockCode,blockName,panchayatCode,panchayatName))
+    elem = driver.find_element_by_name("Panchayat")
+    elem.send_keys(panchayatName)
+    elem.click()
+    time.sleep(delay)
+
+    elem = driver.find_element_by_name("Go")
+    elem.click()
+    
+    curtime = time.strftime('%Y-%m-%d %H:%M:%S')
+    html_source = driver.page_source
+    htmlsoup=BeautifulSoup(html_source)
+    filename = './panchayats/' + panchayatName + '.html'
+    with open(filename, 'w') as html_file:
+      logger.info("Writing [%s]" % filename)
+      html_file.write(driver.page_source.encode('utf-8'))
+    
     try:
       table=htmlsoup.find('table',id="sortable")
       rows = table.findAll('tr')
       td = table.find('td')
-      #print "DATA[", td.text, "]"
-     # #print rows
+      logger.info("Sl No[" + td.text + "]")
+      logger.debug(rows)
       status=1
     except:
+      logger.warning("There was an exception")
       status=0
+
     query="update panchayats set jobcardCrawlStatus="+str(status)+", jobcardCrawlDate='"+curtime+"' where id="+str(panchID) 
-    # #print query
+    logger.info("Executing query[%s]", query)
     cur.execute(query)
+
     if status==1:
       for tr in rows:
-        td = tr.findNext('td')
-        #print "DATA1[", td.text, "]"
         td = td.findNext('td')
-        #print "DATA2[", td.text, "]"
+        logger.debug("Jobcard ID[" + td.text + "]")
         jcno = td.text.strip()
-        #print "jcno", jcno
+        logger.debug("jobcard[%s]" % jcno)
         td = td.findNext('td')
-        #print "DATA3[", td.text, "]"
+        logger.debug("Govt of India Jobcard ID[" + td.text + "]")
         gjcno = td.text.strip()
-        #print "gjcno", gjcno
+        logger.debug("gjcno[%s]", gjcno)
         td = td.findNext('td')
-        #print "DATA4[", td.text, "]"
+        logger.debug("Head of the family[" + td.text + "]")
         hof = td.text
-        #print "HOF", hof
+        logger.debug("HOF[%s]" % hof)
         td = td.findNext('td')
         regDate = td.text
-        #print "Reg Date", regDate
+        logger.debug("Registration Date[%s]" % regDate)
         issueDate = "STR_TO_DATE('"+regDate+"','"+"%d/%m/%Y')"
+        logger.debug("issueDate[%s]" % issueDate)
         td = td.findNext('td')
         caste = td.text
-        #print "caste", caste
+        logger.debug("Caste[%s]" % caste)
                         
-        if True:
-          #print jcno
+        if jcno in jobcards:
+          pass
+          # query='update jobcardRegister set govtJobcard="%s",stateCode="%s",headOfFamily="%s",issueDate="%s",caste="%s",districtCode="%s",blockCode="%s",panchayatCode="%s" where jobcard="%s")' % (gjcno, stateCode, hof, issueDate, caste, districtCode, blockCode, panchayatCode, jcno)
+        else:          
           query="insert into jobcardRegister (jobcard,govtJobcard,stateCode,headOfFamily,issueDate,caste,districtCode,blockCode,panchayatCode) values ('"+jcno+"','"+gjcno+"','"+stateCode+"','"+hof+"',"+issueDate+",'"+caste+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"')"
-          #print "<<", query, ">>"
-          try:
-            cur.execute(query)
-          except MySQLdb.IntegrityError,e:
-            errormessage=(time.strftime("%d/%m/%Y %H:%M:%S "))+str(e)+"\n"
-            errorfile.write(errormessage)
-          continue
+          
+        logger.info("Executing query[%s]", query)
+        try:
+          cur.execute(query)
+        except IntegrityError,e:
+          logger.error("Attempting to insert duplicate [%s]" % e)
 
- #   time.sleep(delay)
-
-#  time.sleep(delay)
+        continue  # Mynk
 
 
 def downloadJobcards(driver, db, logger):
@@ -375,7 +402,7 @@ def downloadJobcards(driver, db, logger):
         i=i+1
         print str(i)+"  "+jobcard
         elem = driver.find_element_by_link_text(jobcard)
-        elem.send_keys(Keys.RETURN)
+        elem.click()
         time.sleep(5)
         jcsource = driver.page_source
         driver.back()
@@ -427,20 +454,11 @@ def downloadJobcardsViaBruteForce(driver, db, logger):
   time.sleep(delay)
 
 def extractJobcards(db):
-  cur=db.cursor()
-
-  query="select jobcard from jobcardRegister where panchayatCode=003"
-  print query
-  cur.execute(query)
-  jcs = cur.fetchall()
-  jobcards = map(list, jcs)
+  jobcards = jobcardList(db, "where panchayatCode=003")
   #print jobcards
 
   for jc in jobcards:
-    jcno = str(jc).strip('[]')
-    print "Moving ", jc, jcno
-    #exit(-1)
-    cmd = 'cp -v ./musters/'+jcno+'.* ./musters/Thumalacheruvu/'
+    cmd = 'cp -v ./musters/'+jc+'.* ./musters/Thumalacheruvu/'
     print cmd
     os.system(cmd)
 
@@ -476,6 +494,10 @@ def contextInitialize(self, logger, args):
   self.logger = logger
   self.db = dbInitialize(host=dbhost, user=dbuser, passwd=dbpasswd, db="mahabubnagar")
   self.display = displayInitialize(args['visible'])
+  if args['visible']:
+    delay=5
+  else:
+    delay=1
   self.driver = driverInitialize(args['browser'])
   # contextRegister(self)
   logger.info("Context Initialized")
@@ -485,7 +507,6 @@ def main():
   args = argsFetch()
   logger = loggerFetch(args.get('log_level'))
   logger.info('args: %s', str(args))
-
   logger.info("BEGIN PROCESSING...")
 
   context = Context()
