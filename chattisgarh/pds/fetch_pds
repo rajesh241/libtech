@@ -1,81 +1,28 @@
 #! /usr/bin/env python
 
-#This code will get the Oabcgatat Banes
 import os
-import csv
-from bs4 import BeautifulSoup
-import requests
-
-import logging
-import MySQLdb
 import time
-import re
+from bs4 import BeautifulSoup
 
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.by import By
+import sys
+sys.path.insert(0, '../../')
+
+from wrappers.logger import loggerFetch
+from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize
+from wrappers.db import dbInitialize,dbFinalize
+
 
 #######################
 # Global Declarations
 #######################
 
-delay = 2
-timeout = 10
+delay = 0
 url="http://khadya.cg.nic.in/pdsonline/cgfsa/Report/FrmRation_Patra_Allot_VerificationDistWise_Aug14.aspx"
-browser="Firefox"
-logFile = __file__+'.log'
-logLevel = logging.ERROR
-logFormat = '%(asctime)s:[%(name)s|%(levelname)s]: %(message)s'
 
 
 #############
 # Functions
 #############
-
-'''
-def logInitialize():
-  import logging
-  logging.basicConfig(filename=logFile, level=logLevel, format=logFormat) # Mynk
-'''
-
-def loggerFetch(level='ERROR'):
-  logger = logging.getLogger(__name__)
-
-  if level:                     # Mynk ???
-    numeric_level = getattr(logging, level.upper(), None)
-    if not isinstance(numeric_level, int):
-      raise ValueError('Invalid log level: %s' % level)
-    else:
-      logger.setLevel(numeric_level)
-  else:
-    logger.setLevel(logLevel)
-
-  # create console handler and set level to debug
-  ch = logging.StreamHandler()
-  ch.setLevel(logging.DEBUG)    # Mynk ???
-
-  # create formatter e.g - FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
-  formatter = logging.Formatter(logFormat)
-
-  # add formatter to ch
-  ch.setFormatter(formatter)
-
-  # add ch to logger
-  logger.addHandler(ch)
-
-  return logger
-
-def loggerTest(logger):
-  logger.debug('debug message')
-  logger.info('info message')
-  logger.warn('warn message')
-  logger.error('error message')
-  logger.critical('critical message')
-    
 
 def argsFetch():
   '''
@@ -87,7 +34,6 @@ def argsFetch():
   parser.add_argument('-c', '--crawl', help='Crawl the pds reports', required=False, action='store_const', const=True)
   parser.add_argument('-p', '--prev', help='Parse the jobcards & musters downloaded', required=False, action='store_const', const=True)
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
-  #parser.add_argument('-d', '--debug', help='Debug level (default=)', required=False)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-t', '--timeout', help='Time to wait before a page loads', required=False)
   parser.add_argument('-b', '--browser', help='Specify the browser to test with', required=False)
@@ -97,126 +43,7 @@ def argsFetch():
   args = vars(parser.parse_args())
   return args
 
-
-def parserFinalize(parser):
-  parser.close()
-
-
-def dbInitialize():
-  '''
-  Connect to MySQL Database
-  '''
-  db = MySQLdb.connect(host="localhost", user="root", passwd="root123", db="surguja")
-  db.autocommit(True)
-  return db;
-
-def dbFinalize(db):
-  db.close()
-
-def displayInitialize(isVisible=0):
-  from pyvirtualdisplay import Display
-  
-  display = Display(visible=isVisible, size=(600, 400))
-  display.start()
-  return display
-
-def displayFinalize(display):
-  display.stop()
-
-def driverInitialize(browser="Firefox"):
-  if browser == "Firefox":
-    fp = webdriver.FirefoxProfile()
-    fp.native_events_enabled = False
-    fp.set_preference("browser.download.folderList",2)
-    fp.set_preference("browser.download.manager.showWhenStarting",False)
-    fp.set_preference("browser.download.dir", os.getcwd())
-    fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.ms-excel")
-
-    driver = webdriver.Firefox(fp)
-  elif browser == "PhantomJS":
-    driver = webdriver.PhantomJS()
-    driver.set_window_size(1120, 550)
-  else:
-    driver = webdriver.Chrome()
-
-  driver.implicitly_wait(10)
-
-  return driver
-
-def driverFinalize(driver):
-  driver.close()
-
-
-def dbFetch(db, logger):
-  # Query to get all the blocks
-  query="select stateCode,districtCode,blockCode,name from blocks"
-  logger.info('query: [%s]', query)
-  cur=db.cursor()
-  cur.execute(query)
-  results = cur.fetchall()
-  logger.info('results: [%s]', str(results))
-
-  return results
-
-pdsList = '''
-392004027
-392004026
-392004009
-392004025
-392004010
-392004038
-392004008
-392004012
-392004007
-392004011
-392004036
-392004019
-392004031
-392004029
-392004002
-392005033
-392005024
-392005009
-392005027
-392005013
-392005037
-392005028
-392005031
-392005036
-392005038
-392005035
-392005029
-392005032
-392005012
-392005040
-392005004
-392005007
-392005019
-392005034
-392007055
-392007009
-392007061
-392007050
-392007008
-392007006
-392007033
-392007059
-392007042
-392007064
-392007044
-392007011
-392007052
-392007036
-392007005
-392007058
-392007020
-392007007
-392007057
-'''
-
-shops = pdsList.strip().split('\n')
-
-def pdsFetch(driver, db, logger):
+def pdsFetch(driver, db, logger, url=None):
   '''
   Crawl the page for the khadya site and fecth the latest reports
   '''
@@ -230,85 +57,33 @@ def pdsFetch(driver, db, logger):
   for row in results:
     (pdsBlockCode, blockName, shopCode, panchayat) = row
     logger.info('pdsBlockCode[%s], blockName[%s], shopCode[%s], panchayat[%s]' % (pdsBlockCode, blockName, shopCode, panchayat))
-    #filename = './html/'+shopCode+'.html'
     filename = './reports/'+ blockName + '_' + panchayat + '_' + shopCode + '.html'
     
     if os.path.exists(filename):
       logger.info("Skipped [%s] as alread downloaded" % filename)
       continue
     logger.info('Block Name:[%s] Panchayat Name:[%s] Shop Code:[%s]' % (blockName, panchayat, shopCode))
-    if shopCode not in shops:
-      logger.info("Skipped shop [%s]" % shopCode)
-      continue
 
-    url="http://khadya.cg.nic.in/pdsonline/cgfsa/Report/FrmRation_Patra_Allot_VerificationDistWise_Aug14.aspx"
+    if not url:
+      url="http://khadya.cg.nic.in/pdsonline/cgfsa/Report/FrmRation_Patra_Allot_VerificationDistWise_Aug14.aspx"
     logger.info('URL: [%s]', url)
+    
     driver.get(url)
-    time.sleep(2)
+    time.sleep(delay)
     driver.find_element_by_xpath("//select[@id='drpdist']/option[@value='39']").click()
     driver.find_element_by_xpath("//select[@id='ddlUrban_Rural']/option[@value='R']").click()
-    time.sleep(2)
+    time.sleep(delay)
     driver.find_element_by_xpath("//select[@id='ddlNNN_Block']/option[@value='"+pdsBlockCode+"']").click()
-    time.sleep(2)
+    time.sleep(delay)
     driver.find_element_by_xpath("//select[@id='ddlShopName']/option[@value='"+shopCode+"']").click()
-    time.sleep(2)
+    time.sleep(delay)
     elem=driver.find_element_by_name("btnShowDetails")
-    elem.send_keys(Keys.RETURN)
-    time.sleep(2)
+    elem.click()
+    time.sleep(delay)
     html_source = driver.page_source
     raw_html=html_source.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
     with open(filename, "w") as html_file:
-      html_file.write(raw_html.encode("UTF-8"))
-
-from shutil import copyfile
-def pdsMove(driver, db, logger):
-  '''
-  Crawl the page for the khadya site and fecth the latest reports
-  '''
-  query="select b.pdsBlockCode,s.shopCode,b.name from pdsShops s,blocks b where b.blockCode=s.blockCode "
-  logger.info('query: [%s]', query)
-  cur=db.cursor()
-  cur.execute(query)
-  results = cur.fetchall()
-  logger.info('results: [%s]', str(results))
-
-  for row in results:
-    pdsBlockCode=row[0]
-    blockName=row[2]
-    shopCode=row[1]
-    filename = './html/'+shopCode+'.html'
-    if os.path.isfile(filename):
-      query='select panchayat from shopMapping where shopCode=' + shopCode
-      logger.info('query: [%s]', query)
-      cur.execute(query)
-      panchayat = cur.fetchall()[0][0]
-      logger.info('panchayat[%s]' % panchayat)
-      dest = './reports/'+ blockName + '_' + panchayat + '_' + shopCode + '.html'
-      logger.info("Moved [%s] to [%s]" % (filename, dest))
-      copyfile(filename,  dest)
-      continue
-    logger.info('Block Name:[%s] Shop Code:[%s]' % (blockName, shopCode))
-    if shopCode not in shops:
-      logger.debug("Skipped shop [%s]" % shopCode)
-      continue
-
-    url="http://khadya.cg.nic.in/pdsonline/cgfsa/Report/FrmRation_Patra_Allot_VerificationDistWise_Aug14.aspx"
-    logger.info('URL: [%s]', url)
-    driver.get(url)
-    time.sleep(2)
-    driver.find_element_by_xpath("//select[@id='drpdist']/option[@value='39']").click()
-    driver.find_element_by_xpath("//select[@id='ddlUrban_Rural']/option[@value='R']").click()
-    time.sleep(2)
-    driver.find_element_by_xpath("//select[@id='ddlNNN_Block']/option[@value='"+pdsBlockCode+"']").click()
-    time.sleep(2)
-    driver.find_element_by_xpath("//select[@id='ddlShopName']/option[@value='"+shopCode+"']").click()
-    time.sleep(2)
-    elem=driver.find_element_by_name("btnShowDetails")
-    elem.send_keys(Keys.RETURN)
-    time.sleep(2)
-    html_source = driver.page_source
-    raw_html=html_source.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
-    with open(filename, "w") as html_file:
+      logger.info("Writing [%s]" % filename)
       html_file.write(raw_html.encode("UTF-8"))
 
 def pdsFetchPrev(driver, db, logger, month="3"):
@@ -340,36 +115,41 @@ def pdsFetchPrev(driver, db, logger, month="3"):
     logger.info('URL: [%s]', url)
 
     driver.get(url)
-    time.sleep(2)
+    time.sleep(delay)
     driver.find_element_by_xpath("//select[@id='DDdist']/option[@value='39']").click()
     driver.find_element_by_xpath("//select[@id='DDUR']/option[@value='R']").click()
-    time.sleep(2)
+    time.sleep(delay)
     driver.find_element_by_xpath("//select[@id='DDBlock_NNN']/option[@value='"+pdsBlockCode+"']").click()
-    time.sleep(2)
-    print "Shopcode[", shopCode, "]"
+    time.sleep(delay)
+    logger.info("Shopcode[" + shopCode + "]")
     driver.find_element_by_xpath("//select[@id='DDShop']/option[@value='"+shopCode+"']").click()
-    time.sleep(2)
+    time.sleep(delay)
     driver.find_element_by_xpath("//select[@id='DDYear']/option[@value='2015']").click()
-    time.sleep(2)
+    time.sleep(delay)
     driver.find_element_by_xpath("//select[@id='DDMonth']/option[@value='" + month + "']").click()
-    time.sleep(2)
+    time.sleep(delay)
     elem=driver.find_element_by_name("Button1")
-    elem.send_keys(Keys.RETURN)
-    time.sleep(2)
+    elem.click()
+    time.sleep(delay)
     html_source = driver.page_source
     raw_html=html_source.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
     with open(filename, "w") as html_file:
+      logger.info("Writing [%s]" % filename)
       html_file.write(raw_html.encode("UTF-8"))
-
 
 def main():
   args = argsFetch()
   logger = loggerFetch(args.get('log_level'))
   logger.info('args: %s', str(args))
 
-  db = dbInitialize()
+  logger.info("BEGIN PROCESSING...")
+
+  db = dbInitialize(db="surguja")  
   display = displayInitialize(args['visible'])
-  driver = driverInitialize(browser)
+  driver = driverInitialize(args['browser'])
+
+  if args['visible']:
+    delay = 2
 
   if args['prev']:
     pdsFetchPrev(driver, db, logger)
@@ -379,8 +159,9 @@ def main():
   driverFinalize(driver)
   displayFinalize(display)
   dbFinalize(db)
+
+  logger.info("...END PROCESSING")
   exit(0)
 
 if __name__ == '__main__':
   main()
-
