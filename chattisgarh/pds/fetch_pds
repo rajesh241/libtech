@@ -158,8 +158,110 @@ def dbFetch(db, logger):
 
   return results
 
+pdsList = '''
+392004027
+392004026
+392004009
+392004025
+392004010
+392004038
+392004008
+392004012
+392004007
+392004011
+392004036
+392004019
+392004031
+392004029
+392004002
+392005033
+392005024
+392005009
+392005027
+392005013
+392005037
+392005028
+392005031
+392005036
+392005038
+392005035
+392005029
+392005032
+392005012
+392005040
+392005004
+392005007
+392005019
+392005034
+392007055
+392007009
+392007061
+392007050
+392007008
+392007006
+392007033
+392007059
+392007042
+392007064
+392007044
+392007011
+392007052
+392007036
+392007005
+392007058
+392007020
+392007007
+392007057
+'''
+
+shops = pdsList.strip().split('\n')
 
 def pdsFetch(driver, db, logger):
+  '''
+  Crawl the page for the khadya site and fecth the latest reports
+  '''
+  query="select b.pdsBlockCode,b.name,s.shopCode,m.panchayat from pdsShops s,blocks b, shopMapping m where b.blockCode=s.blockCode and s.shopcode = m.shopcode"
+  logger.info('query: [%s]', query)
+  cur=db.cursor()
+  cur.execute(query)
+  results = cur.fetchall()
+  logger.debug('results: [%s]', str(results))
+
+  for row in results:
+    (pdsBlockCode, blockName, shopCode, panchayat) = row
+    logger.info('pdsBlockCode[%s], blockName[%s], shopCode[%s], panchayat[%s]' % (pdsBlockCode, blockName, shopCode, panchayat))
+    #filename = './html/'+shopCode+'.html'
+    filename = './reports/'+ blockName + '_' + panchayat + '_' + shopCode + '.html'
+    
+    if os.path.exists(filename):
+      logger.info("Skipped [%s] as alread downloaded" % filename)
+      continue
+    logger.info('Block Name:[%s] Panchayat Name:[%s] Shop Code:[%s]' % (blockName, panchayat, shopCode))
+    if shopCode not in shops:
+      logger.info("Skipped shop [%s]" % shopCode)
+      continue
+
+    url="http://khadya.cg.nic.in/pdsonline/cgfsa/Report/FrmRation_Patra_Allot_VerificationDistWise_Aug14.aspx"
+    logger.info('URL: [%s]', url)
+    driver.get(url)
+    time.sleep(2)
+    driver.find_element_by_xpath("//select[@id='drpdist']/option[@value='39']").click()
+    driver.find_element_by_xpath("//select[@id='ddlUrban_Rural']/option[@value='R']").click()
+    time.sleep(2)
+    driver.find_element_by_xpath("//select[@id='ddlNNN_Block']/option[@value='"+pdsBlockCode+"']").click()
+    time.sleep(2)
+    driver.find_element_by_xpath("//select[@id='ddlShopName']/option[@value='"+shopCode+"']").click()
+    time.sleep(2)
+    elem=driver.find_element_by_name("btnShowDetails")
+    elem.send_keys(Keys.RETURN)
+    time.sleep(2)
+    html_source = driver.page_source
+    raw_html=html_source.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+    with open(filename, "w") as html_file:
+      html_file.write(raw_html.encode("UTF-8"))
+
+from shutil import copyfile
+def pdsMove(driver, db, logger):
   '''
   Crawl the page for the khadya site and fecth the latest reports
   '''
@@ -176,10 +278,20 @@ def pdsFetch(driver, db, logger):
     shopCode=row[1]
     filename = './html/'+shopCode+'.html'
     if os.path.isfile(filename):
-      logger.info("Skipped [%s]" % filename)
+      query='select panchayat from shopMapping where shopCode=' + shopCode
+      logger.info('query: [%s]', query)
+      cur.execute(query)
+      panchayat = cur.fetchall()[0][0]
+      logger.info('panchayat[%s]' % panchayat)
+      dest = './reports/'+ blockName + '_' + panchayat + '_' + shopCode + '.html'
+      logger.info("Moved [%s] to [%s]" % (filename, dest))
+      copyfile(filename,  dest)
+      continue
+    logger.info('Block Name:[%s] Shop Code:[%s]' % (blockName, shopCode))
+    if shopCode not in shops:
+      logger.debug("Skipped shop [%s]" % shopCode)
       continue
 
-    logger.error('Block Name:[%s] Shop Code:[%s]' % (blockName, shopCode))
     url="http://khadya.cg.nic.in/pdsonline/cgfsa/Report/FrmRation_Patra_Allot_VerificationDistWise_Aug14.aspx"
     logger.info('URL: [%s]', url)
     driver.get(url)
