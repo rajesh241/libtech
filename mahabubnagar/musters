@@ -1,24 +1,62 @@
 #! /usr/bin/env python
 
+import os
 from bs4 import BeautifulSoup
+from time import strftime,strptime
+from MySQLdb import IntegrityError
 
 import sys
+sys.path.insert(0, './')
 sys.path.insert(0, '../')
 
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize
 from wrappers.db import dbInitialize,dbFinalize
-from includes.settings_default import dbhost,dbuser,dbpasswd
+
 
 #######################
 # Global Declarations
 #######################
 
-
+state_code = '36'
+district_code = '14'
+block_code = '057'
 
 #############
 # Functions
 #############
+
+def jobcardList(logger, db, filter=None):
+  if filter:
+    filter = ' ' + filter
+  else:
+    filter = ' '
+
+  query = "select jobcard from jobcardRegister" + filter
+  logger.info('Executing query: [%s]', query)
+  cur = db.cursor()
+  cur.execute(query)
+  jobcard_array = list(cur.fetchall())
+  jobcards = [ x[0] for x in jobcard_array ]
+  return jobcards
+  
+def dateConvert(date):
+  return strftime('%Y-%m-%d %H:%M:%S', (strptime(date, '%d-%b-%Y')))
+
+def dateConvert2(date):
+  return strftime('%Y-%m-%d %H:%M:%S', (strptime(date, '%d-%b-%Y %H:%M:%S %p')))
+
+def lookupInitializePanchayats(logger, db):
+  cur = db.cursor()
+
+  query = 'select name, panchayatCode from panchayats'
+  logger.info('query[%s]' % query)
+  cur.execute(query)
+  panchayat_mapping = cur.fetchall()
+  logger.debug('mapping tupple[%s]' % str(panchayat_mapping))
+  
+  return dict((panchayat, panchayatCode) for panchayat, panchayatCode in panchayat_mapping)
+
 
 def lookupInitialize(logger):
   db = dbInitialize(host=dbhost, user=dbuser, passwd=dbpasswd, db="mahabubnagar")
@@ -50,12 +88,12 @@ def argsFetch():
   #  parser.add_argument('-i', '--missed-call-id', help='Specify the ID of missed call', required=True)
   parser.add_argument('-d', '--directory', help='Specify directory to download html file to', required=False)
   parser.add_argument('-q', '--query', help='Query to specify the workset, E.g ... where id=147', required=False)
+  parser.add_argument('-c', '--crawl', help='Crawl the Disbursement Data', required=False)
+  parser.add_argument('-f', '--fetch', help='Fetch the Jobcard Details', required=False)
+  parser.add_argument('-p', '--parse', help='Parse Jobcard HTML for Muster Info', required=False)
 
   args = vars(parser.parse_args())
   return args
-
-def parserFinalize(parser):
-  parser.close()
 
 
 from datetime import timedelta,date
@@ -120,7 +158,7 @@ def downloadDibsursementReport(logger, driver, cmd=None, dir=None, url=None, dat
 
   logger.info("...END %s" % cmd)     
 
-def downloadJobcardDetails(logger, driver, cmd=None, dir=None, url=None):
+def fetchJobcardDetails(logger, driver, cmd=None, dir=None, url=None):
   '''
   Crawl the html for the musters
   '''
@@ -220,6 +258,226 @@ def downloadJobcardDetails(logger, driver, cmd=None, dir=None, url=None):
     
   logger.info("...END %s" % cmd)     
 
+def downloadJobcards(logger, driver, db, cmd=None, dir=None, url=None):
+  '''
+  Crawl the html for the musters
+  '''
+  if cmd == None:
+    cmd="Downloading"
+    
+  if dir == None:
+    dir = "./html"
+
+  if url == None:
+    url = 'http://www.nrega.telangana.gov.in/Nregs/FrontServlet?requestType=HouseholdInf_engRH&actionVal=SearchJOB&JOB_No='
+  url_source = url
+
+  jobcards = jobcardList(logger, db)
+  logger.info('jobcards[%s]' % str(jobcards))  
+
+  logger.info("BEGIN %s..." % cmd)
+
+  logger.info("Command[%s] Directory[%s] URL[%s]" % (cmd, dir, url))
+
+  for jobcard in jobcards:
+    filename = './jobcards/' + jobcard + '.html'
+    if os.path.exists(filename):
+      logger.info("Skipping [%s]", filename)
+      continue
+
+    url = url_source + jobcard
+
+    driver.get(url)
+    logger.info("Fetching...[%s]" % url)
+  
+    driver.get(url)    # A double refresh required for the page to load
+    logger.info("Refreshing...[%s]" % url)
+  
+    html_source = driver.page_source.replace('<head>',
+                                           '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+    logger.debug("HTML Fetched [%s]" % html_source)
+
+    with open(filename, 'w') as html_file:
+      logger.info("Writing [%s]" % filename)
+      html_file.write(driver.page_source.encode('utf-8'))
+
+    driver.back()
+    
+  logger.info("...END %s" % cmd)     
+
+
+def parseMusterInfo(logger, db, cmd=None, dir=None):
+  '''
+  Process the Jobcard HTML for Muster Info
+  '''
+  if cmd == None:
+    cmd="PROCESSING"
+    
+  if dir == None:
+    dir = "./jobcards"
+
+  panchayatCode = lookupInitializePanchayats(logger, db)
+  logger.info('mapping dictionary[%s]' % str(panchayatCode))  
+
+  logger.info("BEGIN %s..." % cmd)
+
+  logger.info("Command[%s] Directory[%s]" % (cmd, dir))
+
+  import os
+#   files = ['141975723027010215.html',]  # Test case no main3
+  files = os.listdir(dir)
+
+  for f in files:
+    filename = dir + '/' + f
+    
+    jobcard = filename[len(dir+'/'):-len('.html')]
+    logger.info("filename[%s] and jobcard[%s]", filename, jobcard)
+
+    with open(filename, 'r') as html_file:
+      logger.info("Reading [%s]" % filename)
+      html_source = html_file.read()
+
+    bs = BeautifulSoup(html_source, "html.parser")
+    span = bs.find('span',attrs={'class':'rpt-hd-txt'})
+    txt = span.text.strip()
+    logger.debug("Span[%s]" % txt)
+    panchayat = txt[txt.find('Panchayat')+len('Panchayat :'):txt.find('Habitation')].strip() #Mynk 
+    logger.info("Panchayat[%s]" % panchayat)
+
+    main3 = bs.find(id='main3')
+    if main3 == None:
+      continue
+    table3 = main3.find('table')
+    logger.debug("Table2[%s]" % table3)
+    header_row = table3.find('tr')
+    row = header_row.findNext('tr')
+
+    while True:
+      td = row.find('td')
+      epay_order_value = td.text
+      epay_order_number = epay_order_value.strip()
+      logger.info("Epayorder No[%s]", epay_order_number)
+      if len(epay_order_number) != 16:
+        logger.info('Reached End of Table')
+        break
+
+      td = td.findNext('td')
+      ftr_no = td.text.strip()
+      logger.info("Ftr No[%s]", ftr_no)
+
+      td = td.findNext('td')
+      muster_number = td.text.strip()
+      logger.info("musterNo[%s]", muster_number)
+      if len(muster_number) != 12:
+        logger.info('Empty Muster Number')
+
+        try:
+          row = row.findNext('tr')
+          logger.debug("row[%s]" % row)
+        except StopIteration:
+          break
+        
+        continue
+
+      financial_year = muster_number[2:4]
+      logger.info("financial_year[%s]", financial_year)
+      
+      td = td.findNext('td')
+      from_date = td.text.strip()
+      logger.info("From Date[%s]", from_date)
+      from_date = dateConvert(from_date)
+      logger.info("From Date[%s]", from_date)
+
+      td = td.findNext('td')
+      to_date = dateConvert(td.text.strip())
+      logger.info("To Date[%s]", to_date)
+
+      td = td.findNext('td')
+      payorder_date = dateConvert(td.text.strip())
+      logger.info("Payorder Date[%s]", payorder_date)
+
+      td = td.findNext('td')
+      work = td.text.strip()
+      (work_code, work_name) = work.split(' / ')
+      logger.info("work_code[%s] work_name[%s]", work_code, work_name)
+
+      td = td.findNext('td')
+      payorder_number = td.text.strip()
+      logger.info("payorder_number[%s]", payorder_number)
+
+      td = td.findNext('td')
+      wageseeker_name = td.text.strip()
+      logger.info("wageseeker_name[%s]", wageseeker_name)
+
+      td = td.findNext('td')  # Skip Caste
+      caste = td.text.strip()
+      logger.info("caste[%s]", caste)
+
+      td = td.findNext('td')
+      account_number = td.text.strip()
+      logger.info("account_number[%s]", account_number)
+
+      td = td.findNext('td')
+      days_worked = td.text.strip()
+      logger.info("days_worked[%s]", days_worked)
+
+      td = td.findNext('td')
+      payorder_amount = td.text.strip()
+      logger.info("payorder_amount[%s]", payorder_amount)
+
+      day_wage = int(payorder_amount)/int(days_worked)
+
+      td = td.findNext('td')
+      credit_date = td.text.strip()
+      logger.info("credit_date[%s]", credit_date)
+      if credit_date != '-':
+        credit_date = dateConvert(credit_date)
+        logger.info("credit_date[%s]", credit_date)
+      else:
+        logger.warning("Credit Date messed")
+
+      td = td.findNext('td')
+      disbursed_amount = td.text.strip()
+      logger.info("disbursed_amount[%s]", disbursed_amount)
+
+      td = td.findNext('td')
+      disbursed_date = td.text.strip()
+      logger.info("disbursed_date[%s]", disbursed_date)
+      if disbursed_date != '-':
+        disbursed_date = dateConvert2(disbursed_date)
+        logger.info("disbursed_date[%s]", disbursed_date)
+      else:
+        logger.warning("Disbursed Date messed")
+      
+
+      td = td.findNext('td')    # Skip outsanding_amount
+      outsanding_amount = td.text.strip()
+      logger.info("outsanding_amount[%s]", outsanding_amount)
+
+      cur = db.cursor()
+      query = 'insert into musters (musterNo, stateCode, districtCode, blockCode, panchayatCode, finyear, workCode, workName, dateFrom, dateTo, crawlDate) values ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s")' % (muster_number, state_code, district_code, block_code, panchayatCode[panchayat], financial_year, work_code, work_name, from_date, to_date, strftime('%Y-%m-%d %H:%M:%S'))
+      logger.info('Executing query[%s]' % query)
+      try:
+        cur.execute(query)
+      except IntegrityError, e:
+        logger.warning('Attempting Duplicate Entry[%s]', e)
+
+      cur = db.cursor()
+      query = 'insert into musterTransactionDetails (musterNo, finyear, workCode, name, jobcard, daysWorked, dayWage, totalWage, accountNo, wagelistNo, creditedDate, blockCode, panchayatCode, stateCode, districtCode, disbursedAmount, disbursedDate, referenceNoEPayorderNo) values ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s")' % (muster_number, financial_year, work_code, wageseeker_name, jobcard, days_worked, day_wage, payorder_amount, account_number, payorder_number, credit_date, block_code, panchayatCode[panchayat], state_code, district_code, disbursed_amount, disbursed_date, epay_order_number)
+      logger.info('Executing query[%s]' % query)
+      try:
+        cur.execute(query)
+      except IntegrityError, e:
+        logger.warning('Attempting Duplicate Entry[%s]', e)
+
+      try:
+        row = row.findNext('tr')
+        logger.debug("row[%s]" % row)
+      except StopIteration:
+        break
+
+  logger.info("...END %s" % cmd)     
+
 
 def main():
   args = argsFetch()
@@ -234,14 +492,21 @@ def main():
   outdir = args['directory']
   url = args['url']
 
-  downloadJobcardDetails(logger, driver, "DOWNLOAD JOBCARDS", outdir, url)
+  if args['crawl']:
+    start_date = date(2015, 4, 1)
+    end_date = date(2015, 8, 19)
+  
+    for day in daterange(start_date, end_date):
+      downloadDibsursementReport(logger, driver, "CRAWLING", outdir, url, day.strftime("%d/%m/%Y"))
+  
+  if args['fetch']:
+    fetchJobcardDetails(logger, driver, "DOWNLOAD JOBCARDS", outdir, url)
 
-  start_date = date(2015, 4, 1)
-#  end_date = date(2015, 8, 19)
-  end_date = date(2015, 4, 1)
+  db = dbInitialize(db="mahabubnagar")
+  downloadJobcards(logger, driver, db, "DOWNLOAD JOBCARDS", outdir, url)
+  #parseMusterInfo(logger, db, "PROCESS MUSTERS", outdir)  
+  dbFinalize(db)
 
-  for day in daterange(start_date, end_date):
-    downloadDibsursementReport(logger, driver, "CRAWLING", outdir, url, day.strftime("%d/%m/%Y"))
 
   driverFinalize(driver)
   displayFinalize(display)
