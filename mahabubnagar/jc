@@ -9,7 +9,6 @@ sys.path.insert(0, '../')
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize
 from wrappers.db import dbInitialize,dbFinalize
-from includes.settings_default import dbhost,dbuser,dbpasswd
 
 import time
 import re
@@ -147,7 +146,7 @@ def wdFetchPanchayat(driver, cur, logger, panchayatName):
 
       if False:
         # Download the html file for parsing later
-        html_file = open('./musters/'+jcno+'.html', 'w') # Mynk
+        html_file = open('./musters/'+jcno+'.html', 'w')
         html_file.write(jc_html)
         html_file.close
 
@@ -235,8 +234,6 @@ def crawlJobcards(driver, db, logger, url):
     try:
       table=htmlsoup.find('table',id="sortable")
       rows = table.findAll('tr')
-#Mynk      td = table.find('td')
-#Mynk      logger.debug("Sl No[" + td.text + "]")
       logger.debug(rows)
       status=1
     except:
@@ -274,7 +271,9 @@ def crawlJobcards(driver, db, logger, url):
                         
         if jcno in jobcards:
           pass
-          # query='update jobcardRegister set govtJobcard="%s",stateCode="%s",headOfFamily="%s",issueDate="%s",caste="%s",districtCode="%s",blockCode="%s",panchayatCode="%s" where jobcard="%s")' % (gjcno, stateCode, hof, issueDate, caste, districtCode, blockCode, panchayatCode, jcno)
+          query='update jobcardRegister set govtJobcard="%s",stateCode="%s",headOfFamily="%s",issueDate="%s",caste="%s",districtCode="%s",blockCode="%s",panchayatCode="%s" where jobcard="%s")' % (gjcno, stateCode, hof, issueDate, caste, districtCode, blockCode, panchayatCode, jcno)
+          logger.warning("Letting pass for now. Need to update with query[%s]" % query)
+          continue
         else:          
           query="insert into jobcardRegister (jobcard,govtJobcard,stateCode,headOfFamily,issueDate,caste,districtCode,blockCode,panchayatCode) values ('"+jcno+"','"+gjcno+"','"+stateCode+"','"+hof+"',"+issueDate+",'"+caste+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"')"
           
@@ -284,7 +283,6 @@ def crawlJobcards(driver, db, logger, url):
         except IntegrityError,e:
           logger.error("Attempting to insert duplicate [%s]" % e)
 
-        continue  # Mynk
 
 def crawlJobcards2(driver, db, logger, url):
   '''
@@ -492,7 +490,7 @@ def contextRegister(context):
 
 def contextInitialize(self, logger, args):
   self.logger = logger
-  self.db = dbInitialize(host=dbhost, user=dbuser, passwd=dbpasswd, db="mahabubnagar")
+  self.db = dbInitialize(db="mahabubnagar")
   self.display = displayInitialize(args['visible'])
   if args['visible']:
     delay=5
