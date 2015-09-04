@@ -1,7 +1,11 @@
 from bs4 import BeautifulSoup
 
+import os
+dirname = os.path.dirname(os.path.realpath(__file__))
+rootdir = os.path.dirname(dirname)
+
 import sys
-sys.path.insert(0, '../')
+sys.path.insert(0, rootdir)
 
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize
