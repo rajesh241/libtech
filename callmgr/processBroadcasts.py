@@ -86,7 +86,7 @@ def main():
   cur.execute(query)
   query="use libtech"
   cur.execute(query)
-  query="select bid,type,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats,priority from broadcasts where error=0 and approved=1 and processed=0 and startDate <= CURDATE();"
+  query="select bid,type,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats,priority,fileid2,template from broadcasts where error=0 and approved=1 and processed=0 and startDate <= CURDATE();"
   print query
   cur.execute(query)
   results = cur.fetchall()
@@ -96,8 +96,10 @@ def main():
     maxhour=str(row[3])
     tringoaudio=gettringoaudio(row[4])
     audio,error=getaudio(cur,row[5])
+    #audio1,error1=getaudio(cur,row[12])
     requestedVendor=row[7]
     priority=row[11]
+    template=row[13]
     print "Vendor "+requestedVendor
     broadcastType=row[1]
     if (broadcastType == "group"):
@@ -105,6 +107,8 @@ def main():
       queryMatchString=getGroupQueryMatchString(cur,row[6]) 
     elif (broadcastType == "location"):
       queryMatchString=getLocationQueryMatchString(row[8],row[9],row[10])
+    elif (broadcastType == "transactional"):
+      queryMatchString='phone is NULL'  #We dont want any calls to be Added to Call Queue
     else:
       error=1
 
@@ -137,7 +141,7 @@ def main():
           vendor=requestedVendor;
         print "phone "+phone+" skip"+str(skip)+"vendor "+vendor
         if len(phone) == 10 and phone.isdigit() and skip == 0:
-          query="insert into callQueue (priority,vendor,bid,minhour,maxhour,phone,audio,tringoaudio,exophone) values ("+str(priority)+",'"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
+          query="insert into callQueue (priority,template,vendor,bid,minhour,maxhour,phone,audio,audio1,tringoaudio,exophone) values ("+str(priority)+",'"+template+"','"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
           print query
           cur.execute(query)
           query="insert into callStatus (bid,phone) values ("+bid+",'"+phone+"');"

@@ -45,6 +45,7 @@ def main():
      <tr>
        <th>MissedCall ID</th>
        <th>LastUpdateDate</th>
+       <th>Panchayat</th>
        <th>Phone</th>
        <th>Jobcard</th>
        <th>currentStep</th>
@@ -72,14 +73,25 @@ def main():
     complaintNumber=row1[4]
     complaintDate=row1[5]
     htmlgen=row1[6]
+    #Getting the panchayatName
+    query="use mahabubnagar"
+    cur.execute(query)
+    query="select p.name from jobcardRegister j,panchayats p where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode and jobcard='%s'" % jobcard
+    cur.execute(query)
+    panchayat=''
+    if (cur.rowcount == 1):
+      panchRow=cur.fetchone()
+      panchayat=panchRow[0]
+    query="use libtech"
+    cur.execute(query)
     htmllink='<a href="./'+str(missedCallID)+'_'+phone+'.html">view html</a>'
-    tableArray=[missedCallID,tsstring,phone,jobcard,currentStep,complaintNumber,str(complaintDate),htmllink]
+    tableArray=[missedCallID,tsstring,panchayat,phone,jobcard,currentStep,complaintNumber,str(complaintDate),htmllink]
     if(finalStatus != 'Closed'):
     #if(htmlgen ==1 ):
       reportTable+=arrayToHTMLLine(tableArray)
     else:
       reportTableClosed+=arrayToHTMLLine(tableArray)
-    print str(missedCallID)+"  "+str(tsstring)
+    print str(missedCallID)+"  "+str(tsstring)+"  "+panchayat
   
   reportTable+="""
     </table></body></html>

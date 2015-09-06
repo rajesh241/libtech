@@ -92,6 +92,7 @@ def main():
     #write csv report
     csvname=broadcastReportFilePath+str(bid)+"_"+name.strip()+".csv"
     query="select phone,DATE_FORMAT(callStartTime,'%d-%M-%Y') callTime,status,attempts,duration from callStatus where bid="+str(bid)
+    query="select a.district,a.block,a.panchayat,c.phone,DATE_FORMAT(c.callStartTime,'%d-%M-%Y') callTime,c.status,c.attempts,c.duration,f.feedback,c.sid from addressbook a,callStatus c left join callFeedback f on c.sid=f.sid where c.phone=a.phone and bid="+str(bid)
     if(completed == 0):
       writecsv(cur,query,csvname)
   myhtml+="</table>"

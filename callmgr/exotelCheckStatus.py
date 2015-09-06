@@ -177,7 +177,7 @@ def main():
           curCallStatus = "fail"
           finalCallmaxRetryFail=1
           finalCallStatus='failMaxRetry'
-        query="update callStatus set status='"+finalCallStatus+"',attempts="+str(retry)+",vendor='"+vendor+"',duration="+str(duration)+",callStartTime='"+callStartTime+"' where  bid="+bid+" and phone='"+phone+"';"
+        query="update callStatus set status='"+finalCallStatus+"',sid='"+callsid+"',attempts="+str(retry)+",vendor='"+vendor+"',duration="+str(duration)+",callStartTime='"+callStartTime+"' where  bid="+bid+" and phone='"+phone+"';"
         print query
         if(isTest == 0):
           cur.execute(query)

@@ -16,9 +16,11 @@ if (!$mydbcon){
         mysqli_query($mydbcon,$query);
         $name=$_POST['name'];
         $type=$_POST['broadcastType'];
+        $template=$_POST['broadcastTemplate'];
         $vendor=$_POST['vendor'];
         $tfileid=$_POST['tfileid'];
         $fileid=$_POST['fileid'];
+        $fileid2=$_POST['fileid2'];
         $district=$_POST['district'];
         $block=$_POST['block'];
         $panchayats=$_POST['panchayat'];
@@ -67,7 +69,7 @@ if (!$mydbcon){
           $error=1;
         }
         if($error == 0){ 
-        $query="insert into broadcasts (priority,name,vendor,type,startDate,endDate,minhour,maxhour,tfileid,fileid,groups,district,blocks,panchayats) values (".$priority.",'".$name."','".$vendor."','".$type."','".$startDate."','".$endDate."',".$minhour.",".$maxhour.",'".$tfileid."','".$fileid."','".$groupString."','".$district."','".$block."','".$panchayatString."');";
+        $query="insert into broadcasts (priority,name,vendor,type,template,startDate,endDate,minhour,maxhour,tfileid,fileid,fileid2,groups,district,blocks,panchayats) values (".$priority.",'".$name."','".$vendor."','".$type."','".$template."','".$startDate."','".$endDate."',".$minhour.",".$maxhour.",'".$tfileid."','".$fileid."','".$fileid2."','".$groupString."','".$district."','".$block."','".$panchayatString."');";
         mysqli_query($mydbcon,$query);
         $id=mysqli_insert_id($mydbcon);
         print "<h4>Congratulations !! Broadcast ".$name." added with ID ".$id."</h4>";

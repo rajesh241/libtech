@@ -92,6 +92,7 @@ while($row=mysqli_fetch_array($results)){
                                   <td><select name="broadcastType" id="broadcast-options">
                                 <option value="group" selected>Group</option>
                                 <option value="location">Location </option>
+                                <option value="transactional">Transactional </option>
                                   </td>
                           </tr>
        <tr>
@@ -126,7 +127,14 @@ while($row=mysqli_fetch_array($results)){
                                 <td>
                                         <input  name="fileid" type="text" size="50"></input>
                                 </td>
-                        </tr>        
+                        </tr>   
+                          <tr>
+                                <td>Libtech File ID for the message to be played after Feedback(Valid only for Feedback Calls)
+                                </td>
+                                <td>
+                                        <input  name="fileid2" type="text" size="50"></input>
+                                </td>
+                        </tr>         
                         <tr>
                                 <td>Start Date (The Date on which you want to start Broadcast)  
                                 </td>
