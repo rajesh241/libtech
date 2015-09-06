@@ -1,13 +1,15 @@
 #! /usr/bin/env python
 
-import os
 from bs4 import BeautifulSoup
 from time import strftime,strptime
 from MySQLdb import IntegrityError
 
+import os
+dirname = os.path.dirname(os.path.realpath(__file__))
+rootdir = os.path.dirname(dirname)
+
 import sys
-sys.path.insert(0, './')
-sys.path.insert(0, '../')
+sys.path.insert(0, rootdir)
 
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize
@@ -267,7 +269,9 @@ def downloadJobcards(logger, driver, db, cmd=None, directory=None, url=None):
   logger.info("Command[%s] Directory[%s] URL[%s]" % (cmd, directory, url))
 
 # Mynk - use when b.name is not all 'Ghattu'  query = 'select j.jobcard, p.name, b.name from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode'
-  query = 'select j.jobcard, p.name from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode'
+  query = 'select j.jobcard, p.name from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and DATE_SUB(NOW(), INTERVAL 2 DAY) >= downloadDate'
+  #query = 'select j.jobcard, p.name from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and DATE_SUB(NOW(), INTERVAL 3 HOUR) >= downloadDate'
+  #query = 'select j.jobcard, p.name from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode'
   logger.info('Executing query: [%s]', query)
   cur = db.cursor()
   cur.execute(query)
@@ -297,11 +301,11 @@ def downloadJobcards(logger, driver, db, cmd=None, directory=None, url=None):
 
     with open(filename, 'w') as html_file:
       logger.info("Writing [%s]" % filename)
-      html_file.write(driver.page_source.encode('utf-8'))
+      html_file.write(html_source.encode('utf-8'))
 
     driver.back()
 
-    query = 'update jobcardRegister set downloadDate="%s"' % strftime('%Y-%m-%d %H:%M:%S')
+    query = 'update jobcardRegister set downloadDate="%s" where jobcard="%s"' % (strftime('%Y-%m-%d %H:%M:%S'), jobcard)
     logger.info('Executing query: [%s]', query)
     cur = db.cursor()
     cur.execute(query)
