@@ -1,20 +1,23 @@
 import MySQLdb
+import os
+dirname = os.path.dirname(os.path.realpath(__file__))
+rootdir = os.path.dirname(dirname)
+
+import sys
+sys.path.insert(0, rootdir)
+
+from wrappers.logger import loggerFetch
+from includes.settings import dbhost,dbuser,dbpasswd,sid,token
+
 
 #######################
 # Global Declarations
 #######################
 
-import os
-import sys
-fileDir=os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, fileDir+'/../includes/')
-from settings_default import dbhost,dbuser,dbpasswd,sid,token
-from logger import loggerFetch
 
 #############
 # Functions
 #############
-
 
 def dbInitialize(host=dbhost, user=dbuser, passwd=dbpasswd, db="libtech", charset=None):
   '''
