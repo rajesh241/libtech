@@ -101,6 +101,7 @@ while($row=mysqli_fetch_array($results)){
                                   <td><select name="broadcastTemplate" >
                                 <option value="general" selected>General Broadcast</option>
                                 <option value="feedback">Feedback Broadcast </option>
+                                <option value="wageBroadcast">Wage Broadcast </option>
                                   </td>
                           </tr>
 

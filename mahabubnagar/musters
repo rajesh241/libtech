@@ -269,7 +269,7 @@ def downloadJobcards(logger, driver, db, cmd=None, directory=None, url=None):
   logger.info("Command[%s] Directory[%s] URL[%s]" % (cmd, directory, url))
 
 # Mynk - use when b.name is not all 'Ghattu'  query = 'select j.jobcard, p.name, b.name from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode'
-  query = 'select j.jobcard, p.name from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and DATE_SUB(NOW(), INTERVAL 2 DAY) >= downloadDate'
+  query = 'select j.jobcard, p.name from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and DATE_SUB(NOW(), INTERVAL 3 DAY) >= downloadDate'
   #query = 'select j.jobcard, p.name from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and DATE_SUB(NOW(), INTERVAL 3 HOUR) >= downloadDate'
   #query = 'select j.jobcard, p.name from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode'
   logger.info('Executing query: [%s]', query)
@@ -284,8 +284,8 @@ def downloadJobcards(logger, driver, db, cmd=None, directory=None, url=None):
 
     filename = dirname + '/' + jobcard + '.html'
     if os.path.exists(filename):
-      logger.info("Skipping [%s]", filename)
-      continue
+      logger.info("Updating [%s]", filename)
+      # continue
 
     url = url_source + jobcard
 

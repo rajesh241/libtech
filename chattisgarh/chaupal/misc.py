@@ -13,7 +13,7 @@ import libtechFunctions
 import globalSettings
 import settings
 from settings import dbhost,dbuser,dbpasswd,sid,token
-from libtechFunctions import getjcNumber,singleRowQuery,getBlockCodeFromJobcard,getPanchayatCodeFromJobcard,getBlockName,getPanchayatName,addPhoneAddressBook
+from libtechFunctions import getjcNumber,singleRowQuery,getBlockCodeFromJobcard,getPanchayatCodeFromJobcard,getBlockName,getPanchayatName,addPhoneAddressBook,getWageBroadcastAudioArray,scheduleWageBroadcastCall
 def main():
   print 'Content-type: text/html'
   print 
@@ -24,19 +24,28 @@ def main():
   cur.execute(query)
   query="use surguja"
   cur.execute(query)
-  query="select jobcard,id from  musterTransactionDetails"
-  query="select jobcard,id from  musterTransactionDetails "
-  cur.execute(query)
-  results = cur.fetchall()
-  for row in results:
-    jobcard=row[0]    
-    rowid=str(row[1])
-    print rowid+"  " +jobcard
-    blockCode=getBlockCodeFromJobcard(jobcard) 
-    panchayatCode=getPanchayatCodeFromJobcard(jobcard) 
-    query="update musterTransactionDetails set blockCode='%s',panchayatCode='%s' where id=%s" %(blockCode,panchayatCode,rowid)
+  jobcard='CH-05-005-032-001/85'
+  phone='8500404969'
+#  phone='9833419391'
+#  phone='9845155447'
+  scheduleWageBroadcastCall(cur,jobcard,phone)
+#  getWageBroadcastAudioArray(cur,jobcard)
+# query="use surguja"
+# cur.execute(query)
+# query="select jobcard,id from  musterTransactionDetails"
+# query="select jobcard,id from  musterTransactionDetails "
+# cur.execute(query)
+# results = cur.fetchall()
+  
+# for row in results:
+#   jobcard=row[0]    
+#   rowid=str(row[1])
+#   print rowid+"  " +jobcard
+#   blockCode=getBlockCodeFromJobcard(jobcard) 
+#   panchayatCode=getPanchayatCodeFromJobcard(jobcard) 
+#   query="update musterTransactionDetails set blockCode='%s',panchayatCode='%s' where id=%s" %(blockCode,panchayatCode,rowid)
 #    print query
-    cur.execute(query)
+#   cur.execute(query)
 #   bid=str(row[0])
 #   phone=row[1]
 #   tableid=str(row[2])
