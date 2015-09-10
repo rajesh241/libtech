@@ -15,7 +15,7 @@ def main():
   cur.execute(query)
   query="use libtech"
   cur.execute(query)
-  query="select c.id,c.vendor,c.bid,c.phone,c.retry from callQueue c,broadcasts b  where b.bid=c.bid and b.endDate < CURDATE() and c.inprogress=0 "
+  query="select c.callid,c.vendor,c.bid,c.phone,c.retry from callQueue c,broadcasts b  where b.bid=c.bid and b.endDate < CURDATE() and c.inprogress=0 "
   cur.execute(query)
   results = cur.fetchall()
   for row in results:
@@ -24,10 +24,10 @@ def main():
     bid=str(row[2])
     phone=row[3]
     retry=row[4]
-    query="update callStatus set status='"+finalCallStatus+"',attempts="+str(retry)+",vendor='"+vendor+"',duration="+str(duration)+" where  bid="+bid+" and phone='"+phone+"';"
+    query="update callSummary set status='"+finalCallStatus+"',attempts="+str(retry)+",vendor='"+vendor+"',duration="+str(duration)+" where  callid="+callid+" ;"
     print query
     cur.execute(query)
-    query="delete from callQueue where id="+str(callid)
+    query="delete from callQueue where callid="+str(callid)
     print query
     cur.execute(query)
 

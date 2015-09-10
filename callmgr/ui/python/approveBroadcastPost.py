@@ -16,7 +16,8 @@ import libtechFunctions
 import globalSettings
 import settings
 import processBroadcasts
-from processBroadcasts import gettringoaudio,getaudio 
+import broadcastFunctions
+from broadcastFunctions import gettringoaudio,getaudio,scheduleGeneralBroadcastCall 
 from settings import dbhost,dbuser,dbpasswd,sid,token
 from libtechFunctions import gethtmlheader 
 from libtechFunctions import gethtmlfooter 
@@ -67,9 +68,10 @@ def main():
       maxhour='23'
       exophone='02233814264'
       vendor=formType
-      query="insert into callQueue (isTest,priority,vendor,bid,minhour,maxhour,phone,audio,audio1,template,tringoaudio,exophone) values (1,20,'"+vendor+"',"+str(bid)+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+audio+"','"+template+"','"+tringoaudio+"','"+exophone+"');"
-      print query 
-      cur.execute(query)
+      scheduleGeneralBroadcastCall(cur,bid,phone,vendor,20)
+      #query="insert into callQueue (isTest,priority,vendor,bid,minhour,maxhour,phone,audio,audio1,template,tringoaudio,exophone) values (1,20,'"+vendor+"',"+str(bid)+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+audio+"','"+template+"','"+tringoaudio+"','"+exophone+"');"
+    #  print query 
+   #   cur.execute(query)
       myhtml+="<h3>Test Call Placed on number %s</h3>" %(phone)
       myhtml+="<p>Please Note that it may take about 5-10 minutes to get the test call based on system load. Please sit back and relax for sometime and ensure that your phone is not on silent</p>"
     else:

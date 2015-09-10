@@ -18,13 +18,13 @@ from libtechFunctions import singleRowQuery,arrayToHTMLLine,writecsv
 from globalSettings import broadcastsReportFile,broadcastReportFilePath
 
 def updateBroadcastTable(cur,bid):
-  query="select count(*) from callStatus where status='success' and bid="+str(bid)
+  query="select count(*) from callSummary where status='success' and bid="+str(bid)
   success=singleRowQuery(cur,query)
-  query="select count(*) from callStatus where status='failMaxRetry' and bid="+str(bid)
+  query="select count(*) from callSummary where status='failMaxRetry' and bid="+str(bid)
   failMaxRetry=singleRowQuery(cur,query)
-  query="select count(*) from callStatus where status='expired' and bid="+str(bid)
+  query="select count(*) from callSummary where status='expired' and bid="+str(bid)
   expired=singleRowQuery(cur,query)
-  query="select count(*) from callStatus where status='pending' and bid="+str(bid)
+  query="select count(*) from callSummary where status='pending' and bid="+str(bid)
   pending=singleRowQuery(cur,query)  
   query="select sum(cost) from callLogs where bid="+str(bid)
   cost=singleRowQuery(cur,query)
@@ -91,8 +91,8 @@ def main():
     myhtml+=arrayToHTMLLine('td',tableArray)
     #write csv report
     csvname=broadcastReportFilePath+str(bid)+"_"+name.strip()+".csv"
-    query="select phone,DATE_FORMAT(callStartTime,'%d-%M-%Y') callTime,status,attempts,duration from callStatus where bid="+str(bid)
-    query="select a.district,a.block,a.panchayat,c.phone,DATE_FORMAT(c.callStartTime,'%d-%M-%Y') callTime,c.status,c.attempts,c.duration,f.feedback,c.sid from addressbook a,callStatus c left join callFeedback f on c.sid=f.sid where c.phone=a.phone and bid="+str(bid)
+    query="select phone,DATE_FORMAT(callStartTime,'%d-%M-%Y') callTime,status,attempts,duration from callSummary where bid="+str(bid)
+    query="select a.district,a.block,a.panchayat,c.phone,DATE_FORMAT(c.callStartTime,'%d-%M-%Y') callTime,c.status,c.attempts,c.duration,f.feedback,c.sid from addressbook a,callSummary c left join callFeedback f on c.sid=f.sid where c.phone=a.phone and bid="+str(bid)
     if(completed == 0):
       writecsv(cur,query,csvname)
   myhtml+="</table>"
