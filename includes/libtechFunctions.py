@@ -14,9 +14,11 @@ import xml.etree.ElementTree as ET
 import settings
 from settings import dbhost,dbuser,dbpasswd,sid,token
 def getOnlyDigits(s):
-  all=string.maketrans('','')
-  nodigs=all.translate(all, string.digits)
-  return s.translate(all, nodigs)
+  digitArray=re.findall(r'\d+', s)
+#  all=string.maketrans('','')
+#  nodigs=all.translate(all, string.digits)
+#  return s.translate(all, nodigs)
+  return digitArray[0]
 
 def getNumberString(a):
   thousands=int(a)/1000
@@ -123,7 +125,12 @@ def writecsv(cur,query,filename):
   writer.writerow(headerlist)
   results = cur.fetchall()
   for row in results:
-    writer.writerow(row) 
+    rowEncoded=[]
+    for a in row:
+      s=getstring(a)
+      b=s.encode("UTF-8")
+      rowEncoded.append(b)
+    writer.writerow(rowEncoded) 
   f.close()
  # print str(cur.description())
 
@@ -368,42 +375,4 @@ def getBlockCodeFromJobcard(jobcard):
 def getPanchayatCodeFromJobcard(jobcard):
   return jobcard[10:13]
 
-def getWageBroadcastAudioArray(cur,jobcard):
-  query="use surguja"
-  cur.execute(query)
-  query="select mt.totalWage,DATE_FORMAT(mt.creditedDate,'%Y'),DATE_FORMAT(mt.creditedDate,'%M'),DATE_FORMAT(mt.creditedDate,'%d'),p.name,mt.id from musterTransactionDetails mt,panchayats p where mt.blockCode=p.blockCode and mt.panchayatCode=p.panchayatCode and mt.jobcard='"+jobcard+"' order by mt.creditedDate desc limit 1;"
-  cur.execute(query)
-  if (cur.rowcount == 0):
-    return "error"
-  else:
-    row=cur.fetchone()
-    amount=getNumberString(row[0])
-    date=str(row[3])+","+str(row[2].lower())+","+str(row[1])
-    panchayat=row[4].lower()
-    jobcardNo=getNumberString(getOnlyDigits(getjcNumber(jobcard)))
-   # date="25,aug"
-   # panchayat="lundra"
-    baseMessage="chattisgarh_wage_broadcast_static0,panchayat,chattisgarh_wage_broadcast_static1,jobcard,chattisgarh_wage_broadcast_static2,amount,chattisgarh_wage_broadcast_static3,date,chattisgarh_wage_broadcast_static4"
-    baseMessage=baseMessage.replace('jobcard',jobcardNo)
-    baseMessage=baseMessage.replace('date',date)
-    baseMessage=baseMessage.replace('amount',amount)
-    baseMessage=baseMessage.replace('panchayat',panchayat)
-    audioMessage=baseMessage+",chattisgarh_wage_broadcast_repeat,"+baseMessage+",chattisgarh_wage_broadcast_thankyou"
-    print audioMessage
-    #print audioMessage
-    return audioMessage
 
-def scheduleWageBroadcastCall(cur,jobcard,phone):
-  dnd,exophone=checkLocalDND(cur,phone)
-  print dnd+exophone
-  if (dnd == 'no'):
-    audio=getWageBroadcastAudioArray(cur,jobcard)
-    if (audio == "error"):
-      print "There is some error here"
-    else:
-      query="use libtech" 
-      cur.execute(query)
-      query="insert into callQueue (template,priority,vendor,bid,minhour,maxhour,phone,audio,exophone) values ('wageBroadcast',1,'exotel',1185,7,21,'%s','%s','%s');" %(phone,audio,exophone)
-      cur.execute(query)
-      query="insert into callStatus (bid,phone) values (1185,'"+phone+"');"
-      cur.execute(query)

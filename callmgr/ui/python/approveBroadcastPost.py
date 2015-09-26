@@ -68,7 +68,7 @@ def main():
       maxhour='23'
       exophone='02233814264'
       vendor=formType
-      scheduleGeneralBroadcastCall(cur,bid,phone,vendor,20)
+      scheduleGeneralBroadcastCall(cur,bid,phone,vendor,1)
       #query="insert into callQueue (isTest,priority,vendor,bid,minhour,maxhour,phone,audio,audio1,template,tringoaudio,exophone) values (1,20,'"+vendor+"',"+str(bid)+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+audio+"','"+template+"','"+tringoaudio+"','"+exophone+"');"
     #  print query 
    #   cur.execute(query)

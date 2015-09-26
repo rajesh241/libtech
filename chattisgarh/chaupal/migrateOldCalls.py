@@ -13,7 +13,7 @@ import libtechFunctions
 import globalSettings
 import settings
 from settings import dbhost,dbuser,dbpasswd,sid,token
-from libtechFunctions import getjcNumber,singleRowQueryV1,getBlockCodeFromJobcard,getPanchayatCodeFromJobcard,getBlockName,getPanchayatName,addPhoneAddressBook,getWageBroadcastAudioArray,scheduleWageBroadcastCall
+from libtechFunctions import getjcNumber,singleRowQueryV1,getBlockCodeFromJobcard,getPanchayatCodeFromJobcard,getBlockName,getPanchayatName,addPhoneAddressBook
 def main():
   print 'Content-type: text/html'
   print 
@@ -24,7 +24,7 @@ def main():
   cur.execute(query)
   query="use libtech"
   cur.execute(query)
-  query="select bid from CompletedCalls where bid>0 group by bid "
+  query="select bid from CompletedCalls where bid>175 and bid < 300 group by bid "
   cur.execute(query)
   results = cur.fetchall()
   for row in results:
@@ -38,7 +38,7 @@ def main():
       attempts=str(row1[1])
       query="select success from CompletedCalls where bid=%s and phone='%s' and (success=1 or success=2)" % (bid,phone)
       success=singleRowQueryV1(cur,query)
-      status='pending'
+      status='expired'
       if(success  == 1):
         status='success'
       elif (success ==2):
@@ -83,7 +83,7 @@ def main():
           status='pass'
         else:
           status='fail'
-        query="insert into callLogs1 (callid,retry,bid,vendor,phone,sid,callStartTime,duration,status,audio) values (%s,%s,%s,'%s','%s','%s','%s','%s','%s','%s')" % (str(callid),str(retry),bid,vendor,phone,vendorcid,ctime,duration,status,callparams)
+        query="insert into callLogs (callid,retry,bid,vendor,phone,sid,callStartTime,duration,status,audio) values (%s,%s,%s,'%s','%s','%s','%s','%s','%s','%s')" % (str(callid),str(retry),bid,vendor,phone,vendorcid,ctime,duration,status,callparams)
         cur.execute(query)
 if __name__ == '__main__':
   main()

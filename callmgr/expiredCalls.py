@@ -19,7 +19,7 @@ def main():
   cur.execute(query)
   results = cur.fetchall()
   for row in results:
-    callid=row[0] 
+    callid=str(row[0])
     vendor=row[1]
     bid=str(row[2])
     phone=row[3]

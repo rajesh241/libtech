@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 import settings
 from settings import dbhost,dbuser,dbpasswd,sid,token
 import libtechFunctions
-from libtechFunctions import singleRowQuery
+from libtechFunctions import singleRowQuery,checkLocalDND,getNumberString,getOnlyDigits,getjcNumber
 
 def gettringoaudio(rawlist):
   tringofilelist=rawlist.rstrip(',')
@@ -75,20 +75,24 @@ def getaudio(cur,rawlist):
   audio=audio.rstrip(',')
   return audio,error
 
-def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,priority=None):
+def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=None):
   query="use libtech"
   cur.execute(query)
   query="select bid,type,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats,priority,fileid2,template from broadcasts where bid=%s" %(bid)
   cur.execute(query)
   row = cur.fetchone()
-  minhour=str(row[2])
-  maxhour=str(row[3])
   tringoaudio=gettringoaudio(row[4])
   audio,error=getaudio(cur,row[5])
   if requestedVendor is None:
     requestedVendor=row[7]
-  if priority is None:
-    priority=row[11]
+
+  minhour='1'
+  maxhour='23'
+  priority='10'
+  if isTest is None:
+    priority=str(row[11])
+    minhour=str(row[2])
+    maxhour=str(row[3])
   template=row[13]
   broadcastType=row[1]
   if phone is None:
@@ -140,8 +144,65 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,priorit
       print query
       cur.execute(query)
       callid=str(cur.lastrowid)
-      query="insert into callQueue (callid,priority,template,vendor,bid,minhour,maxhour,phone,audio,audio1,tringoaudio,exophone) values ("+callid+","+str(priority)+",'"+template+"','"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
+      query="insert into callQueue (callid,priority,template,vendor,bid,minhour,maxhour,phone,audio,audio1,tringoaudio,exophone) values ("+str(callid)+","+str(priority)+",'"+template+"','"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
       print query
       cur.execute(query)
             
+
+
+def getWageBroadcastAudioArray(cur,jobcard,query):
+  query1="use surguja"
+  cur.execute(query1)
+  cur.execute(query)
+  if (cur.rowcount == 0):
+    return "error"
+  else:
+    row=cur.fetchone()
+    amount=getNumberString(row[0])
+    date=str(row[3])+","+str(row[2].lower())+","+str(row[1])
+    panchayat=row[4].lower()
+    jobcardNo=getNumberString(getOnlyDigits(getjcNumber(jobcard)))
+   # date="25,aug"
+   # panchayat="lundra"
+    baseMessage="chattisgarh_wage_broadcast_static0,panchayat,chattisgarh_wage_broadcast_static1,jobcard,chattisgarh_wage_broadcast_static2,amount,chattisgarh_wage_broadcast_static3,date,chattisgarh_wage_broadcast_static4"
+    baseMessage=baseMessage.replace('jobcard',jobcardNo)
+    baseMessage=baseMessage.replace('date',date)
+    baseMessage=baseMessage.replace('amount',amount)
+    baseMessage=baseMessage.replace('panchayat',panchayat)
+    audioMessage=baseMessage+",chattisgarh_wage_broadcast_repeat,"+baseMessage+",chattisgarh_wage_broadcast_thankyou"
+    print audioMessage
+    #print audioMessage
+    return audioMessage
+
+def scheduleWageBroadcastCall(cur,jobcard,phone,musterTransactionID=None,isTest=None):
+  callid='ERROR'
+  bid='1185'
+  if isTest is None:
+    minhour='8'
+    maxhour='20'
+  else:
+    minhour='1'
+    maxhour='23'
+  dnd,exophone=checkLocalDND(cur,phone)
+  print dnd+exophone
+  if (dnd == 'no'):
+    if musterTransactionID is None:
+      query="select mt.totalWage,DATE_FORMAT(mt.creditedDate,'%Y'),DATE_FORMAT(mt.creditedDate,'%M'),DATE_FORMAT(mt.creditedDate,'%d'),p.name,mt.id from musterTransactionDetails mt,panchayats p where mt.blockCode=p.blockCode and mt.panchayatCode=p.panchayatCode and mt.jobcard='"+jobcard+"' order by mt.creditedDate desc limit 1;"
+    else:
+      query="select mt.totalWage,DATE_FORMAT(mt.creditedDate,'%Y'),DATE_FORMAT(mt.creditedDate,'%M'),DATE_FORMAT(mt.creditedDate,'%d'),p.name,mt.id from musterTransactionDetails mt,panchayats p where mt.blockCode=p.blockCode and mt.panchayatCode=p.panchayatCode and mt.id="+str(musterTransactionID)
      
+    audio=getWageBroadcastAudioArray(cur,jobcard,query)
+    if (audio == "error"):
+      print "There is some error here"
+    else:
+      query="use libtech" 
+      cur.execute(query)
+      query="insert into callSummary (bid,phone) values ("+bid+",'"+phone+"');"
+      print query
+      cur.execute(query)
+      callid=str(cur.lastrowid)
+      print "call Scheduled with Callid"+callid
+      query="insert into callQueue (callid,template,priority,vendor,bid,minhour,maxhour,phone,audio,exophone) values (%s,'wageBroadcast',1,'exotel',%s,%s,%s,'%s','%s','%s');" %(callid,bid,minhour,maxhour,phone,audio,exophone)
+      print query
+      cur.execute(query)
+  return callid

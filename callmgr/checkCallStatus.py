@@ -56,7 +56,7 @@ def tringoCallStatus (sid,token,callsid):
        
       price = float(price.strip(' "'))
 
-    if(status == "INCOMPLETE"):
+    if((status == "INCOMPLETE") or (status == "UNATTENDED")):
       callfail=1
       callinprogress=0
       

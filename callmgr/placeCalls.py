@@ -32,7 +32,7 @@ def connect_customer(sid, token,
 
 
 def main():
-  maxTringoCallQueue=32 #This is the maximum number of calls that can be queued with Tringo
+  maxTringoCallQueue=0 #This is the maximum number of calls that can be queued with Tringo
   maxExotelCallQueue=64 #This is the maximum number of calls that can be queued with exotel
   todaydate=datetime.date.today().strftime("%d%B%Y")
   now = datetime.datetime.now()

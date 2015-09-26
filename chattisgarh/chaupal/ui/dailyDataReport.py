@@ -19,6 +19,7 @@ import settings
 from globalSettings import chaupalDataSummaryReportDir,chaupalDashboardLink,chaupalDataDashboardLink,chaupalDataDashboardLimit
 from settings import dbhost,dbuser,dbpasswd,sid,token
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapper, getForm, getButton, getButtonV2,getCenterAligned
+from libtechFunctions import writecsv
 def genHTMLFile(cur,query,heading,htmlFile,extrahtml=None):
   myhtml=''
   if extrahtml is not None:
@@ -48,18 +49,41 @@ def main():
   query="use surguja"
   cur.execute(query)
   queryType='data'
-  query="select id,title,query from reportQueries where type='%s' order by id desc" % queryType
+  query="select id,title,query,locationFilter,finyearFilter from reportQueries where type='%s' order by id desc" % queryType
   cur.execute(query)
   queries=cur.fetchall()
   for row in queries:
     query=row[2]+" limit "+str(chaupalDataDashboardLimit)
+    query=row[2]
     title=row[1]
-    myhtml+= getCenterAligned('<h5 style="color:blue">%s</h5>'% title)
-    myhtml+=genQueryTable(cur,query,title)
-  htmlFile=chaupalDataSummaryReportDir +'index.html'
-  f = open(htmlFile, 'w')
-  myhtml=htmlWrapper(title="Chaupal Data Dashboard", head='<h1 aling="center">Chaupal Data Dashboard</h1>', body=myhtml)
-  f.write(myhtml.encode("UTF-8"))
+    finyearFilter=row[4].replace("myFinYear","16")
+    query=query.replace("additionalFilters"," and "+finyearFilter)
+    
+    titleNoSpace=title.replace(" ","")
+    csvfilename=chaupalDataSummaryReportDir+titleNoSpace+".csv"
+  #  print query
+  #  print csvfilename
+#    writecsv(cur,query,csvfilename)
+
+##Now we need to write the html
+  query="select id,title from reportQueries"
+  section_html = getButtonV2('./dataReportPost.py', 'downloadReport', 'Download')
+  hiddenNames=['title'] 
+  hiddenValues=[1]
+  query_table = "<br />"
+  query_table += bsQuery2HtmlV2(cur, query, query_caption="",extraLabel='Download',extra=section_html,hiddenNames=hiddenNames,hiddenValues=hiddenValues)
+  myhtml+=query_table
+  myhtml=htmlWrapper(title="Chaupal Reports", head='<h1 aling="center">Chaupal Reports</h1>', body=myhtml)
+  print myhtml.encode('UTF-8')
+#myhtml = getQueryTable(cur, query)
+
+    
+#    myhtml+= getCenterAligned('<h5 style="color:blue">%s</h5>'% title)
+#    myhtml+=genQueryTable(cur,query,title)
+  #htmlFile=chaupalDataSummaryReportDir +'index.html'
+  #f = open(htmlFile, 'w')
+#  myhtml=htmlWrapper(title="Chaupal Data Dashboard", head='<h1 aling="center">Chaupal Data Dashboard</h1>', body=myhtml)
+  #f.write(myhtml.encode("UTF-8"))
 # chaupalDashboardHTML =  getCenterAligned('<h5 style="color:blue"><a href="%s">Go back to Main Chaupal Dashboard</a></h5>'%  chaupalDashboardLink )
 # chaupalDataDashboardHTML =  '</br>'+getCenterAligned('<h5 style="color:green"><a href="%s">Go back Data Dashboard</a></h5>'%  chaupalDataDashboardLink )
 # extrahtml=chaupalDashboardHTML+chaupalDataDashboardHTML
