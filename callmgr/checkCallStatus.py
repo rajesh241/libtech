@@ -31,12 +31,15 @@ def tringoCallStatus (sid,token,callsid):
   print tringstatus
   statusArray=tringstatus.split('|')
   lenArray=len(statusArray)
+  print "Lenght of Array is "+str(lenArray)
   callinprogress=1
   callpass=0
   callfail=0
   duration=0
   price=0
   callStartTime=''
+  cost=0
+  status=''
   if (lenArray == 9):
     print "Length of Status is "+str(lenArray)
     status=statusArray[5]
@@ -63,7 +66,7 @@ def tringoCallStatus (sid,token,callsid):
     cost=price*100   # Store in paise
     print( "Cost[%s]" % cost)
 
-    return callinprogress,callpass,callfail,callStartTime,duration,cost,status
+  return callinprogress,callpass,callfail,callStartTime,duration,cost,status
 
 def exotelCallStatus (sid,token,callsid):
   url="https://"+sid+":"+token+"@twilix.exotel.in/v1/Accounts/"+sid+"/Calls/"+callsid

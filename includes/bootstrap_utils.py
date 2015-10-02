@@ -260,6 +260,29 @@ def getButtonV2(action_text, form_type, button_text):
 
   return form_html.replace('form_text', form_text)
 
+def getButtonV3(action_text, form_type, button_text):
+
+
+  form_html = '''
+  <form action="action_text" method="POST" enctype="multipart/form-data" >
+    form_text
+  </form>
+'''
+  form_html = form_html.replace('action_text', action_text)
+
+  form_text = '''
+        <div class="input-group">
+          <input name="formType" value="form_type" type="hidden">
+          extrainputs 
+          <button type="submit" class="btn btn-default">button_text</button>
+        </div>
+''' 
+#  form_text = form_text.replace('jobcard_value', str(jobcard))
+  form_text = form_text.replace('form_type', form_type)
+  form_text = form_text.replace('button_text', button_text)
+
+  return form_html.replace('form_text', form_text)
+
 
 
 def main():

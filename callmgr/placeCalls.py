@@ -32,7 +32,7 @@ def connect_customer(sid, token,
 
 
 def main():
-  maxTringoCallQueue=0 #This is the maximum number of calls that can be queued with Tringo
+  maxTringoCallQueue=32 #This is the maximum number of calls that can be queued with Tringo
   maxExotelCallQueue=64 #This is the maximum number of calls that can be queued with exotel
   todaydate=datetime.date.today().strftime("%d%B%Y")
   now = datetime.datetime.now()
@@ -48,7 +48,7 @@ def main():
   curQueue=singleRowQuery(cur,query)
   print "Current Queued Calls in Tringo is "+str(curQueue)
   if(curQueue < maxExotelCallQueue):
-    query="select c.id,c.phone,c.exophone,c.template from callQueue c,broadcasts b where b.bid=c.bid and (c.vendor='exotel' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry limit 32"
+    query="select c.callid,c.phone,c.exophone,c.template from callQueue c,broadcasts b where b.bid=c.bid and (c.vendor='exotel' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry limit 32"
     print query
     cur.execute(query)
     results = cur.fetchall()
@@ -74,12 +74,23 @@ def main():
    
           )
       print r.status_code
+      print r.content
+      if (r.status_code == 403):
+        root = ET.fromstring(r.content)
+        for restException in root.findall('RestException'):
+          message1 = restException.find('Message').text
+        print message1
+        if 'TRAI NDNC' in message1:
+          print "This seems to be the DND number"
+          query="update callQueue set vendor='tringo',preference=0 where callid="+callid
+          print query
+          cur.execute(query)
       if (r.status_code == 200):
-        print r.content
+        #print r.content
         root = ET.fromstring(r.content)
         for Call in root.findall('Call'):
           sid1 = Call.find('Sid').text
-        query="update callQueue set sid='"+sid1+"',callRequestTime=NOW(),curVendor='exotel',inprogress=1 where id="+callid
+        query="update callQueue set sid='"+sid1+"',callRequestTime=NOW(),curVendor='exotel',inprogress=1 where callid="+callid
         print query
         cur.execute(query)
 
@@ -88,7 +99,7 @@ def main():
   curQueue=singleRowQuery(cur,query)
   print "Current Queued Calls in Tringo is "+str(curQueue)
   if(curQueue < maxTringoCallQueue):
-    query="select c.id,c.phone,c.tringoaudio from callQueue c,broadcasts b where c.bid=b.bid and (c.vendor='tringo' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry,c.vendor DESC limit 32"
+    query="select c.callid,c.phone,c.tringoaudio from callQueue c,broadcasts b where c.bid=b.bid and (c.vendor='tringo' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry,c.vendor DESC limit 10"
     print query
     cur.execute(query)
     results = cur.fetchall()
@@ -105,7 +116,7 @@ def main():
       print "Tringo SID is "+sid1
       if (sid1.isdigit()):
         print "sid1 contains only digits"
-        query="update callQueue set sid='"+sid1+"',callRequestTime=NOW(),curVendor='tringo',inprogress=1 where id="+callid
+        query="update callQueue set sid='"+sid1+"',callRequestTime=NOW(),curVendor='tringo',inprogress=1 where callid="+callid
         print query
         cur.execute(query)
       
