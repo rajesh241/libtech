@@ -6,7 +6,7 @@ $callid=$_GET["CustomField"];
 file_put_contents("/tmp/myget.txt", $callid);
 $query="use libtech";
 mysqli_query($mydbcon,$query);
-$query="select audio from callQueue where id=".$callid;
+$query="select audio from callQueue where callid=".$callid;
 #$query="select audio from callQueue where id=5";
 $result=mysqli_query($mydbcon,$query);
 $row=mysqli_fetch_array($result);
