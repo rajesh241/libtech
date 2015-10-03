@@ -19,6 +19,8 @@ from includes.settings import dbhost,dbuser,dbpasswd,sid,token
 # Global Declarations
 #######################
 
+#DB_NAMES = ['libtechdbOD', ]
+DB_NAMES = ['amritmahal', 'bombatbengaluru', 'dhruvrungta', 'homestay', 'innohub', 'innovationhub', 'iycn', 'jhatkaa', 'khulamanch', 'mtsequipment', 'nuvepro', 'paradigmshift', 'proto', 'protovillage', 'rajeev', 'rajeev_nuvepro', 'spokesandlenses', 'tactsys', 'twb', 'vidsmeco_iycn1', 'wakeupcleanup', 'wellnessunlimited', ]
 DB_NAMES = ['libtech', ]
 
 
@@ -116,7 +118,7 @@ def main():
   if not directory:
     directory = "./BACKUPs"
 
-  filepath = directory
+  filepath = os.path.abspath(directory) # Absolute Path needed for cd
   if backup_frequency:
     filepath += '/' + backup_frequency
 
