@@ -1,4 +1,5 @@
 <?php
-$dbuser="root";
-$dbpasswd="ccmpProject**";
+$dbserver="dbserver";
+$dbuser="dbadmin";
+$dbpasswd="sharedata";
 ?>

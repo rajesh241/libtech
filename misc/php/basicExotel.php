@@ -1,7 +1,8 @@
 <?php
 header('Content-type: text/plain');
 include ("./params.php");
-$mydbcon = mysqli_connect("localhost",$dbuser,$dbpasswd);
+$mydbcon = mysqli_connect("$dbserver",$dbuser,$dbpasswd);
+$callid=400102;
 $callid=$_GET["CustomField"];
 file_put_contents("/tmp/myget.txt", $callid);
 $query="use libtech";
