@@ -1,6 +1,9 @@
 import MySQLdb
 import datetime
 import os
+import sys
+fileDir=os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, fileDir+'/../includes/')
 import time
 from settings import dbhost,dbuser,dbpasswd,sid,token
 
