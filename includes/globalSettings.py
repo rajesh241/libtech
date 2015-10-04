@@ -1,5 +1,5 @@
-broadcastsReportFile="/var/www/html/broadcasts/reports/broadcasts/index.html"
-broadcastReportFilePath="/var/www/html/broadcasts/reports/broadcasts/"
+broadcastsReportFile="/home/libtech/webroot/broadcasts/reports/broadcasts/index.html"
+broadcastReportFilePath="/home/libtech/webroot/broadcasts/reports/broadcasts/"
 includedir="/home/libtech/repo/includes/"
 datadir="/home/libtech/data"
 chaupalDataSummaryReportDir="/home/libtech/data/CHATTISGARH/Summary/"
