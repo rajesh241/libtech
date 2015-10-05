@@ -3,7 +3,7 @@
 include ("./params.php");
 require_once(dirname(__FILE__).'/uifunctions.php');
 $operation=$_POST['operation'];
-$mydbcon = mysqli_connect("localhost",$dbuser,$dbpasswd);
+$mydbcon = mysqli_connect($dbserver,$dbuser,$dbpasswd);
 $query="use libtech";
 mysqli_query($mydbcon,$query);
 //Getting Option value for all groups

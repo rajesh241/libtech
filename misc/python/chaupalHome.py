@@ -28,7 +28,7 @@ def main():
   myhtml+="</br></br></br></br></br>"
   myhtml+=  getCenterAligned('<h3 style="color:green"><a href="http://chaupal.libtech.info/broadcasts/ui/html/broadcastsMain.html">Broadcast Management System </a></h3>' )
   myhtml+="</br>"
-  myhtml+=  getCenterAligned('<h3 style="color:blue">Address Dashboard </h3>' )
+  myhtml+=  getCenterAligned('<h3 style="color:blue"><a href="http://chaupal.libtech.info/addressDashboard/ui/index.py">Address Dashboard </a></h3>' )
   myhtml+="</br>"
   myhtml+=  getCenterAligned('<h3 style="color:blue">Data Dashboard </h3>' )
   myhtml=htmlWrapper(title="Welcome to Chaupal", head='<h1 align="center">Chaupal Home</h1>', body=myhtml)

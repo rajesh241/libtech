@@ -11,7 +11,7 @@ print $htmlheader;
 print "<h1> List of All Groups  </h1>";
 include ("./params.php");
 $operation=$_POST['operation'];
-$mydbcon = mysqli_connect("localhost",$dbuser,$dbpasswd);
+$mydbcon = mysqli_connect($dbserver,$dbuser,$dbpasswd);
 if (!$mydbcon){
   print '<h3>ERROR ERROR Could not connect to DB ! Please contact webadmin</h3>';
 }else{
