@@ -94,6 +94,6 @@ select surguja.jobcardRegister.jobcard jobcard,Group_CONCAT(surguja.jobcardDetai
 
   myhtml=htmlWrapper(title="AddressBook Update", head='<h1 aling="center">Address Book</h1>', body=myhtml)
   print myhtml.encode('UTF-8')
-
+  #print myhtml
 if __name__ == '__main__':
   main()
