@@ -5,8 +5,13 @@ import requests
 import MySQLdb
 import time
 import re
+import os
+import sys
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+fileDir=os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, fileDir+'/../../includes/')
+from settings import dbhost,dbuser,dbpasswd,sid,token
 #This is a Kludge to remove all the input tags from the html because for some reason Beautiful Soup does not parse the html correctly
 regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
 
@@ -14,7 +19,7 @@ regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
 #Error File Defination
 errorfile = open('/tmp/crawlJobcards.log', 'w')
 #Connect to MySQL Database
-db = MySQLdb.connect(host="localhost", user="root", passwd="ccmpProject**", db="surguja",charset='utf8')
+db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, db="surguja",charset='utf8')
 cur=db.cursor()
 db.autocommit(True)
 #Query to set up Database to read Hindi Characters
