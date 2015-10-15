@@ -104,7 +104,7 @@ def argsFetch():
 def parserFinalize(parser):
   parser.close()
 
-def dbInitialize(host="localhost", user="root", passwd="root123", db="libtech"):
+def dbInitialize(host="dbserver", user="dbadmin", passwd="sharedata", db="libtech"):
   '''
   Connect to MySQL Database
   '''
@@ -593,7 +593,7 @@ def processMissedCalls(logger, driver, dir, url, query=None):
   '''
   Process any missed calls in the libtech DB
   '''
-  db = dbInitialize(host="localhost", user="libtech", passwd="lt123", db="libtech")
+  db = dbInitialize()
   cur = db.cursor()
 
   logger.info("BEGIN PROCESSING...")
