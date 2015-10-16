@@ -197,6 +197,7 @@ def bsQuery2HtmlV2(cur, query, query_caption=None, field_names=None, extra=None,
   
   table_html='''
 <div class="container">
+  <pre>    query_text</pre>
   <table class="table table-striped">
     <thead>
       <tr>
