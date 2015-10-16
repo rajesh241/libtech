@@ -18,6 +18,8 @@ import settings
 from settings import dbhost,dbuser,dbpasswd,sid,token
 from libtechFunctions import singleRowQuery,scheduleTransactionCall
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapper, getForm, getButton, getButtonV2,getCenterAligned
+import broadcastFunctions
+from broadcastFunctions import gettringoaudio,getaudio,scheduleGeneralBroadcastCall 
 
 
 
@@ -44,7 +46,8 @@ def main():
     if (cur.rowcount == 0):
       query="insert into ghattuMissedCalls (phoneraw,phone,ctime) values ('%s','%s',NOW());" % (phone,phoneLast10)
       cur.execute(query)
-      scheduleTransactionCall(cur,'1139',phone)
+      #scheduleTransactionCall(cur,'1139',phone)
+      scheduleGeneralBroadcastCall(cur,1139,phone)
     myhtml+= '<br />' + getCenterAligned('<h5 style="color:blue">Ghattu Missed Calls %s</h5>' % phone)
 
   #myhtml+= '<br />' + getCenterAligned('<h5>Return to the <a href="./queryDashboard.py">Query Dashboard</a></h5>')

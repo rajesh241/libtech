@@ -1,6 +1,13 @@
 def getString(a):
   if isinstance(a, basestring):
-    return a
+    try:
+      a.decode('ascii')
+    except UnicodeDecodeError:
+      #return "it was not a ascii-encoded unicode string"
+      return a.decode("UTF-8")
+    else:
+      #return "It may have been an ascii-encoded unicode string"
+      return a
   else:
     return str(a)
 

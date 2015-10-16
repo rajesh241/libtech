@@ -26,10 +26,11 @@ def main():
   print 
   myhtml=""
   myhtml+="</br></br></br></br></br>"
-  myhtml+=  getCenterAligned('<h3 style="color:green">Andhra Pradesh and Telangana Dashboard </h3>' )
+  myhtml+=  getCenterAligned('<h3 style="color:green"><a href="http://ap.libtech.info/broadcasts/ui/html/broadcastsMain.html">Broadcast Management System </a></h3>' )
   myhtml+="</br>"
-  myhtml+=  getCenterAligned('<h3 style="color:blue">Chattisgarh and Chaupal Dashboard </h3>' )
-  myhtml=htmlWrapper(title="Welcome to Libtech", head='<h1 align="center">Welcome to Libtech</h1>', body=myhtml)
+  myhtml+=  getCenterAligned('<h3 style="color:green"><a href="http://ap.libtech.info/ghattuGrievance/ghattu/nrega/html/">Grievance Management System </a></h3>' )
+  myhtml+="</br>"
+  myhtml=htmlWrapper(title="AP Telangana Dashboard", head='<h1 align="center">AP Telangana Dashboard</h1>', body=myhtml)
   print myhtml.encode('UTF-8')
 if __name__ == '__main__':
   main()

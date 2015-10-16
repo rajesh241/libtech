@@ -1,9 +1,12 @@
 <?php
-$xmldir='/home/libtech/libtechweb/ghattu/nrega/xml/';
+$curdir=realpath(dirname(__FILE__));
+print $curdir;
+include ($curdir."/../includes/params.php");
+$mydbcon = mysqli_connect("$dbserver",$dbuser,$dbpasswd);
 $xmlkeys=array('missedCallID', 'phone', 'ts','jobcard', 'isUpdate','htmlgen','payOrderList', 'workerID', 'name', 'complaintNumber', 'complaintDate', 'problemType', 'periodInWeeks', 'remarks', 'currentStep', 'finalStatus', 'closureReason');
 #Escaping mysql $city = $mysqli->real_escape_string($city);
 //Opening Database
- $mydbcon = mysqli_connect("localhost","root","ccmpProject**");
+# $mydbcon = mysqli_connect("localhost","root","ccmpProject**");
     if (!$mydbcon)
        {
       echo('Could not connect to DB');
