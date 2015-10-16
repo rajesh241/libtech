@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 
 import settings
 from settings import dbhost,dbuser,dbpasswd,sid,token
+from bootstrap_utils import getString
 def getOnlyDigits(s):
   digitArray=re.findall(r'\d+', s)
 #  all=string.maketrans('','')
@@ -127,7 +128,7 @@ def writecsv(cur,query,filename):
   for row in results:
     rowEncoded=[]
     for a in row:
-      s=getstring(a)
+      s=getString(a)
       b=s.encode("UTF-8")
       rowEncoded.append(b)
     writer.writerow(rowEncoded) 
@@ -153,7 +154,7 @@ def gen2colTable(headers,headerfixed,values):
   maxrow=len(headers)
   count=0
   while (count < len(headers)):
-    curvalue=getstring(values[count])
+    curvalue=getString(values[count])
     if(headerfixed[count] == 0):
       curvalue='<input type="text" size="100" value="'+curvalue+'"></input>'
     myhtml+="<tr><td>"+headers[count]+"</td><td>"+curvalue+"</td></tr>"
@@ -168,7 +169,7 @@ def arrayToHTMLLineTh(tableArray):
   htmlLine+="</tr>"
   return htmlLine
 
-def getstring(a):
+def getoldstring(a):
   if isinstance(a, basestring):
     return a
   else:
