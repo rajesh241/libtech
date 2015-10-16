@@ -6,13 +6,17 @@ import time
 import re
 import os
 import sys
+fileDir=os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, fileDir+'/../../includes/')
+from settings import dbhost,dbuser,dbpasswd,sid,token
+from globalSettings import datadir
 #Error File Defination
 errorfile = open('/tmp/processFTO.log', 'a')
 #File Path where all the Downloaded FTOs would be placed
 districtName="SURGUJA"
-ftofilepath="/home/libtech/data/CHATTISGARH/"+districtName+"/"
+ftofilepath=datadir+"/CHATTISGARH/"+districtName+"/"
 #Connect to MySQL Database
-db = MySQLdb.connect(host="localhost", user="root", passwd="ccmpProject**", db="surguja",charset='utf8')
+db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, db="surguja",charset='utf8')
 cur=db.cursor()
 db.autocommit(True)
 #Query to set up Database to read Hindi Characters
@@ -20,7 +24,7 @@ query="SET NAMES utf8"
 cur.execute(query)
 
 #Query to get the FTO
-query=" select f.id,f.ftoNo,b.name,f.finyear from ftoDetails f,blocks b where b.blockCode=f.blockCode and b.isActive=1 and f.blockCode='003' and f.isDownloaded=1 and f.isProcessed=0"
+query=" select f.id,f.ftoNo,b.name,f.finyear from ftoDetails f,blocks b where b.blockCode=f.blockCode and b.isActive=1 and f.finyear='16' and f.isDownloaded=1 and f.isProcessed=0 "
 cur.execute(query)
 if cur.rowcount:
   results = cur.fetchall()
@@ -32,11 +36,12 @@ if cur.rowcount:
     print str(ftoid)+"  "+finyear+"  "+ftoNo+"  "+blockName
     if finyear=='16':
       fullfinyear='2015-2016'
-    if finyear=='15':
+    elif finyear=='15':
       fullfinyear='2014-2015'
     else:
       fullfinyear='2013-2014'
-    ftofilename=ftofilepath+blockName+"/DATA/FTO/"+fullfinyear+"/"+ftoNo+".html"
+    ftofilename=ftofilepath+blockName+"/FTO/"+fullfinyear+"/"+ftoNo+".html"
+    print ftofilename
     if (os.path.isfile(ftofilename)): 
       ftohtml=open(ftofilename,'r').read()
     else:

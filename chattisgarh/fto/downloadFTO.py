@@ -3,16 +3,21 @@ from bs4 import BeautifulSoup
 import requests
 import MySQLdb
 import os
+import sys
+fileDir=os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, fileDir+'/../../includes/')
+from settings import dbhost,dbuser,dbpasswd,sid,token
+from globalSettings import datadir
 #Connect to MySQL Database
-db = MySQLdb.connect(host="localhost", user="root", passwd="ccmpProject**", db="surguja")
+db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, db="surguja",charset='utf8')
 cur=db.cursor()
 db.autocommit(True)
 #File Path where all the Downloaded FTOs would be placed
 districtName="SURGUJA"
-ftofilepath="/home/libtech/data/CHATTISGARH/"+districtName+"/"
+ftofilepath=datadir+"/CHATTISGARH/"+districtName+"/"
 #ftofilepath="/home/libtech/libtechdata/CHATTISGARH/"+districtName+"/"
-query="select b.name,f.ftoNo,f.stateCode,f.districtCode,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where f.isDownloaded=0 and f.blockCode=b.blockCode and f.stateCode=b.stateCode and f.districtCode=b.districtCode ;"
-query="select b.name,f.ftoNo,f.stateCode,f.districtCode,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where f.isDownloaded=0 and f.blockCode=b.blockCode and f.stateCode=b.stateCode and f.districtCode=b.districtCode and b.blockCode='003';"
+query="select b.name,f.ftoNo,f.stateCode,f.districtCode,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where f.isDownloaded=0 and f.finyear='16' and f.blockCode=b.blockCode and f.stateCode=b.stateCode and f.districtCode=b.districtCode ;"
+#query="select b.name,f.ftoNo,f.stateCode,f.districtCode,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where f.isDownloaded=0 and f.blockCode=b.blockCode and f.stateCode=b.stateCode and f.districtCode=b.districtCode and b.blockCode='003';"
 cur.execute(query)
 results = cur.fetchall()
 for row in results:
