@@ -1,12 +1,12 @@
 <?php
 header('Content-type: text/plain');
 include ("./params.php");
-$mydbcon = mysqli_connect("localhost",$dbuser,$dbpasswd);
+$mydbcon = mysqli_connect($dbserver,$dbuser,$dbpasswd);
 $callid=$_GET["CustomField"];
 file_put_contents("/tmp/myget.txt", $callid);
 $query="use libtech";
 mysqli_query($mydbcon,$query);
-$query="select audio from callQueue where id=".$callid;
+$query="select audio from callQueue where callid=".$callid;
 $result=mysqli_query($mydbcon,$query);
 $row=mysqli_fetch_array($result);
 $audio=$row['audio'];

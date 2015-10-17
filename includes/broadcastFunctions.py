@@ -159,7 +159,9 @@ def getWageBroadcastAudioArray(cur,jobcard,query):
   else:
     row=cur.fetchone()
     amount=getNumberString(row[0])
-    date=str(row[3])+","+str(row[2].lower())+","+str(row[1])
+    dateString=(str(row[3])).lstrip("0")
+    
+    date=dateString+","+str(row[2].lower())+","+str(row[1])
     panchayat=row[4].lower()
     jobcardNo=getNumberString(getOnlyDigits(getjcNumber(jobcard)))
    # date="25,aug"

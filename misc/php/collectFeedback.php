@@ -1,7 +1,7 @@
 <?php
 header('Content-type: text/plain');
 include ("./params.php");
-$mydbcon = mysqli_connect("localhost",$dbuser,$dbpasswd);
+$mydbcon = mysqli_connect($dbserver,$dbuser,$dbpasswd);
 $sid=$_GET["CallSid"];
 $digits=$_GET["digits"];
 $digits=str_replace('"','',$digits);

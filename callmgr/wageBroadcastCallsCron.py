@@ -27,7 +27,8 @@ def main():
   cur.execute(query)
   query="use surguja"
   cur.execute(query)
-  query="select mt.id,mt.jobcard,mt.musterNo,mt.finyear,mt.accountNo,mt.totalWage,mt.creditedDate from musterTransactionDetails mt,panchayats p where mt.blockCode=p.blockCode and mt.panchayatCode=p.panchayatCode and mt.status='Credited' and mt.creditedDate > '2015-07-30' order by mt.creditedDate DESC "
+  query="select mt.id,mt.jobcard,mt.musterNo,mt.finyear,mt.accountNo,mt.totalWage,mt.creditedDate,mt.bankNameOrPOName,mt.blockCode,mt.panchayatCode from musterTransactionDetails mt,panchayats p where mt.blockCode=p.blockCode and mt.panchayatCode=p.panchayatCode and mt.status='Credited' and mt.creditedDate > '2015-07-30' and mt.bankNameOrPOName LIKE '%BANK%' order by mt.creditedDate"
+#  query="select mt.id,mt.jobcard,mt.musterNo,mt.finyear,mt.accountNo,mt.totalWage,mt.creditedDate from musterTransactionDetails mt,panchayats p where mt.blockCode=p.blockCode and mt.panchayatCode=p.panchayatCode and mt.status='Credited' and mt.creditedDate > '2015-07-30' order by mt.creditedDate DESC "
   cur.execute(query)
   results = cur.fetchall()
   query="use libtech"
@@ -40,6 +41,8 @@ def main():
     accountNo=str(row[4])
     totalWage=str(row[5])
     creditedDate=row[6]
+    blockCode=row[8]
+    panchayatCode=row[9]
     query="select * from wageBroadcast where jobcard='%s' and musterNo='%s' and accountNo='%s' and finyear='%s' and source='cron'" %(jobcard,musterNo,accountNo,finyear)
     cur.execute(query)
     if cur.rowcount == 0:
@@ -58,7 +61,7 @@ def main():
         if cur.rowcount == 0:
           #callid=1
           callid=scheduleWageBroadcastCall(cur,jobcard,phone,musterTransactionID,1)
-          query="insert into wageBroadcast (jobcard,musterNo, accountNo,finyear,phone,wage,dnd,callid,source,callScheduleDate,creditedDate) values ('%s','%s','%s','%s','%s',%s,'%s','%s','cron',NOW(),'%s');" % (jobcard,musterNo,accountNo,finyear,phone,totalWage,dnd,str(callid),creditedDate)
+          query="insert into wageBroadcast (jobcard,musterNo, accountNo,finyear,phone,wage,dnd,callid,source,callScheduleDate,creditedDate,blockCode,panchayatCode) values ('%s','%s','%s','%s','%s',%s,'%s','%s','cron',NOW(),'%s','%s','%s');" % (jobcard,musterNo,accountNo,finyear,phone,totalWage,dnd,str(callid),creditedDate,blockCode,panchayatCode)
           print query
           cur.execute(query)
 #  jobcard='CH-05-005-032-001/85'

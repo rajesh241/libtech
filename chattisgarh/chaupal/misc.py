@@ -13,7 +13,8 @@ import libtechFunctions
 import globalSettings
 import settings
 from settings import dbhost,dbuser,dbpasswd,sid,token
-from libtechFunctions import getjcNumber,singleRowQuery,getBlockCodeFromJobcard,getPanchayatCodeFromJobcard,getBlockName,getPanchayatName,addPhoneAddressBook,getWageBroadcastAudioArray,scheduleWageBroadcastCall
+from libtechFunctions import getjcNumber,singleRowQuery,getBlockCodeFromJobcard,getPanchayatCodeFromJobcard,getBlockName,getPanchayatName,addPhoneAddressBook
+from broadcastFunctions import getWageBroadcastAudioArray,scheduleWageBroadcastCall
 def main():
   print 'Content-type: text/html'
   print 
@@ -24,11 +25,11 @@ def main():
   cur.execute(query)
   query="use surguja"
   cur.execute(query)
-  jobcard='CH-05-005-032-001/85'
-  phone='8500404969'
+  jobcard='CH-05-005-032-001/83-A'
+  phone='9845065241'
 #  phone='9833419391'
 #  phone='9845155447'
-  scheduleWageBroadcastCall(cur,jobcard,phone)
+  scheduleWageBroadcastCall(cur,jobcard,phone,289854,1)
 #  getWageBroadcastAudioArray(cur,jobcard)
 # query="use surguja"
 # cur.execute(query)
