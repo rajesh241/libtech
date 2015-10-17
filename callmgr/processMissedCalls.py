@@ -1,16 +1,24 @@
 import MySQLdb
 import datetime
-import os
 import math
 import time
+import os
+import sys
+fileDir=os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, fileDir+'/../includes/')
+from settings import dbhost,dbuser,dbpasswd,sid,token
+import requests
 
 def main():
   ts=math.trunc(time.time())
-  db = MySQLdb.connect(host="localhost", user="root", passwd="ccmpProject**", db="libtech",charset='utf8')
+  db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, charset='utf8')
+  #db = MySQLdb.connect(host="localhost", user="root", passwd="ccmpProject**", db="libtech",charset='utf8')
   cur=db.cursor()
   db.autocommit(True)
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
+  cur.execute(query)
+  query="use libtech"
   cur.execute(query)
   query="select id,phone,ctime from ghattuMissedCalls where processed=0 "
   cur.execute(query)
