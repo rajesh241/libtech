@@ -102,7 +102,7 @@ def main():
   curQueue=singleRowQuery(cur,query)
   print "Current Queued Calls in Tringo is "+str(curQueue)
   if(curQueue < maxTringoCallQueue):
-    query="select c.callid,c.phone,c.tringoaudio from callQueue c,broadcasts b where c.bid=b.bid and (c.vendor='tringo' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry,c.vendor DESC limit 10"
+    query="select c.callid,c.phone,c.tringoaudio from callQueue c,broadcasts b where c.bid=b.bid and (c.vendor='tringo' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry,c.vendor DESC limit 30"
     print query
     cur.execute(query)
     results = cur.fetchall()
