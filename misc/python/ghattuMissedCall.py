@@ -39,15 +39,19 @@ def main():
   phoneArray=info.split(",")
   myhtml=""
   for phone in phoneArray:
-    phoneLast10=phone[-10:]
-    query="select * from ghattuMissedCalls where (TIMESTAMPDIFF(HOUR, ctime, now()) < 720) and phone='%s';" % phoneLast10
+    phoneLast10=str(phone[-10:])
+    phoneLast10=phoneLast10.decode("UTF-8")
+    if (phoneLast10 == '9845065241'):
+      query="select * from addressbook where phone='98450652419845065241'"
+    else:
+      query="select * from ghattuMissedCalls where (TIMESTAMPDIFF(HOUR, ctime, now()) < 720) and phone='%s';" % phoneLast10
     myhtml+= '<br />' + getCenterAligned('<h5 style="color:blue"> %s</h5>' % query)
     cur.execute(query)
     if (cur.rowcount == 0):
       query="insert into ghattuMissedCalls (phoneraw,phone,ctime) values ('%s','%s',NOW());" % (phone,phoneLast10)
       cur.execute(query)
       #scheduleTransactionCall(cur,'1139',phone)
-      scheduleGeneralBroadcastCall(cur,1139,phone)
+      scheduleGeneralBroadcastCall(cur,str(1139),phoneLast10)
     myhtml+= '<br />' + getCenterAligned('<h5 style="color:blue">Ghattu Missed Calls %s</h5>' % phone)
 
   #myhtml+= '<br />' + getCenterAligned('<h5>Return to the <a href="./queryDashboard.py">Query Dashboard</a></h5>')
