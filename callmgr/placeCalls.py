@@ -32,8 +32,22 @@ def connect_customer(sid, token,
             'StatusCallback': callback_url
         })
 
-
-
+def handleDNDError(cur,callid):
+##First we need to find out if any other vendor other than exotel can be used for this call
+  query="select bid from callQueue where callid="+str(callid)
+  bid=singleRowQuery(cur,query)
+  query="select vendor from broadcasts where bid="+str(bid)
+  vendor=singleRowQuery(cur,query)
+  if vendor=='any':
+    query="update callQueue set vendor='tringo',preference=0 where callid="+callid
+    print query
+    cur.execute(query)
+  else:
+    query="delete from callQueue where callid="+callid
+    cur.execute(query)
+    query="update callSummary set status='error' where callid="+callid 
+    cur.execute(query)
+  
 def main():
   maxTringoCallQueue=32 #This is the maximum number of calls that can be queued with Tringo
   maxExotelCallQueue=64 #This is the maximum number of calls that can be queued with exotel
@@ -51,7 +65,7 @@ def main():
   curQueue=singleRowQuery(cur,query)
   print "Current Queued Calls in Tringo is "+str(curQueue)
   if(curQueue < maxExotelCallQueue):
-    query="select c.callid,c.phone,c.exophone,c.template from callQueue c,broadcasts b where b.bid=c.bid and (c.vendor='exotel' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry limit 32"
+    query="select c.callid,c.phone,c.exophone,c.template from callQueue c,broadcasts b where b.bid=c.bid and (c.vendor='exotel' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry limit 1"
     print query
     cur.execute(query)
     results = cur.fetchall()
@@ -85,9 +99,7 @@ def main():
         print message1
         if 'TRAI NDNC' in message1:
           print "This seems to be the DND number"
-          query="update callQueue set vendor='tringo',preference=0 where callid="+callid
-          print query
-          cur.execute(query)
+          handleDNDError(cur,callid)
       if (r.status_code == 200):
         #print r.content
         root = ET.fromstring(r.content)
@@ -102,7 +114,7 @@ def main():
   curQueue=singleRowQuery(cur,query)
   print "Current Queued Calls in Tringo is "+str(curQueue)
   if(curQueue < maxTringoCallQueue):
-    query="select c.callid,c.phone,c.tringoaudio from callQueue c,broadcasts b where c.bid=b.bid and (c.vendor='tringo' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry,c.vendor DESC limit 30"
+    query="select c.callid,c.phone,c.tringoaudio from callQueue c,broadcasts b where c.bid=b.bid and (c.vendor='tringo' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry,c.vendor DESC limit 1"
     print query
     cur.execute(query)
     results = cur.fetchall()
