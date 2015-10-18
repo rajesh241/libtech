@@ -6,3 +6,5 @@ chaupalDataSummaryReportDir="/home/libtech/webroot/chaupalDataDashboard/reports/
 chaupalDashboardLink='http://chaupal.libtech.info/' 
 chaupalDataDashboardLink='http://chaupal.libtech.info/data/Summary/'
 chaupalDataDashboardLimit=20 
+dbBackupDir="/home/libtech/backup/data/db/"
+dbNames="surguja,libtech,mahabubnagar"
