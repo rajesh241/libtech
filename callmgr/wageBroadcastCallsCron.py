@@ -45,6 +45,7 @@ def main():
     panchayatCode=row[9]
     query="select * from wageBroadcast where jobcard='%s' and musterNo='%s' and accountNo='%s' and finyear='%s' and source='cron'" %(jobcard,musterNo,accountNo,finyear)
     cur.execute(query)
+    print musterTransactionID+"  "+jobcard
     if cur.rowcount == 0:
       query="select phone from addressbook where phone='9845065241'"
       query="select phone from jobcardPhone where jobcard='%s'" % jobcard
@@ -52,18 +53,22 @@ def main():
       if cur.rowcount == 1:
         row1=cur.fetchone()
         phone=row1[0]
-        query="select dnd from addressbook where phone='%s'" % phone
-        dnd=singleRowQuery(cur,query)
-        print jobcard+","+phone+","+dnd
-        query="select * from wageBroadcast where phone='%s' and DATE(NOW()) = DATE(callScheduleDate);" %(phone)
-       # phone='9483782687'
+        print musterTransactionID+"  "+jobcard+","+phone
+        query="select * from addressbook where phone='%s'" % phone
         cur.execute(query)
-        if cur.rowcount == 0:
-          #callid=1
-          callid=scheduleWageBroadcastCall(cur,jobcard,phone,musterTransactionID,1)
-          query="insert into wageBroadcast (jobcard,musterNo, accountNo,finyear,phone,wage,dnd,callid,source,callScheduleDate,creditedDate,blockCode,panchayatCode) values ('%s','%s','%s','%s','%s',%s,'%s','%s','cron',NOW(),'%s','%s','%s');" % (jobcard,musterNo,accountNo,finyear,phone,totalWage,dnd,str(callid),creditedDate,blockCode,panchayatCode)
-          print query
+        if cur.rowcount == 1:
+          query="select dnd from addressbook where phone='%s'" % phone
+          dnd=singleRowQuery(cur,query)
+          print musterTransactionID+"  "+jobcard+","+phone+","+dnd
+          query="select * from wageBroadcast where phone='%s' and DATE(NOW()) = DATE(callScheduleDate);" %(phone)
+         # phone='9483782687'
           cur.execute(query)
+          if cur.rowcount == 0:
+            #callid=1
+            callid=scheduleWageBroadcastCall(cur,jobcard,phone,musterTransactionID,1)
+            query="insert into wageBroadcast (jobcard,musterNo, accountNo,finyear,phone,wage,dnd,callid,source,callScheduleDate,creditedDate,blockCode,panchayatCode) values ('%s','%s','%s','%s','%s',%s,'%s','%s','cron',NOW(),'%s','%s','%s');" % (jobcard,musterNo,accountNo,finyear,phone,totalWage,dnd,str(callid),creditedDate,blockCode,panchayatCode)
+            print query
+            cur.execute(query)
 #  jobcard='CH-05-005-032-001/85'
 #	  phone='9845065241'
 #  phone='9833419391'
