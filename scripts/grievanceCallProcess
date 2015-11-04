@@ -1,23 +1,19 @@
 #! /usr/bin/env python
 
-#This code will get the Oabcgatat Banes
-import os
-import csv
-from bs4 import BeautifulSoup, Tag
-import requests
+from bs4 import BeautifulSoup
 
-import logging
-import MySQLdb
 import time
-import re
+import os
+dirname = os.path.dirname(os.path.realpath(__file__))
+rootdir = os.path.dirname(dirname)
 
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.by import By
+import sys
+sys.path.insert(0, rootdir)
+
+from wrappers.logger import loggerFetch
+from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize
+from wrappers.db import dbInitialize,dbFinalize
+
 
 #######################
 # Global Declarations
@@ -25,60 +21,11 @@ from selenium.webdriver.common.by import By
 
 delay = 2
 timeout = 10
-browser="Firefox"
-logFile = __file__+'.log'
-logLevel = logging.ERROR
-logFormat = '%(asctime)s:[%(name)s|%(module)s|%(funcName)s|%(lineno)s|%(levelname)s]: %(message)s' #  %(asctime)s %(module)s:%(lineno)s %(funcName)s %(message)s"
+
 
 #############
 # Functions
 #############
-
-'''
-def logInitialize():
-  import logging
-  logging.basicConfig(filename=logFile, level=logLevel, format=logFormat) # Mynk
-  logging.basicConfig(
-    filename = fileName,
-    format = "%(levelname) -10s %(asctime)s %(module)s:%(lineno)s %(funcName)s %(message)s",
-    level = logging.DEBUG
-)
-'''
-
-def loggerFetch(level=None):
-  logger = logging.getLogger(__name__)
-
-  if level:
-    numeric_level = getattr(logging, level.upper(), None)
-    if not isinstance(numeric_level, int):
-      raise ValueError('Invalid log level: %s' % level)
-    else:
-      logger.setLevel(numeric_level)
-  else:
-    logger.setLevel(logLevel)
-
-  # create console handler and set level to debug
-  ch = logging.StreamHandler()
-  ch.setLevel(logging.DEBUG)    # Mynk ???
-
-  # create formatter e.g - FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
-  formatter = logging.Formatter(logFormat)
-
-  # add formatter to ch
-  ch.setFormatter(formatter)
-
-  # add ch to logger
-  logger.addHandler(ch)
-
-  return logger
-
-def loggerTest(logger):
-  logger.debug('debug message')
-  logger.info('info message')
-  logger.warn('warn message')
-  logger.error('error message')
-  logger.critical('critical message')
-    
 
 def argsFetch():
   '''
@@ -92,68 +39,11 @@ def argsFetch():
   parser.add_argument('-t', '--timeout', help='Time to wait before a page loads', required=False)
   parser.add_argument('-b', '--browser', help='Specify the browser to test with', required=False)
   parser.add_argument('-u', '--url', help='Specify the url to crawl', required=False)
-  #  parser.add_argument('-j', '--jobcard-number', help='Specify the jobcard no to fetch', required=True)
-  #  parser.add_argument('-m', '--mobile-number', help='Specify the mobile number', required=True)
-  #  parser.add_argument('-i', '--missed-call-id', help='Specify the ID of missed call', required=True)
   parser.add_argument('-d', '--directory', help='Specify directory to download html file to', required=False)
   parser.add_argument('-q', '--query', help='Query to specify the workset, E.g ... where id=147', required=False)
 
   args = vars(parser.parse_args())
   return args
-
-def parserFinalize(parser):
-  parser.close()
-
-def dbInitialize(host="dbserver", user="dbadmin", passwd="sharedata", db="libtech"):
-  '''
-  Connect to MySQL Database
-  '''
-  db = MySQLdb.connect(host=host, user=user, passwd=passwd, db=db)
-  db.autocommit(True)
-  return db;
-
-def dbFinalize(db):
-  db.close()
-
-
-def displayInitialize(isVisible=0):
-  from pyvirtualdisplay import Display
-  
-  display = Display(visible=isVisible, size=(600, 400))
-  display.start()
-  return display
-
-def displayFinalize(display):
-  display.stop()
-
-def driverInitialize(browser="Firefox"):
-  if browser == "Firefox":
-    fp = webdriver.FirefoxProfile()
-    fp.native_events_enabled = False
-    fp.set_preference("browser.download.folderList",2)
-    fp.set_preference("browser.download.manager.showWhenStarting",False)
-    fp.set_preference("browser.download.dir", os.getcwd())
-    fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.ms-excel")
-
-    driver = webdriver.Firefox(fp)
-  elif browser == "PhantomJS":
-    driver = webdriver.PhantomJS()
-    driver.set_window_size(1120, 550)
-  else:
-    driver = webdriver.Chrome()
-
-  driver.implicitly_wait(10)
-
-  return driver
-
-def driverFinalize(driver):
-  driver.close()
-  driver.quit()
-
-
-def wdTest(driver):
-  driver.get("http://www.google.com")
-  print driver.page_source.encode('utf-8')
 
 
 def preText():
@@ -279,13 +169,25 @@ def grievanceDetails():
     </tr>
 
     <tr>
-      <td>Previous Remarks:</td>
-      <td><textarea name="beneficiaryRemarksReadonly" cols="60" rows="10" readonly>beneficiary_remarks</textarea></td>
-    </tr>
-    <tr>
       <td>Beneficiary Remarks:</td>
-      <td><textarea name="beneficiaryRemarks" cols="60" rows="10"></textarea></td>
+      <td><textarea name="beneficiaryRemarks" cols="60" rows="10">beneficiary_remarks</textarea></td>
     </tr>
+
+    <tr>
+      <td>RD Call Center Status:</td>
+      <td><select name="rdStatus" value="rd_status">
+<option value="">--Select One--</option>
+<option value="MPDOPENDING">MPDOPENDING</option>
+<option value="Since when">Since when</option>
+<option value="Post Office Biometric(Finger Prints Not Match)">Post Office Biometric(Finger Prints Not Match)</option>
+<option value="Village Organizations(VO)">Village Organizations(VO)</option>
+</select></td>
+    </tr>
+
+    <tr>
+      <td>Redressal Remarks:</td>
+      <td><textarea name="redressalRemarks" cols="60" rows="10">redressal_remarks</textarea></td>
+    </tr>    
 
   </tbody>
 </table>
@@ -443,13 +345,13 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
 
     elem = driver.find_element_by_name("spl")
     elem.send_keys("JobCard")
-    time.sleep(1)
+    #time.sleep(1)
 
     elem = driver.find_element_by_name("input2")
     elem.send_keys(jobcard_number)
 
     elem = driver.find_element_by_name("Go")
-    elem.send_keys(Keys.RETURN)
+    elem.click()
 
     parent_handle = driver.current_window_handle
     logger.info("Handles [%s] Number [%d]" % (driver.window_handles, len(driver.window_handles)))
@@ -584,8 +486,8 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
   html_text = htmlUpdate(html_text, log_details)
 
   with open(filename, 'w') as html_file:
+    logger.info("Writing file [%s]" % filename)
     html_file.write(html_text)
-    logger.info("Written file [%s]" % filename)
     logger.debug("File content [%s]" % html_text)
 
 
@@ -593,7 +495,7 @@ def processMissedCalls(logger, driver, dir, url, query=None):
   '''
   Process any missed calls in the libtech DB
   '''
-  db = dbInitialize()
+  db = dbInitialize(db="libtech")
   cur = db.cursor()
 
   logger.info("BEGIN PROCESSING...")
@@ -633,7 +535,7 @@ def processMissedCalls(logger, driver, dir, url, query=None):
     id = log_details[0]
     query = 'update ghattuMissedCallsLog set htmlgen=1 where id=' + str(id)
     try:    
-#      cur = db.cursor() # Mynk it it times out need to use this
+      cur = db.cursor()
       logger.info("query[%s]" % query)
       cur.execute(query)
     except Exception as e:
@@ -649,7 +551,7 @@ def main():
   logger.info('args: %s', str(args))
 
   display = displayInitialize(args['visible'])
-  driver = driverInitialize(browser)
+  driver = driverInitialize(args['browser'])
 
   outdir = args['directory']
   url = args['url']
