@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 from bs4 import BeautifulSoup
-from time import strftime,strptime,sleep
+from time import strftime,strptime
 from MySQLdb import IntegrityError
 
 import os
@@ -46,9 +46,12 @@ def argsFetch():
   parser.add_argument('-u', '--url', help='Specify the url to crawl', required=False)
   parser.add_argument('-d', '--directory', help='Specify directory to download html file to', required=False)
   parser.add_argument('-q', '--query', help='Query to specify the workset, E.g ... where id=147', required=False)
+  parser.add_argument('-j', '--jobcard', help='Specify the jobcard to download/push', required=False)
   parser.add_argument('-c', '--crawl', help='Crawl the Disbursement Data', required=False)
   parser.add_argument('-f', '--fetch', help='Fetch the Jobcard Details', required=False)
   parser.add_argument('-p', '--parse', help='Parse Jobcard HTML for Muster Info', required=False, action='store_const', const=True)
+  parser.add_argument('-r', '--process', help='Process downloaded HTML files for Muster Info', required=False, action='store_const', const=True)
+  parser.add_argument('-P', '--push', help='Push Muster Info into the DB on the go', required=False, action='store_const', const=True)
 
   args = vars(parser.parse_args())
   return args
@@ -107,13 +110,14 @@ def downloadJobcardHTML(logger, driver, db, jobcard, dirname=None):
   jobcard_url = 'http://www.nrega.telangana.gov.in/Nregs/FrontServlet?requestType=HouseholdInf_engRH&actionVal=SearchJOB&JOB_No='
   url = jobcard_url + jobcard
 
-  driver.get(url)
   logger.info("Fetching...[%s]" % url)
+  driver.get(url)
+  logger.info("Fetched [%s]" % driver.title)
 
-  sleep(5)
-
-  driver.get(url)    # A double refresh required for the page to load
-  logger.info("Refreshing...[%s]" % url)
+  if driver.title != ':: Job Card Holders Information ::':
+    logger.info("Refreshing...[%s]" % url)
+    driver.get(url)    # A double refresh required for the page to load
+    logger.info("Refreshed [%s]" % driver.title) 
 
   html_source = driver.page_source.replace('<head>',
                                          '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
@@ -466,10 +470,12 @@ def fetchJobcardDetails(logger, driver, cmd=None, dir=None, url=None):
     
   logger.info("...END %s" % cmd)     
 
-def downloadJobcards(logger, db, cmd=None, directory=None, url=None, isVisible=None, isPushInfo=None):
+def downloadJobcards(logger, db, cmd=None, directory=None, url=None, isVisible=None, isPushInfo=None, query=None):
   '''
   Crawl the html for the musters
   '''
+  logger.info("BEGIN %s..." % cmd)
+
   if cmd == None:
     cmd="Downloading"
     
@@ -485,12 +491,12 @@ def downloadJobcards(logger, db, cmd=None, directory=None, url=None, isVisible=N
   if isPushInfo == None:
     isVisible = False
 
-  logger.info("BEGIN %s..." % cmd)
+# Mynk - use when b.name is not all 'Ghattu'  query = 'select j.jobcard, p.name, b.name from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode'
+  if not query:
+    query = 'select j.jobcard, p.name, p.panchayatCode from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and DATE_SUB(NOW(), INTERVAL 3 DAY) >= downloadDate'
 
   logger.info("Command[%s] Directory[%s] URL[%s]" % (cmd, directory, url))
 
-# Mynk - use when b.name is not all 'Ghattu'  query = 'select j.jobcard, p.name, b.name from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode'
-  query = 'select j.jobcard, p.name, p.panchayatCode from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and DATE_SUB(NOW(), INTERVAL 3 DAY) >= downloadDate'
   # query = 'select j.jobcard, p.name, p.panchayatCode from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and  DATE_SUB(NOW(), INTERVAL 2 MONTH) >= downloadDate'
   # query = 'select j.jobcard, p.name, p.panchayatCode from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and p.name in ("Ghattu" ,"Chintalakunta") and j.isProcessed=0'
 
@@ -506,7 +512,6 @@ def downloadJobcards(logger, db, cmd=None, directory=None, url=None, isVisible=N
     logger.info( "jobcard[%s] panchayat[%s] panchayat_code[%s]" % (jobcard, panchayat, panchayat_code))
     dirname = directory + '/' + panchayat    
     html_source = downloadJobcardHTML(logger, driver, db, jobcard, dirname)
-    driver.back()
 
     if isPushInfo:
       if html_source:
@@ -606,6 +611,36 @@ def parseMusterInfo(logger, db, cmd=None, directory=None, query=None):
 
   logger.info("...END %s" % cmd)     
 
+  
+def fetchJobcard(logger, db, jobcard, cmd=None, outdir=None, url=None, isVisible=None, isPushInfo=None):
+  '''
+  Fetch the Jobcard Details for specified jobcard number
+  '''
+  logger.info("BEGIN %s..." % cmd)
+
+  if cmd == None:
+    cmd="FETCH JOBCARD"
+    
+  if outdir == None:
+    outdir = "./jobcards"
+
+  if url == None:
+    url = 'http://www.nrega.telangana.gov.in/Nregs/FrontServlet?requestType=HouseholdInf_engRH&actionVal=SearchJOB&JOB_No=' + jobcard
+
+  if isVisible == None:
+    isVisible = 0
+
+  if isPushInfo == None:
+    isVisible = False
+
+  query = 'select j.jobcard, p.name, p.panchayatCode from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and j.jobcard=' + jobcard # + ' LIMIT 1'
+
+  logger.info("Command[%s] Directory[%s] URL[%s] jobcard[%s]" % (cmd, outdir, url, jobcard))
+
+  downloadJobcards(logger, db, "DOWNLOAD JOBCARDS", outdir, url, isVisible, isPushInfo, query)
+  
+  logger.info("...END %s" % cmd)     
+
 
 def main():
   args = argsFetch()
@@ -631,8 +666,12 @@ def main():
   
   if args['parse']:
     parseMusterInfo(logger, db, "PARSE MUSTERS", outdir)
+  elif args['process']:
+    processMusterInfo(logger, db, "PARSE MUSTERS", outdir)
+  elif args['jobcard']:
+    fetchJobcard(logger, db, args['jobcard'], "FETCH JOBCARD", outdir, url, args['visible'], args['push'])
   else:
-    downloadJobcards(logger, db, "DOWNLOAD JOBCARDS", outdir, url, args['visible'])
+    downloadJobcards(logger, db, "DOWNLOAD JOBCARDS", outdir, url, args['visible'], args['push'], args['query'])
 
   dbFinalize(db)
 
