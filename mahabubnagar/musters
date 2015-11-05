@@ -298,16 +298,18 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None):
       logger.info('Executing query[%s]' % query)
       cur.execute(query)
 
-    query = 'update jobcardRegister set isProcessed=1 where jobcard="%s"' % (jobcard)
-    logger.info('Executing query[%s]' % query)
-    cur.execute(query)
-    
     try:
       row = row.findNext('tr')
       logger.debug("row[%s]" % row)
     except StopIteration:
       break
 
+  cur = db.cursor()
+  query = 'update jobcardRegister set isProcessed=1 where jobcard="%s"' % (jobcard)
+  logger.info('Executing query[%s]' % query)
+  cur.execute(query)    
+
+    
 from datetime import timedelta,date
 
 def daterange(start_date, end_date):
@@ -493,7 +495,7 @@ def downloadJobcards(logger, db, cmd=None, directory=None, url=None, isVisible=N
 
 # Mynk - use when b.name is not all 'Ghattu'  query = 'select j.jobcard, p.name, b.name from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode'
   if not query:
-    query = 'select j.jobcard, p.name, p.panchayatCode from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and DATE_SUB(NOW(), INTERVAL 3 DAY) >= downloadDate'
+    query = 'select j.jobcard, p.name, p.panchayatCode from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and DATE_SUB(NOW(), INTERVAL 1 DAY) >= downloadDate'
 
   logger.info("Command[%s] Directory[%s] URL[%s]" % (cmd, directory, url))
 
@@ -544,18 +546,11 @@ def processMusterInfo(logger, db, cmd=None, dir=None):
 
   logger.info("Command[%s] Directory[%s]" % (cmd, dir))
 
-  import os
-  #files = ['141975706007010167.html', ] # Test case regular
-  #files = ['141975723027010215.html','141975720025010465.html']  # Test case no main3
-  #files = os.listdir(dir)
-  #cmd = 'find %s -name "*.html"' % dir
-  #files = os.system(cmd)
   import glob
   files = glob.glob(dir + '/*/*.html')
   logger.debug('files[%s]' % files)
 
   for abs_filename in files:
-    #jobcard = filename[len(dir+'/'):-len('.html')]
     dirname = os.path.dirname(abs_filename)
     panchayat = os.path.basename(dirname)
     panchayat_code = lookupPanchayatCode[panchayat]
@@ -633,7 +628,7 @@ def fetchJobcard(logger, db, jobcard, cmd=None, outdir=None, url=None, isVisible
   if isPushInfo == None:
     isVisible = False
 
-  query = 'select j.jobcard, p.name, p.panchayatCode from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and j.jobcard=' + jobcard # + ' LIMIT 1'
+  query = 'select j.jobcard, p.name, p.panchayatCode from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and j.jobcard="%s"' % jobcard
 
   logger.info("Command[%s] Directory[%s] URL[%s] jobcard[%s]" % (cmd, outdir, url, jobcard))
 
