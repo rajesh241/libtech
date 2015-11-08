@@ -101,12 +101,6 @@ def downloadJobcardHTML(logger, driver, db, jobcard, dirname=None):
 
   filename = dirname + '/' + jobcard + '.html'
   
-  '''
-  if os.path.exists(filename):
-    logger.info("Skipping instead of Updating [%s]", filename)
-    return # Mynk
-  '''
-
   jobcard_url = 'http://www.nrega.telangana.gov.in/Nregs/FrontServlet?requestType=HouseholdInf_engRH&actionVal=SearchJOB&JOB_No='
   url = jobcard_url + jobcard
 
@@ -120,7 +114,8 @@ def downloadJobcardHTML(logger, driver, db, jobcard, dirname=None):
     logger.info("Refreshed [%s]" % driver.title) 
 
   html_source = driver.page_source.replace('<head>',
-                                         '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+                                         '<head><meta http-equiv="Content-Type" '
+                                          'content="text/html; charset=utf-8"/>').encode('utf-8')
   logger.debug("HTML Fetched [%s]" % html_source)
 
   bs = BeautifulSoup(html_source, "html.parser")
@@ -128,12 +123,29 @@ def downloadJobcardHTML(logger, driver, db, jobcard, dirname=None):
   if not span:
     logger.error("Span not found for jobcard[%s]" % (jobcard))
     return None
-  
-  with open(filename, 'w') as html_file:
-    logger.info("Writing [%s]" % filename)
-    html_file.write(html_source.encode('utf-8'))
 
-  query = 'update jobcardRegister set downloadDate="%s", isDownloaded=1, isProcessed=0 where jobcard="%s"' % (strftime('%Y-%m-%d %H:%M:%S'), jobcard)
+  query = None
+  ''' Update Only if there is a change for Google Drive will sync '''
+  if os.path.exists(filename):
+    with open(filename, 'r+') as html_file:
+      cur_source = html_file.read()
+      bs2 = BeautifulSoup(cur_source, "html.parser")
+      
+      if (bs.find(id='main3') != bs2.find(id='main3')):
+        html_file.seek(0)
+        html_file.write(html_source)
+        html_file.truncate()
+        logger.info("Updating [%s]" % filename)
+      else:
+        logger.info("Skipping as no update")
+        query = 'update jobcardRegister set downloadDate="%s", isDownloaded=1 where jobcard="%s"' % (strftime('%Y-%m-%d %H:%M:%S'), jobcard)
+  else:
+    with open(filename, 'w') as html_file:
+      logger.info("Writing [%s]" % filename)
+      html_file.write(html_source.encode('utf-8'))
+
+  if not query:
+    query = 'update jobcardRegister set downloadDate="%s", isDownloaded=1, isProcessed=0 where jobcard="%s"' % (strftime('%Y-%m-%d %H:%M:%S'), jobcard)
   logger.info('Executing query: [%s]', query)
   cur = db.cursor()
   cur.execute(query)
@@ -493,14 +505,11 @@ def downloadJobcards(logger, db, cmd=None, directory=None, url=None, isVisible=N
   if isPushInfo == None:
     isVisible = False
 
-# Mynk - use when b.name is not all 'Ghattu'  query = 'select j.jobcard, p.name, b.name from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode'
-  if not query:
-    query = 'select j.jobcard, p.name, p.panchayatCode from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and DATE_SUB(NOW(), INTERVAL 1 DAY) >= downloadDate'
-
   logger.info("Command[%s] Directory[%s] URL[%s]" % (cmd, directory, url))
-
-  # query = 'select j.jobcard, p.name, p.panchayatCode from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and  DATE_SUB(NOW(), INTERVAL 2 MONTH) >= downloadDate'
-  # query = 'select j.jobcard, p.name, p.panchayatCode from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and p.name in ("Ghattu" ,"Chintalakunta") and j.isProcessed=0'
+    
+  if not query:
+    # Mynk - use when b.name is not all 'Ghattu'  query = 'select j.jobcard, p.name, b.name from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode'
+    query = 'select j.jobcard, p.name, p.panchayatCode from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and DATE_SUB(NOW(), INTERVAL 1 DAY) >= downloadDate order by j.downloadDate'
 
   logger.info('Executing query: [%s]', query)
   cur = db.cursor()
