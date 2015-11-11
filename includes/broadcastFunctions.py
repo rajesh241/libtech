@@ -150,9 +150,8 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
       cur.execute(query)
             
 
-
-def getWageBroadcastAudioArray(cur,jobcard,query):
-  query1="use surguja"
+def getWageBroadcastAudioArray(cur,jobcard,query,dbname):
+  query1="use %s" % dbname
   cur.execute(query1)
   cur.execute(query)
   if (cur.rowcount == 0):
@@ -161,23 +160,32 @@ def getWageBroadcastAudioArray(cur,jobcard,query):
     row=cur.fetchone()
     amount=getNumberString(row[0])
     dateString=(str(row[3])).lstrip("0")
-    
+    day=dateString
     date=dateString+","+str(row[2].lower())+","+str(row[1])
     panchayat=row[4].lower()
     jobcardNo=getNumberString(getOnlyDigits(getjcNumber(jobcard)))
    # date="25,aug"
    # panchayat="lundra"
-    baseMessage="chattisgarh_wage_broadcast_static0,panchayat,chattisgarh_wage_broadcast_static1,jobcard,chattisgarh_wage_broadcast_static2,amount,chattisgarh_wage_broadcast_static3,date,chattisgarh_wage_broadcast_static4"
+    if(dbname == "surguja"):
+      baseMessage="chattisgarh_wage_broadcast_static0,panchayat,chattisgarh_wage_broadcast_static1,jobcard,chattisgarh_wage_broadcast_static2,amount,chattisgarh_wage_broadcast_static3,date,chattisgarh_wage_broadcast_static4"
+    else:
+      baseMessage="wage_broadcast_1,amount,wage_broadcast_2,day,wage_broadcast_3"
     baseMessage=baseMessage.replace('jobcard',jobcardNo)
     baseMessage=baseMessage.replace('date',date)
     baseMessage=baseMessage.replace('amount',amount)
+    baseMessage=baseMessage.replace('day',day)
     baseMessage=baseMessage.replace('panchayat',panchayat)
-    audioMessage=baseMessage+",chattisgarh_wage_broadcast_repeat,"+baseMessage+",chattisgarh_wage_broadcast_thankyou"
+    if(dbname == "surguja"):
+      audioMessage=baseMessage+",chattisgarh_wage_broadcast_repeat,"+baseMessage+",chattisgarh_wage_broadcast_thankyou"
+    else:
+      audioMessage=baseMessage
     print audioMessage
     #print audioMessage
     return audioMessage
 
-def scheduleWageBroadcastCall(cur,jobcard,phone,musterTransactionID=None,isTest=None):
+def scheduleWageBroadcastCall(cur,jobcard,phone,dbname,musterTransactionID=None,isTest=None):
+  query="use %s" % dbname
+  cur.execute(query)
   callid='ERROR'
   bid='1185'
   if isTest is None:
@@ -194,7 +202,7 @@ def scheduleWageBroadcastCall(cur,jobcard,phone,musterTransactionID=None,isTest=
     else:
       query="select mt.totalWage,DATE_FORMAT(mt.creditedDate,'%Y'),DATE_FORMAT(mt.creditedDate,'%M'),DATE_FORMAT(mt.creditedDate,'%d'),p.name,mt.id from musterTransactionDetails mt,panchayats p where mt.blockCode=p.blockCode and mt.panchayatCode=p.panchayatCode and mt.id="+str(musterTransactionID)
      
-    audio=getWageBroadcastAudioArray(cur,jobcard,query)
+    audio=getWageBroadcastAudioArray(cur,jobcard,query,dbname)
     if (audio == "error"):
       print "There is some error here"
     else:
@@ -209,3 +217,4 @@ def scheduleWageBroadcastCall(cur,jobcard,phone,musterTransactionID=None,isTest=
       print query
       cur.execute(query)
   return callid
+
