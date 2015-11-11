@@ -59,20 +59,21 @@ def getLocationQueryMatchString(rawdistrict,rawblock,rawpanchayat):
 
 def getaudio(cur,rawlist):
   error=0
-  filelist=rawlist.rstrip(',')
-  filelistArray=filelist.split(',')
   audio=''
-  for audioFileID in filelistArray:
-    query="select count(*) from audioLibrary where id="+audioFileID
-    audioExists=singleRowQuery(cur,query)
-    if (audioExists == 1):
-      query="select filename from audioLibrary where id="+audioFileID
-#      print query
-      audio+=singleRowQuery(cur,query)
-    else:
-      error=1
-    audio+=','
-  audio=audio.rstrip(',')
+  if rawlist != '':
+    filelist=rawlist.rstrip(',')
+    filelistArray=filelist.split(',')
+    for audioFileID in filelistArray:
+      query="select count(*) from audioLibrary where id="+audioFileID
+      audioExists=singleRowQuery(cur,query)
+      if (audioExists == 1):
+        query="select filename from audioLibrary where id="+audioFileID
+        #print query
+        audio+=singleRowQuery(cur,query)
+      else:
+        error=1
+      audio+=','
+    audio=audio.rstrip(',')
   return audio,error
 
 def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=None):

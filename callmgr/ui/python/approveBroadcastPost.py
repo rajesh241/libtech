@@ -59,8 +59,9 @@ def main():
  #   fileid1=result[2]
     template=result[3]
     tfileid=result[1]
-    tringoaudio=gettringoaudio(tfileid)
-    audio,error=getaudio(cur,fileid)
+    error=0
+   # tringoaudio=gettringoaudio(tfileid)
+  #  audio,error=getaudio(cur,fileid)
   #  audio1,error1=getaudio(cur,fileid1)
     if(error == 0):
       #print audio+tringoaudio 
