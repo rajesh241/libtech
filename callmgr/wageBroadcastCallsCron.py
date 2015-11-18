@@ -31,6 +31,7 @@ def main():
 #  query="select mt.id,mt.jobcard,mt.musterNo,mt.finyear,mt.accountNo,mt.totalWage,mt.creditedDate from musterTransactionDetails mt,panchayats p where mt.blockCode=p.blockCode and mt.panchayatCode=p.panchayatCode and mt.status='Credited' and mt.creditedDate > '2015-07-30' order by mt.creditedDate DESC "
   cur.execute(query)
   results = cur.fetchall()
+  dbname='surguja'
   query="use libtech"
   cur.execute(query)
   for row in results:
@@ -65,7 +66,7 @@ def main():
           cur.execute(query)
           if cur.rowcount == 0:
             #callid=1
-            callid=scheduleWageBroadcastCall(cur,jobcard,phone,musterTransactionID,1)
+           # callid=scheduleWageBroadcastCall(cur,jobcard,phone,dbname,musterTransactionID)
             query="insert into wageBroadcast (jobcard,musterNo, accountNo,finyear,phone,wage,dnd,callid,source,callScheduleDate,creditedDate,blockCode,panchayatCode) values ('%s','%s','%s','%s','%s',%s,'%s','%s','cron',NOW(),'%s','%s','%s');" % (jobcard,musterNo,accountNo,finyear,phone,totalWage,dnd,str(callid),creditedDate,blockCode,panchayatCode)
             print query
             cur.execute(query)

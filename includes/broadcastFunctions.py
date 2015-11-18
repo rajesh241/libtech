@@ -163,7 +163,9 @@ def getWageBroadcastAudioArray(cur,jobcard,query,dbname):
     day=dateString
     date=dateString+","+str(row[2].lower())+","+str(row[1])
     panchayat=row[4].lower()
-    jobcardNo=getNumberString(getOnlyDigits(getjcNumber(jobcard)))
+    jobcardNo='1'
+    if(dbname == 'surguja'):
+      jobcardNo=getNumberString(getOnlyDigits(getjcNumber(jobcard)))
    # date="25,aug"
    # panchayat="lundra"
     if(dbname == "surguja"):

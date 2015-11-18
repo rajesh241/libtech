@@ -226,6 +226,8 @@ def getPanchayatName(cur,blockCode,panchayatCode):
   return singleRowQuery(cur,query)
 
 def addPhoneAddressBook(cur,phone,district,block,panchayat):
+  query="use libtech"
+  cur.execute(query)
   if(len(phone) == 10):
     query="select id from addressbook where phone='"+phone+"'"
     cur.execute(query)
@@ -265,6 +267,58 @@ def addJobcardPhone(cur,phone,jobcard):
     return "success"
   else:
     return "fail"
+def getBlockNameV1(cur,dbname,blockCode):
+  query="use %s" % dbname
+  cur.execute(query)
+  query="select name from blocks where blockCode='%s'" % blockCode
+  return singleRowQuery(cur,query)
+
+def getPanchayatNameV1(cur,dbname,blockCode,panchayatCode):
+  query="use %s" % dbname
+  cur.execute(query)
+  query="select name from panchayats where blockCode='%s' and panchayatCode='%s'" % (blockCode,panchayatCode)
+  return singleRowQuery(cur,query)
+
+
+def getBlockCodeFromJobcardV1(cur,jobcard,dbname):
+  query="use %s" % dbname
+  cur.execute(query)
+  query="select blockCode from jobcardRegister where jobcard='%s' " % jobcard
+  blockCode=singleRowQueryV1(cur,query)
+  return blockCode
+
+def getPanchayatCodeFromJobcardV1(cur,jobcard,dbname):
+  query="use %s" % dbname
+  cur.execute(query)
+  query="select panchayatCode from jobcardRegister where jobcard='%s' " % jobcard
+  panchayatCode=singleRowQueryV1(cur,query)
+  return panchayatCode
+
+
+def addJobcardPhoneV1(cur,phone,jobcard,dbname):
+  if(len(phone) == 10):
+    blockCode=getBlockCodeFromJobcardV1(cur,jobcard,dbname)
+    if (blockCode != "ERROR"):
+      panchayatCode=getPanchayatCodeFromJobcardV1(cur,jobcard,dbname)
+      blockName=getBlockNameV1(cur,dbname,blockCode)
+      panchayatName=getPanchayatNameV1(cur,dbname,blockCode,panchayatCode)
+      addPhoneAddressBook(cur,phone,dbname,blockName,panchayatName)
+      if (jobcard != "NoJobCard"):
+        query="select id from jobcardPhone where jobcard='"+jobcard+"'"
+        #myhtml+= '<br />' + getCenterAligned('<h5 style="color:red"> %s</h5>' % query )
+        cur.execute(query)
+        if (cur.rowcount == 0):
+          query="insert into jobcardPhone (jobcard,phone) values ('%s','%s')" % (jobcard,phone)
+        else:
+          query="update jobcardPhone set phone='%s' where jobcard='%s'" %(phone,jobcard)
+       # myhtml+= '<br />' + getCenterAligned('<h5 style="color:red"> %s</h5>' % query )
+        cur.execute(query)
+      return "success"
+    else:
+      return "fail"
+  else:
+    return "fail"
+
 
 def checkDND(phone):
   url = 'https://%s:%s@twilix.exotel.in/v1/Accounts/%s/Numbers/%s' % (sid, token, sid, phone)
