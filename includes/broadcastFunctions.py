@@ -203,7 +203,8 @@ def scheduleWageBroadcastCall(cur,jobcard,phone,dbname,musterTransactionID=None,
       query="select mt.totalWage,DATE_FORMAT(mt.creditedDate,'%Y'),DATE_FORMAT(mt.creditedDate,'%M'),DATE_FORMAT(mt.creditedDate,'%d'),p.name,mt.id from musterTransactionDetails mt,panchayats p where mt.blockCode=p.blockCode and mt.panchayatCode=p.panchayatCode and mt.jobcard='"+jobcard+"' order by mt.creditedDate desc limit 1;"
     else:
       query="select mt.totalWage,DATE_FORMAT(mt.creditedDate,'%Y'),DATE_FORMAT(mt.creditedDate,'%M'),DATE_FORMAT(mt.creditedDate,'%d'),p.name,mt.id from musterTransactionDetails mt,panchayats p where mt.blockCode=p.blockCode and mt.panchayatCode=p.panchayatCode and mt.id="+str(musterTransactionID)
-     
+    if(dbname == 'mahabubnagar'):
+      query=query.replace('creditedDate','disbursedDate') 
     audio=getWageBroadcastAudioArray(cur,jobcard,query,dbname)
     if (audio == "error"):
       print "There is some error here"
