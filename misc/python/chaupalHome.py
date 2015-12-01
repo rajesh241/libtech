@@ -30,7 +30,7 @@ def main():
   myhtml+="</br>"
   myhtml+=  getCenterAligned('<h3 style="color:blue"><a href="http://chaupal.libtech.info/addressDashboard/ui/index.py">Address Dashboard </a></h3>' )
   myhtml+="</br>"
-  myhtml+=  getCenterAligned('<h3 style="color:blue"><a href="http://chaupal.libtech.info/addressDashboard/ui/dataDashboardMain.py">Data Dashboard </a></h3>' )
+  myhtml+=  getCenterAligned('<h3 style="color:blue"><a href="http://chaupal.libtech.info/addressDashboard/ui/reportsMain.py">Data Dashboard </a></h3>' )
   myhtml+="</br>"
   myhtml+=  getCenterAligned('<h3 style="color:blue"><a href="http://libtech.info/general/CHATTISGARH_PDS_REPORTS/">PDS Reports </a></h3>' )
   myhtml=htmlWrapper(title="Welcome to Chaupal", head='<h1 align="center">Chaupal Home</h1>', body=myhtml)

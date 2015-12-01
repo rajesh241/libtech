@@ -175,7 +175,7 @@ def grievanceDetails():
 
     <tr>
       <td>RD Call Center Status:</td>
-      <td><select name="rdStatus" value="rd_status">
+      <td><select name="rdCallCenterStatus" value="rd_status">
 <option value="">--Select One--</option>
 <option value="MPDOPENDING">MPDOPENDING</option>
 <option value="Since when">Since when</option>
@@ -285,9 +285,12 @@ def htmlUpdate(html, log_details):
   problem_type = log_details[10]
   period_in_weeks = log_details[11]
   beneficiary_remarks = log_details[12]
+  redressal_remarks = log_details[16]
+  rd_status = log_details[17]
   current_step = log_details[13]
   final_status = log_details[14]
   closure_reason = log_details[15]
+  
 
   html = html.replace('jobcard_number', jobcard_number)
   html = html.replace('mobile_number', mobile_number)
@@ -303,6 +306,8 @@ def htmlUpdate(html, log_details):
   html = dropdownOptionSet(html, closure_reason)
   
   html = html.replace('beneficiary_remarks', str(beneficiary_remarks))
+  html = html.replace('redressal_remarks', str(redressal_remarks))
+  html = dropdownOptionSet(html, rd_status)  
   html = dropdownOptionSet(html, problem_type)  
   html = html.replace('period_in_weeks', str(period_in_weeks))
   
@@ -503,7 +508,8 @@ def processMissedCalls(logger, driver, dir, url, query=None):
   if query == None:
     query = '''SELECT log.id, log.missedCallID, log.phone, log.ts, log.jobcard, log.workerID,
     log.payOrderList, log.name, log.complaintNumber, log.complaintDate, log.problemType,
-    log.periodInWeeks, log.remarks, log.currentStep, log.finalStatus, log.closureReason
+    log.periodInWeeks, log.remarks, log.currentStep, log.finalStatus, log.closureReason,
+    log.redressalRemarks, log.rdCallCenterStatus
     FROM ghattuMissedCallsLog AS log
     RIGHT JOIN(
        SELECT missedCallID, max(ts) AS ts FROM ghattuMissedCallsLog

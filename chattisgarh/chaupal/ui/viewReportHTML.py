@@ -65,11 +65,16 @@ def main():
     query=selectClause+" where "+whereClause+blockFilterQuery+panchayatFilterQuery+"  order by  "+orderClause+" limit 50"
   else: 
     query=selectClause+" where "+whereClause+blockFilterQuery+panchayatFilterQuery+" group by "+groupClause+"  order by  "+orderClause+" limit 50"
+  queryWithoutLimit=query.replace("limit 50"," ")
   queryTable=bsQuery2HtmlV2(cur,query)
   queryTable=queryTable.replace('query_text',query) 
+  myForm=getButtonV3('./downloadReport.py','downloadReport','Download Report')
+  myFormExtraInputs='<input type="hidden" name="title" value="%s"><input type="hidden" name="blockName" value="%s"><input type="hidden" name="panchayatName" value="%s"><input type="hidden" name="query" value="%s">' % (title,blockName,panchayatName,queryWithoutLimit)
+  myForm = myForm.replace('extrainputs',myFormExtraInputs)
   myhtml=''
   myhtml+=  getCenterAligned('<h3 style="color:green"> %s-%s</h3>' % (blockName.upper(),panchayatName.upper()))
-  myhtml+=  getCenterAligned('<h3 style="color:green"> %s</h3>' % groupClause)
+  #myhtml+=  getCenterAligned('<h3 style="color:green"> %s</h3>' % groupClause)
+  myhtml+=  getCenterAligned('<h3 style="color:green"> %s</h3>' % getString(myForm))
 
   myhtml+= queryTable
 ##Now we need to write the html
