@@ -25,14 +25,15 @@ def main():
   db.autocommit(True)
   query="SET NAMES utf8"
   cur.execute(query)
-  query="use surguja"
+  query="use mahabubnagar"
   cur.execute(query)
-  query="select mt.id,mt.jobcard,mt.musterNo,mt.finyear,mt.accountNo,mt.totalWage,mt.creditedDate,mt.bankNameOrPOName,mt.blockCode,mt.panchayatCode from musterTransactionDetails mt,panchayats p where mt.blockCode=p.blockCode and mt.panchayatCode=p.panchayatCode and mt.status='Credited' and mt.creditedDate > '2015-07-30' and mt.bankNameOrPOName LIKE '%BANK%' order by mt.creditedDate"
-  query="select mt.id,mt.jobcard,mt.musterNo,mt.finyear,mt.accountNo,mt.totalWage,mt.creditedDate,mt.bankNameOrPOName,mt.blockCode,mt.panchayatCode from musterTransactionDetails mt,panchayats p where mt.blockCode=p.blockCode and mt.panchayatCode=p.panchayatCode and mt.status='Credited' and TIMESTAMPDIFF(DAY, mt.creditedDate, now()) < 30 and mt.bankNameOrPOName LIKE '%BANK%' order by mt.creditedDate"
+  query="select mt.id,mt.jobcard,mt.musterNo,mt.finyear,mt.accountNo,mt.totalWage,mt.disbursedDate,mt.bankNameOrPOName,mt.blockCode,mt.panchayatCode from musterTransactionDetails mt,panchayats p where mt.blockCode=p.blockCode and mt.panchayatCode=p.panchayatCode and  mt.disbursedDate > '2015-10-30'  order by mt.disbursedDate DESC"
+  query="select mt.id,mt.jobcard,mt.musterNo,mt.finyear,mt.accountNo,mt.totalWage,mt.disbursedDate,mt.bankNameOrPOName,mt.blockCode,mt.panchayatCode from musterTransactionDetails mt,panchayats p where mt.blockCode=p.blockCode and mt.panchayatCode=p.panchayatCode and TIMESTAMPDIFF(DAY, mt.disbursedDate, now()) < 30   order by mt.disbursedDate DESC"
+  print query
 #  query="select mt.id,mt.jobcard,mt.musterNo,mt.finyear,mt.accountNo,mt.totalWage,mt.creditedDate from musterTransactionDetails mt,panchayats p where mt.blockCode=p.blockCode and mt.panchayatCode=p.panchayatCode and mt.status='Credited' and mt.creditedDate > '2015-07-30' order by mt.creditedDate DESC "
   cur.execute(query)
   results = cur.fetchall()
-  dbname='surguja'
+  dbname='mahabubnagar'
   query="use libtech"
   cur.execute(query)
   for row in results:
@@ -66,9 +67,9 @@ def main():
          # phone='9483782687'
           cur.execute(query)
           if cur.rowcount == 0:
-            #callid=1
+            callid=1
             callid=scheduleWageBroadcastCall(cur,jobcard,phone,dbname,musterTransactionID)
-            query="insert into wageBroadcast (jobcard,musterNo, accountNo,finyear,phone,wage,dnd,callid,source,callScheduleDate,creditedDate,blockCode,panchayatCode) values ('%s','%s','%s','%s','%s',%s,'%s','%s','cron',NOW(),'%s','%s','%s');" % (jobcard,musterNo,accountNo,finyear,phone,totalWage,dnd,str(callid),creditedDate,blockCode,panchayatCode)
+            query="insert into wageBroadcast (dbname,jobcard,musterNo, accountNo,finyear,phone,wage,dnd,callid,source,callScheduleDate,creditedDate,blockCode,panchayatCode) values ('%s','%s','%s','%s','%s','%s',%s,'%s','%s','cron',NOW(),'%s','%s','%s');" % (dbname,jobcard,musterNo,accountNo,finyear,phone,totalWage,dnd,str(callid),creditedDate,blockCode,panchayatCode)
             print query
             cur.execute(query)
 #  jobcard='CH-05-005-032-001/85'
