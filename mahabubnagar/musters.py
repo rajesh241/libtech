@@ -142,7 +142,7 @@ def downloadJobcardHTML(logger, driver, db, jobcard, dirname=None):
   else:
     with open(filename, 'w') as html_file:
       logger.info("Writing [%s]" % filename)
-      html_file.write(html_source.encode('utf-8'))
+      html_file.write(html_source)
 
   if not query:
     query = 'update jobcardRegister set downloadDate="%s", isDownloaded=1, isProcessed=0 where jobcard="%s"' % (strftime('%Y-%m-%d %H:%M:%S'), jobcard)
@@ -503,7 +503,7 @@ def downloadJobcards(logger, db, cmd=None, directory=None, url=None, isVisible=N
     isVisible = 0
 
   if isPushInfo == None:
-    isVisible = False
+    isPushInfo = False
 
   logger.info("Command[%s] Directory[%s] URL[%s]" % (cmd, directory, url))
     
@@ -616,7 +616,7 @@ def parseMusterInfo(logger, db, cmd=None, directory=None, query=None):
   logger.info("...END %s" % cmd)     
 
   
-def fetchJobcard(logger, db, jobcard, cmd=None, outdir=None, url=None, isVisible=None, isPushInfo=None):
+def fetchJobcard(logger, db, jobcard, cmd=None, dir=None, url=None, isVisible=None, isPushInfo=None):
   '''
   Fetch the Jobcard Details for specified jobcard number
   '''
@@ -625,8 +625,8 @@ def fetchJobcard(logger, db, jobcard, cmd=None, outdir=None, url=None, isVisible
   if cmd == None:
     cmd="FETCH JOBCARD"
     
-  if outdir == None:
-    outdir = "./jobcards"
+  if dir == None:
+    dir = "./jobcards"
 
   if url == None:
     url = 'http://www.nrega.telangana.gov.in/Nregs/FrontServlet?requestType=HouseholdInf_engRH&actionVal=SearchJOB&JOB_No=' + jobcard
@@ -635,13 +635,13 @@ def fetchJobcard(logger, db, jobcard, cmd=None, outdir=None, url=None, isVisible
     isVisible = 0
 
   if isPushInfo == None:
-    isVisible = False
+    isPushInfo = False
 
   query = 'select j.jobcard, p.name, p.panchayatCode from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and j.jobcard="%s"' % jobcard
 
-  logger.info("Command[%s] Directory[%s] URL[%s] jobcard[%s]" % (cmd, outdir, url, jobcard))
+  logger.info("Command[%s] Directory[%s] URL[%s] jobcard[%s]" % (cmd, dir, url, jobcard))
 
-  downloadJobcards(logger, db, "DOWNLOAD JOBCARDS", outdir, url, isVisible, isPushInfo, query)
+  downloadJobcards(logger, db, "DOWNLOAD JOBCARDS", dir, url, isVisible, isPushInfo, query)
   
   logger.info("...END %s" % cmd)     
 

@@ -13,7 +13,7 @@ sys.path.insert(0, rootdir)
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize
 from wrappers.db import dbInitialize,dbFinalize
-
+from mahabubnagar.musters import fetchJobcard
 
 #######################
 # Global Declarations
@@ -313,7 +313,7 @@ def htmlUpdate(html, log_details):
   
   return html
 
-def fetchJobcard(logger, driver, log_details, dir=None, url=None):
+def oldFetchJobcard(logger, driver, log_details, dir=None, url=None):
   '''
   Fetch the html for the jobcard
   '''
@@ -494,9 +494,186 @@ def fetchJobcard(logger, driver, log_details, dir=None, url=None):
     logger.info("Writing file [%s]" % filename)
     html_file.write(html_text)
     logger.debug("File content [%s]" % html_text)
+    
+    
+def createGrievanceForms(logger, db, log_details, dir=None, url=None):
+  '''
+  Creates a HTML form for field workers to update about the grievance
+  '''
 
+  logger.info("LogDetails[%s] Directory[%s] URL[%s]" %
+              (log_details, dir, url))
 
-def processMissedCalls(logger, driver, dir, url, query=None):
+  if not dir:
+    dir = "./forms"
+    
+  if not os.path.exists(dir):
+    os.makedirs(dir)
+
+  missed_call_id = log_details[1]
+  mobile_number = log_details[2]
+  jobcard_number = log_details[4]
+
+  logger.info("JocardNumber[%s] MobileNumber[%s] ID[%s] Directory[%s] URL[%s]" %
+              (jobcard_number, mobile_number, missed_call_id, dir, url))
+
+  if jobcard_number == None or jobcard_number == "" or len(jobcard_number) != 18:
+    jobcard_number = "0"
+
+  logger.info("JocardNumber[%s] MobileNumber[%s] ID[%s] Directory[%s] URL[%s]" %
+              (jobcard_number, mobile_number, missed_call_id, dir, url))
+
+  filename = dir + '/' + str(missed_call_id) + '_' + str(mobile_number) + '.html'
+
+  fetched = 1
+  fetch_dir = "/home/libtech/ghattu.libtech/jobcards"
+  
+  if jobcard_number != "0":
+    query='use mahabubnagar'
+    logger.info("query[%s]" % query)
+
+    cur = db.cursor()
+    cur.execute(query)
+    logger.info("Fetching...[%s]" % jobcard_number)
+    fetchJobcard(logger, db, jobcard_number, cmd="FETCH JOBCARD", dir=fetch_dir, isPushInfo=True)
+
+    query='select p.name from jobcardRegister j, panchayats p where j.panchayatCode=p.panchayatCode  and j.jobcard="%s"' % jobcard_number
+    logger.info("query[%s]" % query)
+
+    cur = db.cursor()
+    cur.execute(query)
+    panchayat = cur.fetchall()[0][0]
+    logger.info("Fetching...[%s]" % panchayat)
+    jobcard_file = fetch_dir + '/' + str(panchayat) + '/' + jobcard_number + '.html'
+
+    query='use libtech'
+    logger.info("query[%s]" % query)
+
+    cur = db.cursor()
+    cur.execute(query)
+
+    
+    logger.info("Reading [%s]" % jobcard_file)
+    with open(jobcard_file, "r") as jobcard_fd:
+      html_source = jobcard_fd.read()
+      
+    bs = BeautifulSoup(html_source)
+    span = bs.find('span',attrs={'class':'rpt-hd-txt'})
+    logger.debug("Span[%s]" % span)
+    main1 = bs.find('div',id='main1')
+    logger.debug("Main1[%s]" % main1)
+    
+    if main1 != None:
+      table1 = main1.find('table')
+      logger.debug("Table1[%s]" % table1)
+
+      table1A = table1.find('table', id='sortable')
+      logger.debug("Table1A[%s]" % table1A)
+
+      table1B = table1A.findNext('table', id='sortable')
+      logger.debug("Table1B[%s]" % table1B)
+
+      rows = table1B.findAll('tr')
+      hrow = rows[0]
+      count = len(rows)
+      logger.info("RowCount[%d]" % count)
+      logger.debug("Row[%s]" % rows)
+      if count > 2:
+        th = str(hrow.find('th'))
+        heading = th.replace('S.No.', 'Select')
+        hrow.insert(len(hrow)+1, heading)
+        logger.debug("HeadRow[%s]" % hrow)
+        count = count-3
+
+        row = rows[3] # hrow.findNext('tr').findNext('tr').findNext('tr')
+        logger.debug("FirstRow[%s]" % row)
+
+        worker_id_list = log_details[5].split(',')
+
+        # Mynk logger.info("Cells[%s]"%row.findAll('td'))
+        while count != 0:  # Mynk Can change to for perhaps
+          count = count - 1
+          td = row.find('td')
+          td = td.findNext('td')
+          worker_id_value = td.text
+          worker_id = worker_id_value.strip()
+
+          checkbox = '<input type="checkbox" name="workerID[]" value="'+ worker_id + '">'
+          if worker_id in worker_id_list:
+            checkbox = checkbox.replace('">', '" checked>')
+          logger.debug("Checkbox[%s], WorkerIdValue[%s], WorkerID[%s]" % (checkbox, worker_id_value, worker_id))
+          value = str(td).replace(worker_id_value, checkbox).replace('align="right"', 'align="center"')
+          row.insert(len(row)+1, value)
+          try:
+            row = row.findNext('tr')
+          except StopIteration:
+            break
+
+      main3 = bs.find(id='main3')
+      table3 = main3.find('table')
+      logger.debug("Table2[%s]" % table3)
+      hrow = table3.find('tr')
+
+      th = str(hrow.find('th'))
+      heading = th.replace('Epayorder No:', 'Select')
+      hrow.insert(len(hrow)+1, heading)
+      heading = th.replace('Epayorder No:', 'Muster Signed')
+      hrow.insert(len(hrow)+1, heading)
+
+      row = hrow.findNext('tr')
+
+      epay_order_list = log_details[6].split(',')
+
+      while True:
+        td = row.find('td')
+        epay_order_value = td.text
+        epay_order_number = epay_order_value.strip()
+
+        if len(epay_order_number) != 16:
+          break
+
+        checkbox = '<input type="checkbox" name="ePayOrderList[]" value="'+ epay_order_number + '">'
+        if epay_order_number in epay_order_list:
+          checkbox = checkbox.replace('">', '" checked>')
+        logger.debug("ePayOrder CheckBox[%s]" % checkbox)
+        value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
+        row.insert(len(row)+1, value)
+
+        checkbox = '<input type="checkbox" name="signedPayOrderList[]" value="signed_'+ epay_order_number + '">'
+        value = str(td).replace(epay_order_value, checkbox).replace('align="left"', 'align="center"')
+        row.insert(len(row)+1, value)
+
+        try:
+          row = row.findNext('tr')
+        except StopIteration:
+          break
+    else:
+      fetched = 0
+
+  else:
+    fetched = 0
+
+  if fetched == 0:  
+    span = ""
+    table1 = ""
+    table3 = ""
+
+  html_text = preText()
+  html_text += grievanceDetails()
+  html_text += '<div style="background-color: #86C0C0">' + str(span) + '</div> <br />'
+  html_text += '<div>' + htmlUnescape(str(table1)) + '</div>'
+  html_text += '<div>' + htmlUnescape(str(table3)) + '</div>'
+  html_text += postText()
+
+  html_text = htmlUpdate(html_text, log_details)
+
+  with open(filename, 'w') as html_file:
+    logger.info("Writing file [%s]" % filename)
+    html_file.write(html_text)
+    logger.debug("File content [%s]" % html_text)
+
+    
+def processMissedCalls(logger, dir, url, query=None):
   '''
   Process any missed calls in the libtech DB
   '''
@@ -522,13 +699,15 @@ def processMissedCalls(logger, driver, dir, url, query=None):
   cur.execute(query)
   missedCalls = cur.fetchall()
   logger.debug("missedCalls[%s]" % str(missedCalls))
-  for  log_details in missedCalls:
+  for log_details in missedCalls:
     #Put error checks in place and only then update libtech DB
 
     logger.info("log_details[%s]" % str(log_details))
 
     if True:
-      fetchJobcard(logger, driver, log_details, dir, url)
+      createGrievanceForms(logger, db, log_details, dir, url)
+    elif False:
+      oldFetchJobcard(logger, driver, log_details, dir, url)
     else:
       id = log_details[1]
       phone = log_details[2]
@@ -556,16 +735,13 @@ def main():
   logger = loggerFetch(args.get('log_level'))
   logger.info('args: %s', str(args))
 
-  display = displayInitialize(args['visible'])
-  driver = driverInitialize(args['browser'])
+#  display = displayInitialize(args['visible'])
+#  driver = driverInitialize(args['browser'])
 
-  outdir = args['directory']
-  url = args['url']
-  
-  processMissedCalls(logger, driver, outdir, url, args['query'])
+  processMissedCalls(logger, args['directory'], args['url'], args['query'])
 
-  driverFinalize(driver)
-  displayFinalize(display)
+#  driverFinalize(driver)
+#  displayFinalize(display)
 
   exit(0)
 
