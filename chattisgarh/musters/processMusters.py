@@ -107,7 +107,7 @@ if cur.rowcount:
             branchNameOrPOAddress="".join(cols[statusindex-3].text.split())
             branchCodeOrPOCode="".join(cols[statusindex-2].text.split())
             wagelistNo="".join(cols[statusindex-1].text.split())
-            creditedDatestring="".join(cols[statusindex+1].text.split())
+            creditedDatestring="".join(cols[statusindex+3].text.split())
             nameandjobcardarray=re.match(r'(.*)CH-05-(.*)',nameandjobcard)
             name=nameandjobcardarray.groups()[0]
             jobcard='CH-05-'+nameandjobcardarray.groups()[1]

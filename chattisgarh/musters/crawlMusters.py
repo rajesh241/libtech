@@ -19,21 +19,28 @@ regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
 #Error File Defination
 errorfile = open('/tmp/crawlJobcards.log', 'w')
 #Connect to MySQL Database
-db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, db="surguja",charset='utf8')
+db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, charset='utf8')
 cur=db.cursor()
 db.autocommit(True)
 #Query to set up Database to read Hindi Characters
 query="SET NAMES utf8"
 cur.execute(query)
-
+district=sys.argv[1]
 #muster Type list
 musterTypeList= ['10','11','13','14']
 #Some Constants 
 fullfinyear='2015-2016'
 finyear='16'
 districtName="SURGUJA"
+districtName=district
+dbname=district
+
+query="use "+dbname
+print query
+cur.execute(query)
 #Query to get all the blocks
 query="select stateCode,districtCode,blockCode,name from blocks where isActive=1"
+query="select stateCode,districtCode,blockCode,name from blocks "
 #query="select stateCode,districtCode,blockCode,name from blocks where blockCode='002'"
 cur.execute(query)
 results = cur.fetchall()
@@ -42,7 +49,9 @@ for row in results:
   districtCode=row[1]
   blockCode=row[2]
   blockName=row[3]
-  query="select name,panchayatCode,id from panchayats where isSurvey=1 and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' "
+  print blockName
+  query="select name,panchayatCode,id from panchayats where isChaupal=1 and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' "
+#  query="select name,panchayatCode,id from panchayats where stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' "
   cur.execute(query)
   panchresults = cur.fetchall()
   for panchrow in panchresults:
@@ -78,6 +87,7 @@ for row in results:
           worknameworkcode=cols[5].text
           if district!="District":
             emusterno="".join(cols[6].text.split())
+            print emusterno
             datefromdateto="".join(cols[7].text.split())
             datefromstring=datefromdateto[0:datefromdateto.index("-")]
             datetostring=datefromdateto[datefromdateto.index("-") +2:len(datefromdateto)]
@@ -91,9 +101,9 @@ for row in results:
               dateto = time.strftime('%Y-%m-%d %H:%M:%S', dateto)
             else:
               dateto=''
-            worknameworkcodearray=re.match(r'(.*)\(3305(.*)\)',worknameworkcode)
+            worknameworkcodearray=re.match(r'(.*)\(330(.*)\)',worknameworkcode)
             workName=worknameworkcodearray.groups()[0]
-            workCode='3305'+worknameworkcodearray.groups()[1]
+            workCode='330'+worknameworkcodearray.groups()[1]
             print emusterno+" "+datefromstring+"  "+datetostring+"  "+workCode
             query="insert into musters (musterNo,stateCode,districtCode,blockCode,panchayatCode,musterType,finyear,workCode,workName,dateFrom,dateTo,crawlDate) values ('"+emusterno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"','"+musterType+"','"+finyear+"','"+workCode+"','"+workName+"','"+datefrom+"','"+dateto+"',NOW())"
             try:

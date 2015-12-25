@@ -88,31 +88,36 @@ def fetchMuster(logger, driver, log_details, dir=None, url=None):
 
 def main():
 
-  args = argsFetch()
-  logger = loggerFetch(args.get('log_level'))
-  logger.info('args: %s', str(args))
+  district=sys.argv[1]
+ # args = argsFetch()
+  logger = loggerFetch()
+#  logger.info('args: %s', str(args))
 
-  display = displayInitialize(args['visible'])
+  display = displayInitialize(0)
   driver = driverInitialize()
 
-  outdir = args['directory']
-  url = args['url']
-
-  db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, db="surguja",charset='utf8')
+ # outdir = args['directory']
+ # url = args['url']
+  outdir="/home/libtech"
+  url="www.google.com"
+  db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd,charset='utf8')
   cur=db.cursor()
   db.autocommit(True)
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
+  cur=runquery(cur,query) #cur.execute(query)
+  query="use "+district
   cur=runquery(cur,query) #cur.execute(query)
   #This is a Kludge to remove all the input tags from the html because for some reason Beautiful Soup does not parse the html correctly
   regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
   
   #File Path where all the Downloaded FTOs would be placed
   districtName="SURGUJA"
+  districtName=district.upper()
   musterfilepath=datadir+"/CHATTISGARH/"+districtName+"/"
-  query="select count(*) from musters m,blocks b, panchayats p where b.isActive=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isSurvey=1 and m.finyear='16' and m.isDownloaded=0 and m.isError=0 and m.musterType='10' limit 10;"
-  query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isActive=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isSurvey=1 and m.finyear='16' and m.isDownloaded=0 and m.isError=0 and m.musterType='10' limit 10;"
-  query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isActive=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isSurvey=1 and m.finyear='16' and m.isError=0 and m.musterType='10' and (m.isDownloaded=0 or (m.isComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) ) order by TIMESTAMPDIFF(DAY, m.downloadAttemptDate, now()) desc limit 10;"
+  query="select count(*) from musters m,blocks b, panchayats p where b.isActive=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isChaupal=1 and m.finyear='16' and m.isDownloaded=0 and m.isError=0 and m.musterType='10' limit 10;"
+  query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isActive=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isChaupal=1 and m.finyear='16' and m.isDownloaded=0 and m.isError=0 and m.musterType='10' limit 10;"
+  query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isActive=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isChaupal=1 and m.finyear='16' and m.isError=0 and m.musterType='10' and (m.isDownloaded=0 or (m.isComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) ) order by TIMESTAMPDIFF(DAY, m.downloadAttemptDate, now()) desc limit 10;"
   #query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.isDownloaded=0 and m.musterType='10' and m.blockCode='"+inblock+"';"
   print query
   #cur.execute(query)
