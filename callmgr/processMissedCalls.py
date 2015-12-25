@@ -31,7 +31,7 @@ def main():
     cur.execute(query)
     #query="use mahabubnagar"
     #cur.execute(query)
-    query="select job_card from ghattu_ab where phone='"+phone+"' limit 1"
+    query="select jobcard from jobcardPhone where phone='"+phone+"' limit 1"
     cur.execute(query)
     jobcard=0
     if(cur.rowcount == 1):
