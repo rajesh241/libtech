@@ -4,12 +4,20 @@ from bs4 import BeautifulSoup
 import requests
 import MySQLdb
 import re
+import os
+import sys
+fileDir=os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, fileDir+'/../../includes/')
+from settings import dbhost,dbuser,dbpasswd,sid,token
 #Connect to MySQL Database
-db = MySQLdb.connect(host="localhost", user="root", passwd="golani123", db="surguja")
+#db = MySQLdb.connect(host="localhost", user="root", passwd="golani123")
+db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, db="surguja",charset='utf8')
 cur=db.cursor()
 db.autocommit(True)
 
 #Query to get all the blocks
+query="use korea"
+cur.execute(query)
 query="select stateCode,districtCode,blockCode,name from blocks"
 cur.execute(query)
 results = cur.fetchall()

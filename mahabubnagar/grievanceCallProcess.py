@@ -287,6 +287,9 @@ def htmlUpdate(html, log_details):
   beneficiary_remarks = log_details[12]
   redressal_remarks = log_details[16]
   rd_status = log_details[17]
+  if not rd_status:
+    rd_status=""
+
   current_step = log_details[13]
   final_status = log_details[14]
   closure_reason = log_details[15]
