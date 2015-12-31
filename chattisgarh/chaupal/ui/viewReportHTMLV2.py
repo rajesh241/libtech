@@ -19,7 +19,7 @@ import settings
 from globalSettings import chaupalDataSummaryReportDir,chaupalDashboardLink,chaupalDataDashboardLink,chaupalDataDashboardLimit
 from settings import dbhost,dbuser,dbpasswd,sid,token
 from bootstrap_utils import getString,bsQuery2Html, bsQuery2HtmlV2,htmlWrapper, getForm, getButtonV3, getButtonV2,getCenterAligned
-from libtechFunctions import writecsv,getPanchayatName,getBlockName
+from libtechFunctions import writecsv,getPanchayatNameV1,getBlockNameV1
 
 def main():
   print 'Content-type: text/html'
@@ -30,24 +30,26 @@ def main():
   db.autocommit(True)
   query="SET NAMES utf8"
   cur.execute(query)
-  query="use surguja"
-  cur.execute(query)
 
   form = cgi.FieldStorage()
   blockCode=form["blockCode"].value
+  districtName=form["district"].value
   panchayatCode=form["panchayatCode"].value
+  query="use %s" %(districtName)
+  query="use libtech"
+  cur.execute(query)
   formID=form["formID"].value
-  if blockCode=='all':
+  if blockCode=='none':
     blockName='ALL BLOCKS'
     blockFilterQuery=""
   else:
-    blockName=getBlockName(cur,blockCode)
+    blockName=getBlockNameV1(cur,blockCode,districtName)
     blockFilterQuery=" and b.blockCode="+str(blockCode)
-  if panchayatCode=='all':
+  if panchayatCode=='none':
     panchayatName='ALL PANCHAYATS'
     panchayatFilterQuery=""
   else:
-    panchayatName=getPanchayatName(cur,blockCode,panchayatCode)
+    panchayatName=getPanchayatNameV1(cur,blockCode,panchayatCode,districtName)
     panchayatFilterQuery=" and p.panchayatCode="+str(panchayatCode)
   
   query="select title,dbname,selectClause,whereClause,orderClause,dbname,groupClause from reportQueries where id=" + str(formID)
@@ -59,7 +61,7 @@ def main():
   whereClause=row[3]
   orderClause=row[4]
   groupClause=row[6]
-  query="use "+dbname
+  query="use "+districtName
   cur.execute(query)
   if groupClause is None:
     query=selectClause+" where "+whereClause+blockFilterQuery+panchayatFilterQuery+"  order by  "+orderClause+" limit 50"
@@ -69,7 +71,7 @@ def main():
   queryTable=bsQuery2HtmlV2(cur,query)
   queryTable=queryTable.replace('query_text',query) 
   myForm=getButtonV3('./downloadReport.py','downloadReport','Download Report')
-  myFormExtraInputs='<input type="hidden" name="reportType" value="dataDashboard"><input type="hidden" name="title" value="%s"><input type="hidden" name="blockName" value="%s"><input type="hidden" name="panchayatName" value="%s"><input type="hidden" name="query" value="%s">' % (title,blockName,panchayatName,queryWithoutLimit)
+  myFormExtraInputs='<input type="hidden" name="title" value="%s"><input type="hidden" name="blockName" value="%s"><input type="hidden" name="panchayatName" value="%s"><input type="hidden" name="query" value="%s">' % (title,blockName,panchayatName,queryWithoutLimit)
   myForm = myForm.replace('extrainputs',myFormExtraInputs)
   myhtml=''
   myhtml+=  getCenterAligned('<h3 style="color:green"> %s-%s</h3>' % (blockName.upper(),panchayatName.upper()))

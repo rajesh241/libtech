@@ -32,14 +32,19 @@ def main():
   cur.execute(query)
 
   form = cgi.FieldStorage()
-  blockName=form["blockName"].value
-  panchayatName=form["panchayatName"].value
   title=form["title"].value
   query=form["query"].value
+  reportType=form["reportType"].value
   title1=title.replace(" ","")
-  blockName1=blockName.replace(" ","")
-  panchayatName1=panchayatName.replace(" ","")
-  filename=chaupalDataSummaryReportDir+"/"+title1+"/"+title1+"_"+blockName1+"_"+panchayatName1+".csv"
+  if reportType=='misc':
+    suffix=reportType+"/"+title1+".csv"
+  else:
+    blockName=form["blockName"].value
+    panchayatName=form["panchayatName"].value
+    blockName1=blockName.replace(" ","")
+    panchayatName1=panchayatName.replace(" ","")
+    suffix=title1+"/"+title1+"_"+blockName1+"_"+panchayatName1+".csv"
+  filename=chaupalDataSummaryReportDir+"/"+suffix
   #filename=filename.lower()
   dir1 = os.path.dirname(filename)
 
@@ -48,7 +53,7 @@ def main():
   except:
     os.mkdir(dir1)
   writecsv(cur,query,filename)
-  redirectURL="http://chaupal.libtech.info/reports/summary/"+title1+"/"+title1+"_"+blockName1+"_"+panchayatName1+".csv"
+  redirectURL="http://chaupal.libtech.info/reports/summary/"+suffix
   print 'Content-Type: text/html'
   print 'Location: %s' % redirectURL
   print # HTTP says you have to have a blank line between headers and content

@@ -291,6 +291,139 @@ def getButtonV3(action_text, form_type, button_text):
 
   return form_html.replace('form_text', form_text)
 
+def bsQuery2HTMLLinkV1(cur, query, query_caption=None, field_names=None, extra=None,extraLabel=None,hiddenNames=None,hiddenValues=None):
+
+  cur.execute(query)
+  results = cur.fetchall()
+
+  if query_caption == None:
+    query_caption = "Query:"
+
+  if field_names == None:
+    field_names = [i[0] for i in cur.description]
+  num_fields = len(cur.description)
+  
+  table_html='''
+<div class="container col-xs-6">
+  <div class="table-responsive">
+  <table class="table table-striped">
+    <thead>
+      <tr class="info">
+      '''
+  i=0
+  for field_name in field_names:
+    if i==0:
+      table_html += "<th >" + field_name.strip() + "</th>"
+    i=i+1 
+  if extra != None:
+    table_html += "<th >" + extraLabel + "</th>"
+
+  table_html += '''
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="info">
+      '''
+  
+  baseLink='<a href="./dataDashboardMain.py?extrainputs">linktext</a>'
+  for row in results:
+    inputs=''
+    i=0
+    if hiddenNames != None:
+      for inputName in hiddenNames:
+        inputValue=row[hiddenValues[i]]
+        i=i+1
+        inputs+='%s=%s&' % (inputName,inputValue)
+    linkValue=baseLink.replace("extrainputs",inputs)
+    linkValue=linkValue[:-1]
+    table_html += "<tr class='success'>"
+
+    i = 0
+    while i < num_fields:
+      if i==0:
+        rowvalue=linkValue.replace("linktext",row[i])
+        table_html += "<td>" + getString(rowvalue) + "</td>"
+      #else:
+      #  table_html += "<td>" + getString(row[i]) + "</td>"
+      i += 1
+
+    if extra != None:
+      table_html += "<td>" + extra.replace('extrainputs',inputs) + "</td>"
+
+    table_html += "</tr>"
+
+  table_html += '''
+    </tbody>
+  </table>
+  </div>
+</div>
+  '''
+  return table_html
+
+def bsQuery2HtmlV3(cur, query, query_caption=None, field_names=None, extra=None,extraLabel=None,hiddenNames=None,hiddenValues=None):
+
+  cur.execute(query)
+  results = cur.fetchall()
+
+  if query_caption == None:
+    query_caption = "Query:"
+
+  if field_names == None:
+    field_names = [i[0] for i in cur.description]
+  num_fields = len(cur.description)
+  
+  table_html='''
+<div class="container col-xs-6">
+  <div class="table-responsive">
+  <table class="table table-striped">
+    <thead>
+      <tr class="danger">
+      '''
+
+  for field_name in field_names:
+    table_html += "<th>" + field_name.strip() + "</th>"
+
+  if extra != None:
+    table_html += "<th>" + extraLabel + "</th>"
+
+  table_html += '''
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+      '''
+  
+  for row in results:
+    inputs=''
+    i=0
+    if hiddenNames != None:
+      for inputName in hiddenNames:
+        inputValue=row[hiddenValues[i]]
+        i=i+1
+        inputs+='<input name="%s" value="%s" type="hidden">' %(inputName,inputValue)
+
+
+    table_html += '<tr class="warning">'
+
+    i = 0
+    while i < num_fields:
+      table_html += "<td>" + getString(row[i]) + "</td>"
+      i += 1
+
+    if extra != None:
+      table_html += "<td>" + extra.replace('extrainputs',inputs) + "</td>"
+
+    table_html += "</tr>"
+
+  table_html += '''
+    </tbody>
+  </table>
+  </div>
+</div>
+  '''
+  return table_html
+
+
 
 
 def main():
