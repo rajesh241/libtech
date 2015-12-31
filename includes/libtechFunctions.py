@@ -430,11 +430,4 @@ def getBlockCodeFromJobcard(jobcard):
 def getPanchayatCodeFromJobcard(jobcard):
   return jobcard[10:13]
 
-def getBlockNameV1(cur,blockCode,districtName):
-  query="select %s.blocks.name from %s.blocks where %s.blocks.blockCode='%s'" % (districtName.lower(),districtName.lower(),districtName.lower(),blockCode)
-  return singleRowQuery(cur,query)
-def getPanchayatNameV1(cur,blockCode,panchayatCode,districtName):
-  query="select %s.panchayats.name from %s.panchayats where %s.panchayats.blockCode='%s' and %s.panchayats.panchayatCode='%s'" % (districtName.lower(),districtName.lower(),districtName.lower(),blockCode,districtName.lower(),panchayatCode)
-  return singleRowQuery(cur,query)
-
 
