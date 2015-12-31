@@ -36,22 +36,22 @@ def main():
   districtName=form["district"].value
   panchayatCode=form["panchayatCode"].value
   query="use %s" %(districtName)
-  query="use libtech"
-  cur.execute(query)
   formID=form["formID"].value
   if blockCode=='none':
     blockName='ALL BLOCKS'
     blockFilterQuery=""
   else:
-    blockName=getBlockNameV1(cur,blockCode,districtName)
+    blockName=getBlockNameV1(cur,districtName.lower(),blockCode)
     blockFilterQuery=" and b.blockCode="+str(blockCode)
   if panchayatCode=='none':
     panchayatName='ALL PANCHAYATS'
     panchayatFilterQuery=""
   else:
-    panchayatName=getPanchayatNameV1(cur,blockCode,panchayatCode,districtName)
+    panchayatName=getPanchayatNameV1(cur,districtName.lower(),blockCode,panchayatCode)
     panchayatFilterQuery=" and p.panchayatCode="+str(panchayatCode)
   
+  query="use libtech"
+  cur.execute(query)
   query="select title,dbname,selectClause,whereClause,orderClause,dbname,groupClause from reportQueries where id=" + str(formID)
   cur.execute(query)
   row=cur.fetchone()
