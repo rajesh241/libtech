@@ -206,7 +206,7 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None):
 
       if financial_year < 15:
         logger.info('Finanacial Year[20%s-%s]' % (financial_year-1, financial_year))
-        should_skip = True
+        # Mynk should_skip = True 
 
       financial_year = str(financial_year)
 
