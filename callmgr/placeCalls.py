@@ -80,6 +80,8 @@ def main():
         exotelURL='http://my.exotel.in/exoml/start/50053'
       elif (template == 'wageBroadcast'):
         exotelURL='http://my.exotel.in/exoml/start/51210'
+      elif (template == 'ghattuFeedback'):
+        exotelURL='http://my.exotel.in/exoml/start/62882'
       print callid+"  "+phone
       r = connect_customer(
           sid, token,
