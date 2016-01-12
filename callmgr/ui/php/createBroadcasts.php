@@ -101,6 +101,7 @@ while($row=mysqli_fetch_array($results)){
                                   <td><select name="broadcastTemplate" >
                                 <option value="general" selected>General Broadcast</option>
                                 <option value="feedback">Feedback Broadcast </option>
+                                <option value="ghattuFeedback">Ghattu Feedback Broadcast </option>
                                 <option value="wageBroadcast">Wage Broadcast </option>
                                   </td>
                           </tr>
@@ -130,7 +131,7 @@ while($row=mysqli_fetch_array($results)){
                                 </td>
                         </tr>   
                           <tr>
-                                <td>Libtech File ID for the message to be played after Feedback(Valid only for Feedback Calls)
+                                <td>Libtech File ID for the Question for feedback Broadcast(Valid only for Ghattu Feedback Calls)
                                 </td>
                                 <td>
                                         <input  name="fileid2" type="text" size="50"></input>

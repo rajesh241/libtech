@@ -29,7 +29,7 @@ def main():
   for row in results:
     bid=str(row[0])
     template=row[13]
-    if((template == 'general') or  (template == 'feedback')):
+    if((template == 'general') or  (template == 'feedback') or (template == 'ghattuFeedback')):
       scheduleGeneralBroadcastCall(cur,bid)
 
       query="update broadcasts set processed=1 where bid="+bid

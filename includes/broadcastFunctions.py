@@ -84,6 +84,7 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
   row = cur.fetchone()
   tringoaudio=gettringoaudio(row[4])
   audio,error=getaudio(cur,row[5])
+  audio1,error=getaudio(cur,row[12])
   if requestedVendor is None:
     requestedVendor=row[7]
 
@@ -145,7 +146,7 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
       print query
       cur.execute(query)
       callid=str(cur.lastrowid)
-      query="insert into callQueue (callid,priority,template,vendor,bid,minhour,maxhour,phone,audio,audio1,tringoaudio,exophone) values ("+str(callid)+","+str(priority)+",'"+template+"','"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
+      query="insert into callQueue (callid,priority,template,vendor,bid,minhour,maxhour,phone,audio,audio1,tringoaudio,exophone) values ("+str(callid)+","+str(priority)+",'"+template+"','"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+audio1+"','"+tringoaudio+"','"+exophone+"');"
       print query
       cur.execute(query)
             
