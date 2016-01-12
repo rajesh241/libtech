@@ -1,10 +1,14 @@
-import MySQLdb
 import os
 dirname = os.path.dirname(os.path.realpath(__file__))
 rootdir = os.path.dirname(dirname)
 
 import sys
 sys.path.insert(0, rootdir)
+
+if sys.version_info[0] > 2:
+  import pymysql
+  pymysql.install_as_MySQLdb()
+import MySQLdb
 
 from wrappers.logger import loggerFetch
 from includes.settings import dbhost,dbuser,dbpasswd,sid,token
