@@ -518,7 +518,7 @@ def main():
   if args['crawl']:
     crawlJobcards(context.driver, context.db, context.logger, context.url)
   else:
-    downloadJobcards(driver, db, logger)
+    downloadJobcards(context.driver, context.db, context.logger)
     # extractJobcards(driver, db, logger)
 
   contextFinalize(context)
