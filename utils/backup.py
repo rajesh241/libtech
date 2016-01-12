@@ -21,7 +21,7 @@ from includes.settings import dbhost,dbuser,dbpasswd,sid,token
 
 #DB_NAMES = ['libtechdbOD', ]
 DB_NAMES = ['amritmahal', 'bombatbengaluru', 'dhruvrungta', 'homestay', 'innohub', 'innovationhub', 'iycn', 'jhatkaa', 'khulamanch', 'mtsequipment', 'nuvepro', 'paradigmshift', 'proto', 'protovillage', 'rajeev', 'rajeev_nuvepro', 'spokesandlenses', 'tactsys', 'twb', 'vidsmeco_iycn1', 'wakeupcleanup', 'wellnessunlimited', ]
-DB_NAMES = ['libtech', ]
+DB_NAMES = ['libtech', 'mahabubnagar' ]
 
 
 #############
