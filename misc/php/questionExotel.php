@@ -11,7 +11,7 @@ $query="select audio1 from callQueue where callid=".$callid;
 #$query="select audio from callQueue where id=5";
 $result=mysqli_query($mydbcon,$query);
 $row=mysqli_fetch_array($result);
-$audio=$row['audio'];
+$audio=$row['audio1'];
 $audioarray=explode(",",$audio);
 foreach($audioarray as $singleaudio){
 $myaudio="http://libtech.info/audio/".$singleaudio."\n";

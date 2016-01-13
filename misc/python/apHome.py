@@ -30,6 +30,8 @@ def main():
   myhtml+="</br>"
   myhtml+=  getCenterAligned('<h3 style="color:green"><a href="http://ap.libtech.info/ghattuGrievance/ghattu/nrega/html/">Grievance Management System </a></h3>' )
   myhtml+="</br>"
+  myhtml+=  getCenterAligned('<h3 style="color:blue"><a href="http://chaupal.libtech.info/addressDashboard/ui/queryDashboard.py">Query Dashboard </a></h3>' )
+  myhtml+="</br>"
   myhtml=htmlWrapper(title="AP Telangana Dashboard", head='<h1 align="center">AP Telangana Dashboard</h1>', body=myhtml)
   print myhtml.encode('UTF-8')
 if __name__ == '__main__':
