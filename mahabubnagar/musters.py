@@ -52,6 +52,7 @@ def argsFetch():
   parser.add_argument('-p', '--parse', help='Parse Jobcard HTML for Muster Info', required=False, action='store_const', const=True)
   parser.add_argument('-r', '--process', help='Process downloaded HTML files for Muster Info', required=False, action='store_const', const=True)
   parser.add_argument('-P', '--push', help='Push Muster Info into the DB on the go', required=False, action='store_const', const=True)
+  parser.add_argument('-J', '--jobcard-details', help='Fetch the Jobcard Details for DB jobcardDetails table', required=False, action='store_const', const=True)
 
   args = vars(parser.parse_args())
   return args
@@ -153,7 +154,7 @@ def downloadJobcardHTML(logger, driver, db, jobcard, dirname=None):
   return html_source
 
 
-def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None):
+def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_jobcard_details=None):
   '''
   Parse & Push the Muster Info into the DB
   '''
@@ -171,6 +172,120 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None):
   if not panchayat_code:
     panchayat_code = lookupPanchayatCode[panchayat]
 
+  if fetch_jobcard_details:
+    main1 = bs.find('div',id='main1')
+    logger.debug("Main1[%s]" % main1)
+
+    if main1 != None:
+      table1 = main1.find('table')
+      logger.debug("Table1[%s]" % table1)
+
+      table1A = table1.find('table', id='sortable')
+      logger.debug("Table1A[%s]" % table1A)
+
+      table1B = table1A.findNext('table', id='sortable')
+      logger.debug("Table1B[%s]" % table1B)
+
+      rows = table1B.findAll('tr')
+      hrow = rows[0]
+      count = len(rows)
+      logger.info("RowCount[%d]" % count)
+      logger.debug("Row[%s]" % rows)
+      if count > 3:
+        th = str(hrow.find('th'))
+        logger.debug("HeadRow[%s]" % hrow)
+        count = count-3
+        
+        row = rows[3]
+        logger.debug("FirstRow[%s]" % row)
+
+        while count != 0:
+          count = count - 1
+          td = row.find('td')
+          td = td.findNext('td')
+          worker_id_value = td.text
+          worker_id = worker_id_value.strip()
+          logger.debug("worker_id [%s]" % worker_id)
+
+          td = td.findNext('td')
+          worker_name_value = td.text
+          worker_name = worker_name_value.strip()
+          logger.debug("worker_name [%s]" % worker_name)
+
+          td = td.findNext('td')
+          age_value = td.text
+          age = age_value.strip()
+          logger.debug("age [%s]" % age)
+          if age == '-':
+            age = ""
+
+          td = td.findNext('td')
+          gender_value = td.text
+          gender = gender_value.strip()
+          logger.debug("gender [%s]" % gender)
+
+          td = td.findNext('td')
+          relationship_value = td.text
+          relationship = relationship_value.strip()
+          logger.debug("relationship [%s]" % relationship)
+
+          td = td.findNext('td')
+          account_no_value = td.text
+          account_no = account_no_value.strip()
+          logger.debug("account_no [%s]" % account_no)
+
+          td = td.findNext('td')
+          paying_agency_value = td.text
+          paying_agency = paying_agency_value.strip()
+          logger.debug("paying_agency [%s]" % paying_agency)
+
+          td = td.findNext('td')
+          ifsc_code_value = td.text
+          ifsc_code = ifsc_code_value.strip()
+          logger.debug("ifsc_code [%s]" % ifsc_code)
+
+          td = td.findNext('td')
+          branch_value = td.text
+          branch = branch_value.strip()
+          logger.debug("branch [%s]" % branch)
+
+          td = td.findNext('td')
+          uid_no_value = td.text
+          uid_no = uid_no_value.strip()
+          logger.debug("uid_no [%s]" % uid_no)
+
+          td = td.findNext('td')
+          shg_id_value = td.text
+          shg_id = shg_id_value.strip()
+          logger.debug("shg_id [%s]" % shg_id)
+
+          td = td.findNext('td')
+          disabled_value = td.text
+          disabled = disabled_value.strip()
+          logger.debug("disabled [%s]" % disabled)
+          
+          if disabled == "N":
+            is_disabled = 0
+          else:
+            is_disabled = 1
+          logger.debug("disabled [%s]" % is_disabled)
+
+          cur = db.cursor()
+          query = 'insert into jobcardDetails (jobcard, applicantNo, age, applicantName, gender, accountNo, aadharNo, bankNameOrPOName, IFSCCodeOrEMOCode, branchNameOrPOAddress, isDisabled) values ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s")' % (jobcard, worker_id, age, worker_name, gender, account_no, uid_no, paying_agency, ifsc_code, branch, is_disabled) + ' ON DUPLICATE KEY update jobcard="%s", applicantNo="%s", age="%s", applicantName="%s", gender="%s", accountNo="%s", aadharNo="%s", bankNameOrPOName="%s", IFSCCodeOrEMOCode="%s", branchNameOrPOAddress="%s", isDisabled="%s"' % (jobcard, worker_id, age, worker_name, gender, account_no, uid_no, paying_agency, ifsc_code, branch, is_disabled)
+          logger.info('Executing query[%s]' % query)
+          try:
+            cur.execute(query)
+          except IntegrityError, e:
+            logger.warning('Attempting Duplicate Entry[%s]', e)
+
+          try:
+            row = row.findNext('tr')
+          except StopIteration:
+            break
+
+
+  # The logic to get muster information begins here
+          
   main3 = bs.find(id='main3')
   if main3 == None:
     return
@@ -183,29 +298,29 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None):
     td = row.find('td')
     epay_order_value = td.text
     epay_order_number = epay_order_value.strip()
-    logger.info("Epayorder No[%s]", epay_order_number)
+    logger.debug("Epayorder No[%s]", epay_order_number)
     if len(epay_order_number) != 16:
-      logger.info('Reached End of Table with epay_order_number[%s]' % epay_order_number)
+      logger.debug('Reached End of Table with epay_order_number[%s]' % epay_order_number)
       break
 
     td = td.findNext('td')
     ftr_no = td.text.strip()
-    logger.info("Ftr No[%s]", ftr_no)
+    logger.debug("Ftr No[%s]", ftr_no)
 
     td = td.findNext('td')
     muster_number = td.text.strip()
-    logger.info("musterNo[%s]", muster_number)
+    logger.debug("musterNo[%s]", muster_number)
 
     should_skip = False
     if len(muster_number) != 12:
-      logger.info('Invalid Muster Number[%s]' % muster_number)
+      logger.debug('Invalid Muster Number[%s]' % muster_number)
       should_skip = True
     else:
       financial_year = int(muster_number[4:6])  # [4:6] Mynk to test
-      logger.info("financial_year[%s]", financial_year)
+      logger.debug("financial_year[%s]", financial_year)
 
       if financial_year < 15:
-        logger.info('Finanacial Year[20%s-%s]' % (financial_year-1, financial_year))
+        logger.debug('Finanacial Year[20%s-%s]' % (financial_year-1, financial_year))
         # Mynk should_skip = True 
 
       financial_year = str(financial_year)
@@ -221,74 +336,74 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None):
 
     td = td.findNext('td')
     from_date = td.text.strip()
-    logger.info("From Date[%s]", from_date)
+    logger.debug("From Date[%s]", from_date)
     from_date = dateConvert(from_date)
-    logger.info("From Date[%s]", from_date)
+    logger.debug("From Date[%s]", from_date)
 
     td = td.findNext('td')
     to_date = dateConvert(td.text.strip())
-    logger.info("To Date[%s]", to_date)
+    logger.debug("To Date[%s]", to_date)
 
     td = td.findNext('td')
     payorder_date = dateConvert(td.text.strip())
-    logger.info("Payorder Date[%s]", payorder_date)
+    logger.debug("Payorder Date[%s]", payorder_date)
 
     td = td.findNext('td')
     work = td.text.strip()
     (work_code, work_name) = work.split(' / ')
-    logger.info("work_code[%s] work_name[%s]", work_code, work_name)
+    logger.debug("work_code[%s] work_name[%s]", work_code, work_name)
 
     td = td.findNext('td')
     payorder_number = td.text.strip()
-    logger.info("payorder_number[%s]", payorder_number)
+    logger.debug("payorder_number[%s]", payorder_number)
 
     td = td.findNext('td')
     wageseeker_name = td.text.strip()
-    logger.info("wageseeker_name[%s]", wageseeker_name)
+    logger.debug("wageseeker_name[%s]", wageseeker_name)
 
     td = td.findNext('td')  # Skip Caste
     caste = td.text.strip()
-    logger.info("caste[%s]", caste)
+    logger.debug("caste[%s]", caste)
 
     td = td.findNext('td')
     account_number = td.text.strip()
-    logger.info("account_number[%s]", account_number)
+    logger.debug("account_number[%s]", account_number)
 
     td = td.findNext('td')
     days_worked = td.text.strip()
-    logger.info("days_worked[%s]", days_worked)
+    logger.debug("days_worked[%s]", days_worked)
 
     td = td.findNext('td')
     payorder_amount = td.text.strip()
-    logger.info("payorder_amount[%s]", payorder_amount)
+    logger.debug("payorder_amount[%s]", payorder_amount)
 
     day_wage = int(payorder_amount)/int(days_worked)
 
     td = td.findNext('td')
     credit_date = td.text.strip()
-    logger.info("credit_date[%s]", credit_date)
+    logger.debug("credit_date[%s]", credit_date)
     if credit_date != '-':
       credit_date = dateConvert(credit_date)
-      logger.info("credit_date[%s]", credit_date)
+      logger.debug("credit_date[%s]", credit_date)
     else:
       logger.warning("Credit Date messed")
 
     td = td.findNext('td')
     disbursed_amount = td.text.strip()
-    logger.info("disbursed_amount[%s]", disbursed_amount)
+    logger.debug("disbursed_amount[%s]", disbursed_amount)
 
     td = td.findNext('td')
     disbursed_date = td.text.strip()
-    logger.info("disbursed_date[%s]", disbursed_date)
+    logger.debug("disbursed_date[%s]", disbursed_date)
     if disbursed_date != '-':
       disbursed_date = dateConvert2(disbursed_date)
-      logger.info("disbursed_date[%s]", disbursed_date)
+      logger.debug("disbursed_date[%s]", disbursed_date)
     else:
       logger.warning("Disbursed Date messed")
     
     td = td.findNext('td')    # Skip outsanding_amount
     outsanding_amount = td.text.strip()
-    logger.info("outsanding_amount[%s]", outsanding_amount)
+    logger.debug("outsanding_amount[%s]", outsanding_amount)
 
     cur = db.cursor()
     query = 'insert into musters (musterNo, stateCode, districtCode, blockCode, panchayatCode, finyear, workCode, workName, dateFrom, dateTo, crawlDate) values ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s")' % (muster_number, state_code, district_code, block_code, panchayat_code, financial_year, work_code, work_name, from_date, to_date, strftime('%Y-%m-%d %H:%M:%S'))
@@ -299,17 +414,13 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None):
       logger.warning('Attempting Duplicate Entry[%s]', e)
 
     cur = db.cursor()
-    query = 'insert into musterTransactionDetails (musterNo, finyear, workCode, name, jobcard, daysWorked, dayWage, totalWage, accountNo, wagelistNo, creditedDate, blockCode, panchayatCode, stateCode, districtCode, disbursedAmount, disbursedDate, referenceNoEPayorderNo) values ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s")' % (muster_number, financial_year, work_code, wageseeker_name, jobcard, days_worked, day_wage, payorder_amount, account_number, payorder_number, credit_date, block_code, panchayat_code, state_code, district_code, disbursed_amount, disbursed_date, epay_order_number)
+    query = 'insert into musterTransactionDetails (musterNo, finyear, workCode, name, jobcard, daysWorked, dayWage, totalWage, accountNo, wagelistNo, creditedDate, blockCode, panchayatCode, stateCode, districtCode, disbursedAmount, disbursedDate, referenceNoEPayorderNo) values ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s")' % (muster_number, financial_year, work_code, wageseeker_name, jobcard, days_worked, day_wage, payorder_amount, account_number, payorder_number, credit_date, block_code, panchayat_code, state_code, district_code, disbursed_amount, disbursed_date, epay_order_number) + ' ON DUPLICATE KEY update finyear="%s", workCode="%s", daysWorked="%s", dayWage="%s", totalWage="%s", accountNo="%s", wagelistNo="%s", creditedDate="%s", blockCode="%s", panchayatCode="%s", stateCode="%s", districtCode="%s", disbursedAmount="%s", disbursedDate="%s", referenceNoEPayorderNo="%s"' % (financial_year, work_code, days_worked, day_wage, payorder_amount, account_number, payorder_number, credit_date, block_code, panchayat_code, state_code, district_code, disbursed_amount, disbursed_date, epay_order_number)
     logger.info('Executing query[%s]' % query)
     try:
       cur.execute(query)
     except IntegrityError, e:
-      logger.warning('Updating Entry since[%s]', e)
-      cur = db.cursor()
-      query = 'update musterTransactionDetails set finyear="%s", workCode="%s", daysWorked="%s", dayWage="%s", totalWage="%s", accountNo="%s", wagelistNo="%s", creditedDate="%s", blockCode="%s", panchayatCode="%s", stateCode="%s", districtCode="%s", disbursedAmount="%s", disbursedDate="%s", referenceNoEPayorderNo="%s" where musterNo="%s" and name="%s" and jobcard="%s"' % (financial_year, work_code, days_worked, day_wage, payorder_amount, account_number, payorder_number, credit_date, block_code, panchayat_code, state_code, district_code, disbursed_amount, disbursed_date, epay_order_number, muster_number, wageseeker_name, jobcard)
-      logger.info('Executing query[%s]' % query)
-      cur.execute(query)
-
+      logger.warning('Attempting Duplicate Entry[%s]', e)
+      
     try:
       row = row.findNext('tr')
       logger.debug("row[%s]" % row)
@@ -484,7 +595,7 @@ def fetchJobcardDetails(logger, driver, cmd=None, dir=None, url=None):
     
   logger.info("...END %s" % cmd)     
 
-def downloadJobcards(logger, db, cmd=None, directory=None, url=None, isVisible=None, isPushInfo=None, query=None):
+def downloadJobcards(logger, db, cmd=None, directory=None, url=None, isVisible=None, isPushInfo=None, query=None, fetch_jobcard_details=None):
   '''
   Crawl the html for the musters
   '''
@@ -515,6 +626,8 @@ def downloadJobcards(logger, db, cmd=None, directory=None, url=None, isVisible=N
   cur = db.cursor()
   cur.execute(query)
   jobcard_details = cur.fetchall()
+  if jobcard_details:
+    logger.debug("Jobcard Details [%s]" % str(jobcard_details))
   
   display = displayInitialize(isVisible)
   driver = driverInitialize()
@@ -524,9 +637,9 @@ def downloadJobcards(logger, db, cmd=None, directory=None, url=None, isVisible=N
     dirname = directory + '/' + panchayat    
     html_source = downloadJobcardHTML(logger, driver, db, jobcard, dirname)
 
-    if isPushInfo:
+    if isPushInfo or fetch_jobcard_details:
       if html_source:
-        pushMusterInfo(logger, db, html_source, jobcard, panchayat_code)
+        pushMusterInfo(logger, db, html_source, jobcard, panchayat_code, fetch_jobcard_details)
       else:
         query = 'update jobcardRegister set isDownloaded=0 where jobcard="%s"' % (jobcard) # Mynk
         logger.info('Executing query: [%s]', query)
@@ -575,7 +688,7 @@ def processMusterInfo(logger, db, cmd=None, dir=None):
 
   logger.info("...END %s" % cmd)     
 
-def parseMusterInfo(logger, db, cmd=None, directory=None, query=None):
+def parseMusterInfo(logger, db, cmd=None, directory=None, query=None, fetch_jobcard_details=None):
   '''
   Parse the Jobcard HTML for Muster Info
   '''
@@ -587,7 +700,7 @@ def parseMusterInfo(logger, db, cmd=None, directory=None, query=None):
 
   logger.info("BEGIN %s..." % cmd)
 
-  logger.info("Command[%s] Directory[%s]" % (cmd, dir))
+  logger.info("Command[%s] Directory[%s]" % (cmd, directory))
 
   if query == None:
     query = 'select j.jobcard, p.name, p.panchayatCode from jobcardRegister j, panchayats p, blocks b where j.blockCode=p.blockCode and j.panchayatCode=p.panchayatCode  and j.blockCode=b.blockCode and j.isProcessed=0'
@@ -611,7 +724,7 @@ def parseMusterInfo(logger, db, cmd=None, directory=None, query=None):
       logger.info("Reading [%s]" % filename)
       html_source = html_file.read()
 
-    pushMusterInfo(logger, db, html_source, jobcard, panchayat_code)
+    pushMusterInfo(logger, db, html_source, jobcard, panchayat_code, fetch_jobcard_details)
 
   logger.info("...END %s" % cmd)     
 
@@ -655,6 +768,7 @@ def main():
 
   outdir = args['directory']
   url = args['url']
+  fetch_jobcard_details = args['jobcard_details']
 
   if args['crawl']: #Mynk
     start_date = date(2015, 4, 1)
@@ -669,13 +783,13 @@ def main():
   db = dbInitialize(db="mahabubnagar")
   
   if args['parse']:
-    parseMusterInfo(logger, db, "PARSE MUSTERS", outdir)
+    parseMusterInfo(logger, db, "PARSE MUSTERS", outdir, args['query'], fetch_jobcard_details)
   elif args['process']:
-    processMusterInfo(logger, db, "PARSE MUSTERS", outdir)
+    processMusterInfo(logger, db, "PROCESS MUSTERS", outdir)
   elif args['jobcard']:
     fetchJobcard(logger, db, args['jobcard'], "FETCH JOBCARD", outdir, url, args['visible'], args['push'])
   else:
-    downloadJobcards(logger, db, "DOWNLOAD JOBCARDS", outdir, url, args['visible'], args['push'], args['query'])
+    downloadJobcards(logger, db, "DOWNLOAD JOBCARDS", outdir, url, args['visible'], args['push'], args['query'], fetch_jobcard_details)
 
   dbFinalize(db)
 
