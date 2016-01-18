@@ -1,0 +1,9 @@
+TAGS
+includes/settings.py
+*.py_*
+*.py.*
+*.pyc
+*.pyc.*
+*~
+\#*\#
+.#*
