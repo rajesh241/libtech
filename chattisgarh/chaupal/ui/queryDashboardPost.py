@@ -1,28 +1,15 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
 import cgi
 import cgitb; cgitb.enable() # Optional; for debugging only
 import MySQLdb
-import math
-import datetime
 import os
-import time
-import requests
-import xml.etree.ElementTree as ET
 import sys
+
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../../includes/')
-sys.path.insert(0, fileDir+'/../../')
-sys.path.insert(0, fileDir+'./')
-import libtechFunctions
-import globalSettings
-import settings
-import processBroadcasts
-from processBroadcasts import gettringoaudio,getaudio 
+
 from settings import dbhost,dbuser,dbpasswd,sid,token
-from libtechFunctions import gethtmlheader 
-from libtechFunctions import gethtmlfooter 
-from libtechFunctions import singleRowQuery,arrayToHTMLLine,writecsv 
-from globalSettings import broadcastsReportFile,broadcastReportFilePath
 
 from bootstrap_utils import bsQuery2Html, htmlWrapper, getForm, getCenterAligned
 from queryDashboard import getQueryTable, queryDB

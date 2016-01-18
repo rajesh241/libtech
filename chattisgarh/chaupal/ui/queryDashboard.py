@@ -10,7 +10,7 @@ sys.path.insert(0, fileDir+'/../../../includes/')
 
 from settings import dbhost,dbuser,dbpasswd,sid,token
 
-from bootstrap_utils import bsQuery2Html,htmlWrapper, getForm, getCenterAligned
+from bootstrap_utils import bsQuery2Html, htmlWrapper, getForm, getCenterAligned
 
 def getQueryTable(cur):
   query = 'select * from queryDB'
