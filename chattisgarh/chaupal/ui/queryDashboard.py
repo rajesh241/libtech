@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import sys
@@ -12,7 +12,7 @@ import cgitb; cgitb.enable() # Optional; for debugging only
 from db import dbInitialize,dbFinalize
 
 
-from bootstrap_utils import bsQuery2Html, htmlWrapper, getForm, getCenterAligned
+from bootstrap import bsQuery2Html, htmlWrapper, getForm, getCenterAligned
 
 def getQueryTable(cur):
   query = 'select * from queryDB'
