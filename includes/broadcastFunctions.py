@@ -111,18 +111,18 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
     queryMatchString="phone='%s'" % phone
 
 
-  print "Printing Debug Information"+str(bid)
-  print "Broadcast ID"+str(bid)
-  print "Tringo audio is "+tringoaudio;
-  print "audiolist"+audio
-  print "Broadcast Type "+broadcastType
-  print "QueryMatchString "+queryMatchString
-  print "Vendor "+requestedVendor
+  print("Printing Debug Information"+str(bid))
+  print("Broadcast ID"+str(bid))
+  print("Tringo audio is "+tringoaudio)
+  print("audiolist"+audio)
+  print("Broadcast Type "+broadcastType)
+  print("QueryMatchString "+queryMatchString)
+  print("Vendor "+requestedVendor)
             
       
  
   query="select phone,exophone,dnd from addressbook where "+queryMatchString+" "
-  print query
+  print(query)
   cur.execute(query)
   results1 = cur.fetchall()
   for r in results1:
@@ -140,14 +140,14 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
         skip=1 
     else:
       vendor=requestedVendor;
-    print "phone "+phone+" skip"+str(skip)+"vendor "+vendor
+    print("phone "+phone+" skip"+str(skip)+"vendor "+vendor)
     if len(phone) == 10 and phone.isdigit() and skip == 0:
       query="insert into callSummary (bid,phone) values ("+bid+",'"+phone+"');"
-      print query
+      print(query)
       cur.execute(query)
       callid=str(cur.lastrowid)
       query="insert into callQueue (callid,priority,template,vendor,bid,minhour,maxhour,phone,audio,audio1,tringoaudio,exophone) values ("+str(callid)+","+str(priority)+",'"+template+"','"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+audio1+"','"+tringoaudio+"','"+exophone+"');"
-      print query
+      print(query)
       cur.execute(query)
             
 
@@ -182,8 +182,8 @@ def getWageBroadcastAudioArray(cur,jobcard,query,dbname):
       audioMessage=baseMessage+",chattisgarh_wage_broadcast_repeat,"+baseMessage+",chattisgarh_wage_broadcast_thankyou"
     else:
       audioMessage=baseMessage
-    print audioMessage
-    #print audioMessage
+    print(audioMessage)
+
     return audioMessage
 
 def scheduleWageBroadcastCall(cur,jobcard,phone,dbname,musterTransactionID=None,isTest=None):
@@ -198,7 +198,7 @@ def scheduleWageBroadcastCall(cur,jobcard,phone,dbname,musterTransactionID=None,
     minhour='1'
     maxhour='23'
   dnd,exophone=checkLocalDND(cur,phone)
-  print dnd+exophone
+  print(dnd+exophone)
   if (dnd == 'no'):
     if musterTransactionID is None:
       query="select mt.totalWage,DATE_FORMAT(mt.creditedDate,'%Y'),DATE_FORMAT(mt.creditedDate,'%M'),DATE_FORMAT(mt.creditedDate,'%d'),p.name,mt.id from musterTransactionDetails mt,panchayats p where mt.blockCode=p.blockCode and mt.panchayatCode=p.panchayatCode and mt.jobcard='"+jobcard+"' order by mt.creditedDate desc limit 1;"
@@ -208,17 +208,17 @@ def scheduleWageBroadcastCall(cur,jobcard,phone,dbname,musterTransactionID=None,
       query=query.replace('creditedDate','disbursedDate') 
     audio=getWageBroadcastAudioArray(cur,jobcard,query,dbname)
     if (audio == "error"):
-      print "There is some error here"
+      print("There is some error here")
     else:
       query="use libtech" 
       cur.execute(query)
       query="insert into callSummary (bid,phone) values ("+bid+",'"+phone+"');"
-      print query
+      print(query)
       cur.execute(query)
       callid=str(cur.lastrowid)
-      print "call Scheduled with Callid"+callid
+      print("call Scheduled with Callid"+callid)
       query="insert into callQueue (callid,template,priority,vendor,bid,minhour,maxhour,phone,audio,exophone) values (%s,'wageBroadcast',1,'exotel',%s,%s,%s,'%s','%s','%s');" %(callid,bid,minhour,maxhour,phone,audio,exophone)
-      print query
+      print(query)
       cur.execute(query)
   return callid
 

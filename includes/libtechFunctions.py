@@ -36,7 +36,7 @@ def getNumberString(a):
   return numberString.rstrip(',')
 def getjcNumber(jobcard):
   jobcardArray=jobcard.split('/')
-#  print jobcardArray[1]
+#  print(jobcardArray[1])
   jcNumber=re.sub("[^0-9]", "", jobcardArray[1])
   return jcNumber
 
@@ -133,7 +133,7 @@ def writecsv(cur,query,filename):
       rowEncoded.append(b)
     writer.writerow(rowEncoded) 
   f.close()
- # print str(cur.description())
+ # print(str(cur.description()))
 
 def gen2colOptions(inputlabel,inputname,optionArray,curvalue):
   myhtml=""
@@ -323,7 +323,7 @@ def addJobcardPhoneV1(cur,phone,jobcard,dbname):
 def checkDND(phone):
   url = 'https://%s:%s@twilix.exotel.in/v1/Accounts/%s/Numbers/%s' % (sid, token, sid, phone)
   r = requests.get(url)
-  #print r.content
+  #print(r.content)
   root = ET.fromstring(r.content)
   for number in root.findall('Numbers'):
     PhoneNumber = number.find('PhoneNumber').text
@@ -383,7 +383,7 @@ def getaudio(cur,rawlist):
     audioExists=singleRowQuery(cur,query)
     if (audioExists == 1):
       query="select filename from audioLibrary where id="+audioFileID
-#      print query
+#      print(query)
       audio+=singleRowQuery(cur,query)
     else:
       error=1
@@ -405,7 +405,7 @@ def scheduleTransactionCall(cur,bid,phone):
   priority=row[11]
   broadcastType=row[1]
   dnd,exophone=checkDND(phone)
-  print dnd+exophone
+  print(dnd+exophone)
   if (error == 0):
     skip=0
     if(dnd == 'yes'):
@@ -416,13 +416,13 @@ def scheduleTransactionCall(cur,bid,phone):
         skip=1 
     else:
       vendor=requestedVendor;
-    print "phone "+phone+" skip"+str(skip)+"vendor "+vendor
+    print("phone "+phone+" skip"+str(skip)+"vendor "+vendor)
     if len(phone) == 10 and phone.isdigit() and skip == 0:
       query="insert into callQueue (priority,vendor,bid,minhour,maxhour,phone,audio,tringoaudio,exophone) values ("+str(priority)+",'"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+tringoaudio+"','"+exophone+"');"
-     # print query
+     # print(query)
       cur.execute(query)
       query="insert into callStatus (bid,phone) values ("+bid+",'"+phone+"');"
-     # print query
+     # print(query)
       cur.execute(query)
   
 def getBlockCodeFromJobcard(jobcard):

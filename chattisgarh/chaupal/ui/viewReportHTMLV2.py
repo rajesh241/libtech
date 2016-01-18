@@ -30,7 +30,7 @@ def main():
   db.autocommit(True)
   query="SET NAMES utf8"
   cur.execute(query)
-
+  reportType='dataReport'
   form = cgi.FieldStorage()
   blockCode=form["blockCode"].value
   districtName=form["district"].value
@@ -71,7 +71,7 @@ def main():
   queryTable=bsQuery2HtmlV2(cur,query)
   queryTable=queryTable.replace('query_text',query) 
   myForm=getButtonV3('./downloadReport.py','downloadReport','Download Report')
-  myFormExtraInputs='<input type="hidden" name="title" value="%s"><input type="hidden" name="blockName" value="%s"><input type="hidden" name="panchayatName" value="%s"><input type="hidden" name="query" value="%s">' % (title,blockName,panchayatName,queryWithoutLimit)
+  myFormExtraInputs='<input type="hidden" name="reportType" value="%s"><input type="hidden" name="dbname" value="%s"><input type="hidden" name="title" value="%s"><input type="hidden" name="blockName" value="%s"><input type="hidden" name="panchayatName" value="%s"><input type="hidden" name="query" value="%s">' % (reportType,districtName,title,blockName,panchayatName,queryWithoutLimit)
   myForm = myForm.replace('extrainputs',myFormExtraInputs)
   myhtml=''
   myhtml+=  getCenterAligned('<h3 style="color:green"> %s-%s</h3>' % (blockName.upper(),panchayatName.upper()))
