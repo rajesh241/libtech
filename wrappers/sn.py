@@ -100,6 +100,25 @@ def driverFinalize(driver):
   driver.close()
   driver.quit()
 
+def waitUntilID(driver, id, timeout):
+  '''
+  A function that waits until the ID is available else times out.
+  Return: True if found else False
+  '''
+  try:
+    # logger.info("Waiting for the page to load...")
+    elem = WebDriverWait(driver, 10).until(
+      EC.presence_of_element_located((By.ID, id))
+    )
+    # logger.info("...done looking")
+
+  except (NoSuchElementException, TimeoutException):
+    # logger.error("Failed to fetch the page")
+    return False
+
+  finally:
+    return True
+  
 
 def wdTest(driver):
   driver.get("http://www.google.com")
