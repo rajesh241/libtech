@@ -33,6 +33,9 @@ def main():
 
   form = cgi.FieldStorage()
   title=form["title"].value
+  dbname=form["dbname"].value
+  query="use %s" % (dbname)
+  cur.execute(query)
   query=form["query"].value
   reportType=form["reportType"].value
   title1=title.replace(" ","")
