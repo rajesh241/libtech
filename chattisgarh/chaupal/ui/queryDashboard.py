@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 
-import cgitb; cgitb.enable() # Optional; for debugging only
-import MySQLdb
 import os
 import sys
 
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../../includes/')
+sys.path.insert(0, fileDir+'/../../../wrappers/')
+sys.path.insert(0, fileDir+'/../../../utils/')
 
-from settings import dbhost,dbuser,dbpasswd,sid,token
+import cgitb; cgitb.enable() # Optional; for debugging only
+from db import dbInitialize,dbFinalize
+
 
 from bootstrap_utils import bsQuery2Html, htmlWrapper, getForm, getCenterAligned
 
@@ -23,9 +25,9 @@ def getQueryTable(cur):
   return query_table
 
 def queryDB():
-  print 'Content-type: text/html'
-  print 
-  db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, charset='utf8')
+  print('Content-type: text/html')
+
+  db = dbInitialize(db="libtech", charset='utf8')
   cur=db.cursor()
   db.autocommit(True)
   query="SET NAMES utf8"
@@ -47,11 +49,33 @@ def queryDB():
     myhtml += getCenterAligned('<a href="#"><h5>Top</h5></a></div>') + '<br />'
   
   myhtml=htmlWrapper(title="Query Dashboard", head='<h1 aling="center"><a href="./queryDashboard.py">Query Dashboard</a></h1>', body=myhtml)
-  return myhtml.encode('UTF-8')
+
+  dbFinalize(db)
+  return myhtml  # .encode('UTF-8') # .encode('ascii','xmlcharrefreplace') 
 
 
 def main():
-  print queryDB()
+  print(queryDB())
+
+  #res = queryDB()   #
+  #print(str(res, encoding="UTF-8"))
+
+  '''
+  if type(res) is bytes:
+   print(str(res, encoding="UTF-8"))
+   #print(res)
+   # sys.stdout.buffer.write(res)
+  else:
+    print(type(res))
+    print(sys.stdout.encoding)
+    #sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+
+    tmpout = sys.stdout
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    print(sys.stdout.encoding)
+    sys.stdout = tmpout
+  '''
 
 if __name__ == '__main__':
   main()
