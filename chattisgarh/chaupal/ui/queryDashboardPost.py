@@ -1,10 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import sys
+if sys.stdout.encoding != 'UTF-8':   # Figure a way to modify it from within - Mynk
+  os.putenv("PYTHONIOENCODING",'UTF-8')
+  os.execv(sys.executable,['python3']+sys.argv)
 
 fileDir=os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, fileDir+'/../../../includes/')
 sys.path.insert(0, fileDir+'/../../../wrappers/')
 sys.path.insert(0, fileDir+'/../../../utils/')
 
@@ -13,7 +15,7 @@ import cgitb; cgitb.enable() # Optional; for debugging only
 from db import dbInitialize,dbFinalize
 
 
-from bootstrap_utils import bsQuery2Html, htmlWrapper, getForm, getCenterAligned
+from bootstrap import bsQuery2Html, htmlWrapper, getForm, getCenterAligned
 from queryDashboard import getQueryTable, queryDB
 
 def main():
@@ -57,7 +59,7 @@ def main():
 
   myhtml=htmlWrapper(title="Query Dashboard", head='<h1 aling="center"><a href="./queryDashboard.py">Query Dashboard</a></h1>', body=myhtml)
   dbFinalize(db)
-  print myhtml.encode('UTF-8')
+  print(myhtml)
 
 if __name__ == '__main__':
   main()

@@ -2,9 +2,11 @@
 
 import os
 import sys
+if sys.stdout.encoding != 'UTF-8':   # Figure a way to modify it from within - Mynk
+  os.putenv("PYTHONIOENCODING",'UTF-8')
+  os.execv(sys.executable,['python3']+sys.argv)
 
 fileDir=os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, fileDir+'/../../../includes/')
 sys.path.insert(0, fileDir+'/../../../wrappers/')
 sys.path.insert(0, fileDir+'/../../../utils/')
 
