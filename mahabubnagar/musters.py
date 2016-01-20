@@ -58,6 +58,8 @@ def argsFetch():
   return args
 
 def dateConvert(date):
+  if date == '-':
+    return None
   return strftime('%Y-%m-%d %H:%M:%S', (strptime(date, '%d-%b-%Y')))
 
 def dateConvert2(date):
@@ -312,9 +314,10 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
     logger.debug("musterNo[%s]", muster_number)
 
     should_skip = False
-    if len(muster_number) != 12:
+    if muster_number == '-': # Mynk suppressing checks - len(muster_number) != 12:
       logger.debug('Invalid Muster Number[%s]' % muster_number)
-      should_skip = True
+      # should_skip = True
+      financial_year = "08";
     else:
       financial_year = int(muster_number[4:6])  # [4:6] Mynk to test
       logger.debug("financial_year[%s]", financial_year)
@@ -325,6 +328,7 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
 
       financial_year = str(financial_year)
 
+    should_skip = False
     if should_skip:
       try:
         row = row.findNext('tr')
@@ -350,8 +354,11 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
 
     td = td.findNext('td')
     work = td.text.strip()
-    (work_code, work_name) = work.split(' / ')
-    logger.debug("work_code[%s] work_name[%s]", work_code, work_name)
+    if work != '/':
+      (work_code, work_name) = work.split(' / ')
+    else:
+      (work_code, work_name) = ("DummyWorkCode", "DummyWorkName")
+    logger.info("work_code[%s] work_name[%s]", work_code, work_name)
 
     td = td.findNext('td')
     payorder_number = td.text.strip()
@@ -377,14 +384,42 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
     payorder_amount = td.text.strip()
     logger.debug("payorder_amount[%s]", payorder_amount)
 
-    day_wage = int(payorder_amount)/int(days_worked)
+    if days_worked != "0":
+      day_wage = int(payorder_amount)/int(days_worked)
+    else:
+      day_wage = int(payorder_amount)   # Mynk days_worked can be 0 as in http://crawl.libtech.info/data/Telangana/Mahabubnagar/Ghattu/Nandinne/141975701001010236.html
 
     td = td.findNext('td')
     credit_date = td.text.strip()
     logger.debug("credit_date[%s]", credit_date)
     if credit_date != '-':
       credit_date = dateConvert(credit_date)
-      logger.debug("credit_date[%s]", credit_date)
+      logger.info("credit_date[%s]", credit_date)
+
+      if muster_number == '-': # Mynk suppressing checks - len(muster_number) != 12:
+        from_date = credit_date
+        to_date = credit_date
+        date_str = str(credit_date)
+        financial_year = int(date_str[2:4])
+
+        month = int(date_str[5:7])
+        if month > 3:
+          financial_year += 1
+        muster_number = "20" + str(financial_year-1) + str(financial_year) + "000000"
+        financial_year = str(financial_year);
+
+        '''
+        import datetime
+        day = int(date_str[8:10])
+        year = int(date_str[:4])
+        date_dt = datetime.date(year, month, day)
+        logger.info("converted_date=", str(date_dt))
+        next_dt = date_dt + datetime.timedelta(days=1)
+        to_date = str(next_dt)# date_str[:8] + str(next_date) + date_str[10:]
+        logger.info("Next Date=", to_date)
+        '''
+        logger.info('Updating Muster Number[%s], finyear[%s] and dates from[%s] to[%s]' % (muster_number, financial_year, from_date, to_date))
+
     else:
       logger.warning("Credit Date messed")
 
