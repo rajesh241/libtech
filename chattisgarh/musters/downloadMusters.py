@@ -64,7 +64,7 @@ def fetchMuster(logger, driver, log_details, dir=None, url=None):
     logger.info("Fetching...[%s]" % url)
 
     driver.get(url)
-    time.sleep(10)
+    time.sleep(20)
     el = driver.find_element_by_id('ctl00_ContentPlaceHolder1_ddlwork')
     for option in el.find_elements_by_tag_name('option'):
       #print option.text
@@ -89,6 +89,7 @@ def fetchMuster(logger, driver, log_details, dir=None, url=None):
 def main():
 
   district=sys.argv[1]
+  infinyear=sys.argv[2]
  # args = argsFetch()
   logger = loggerFetch()
 #  logger.info('args: %s', str(args))
@@ -117,7 +118,7 @@ def main():
   musterfilepath=datadir+"/CHATTISGARH/"+districtName+"/"
   query="select count(*) from musters m,blocks b, panchayats p where b.isActive=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isChaupal=1 and m.finyear='16' and m.isDownloaded=0 and m.isError=0 and m.musterType='10' limit 10;"
   query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isActive=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isChaupal=1 and m.finyear='16' and m.isDownloaded=0 and m.isError=0 and m.musterType='10' limit 10;"
-  query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isActive=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isChaupal=1 and m.finyear='16' and m.isError=0 and m.musterType='10' and (m.isDownloaded=0 or (m.isComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) ) order by TIMESTAMPDIFF(DAY, m.downloadAttemptDate, now()) desc limit 10;"
+  query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isActive=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isChaupal=1 and m.finyear='"+infinyear+"' and m.isError=0 and m.musterType='10' and (m.isDownloaded=0 or (m.isComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) ) order by TIMESTAMPDIFF(DAY, m.downloadAttemptDate, now()) desc limit 10;"
   #query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.isDownloaded=0 and m.musterType='10' and m.blockCode='"+inblock+"';"
   print query
   #cur.execute(query)
@@ -150,6 +151,8 @@ def main():
       fullfinyear='2015-2016'
     elif finyear=='15':
       fullfinyear='2014-2015'
+    elif finyear=='14':
+      fullfinyear='2013-2014'
     else:
       fullfinyear='2013-2014'
     print "Block Name="+blockName

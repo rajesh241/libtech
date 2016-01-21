@@ -32,7 +32,7 @@ def main():
   query="SET NAMES utf8"
   cur.execute(query)
   districtName="SURGUJA"
-  ftofilepath=datadir+"/CHATTISGARH/"+districtName+"/"
+  ftofilepath=datadir+districtName+"/"
   url="http://services.ptcmysore.gov.in/emo/Trackfto.aspx"
   #ftofilepath="/home/libtech/libtechdata/CHATTISGARH/"+districtName+"/"
   query="select b.name,f.ftoNo,f.stateCode,f.districtCode,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where TIMESTAMPDIFF(HOUR, f.statusDownloadDate, now()) > 48  and f.isStatusDownloaded=0 and f.finyear='16' and f.blockCode=b.blockCode and f.stateCode=b.stateCode and f.districtCode=b.districtCode limit 50;"

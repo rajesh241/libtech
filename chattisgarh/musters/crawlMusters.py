@@ -26,11 +26,18 @@ db.autocommit(True)
 query="SET NAMES utf8"
 cur.execute(query)
 district=sys.argv[1]
+finyear=sys.argv[2]
 #muster Type list
 musterTypeList= ['10','11','13','14']
-#Some Constants 
-fullfinyear='2015-2016'
-finyear='16'
+if finyear=='16':
+  fullfinyear='2015-2016'
+elif finyear=='15':
+  fullfinyear='2014-2015'
+elif finyear=='14':
+  fullfinyear='2013-2014'
+else:
+  fullfinyear='2013-2014'
+#   Some Constants 
 districtName="SURGUJA"
 districtName=district
 dbname=district

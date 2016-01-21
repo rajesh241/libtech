@@ -19,7 +19,7 @@ errorfile = open('/tmp/processMusters.log', 'a')
 testfile = open('/tmp/f.html', 'w')
 #File Path where all the Downloaded FTOs would be placed
 districtName="SURGUJA"
-musterfilepath=datadir+"/CHATTISGARH/"+districtName+"/"
+musterfilepath=datadir+districtName+"/"
 #Connect to MySQL Database
 db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, db="surguja",charset='utf8')
 cur=db.cursor()
@@ -32,7 +32,7 @@ cur.execute(query)
 #print inblock
 #Query to get the Musters 
 query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.isProcessed=0 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.blockCode='002' limit 1;"
-query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode,m.blockCode,p.panchayatCode from musters m,blocks b,panchayats p where m.isError=0 and m.isDownloaded=1 and m.isProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.finyear='16' ;"
+query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode,m.blockCode,p.panchayatCode from musters m,blocks b,panchayats p where m.isError=0 and m.isDownloaded=1 and m.isProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode ;"
 #query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.isProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.finyear='16' and m.musterNo=1296"
 cur.execute(query)
 if cur.rowcount:

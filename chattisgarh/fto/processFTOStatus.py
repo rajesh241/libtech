@@ -14,7 +14,7 @@ from globalSettings import datadir
 errorfile = open('/tmp/processFTO.log', 'a')
 #File Path where all the Downloaded FTOs would be placed
 districtName="SURGUJA"
-ftofilepath=datadir+"/CHATTISGARH/"+districtName+"/"
+ftofilepath=datadir+districtName+"/"
 #Connect to MySQL Database
 db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, db="surguja",charset='utf8')
 cur=db.cursor()

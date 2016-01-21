@@ -14,7 +14,7 @@ cur=db.cursor()
 db.autocommit(True)
 #File Path where all the Downloaded FTOs would be placed
 districtName="SURGUJA"
-ftofilepath=datadir+"/CHATTISGARH/"+districtName+"/"
+ftofilepath=datadir+districtName+"/"
 #ftofilepath="/home/libtech/libtechdata/CHATTISGARH/"+districtName+"/"
 query="select b.name,f.ftoNo,f.stateCode,f.districtCode,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where f.isDownloaded=0 and f.finyear='16' and f.blockCode=b.blockCode and f.stateCode=b.stateCode and f.districtCode=b.districtCode ;"
 #query="select b.name,f.ftoNo,f.stateCode,f.districtCode,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where f.isDownloaded=0 and f.blockCode=b.blockCode and f.stateCode=b.stateCode and f.districtCode=b.districtCode and b.blockCode='003';"

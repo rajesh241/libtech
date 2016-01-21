@@ -1,9 +1,9 @@
 while true
 do 
     date 
-    sleep 100
-    sh downloadMustersWrapper.sh surguja
-    sleep 100
-    sh downloadMustersWrapper.sh korea
+    sleep 20
+    sh downloadMustersWrapper.sh surguja 16
+#    sleep 100
+#    sh downloadMustersWrapper.sh korea 16
 done
 
