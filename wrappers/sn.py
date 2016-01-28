@@ -19,7 +19,7 @@ from wrappers.logger import loggerFetch
 
 timeout = 10
 browser = "Firefox"
-visible = 1
+visible = 0
 logfile = "/tmp/%s_firefox_console.log"%os.environ.get('USER')
 size = (width, height) = (1024,768)
 
@@ -79,6 +79,7 @@ def driverInitialize(browser=None):
     fp.set_preference("browser.download.manager.showWhenStarting",False)
     fp.set_preference("browser.download.dir", os.getcwd())
     fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.ms-excel")
+    fp.set_preference("browser.privatebrowsing.autostart", True)
 
 # Mynk Doesn't work - http://stackoverflow.com/questions/15397483/how-do-i-set-browser-width-and-height-in-selenium-webdriver
 #    fp.set_preference('browser.window.width', width)
@@ -100,30 +101,39 @@ def driverFinalize(driver):
   driver.close()
   driver.quit()
 
-def waitUntilID(driver, id, timeout):
+def waitUntilID(logger, driver, id, timeout):
   '''
   A function that waits until the ID is available else times out.
-  Return: True if found else False
+  Return: The element if found by ID
   '''
   try:
-    # logger.info("Waiting for the page to load...")
+    logger.info("Waiting for the page to load...")
     elem = WebDriverWait(driver, 10).until(
       EC.presence_of_element_located((By.ID, id))
     )
-    # logger.info("...done looking")
+    logger.info("...done looking")
+    return elem
 
   except (NoSuchElementException, TimeoutException):
-    # logger.error("Failed to fetch the page")
-    return False
-
-  finally:
-    return True
+    logger.error("Failed to fetch the page")
+    return None
   
 
 def wdTest(driver):
   driver.get("http://www.google.com")
   #return driver.page_source.encode('utf-8')
-  return driver.title
+  return driver.page_source
+
+import pickle
+def cookieDump(driver, filename=None):
+    # login code
+    cookies = driver.get_cookies()
+    print("[[[%s]]]" % cookies)
+    pickle.dump(cookies, open("QuoraCookies.pkl","wb"))
+
+def cookieLoad(driver, filename=None):
+    for cookie in pickle.load(open("QuoraCookies.pkl", "rb")):
+        driver.add_cookie(cookie)
 
 def runTestSuite():
   logger = loggerFetch("info")
@@ -132,11 +142,20 @@ def runTestSuite():
   display = displayInitialize(visible)
   driver = driverInitialize(browser)
 
+  if True:
+    cookieDump(driver)
+
   logger.info(wdTest(driver))
+
+  if True:
+    cookieDump(driver)
+
+  print(driver.current_url)
 
   driverFinalize(driver)
   displayFinalize(display)
 
+  '''
   display = vDisplayInitialize(visible)
   driver = driverInitialize(browser)
 
@@ -144,7 +163,7 @@ def runTestSuite():
 
   driverFinalize(driver)
   vDisplayFinalize(display)
-
+  '''	
 
   logger.info("...END PROCESSING")     
 

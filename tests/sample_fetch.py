@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, rootdir)
 
 from wrappers.logger import loggerFetch
-from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
+from wrappers.sn import driverinitialize,driverfinalize,displayinitialize,displayfinalize,waituntilid # ,cookieDump,cookieLoad
 from wrappers.db import dbInitialize,dbFinalize
 
 
@@ -70,6 +70,7 @@ def fetchMusterDetails(logger, db, cmd=None, directory=None, url=None, is_parse_
 
   if url == None:
     url = 'http://164.100.112.66/netnrega/Citizen_html/Musternew.aspx?id=2&lflag=eng&ExeL=GP&fin_year=2015-2016&state_code=33&district_code=3305&block_code=3305007&panchayat_code=3305007038&State_name=CHHATTISGARH&District_name=SURGUJA&Block_name=BATAULI&panchayat_name=Govindpur'
+    url = 'http://khadya.cg.nic.in/pdsonline/cgfsa/Report/SSRS_Reports/RptMonthWiseDeleteRestoreNew_RC.aspx'
 
   if is_visible == None:
     is_visible = 0        # Set to 1 for debugging selenium
@@ -92,24 +93,46 @@ def fetchMusterDetails(logger, db, cmd=None, directory=None, url=None, is_parse_
   display = displayInitialize(is_visible)
   driver = driverInitialize()
 
+  logger.error("Current URL [%s] Title [%s]" % (driver.current_url, driver.title))
+  # cookieDump(driver)
+  # driver.delete_all_cookies()
+  logger.error("Current URL [%s] Title [%s]" % (driver.current_url, driver.title))
   logger.info("Fetching...[%s]" % url)
   driver.get(url)
 
+  logger.error("Current URL [%s] Title [%s]" % (driver.current_url, driver.title))
+
+  # cookieDump(driver)
   # Use double refresh if need be like in AP sites
   if False:
     logger.info("Refreshing...[%s]" % url)
     driver.get(url)    # A double refresh required for the page to load
-
-  if waitUntilID(driver, 'ctl00_ContentPlaceHolder1_ddlwork', 10):
+  logger.error("Current URL [%s] Title [%s]" % (driver.current_url, driver.title))
+    
+  # cookieDump(driver)
+  el = waitUntilID(logger, driver, 'ctl00_ContentPlaceHolder1_ddlwork', 10) 
+  if el:
+    #el = driver.find_element_by_id('ctl00_ContentPlaceHolder1_ddlwork')
+    logger.info("Found El[%s]" % str(el))
     html_source = driver.page_source.replace('<head>',
                                            '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
     logger.debug("HTML Fetched [%s]" % html_source)
+    # cookieDump(driver)
 
     with open(filename, "wb") as html_file:
       logger.info("Writing [%s]" % filename)
       html_file.write(html_source.encode('UTF-8'))
   else:
-    logger.error("Failed to fetch the page")
+    logger.error("Failed to fetch the page [%s]" % driver.current_url)
+    logger.error("Current URL [%s] Title [%s]" % (driver.current_url, driver.title))    
+    cookieDump(driver)
+    html_source = driver.page_source
+    logger.info("HTML Fetched [%s]" % html_source)
+
+    with open(filename, "wb") as html_file:
+      logger.info("Writing [%s]" % filename)
+      html_file.write(html_source.encode('UTF-8'))
+    
     driverFinalize(driver)
     displayFinalize(display)
     return # Error condition to be dealt with
