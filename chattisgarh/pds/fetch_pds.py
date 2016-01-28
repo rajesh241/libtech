@@ -29,6 +29,181 @@ month2number = {
   "जनवरी":1, "फरवरी":2, "मार्च":3, "अप्रैल":4, "मई":5, "जून":6, "जुलाई":7, "अगस्त":8, "सितम्बर":9, "अक्टूबर":10, "नवम्बर":11, "दिसम्बर":12
 }
 
+blockSelectCode = {
+  'UDAIPUR':'1', 'BATAULI':'2', 'MAINPAT':'3', 'LAKHANPUR':'4', 'LUNDRA':'5', 'AMBIKAPUR':'6', 'SITAPUR':'7'
+}
+
+shopSelectCode = {
+  #Udaipur shopCode Mapping
+  "392005001":"1",
+  "392005002":"2",
+  "392005003":"3",
+  "392005004":"4",
+  "392005005":"5",
+  "392005006":"6",
+  "392005007":"7",
+  "392005008":"8",
+  "392005009":"9",
+  "392005010":"10",
+  "392005011":"11",
+  "392005012":"12",
+  "392005013":"13",
+  "392005014":"14",
+  "392005015":"15",
+  "392005016":"16",
+  "392005017":"17",
+  "392005018":"18",
+  "392005019":"19",
+  "392005020":"20",
+  "392005021":"21",
+  "392005022":"22",
+  "392005023":"23",
+  "392005024":"24",
+  "392005025":"25",
+  "392005026":"26",
+  "392005027":"27",
+  "392005028":"28",
+  "392005029":"29",
+  "392005030":"30",
+  "392005031":"31",
+  "392005032":"32",
+  "392005033":"33",
+  "392005034":"34",
+  "392005035":"35",
+  "392005036":"36",
+  "392005037":"37",
+  "392005038":"38",
+  "392005039":"39",
+  "392005040":"40",
+  "392005041":"41",
+  "392005042":"42",
+  "392005043":"43",
+  "392005044":"44",
+  "392005045":"45",
+  "392005046":"46",
+  "392005047":"47",
+  "392005048":"48",
+  "392005049":"49",
+  "392005050":"50",
+  "392005051":"51",
+  "392005052":"52",
+  "392005053":"53",
+
+  #Batauli shopCode Mapping
+  "392004001":"1",
+  "392004002":"2",
+  "392004003":"3",
+  "392004004":"4",
+  "392004005":"5",
+  "392004006":"6",
+  "392004007":"7",
+  "392004008":"8",
+  "392004009":"9",
+  "392004010":"10",
+  "392004011":"11",
+  "392004012":"12",
+  "392004013":"13",
+  "392004014":"14",
+  "392004015":"15",
+  "392004016":"16",
+  "392004017":"17",
+  "392004018":"18",
+  "392004019":"19",
+  "392004020":"20",
+  "392004021":"21",
+  "392004022":"22",
+  "392004023":"23",
+  "392004024":"24",
+  "392004025":"25",
+  "392004026":"26",
+  "392004027":"27",
+  "392004028":"28",
+  "392004029":"29",
+  "392004030":"30",
+  "392004031":"31",
+  "392004032":"32",
+  "392004033":"33",
+  "392004034":"34",
+  "392004035":"35",
+  "392004036":"36",
+  "392004037":"37",
+  "392004038":"38",
+  "392004039":"39",
+  "392004040":"40",
+
+  #Lundra shopCode Mapping
+  "392007001":"1",
+  "392007002":"2",
+  "392007003":"3",
+  "392007004":"4",
+  "392007005":"5",
+  "392007006":"6",
+  "392007007":"7",
+  "392007008":"8",
+  "392007009":"9",
+  "392007010":"10",
+  "392007011":"11",
+  "392007012":"12",
+  "392007013":"13",
+  "392007014":"14",
+  "392007015":"15",
+  "392007016":"16",
+  "392007017":"17",
+  "392007018":"18",
+  "392007019":"19",
+  "392007020":"20",
+  "392007021":"21",
+  "392007022":"22",
+  "392007023":"23",
+  "392007024":"24",
+  "392007025":"25",
+  "392007026":"26",
+  "392007027":"27",
+  "392007028":"28",
+  "392007029":"29",
+  "392007030":"30",
+  "392007031":"31",
+  "392007032":"32",
+  "392007033":"33",
+  "392007034":"34",
+  "392007035":"35",
+  "392007036":"36",
+  "392007037":"37",
+  "392007038":"38",
+  "392007039":"39",
+  "392007040":"40",
+  "392007041":"41",
+  "392007042":"42",
+  "392007043":"43",
+  "392007044":"44",
+  "392007045":"45",
+  "392007046":"46",
+  "392007047":"47",
+  "392007048":"48",
+  "392007049":"49",
+  "392007050":"50",
+  "392007051":"51",
+  "392007052":"52",
+  "392007053":"53",
+  "392007054":"54",
+  "392007055":"55",
+  "392007056":"56",
+  "392007057":"57",
+  "392007058":"58",
+  "392007059":"59",
+  "392007060":"60",
+  "392007061":"61",
+  "392007062":"62",
+  "392007063":"63",
+  "392007064":"64",
+  "392007065":"65",
+  "392007066":"66",
+  "392007067":"67",
+  "392007068":"68",
+  "392007069":"69",
+  "392007070":"70",
+}
+
 
 #############
 # Functions
@@ -53,6 +228,7 @@ def argsFetch():
   parser.add_argument('-m', '--month', help='Specify the month for download', required=False)
   parser.add_argument('-y', '--year', help='Specify the year for download', required=False)
   parser.add_argument('-w', '--work-allocation', help='Download Work Allocation Reports', required=False, action='store_const', const=True)
+  parser.add_argument('-f', '--fetch', help='Fetch the pds reports for all districts', required=False, action='store_const', const=True)
 
   args = vars(parser.parse_args())
   return args
@@ -145,6 +321,84 @@ def pdsFetch(logger, driver, db, dir=None):
     with open(filename, "wb") as html_file:
       logger.info("Writing [%s]" % filename)
       html_file.write(raw_html.encode("UTF-8"))
+
+    query='update shopMapping set downloadDate="%s", isDownloaded=1, isProcessed=0 where shopCode="%s"' % (strftime('%Y-%m-%d %H:%M:%S'), shopCode)
+    logger.info('query: [%s]', query)
+    cur=db.cursor()
+    cur.execute(query)
+
+
+def pdsFetchReports(logger, driver, db, dir=None):
+  '''
+  Crawl to the page for the khadya site and fecth the latest reports
+  '''
+  
+  if not dir:
+    dir='./reports'
+  
+  query="select b.pdsBlockCode,b.name,s.shopCode,m.panchayat from pdsShops s,blocks b, shopMapping m where b.blockCode=s.blockCode and s.shopcode = m.shopcode and m.isDownloaded = 0"
+  logger.info('query: [%s]', query)
+  cur=db.cursor()
+  cur.execute(query)
+  results = cur.fetchall()
+  logger.debug('results: [%s]', str(results))
+
+  for row in results:
+    (pdsBlockCode, blockName, shopCode, panchayat) = row
+    logger.info('pdsBlockCode[%s], blockName[%s], shopCode[%s], panchayat[%s]' % (pdsBlockCode, blockName, shopCode, panchayat))
+    filename = dir + '/' + blockName + '_' + panchayat + '_' + shopCode + '.html'
+    logger.info('File Name:[%s]' % filename)
+    
+    if os.path.exists(filename):
+      logger.info("Skipped [%s] as alread downloaded" % filename)
+      continue
+
+    url='http://khadya.cg.nic.in/pdsonline/cgfsa/Report/SSRS_Reports/RptMonthWiseDeleteRestoreNew_RC.aspx'
+    logger.info('URL: [%s]', url)
+
+    start_date = '4/1/2015'
+    end_date = '1/20/2016'  # Mynk Need to Test
+    end_date = '12/31/2015'
+    
+    driver.get(url)
+    time.sleep(delay)
+    driver.find_element_by_xpath("//select[@id='ReportViewer1_ctl00_ctl03_ddValue']/option[@value='26']").click()
+    time.sleep(delay)
+    driver.find_element_by_xpath("//select[@id='ReportViewer1_ctl00_ctl05_ddValue']/option[@value='2']").click()
+    time.sleep(delay)
+    driver.find_element_by_xpath("//select[@id='ReportViewer1_ctl00_ctl07_ddValue']/option[@value='"+blockSelectCode[blockName]+"']").click()
+    time.sleep(delay)
+    driver.find_element_by_xpath("//select[@id='ReportViewer1_ctl00_ctl09_ddValue']/option[@value='"+shopSelectCode[shopCode]+"']").click()
+    time.sleep(delay)
+
+    '''
+    driver.find_element_by_link_text(u"ऊ.मु.दुकान = 392005001-आदिमजाति सेवा सहकारी समिति उदयपुर").click()
+    '''
+
+    driver.find_element_by_id("ReportViewer1_ctl00_ctl11_txtValue").clear()
+    driver.find_element_by_id("ReportViewer1_ctl00_ctl11_txtValue").send_keys("12/1/2014")
+    #driver.find_element_by_id("ReportViewer1_ctl00_ctl11_txtValue").send_keys("20141201")  # YYYYMMDD
+    #driver.find_element_by_xpath("//select[@id='ReportViewer1_ctl00_ctl11_txtValue']/option[@value='"+start_date+"']").click()
+    #driver.find_element_by_id("ReportViewer1_ctl00_ctl11_ddDropDownButton").click()
+    time.sleep(delay)
+
+    driver.find_element_by_id("ReportViewer1_ctl00_ctl13_txtValue").clear
+    driver.find_element_by_id("ReportViewer1_ctl00_ctl13_txtValue").send_keys("12/31/2015")
+    #driver.find_element_by_xpath("//select[@id='ReportViewer1_ctl00_ctl13_txtValue']/option[@value='"+end_date+"']").click()
+    time.sleep(delay)
+
+    driver.find_element_by_id("ReportViewer1").click()
+    elem=driver.find_element_by_name("ReportViewer1$ctl00$ctl00")
+    elem.click()
+    time.sleep(delay)
+    html_source = driver.page_source
+    raw_html=html_source.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+    with open(filename, "wb") as html_file:
+      logger.info("Writing [%s]" % filename)
+      html_file.write(raw_html.encode("UTF-8"))
+
+    logger.info("Done")
+    exit(0)
 
     query='update shopMapping set downloadDate="%s", isDownloaded=1, isProcessed=0 where shopCode="%s"' % (strftime('%Y-%m-%d %H:%M:%S'), shopCode)
     logger.info('query: [%s]', query)
@@ -283,17 +537,13 @@ def pdsReportParse(logger, db, dir=None):
         logger.warning('Attempting Duplicate Entry[%s]', e)
 
       cur = db.cursor()
-      query = 'insert into pdsEnrollment (rationcardNo, dateDisbursed, noOfFamilyMembers, allotment) values ("%s", "%s", "%s", "%s")' % (rationcard_no, date_of_issue, no_of_familymembers, allotment)
+      query = 'insert into pdsEnrollment (rationcardNo, shopCode, dateDisbursed, noOfFamilyMembers, allotment) values ("%s", "%s", "%s", "%s", "%s")' % (rationcard_no, shopCode, date_of_issue, no_of_familymembers, allotment) + ' ON DUPLICATE KEY UPDATE rationcardNo="%s", shopCode="%s", dateDisbursed="%s", noOfFamilyMembers="%s", allotment="%s"' % (rationcard_no, shopCode, date_of_issue, no_of_familymembers, allotment)
       logger.info('Executing query[%s]' % query)
       try:
         cur.execute(query)
       except IntegrityError as e:
-        logger.warning('Updating Entry since[%s]', e)
-        cur = db.cursor()
-        query = 'update pdsEnrollment set rationcardNo="%s", dateDisbursed="%s", noOfFamilyMembers="%s", allotment="%s"' % (rationcard_no, date_of_issue, no_of_familymembers, allotment)
-        logger.info('Executing query[%s]' % query)
-        # Mynk ForNow cur.execute(query)
-
+        logger.warning('Attempting Duplicate Entry[%s]', e)
+            
       delimiter = "$" * 30
       logger.info("%s %s %s" % (delimiter, "End of Ration Disbursement", delimiter))
 
@@ -389,8 +639,10 @@ def main():
     pdsFetchPrev(logger, driver, db, args['directory'], args['month'], args['year'])
   elif args['parse']:
     pdsReportParse(logger, db, args['directory'])
-  elif args['work-allocation']:
+  elif args['work_allocation']:
     downloadWorkAllocationHTML(driver, db, logger) # Mynk Fix Order
+  elif args['fetch']:
+    pdsFetchReports(logger, driver, db, args['directory'])
   else:
     pdsFetch(logger, driver, db, args['directory'])
 
