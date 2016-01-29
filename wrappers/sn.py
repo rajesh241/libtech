@@ -27,8 +27,26 @@ size = (width, height) = (1024,768)
 # Functions
 #############
 
+def argsFetch():
+  '''
+  Paser for the argument list that returns the args list
+  '''
+  import argparse
 
-def displayInitialize(isVisible=0):
+  parser = argparse.ArgumentParser(description='Script for crawling, downloading & parsing musters')
+  parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
+  parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
+  parser.add_argument('-t', '--timeout', help='Time to wait before a page loads', required=False)
+  parser.add_argument('-b', '--browser', help='Specify the browser to test with', required=False)
+  parser.add_argument('-u', '--url', help='Specify the url to crawl', required=False)
+  parser.add_argument('-c', '--cookie-dump', help='Cookie Dump', required=False, action='store_const', const=True)
+
+  args = vars(parser.parse_args())
+  return args
+
+def displayInitialize(isVisible=None):
+  if not isVisible:
+    isVisible = visible
   from pyvirtualdisplay import Display
   
   display = Display(visible=isVisible, size=size) # size=(600, 400))
@@ -119,9 +137,10 @@ def waitUntilID(logger, driver, id, timeout):
     return None
   
 
-def wdTest(driver):
-  driver.get("http://www.google.com")
-  #return driver.page_source.encode('utf-8')
+def wdTest(driver, url=None):
+  if not url:
+    url = "http://www.google.com"
+  driver.get(url)
   return driver.page_source
 
 import pickle
@@ -136,21 +155,24 @@ def cookieLoad(driver, filename=None):
         driver.add_cookie(cookie)
 
 def runTestSuite():
-  logger = loggerFetch("info")
+  args = argsFetch()
+  logger = loggerFetch(args.get('log_level'))
+  logger.info('args: %s', str(args))
+
   logger.info("BEGIN PROCESSING...")
 
-  display = displayInitialize(visible)
-  driver = driverInitialize(browser)
+  display = displayInitialize(args['visible'])
+  driver = driverInitialize(args['browser'])
 
-  if True:
+  if args['cookie_dump']:
     cookieDump(driver)
 
-  logger.info(wdTest(driver))
+  logger.info("Fetching [%s]" % driver.current_url)
+  logger.info(wdTest(driver, args['url']))
+  logger.info("Fetched [%s]" % driver.current_url)
 
-  if True:
+  if args['cookie_dump']:
     cookieDump(driver)
-
-  print(driver.current_url)
 
   driverFinalize(driver)
   displayFinalize(display)

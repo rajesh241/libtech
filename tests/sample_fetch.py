@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, rootdir)
 
 from wrappers.logger import loggerFetch
-from wrappers.sn import driverinitialize,driverfinalize,displayinitialize,displayfinalize,waituntilid # ,cookieDump,cookieLoad
+from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID # ,cookieDump,cookieLoad
 from wrappers.db import dbInitialize,dbFinalize
 
 
@@ -61,24 +61,24 @@ def fetchMusterDetails(logger, db, cmd=None, directory=None, url=None, is_parse_
   '''
   Fetch the Muster Details for specified parameters in the specified directory
   '''
-  if cmd == None:
+  if not cmd:
     cmd="FETCH MUSTER DETAILS"
   logger.info("BEGIN %s..." % cmd)
     
-  if directory == None:
+  if not directory:
     directory = "./Downloads"
 
-  if url == None:
-    url = 'http://164.100.112.66/netnrega/Citizen_html/Musternew.aspx?id=2&lflag=eng&ExeL=GP&fin_year=2015-2016&state_code=33&district_code=3305&block_code=3305007&panchayat_code=3305007038&State_name=CHHATTISGARH&District_name=SURGUJA&Block_name=BATAULI&panchayat_name=Govindpur'
+  if not url:
     url = 'http://khadya.cg.nic.in/pdsonline/cgfsa/Report/SSRS_Reports/RptMonthWiseDeleteRestoreNew_RC.aspx'
-
-  if is_visible == None:
+    url = 'http://164.100.112.66/netnrega/Citizen_html/Musternew.aspx?id=2&lflag=eng&ExeL=GP&fin_year=2015-2016&state_code=33&district_code=3305&block_code=3305007&panchayat_code=3305007038&State_name=CHHATTISGARH&District_name=SURGUJA&Block_name=BATAULI&panchayat_name=Govindpur'
+    
+  if not is_visible:
     is_visible = 0        # Set to 1 for debugging selenium
 
-  if is_parse_info == None:
+  if not is_parse_info:
     is_parse_info = False
 
-  if is_push_info == None:
+  if not is_push_info:
     is_push_info = False
 
   # The part below could be moved to a function downloadMusterDetails() to make it reusable
@@ -125,7 +125,7 @@ def fetchMusterDetails(logger, db, cmd=None, directory=None, url=None, is_parse_
   else:
     logger.error("Failed to fetch the page [%s]" % driver.current_url)
     logger.error("Current URL [%s] Title [%s]" % (driver.current_url, driver.title))    
-    cookieDump(driver)
+    # cookieDump(driver)
     html_source = driver.page_source
     logger.info("HTML Fetched [%s]" % html_source)
 
