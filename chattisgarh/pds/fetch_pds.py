@@ -635,16 +635,22 @@ def main():
   if args['visible']:
     delay = 2
 
+  download_dir = args['directory']
+  if download_dir:
+    logger.info('download_dir[%s]' % download_dir)
+    if not os.path.exists(download_dir):
+      os.makedirs(download_dir)
+
   if args['prev']:
-    pdsFetchPrev(logger, driver, db, args['directory'], args['month'], args['year'])
+    pdsFetchPrev(logger, driver, db, download_dir, args['month'], args['year'])
   elif args['parse']:
-    pdsReportParse(logger, db, args['directory'])
+    pdsReportParse(logger, db, download_dir)
   elif args['work_allocation']:
     downloadWorkAllocationHTML(driver, db, logger) # Mynk Fix Order
   elif args['fetch']:
-    pdsFetchReports(logger, driver, db, args['directory'])
+    pdsFetchReports(logger, driver, db, download_dir)
   else:
-    pdsFetch(logger, driver, db, args['directory'])
+    pdsFetch(logger, driver, db, download_dir)
 
   if not args['parse']:
     driverFinalize(driver)
