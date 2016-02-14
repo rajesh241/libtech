@@ -29,7 +29,7 @@ def main():
   phone='9246522344'
 #  phone='9845155447'
   phone='9845065241'
-  phone='9833419391'
+#  phone='9833419391'
   dbname='mahabubnagar'
   dbname='surguja'
   scheduleWageBroadcastCall(cur,jobcard,phone,dbname,260846,1)

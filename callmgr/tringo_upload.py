@@ -92,6 +92,13 @@ def main():
 
   display = displayInitialize(args['visible'])
   driver = driverInitialize(args['browser'])
+  db = dbInitialize(db="surguja", charset="utf8")  # The rest is updated automatically in the function
+  cur=db.cursor()
+  db.autocommit(True)
+  #Query to set up Database to read Hindi Characters
+  query="SET NAMES utf8"
+  cur.execute(query)
+
 
   wave_file = args['filename']
 
