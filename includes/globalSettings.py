@@ -8,3 +8,5 @@ chaupalDataDashboardLink='http://chaupal.libtech.info/data/Summary/'
 chaupalDataDashboardLimit=20 
 dbBackupDir="/home/libtech/backup/data/db/"
 dbNames="surguja,libtech,mahabubnagar"
+maxExotelCallQueue=100 #This is the maximum number of calls that can be queued with exotel
+maxTringoCallQueue=0 #This is the maximum number of calls that can be queued with exotel
