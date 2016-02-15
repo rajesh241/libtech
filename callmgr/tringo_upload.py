@@ -140,7 +140,7 @@ def main():
   query="SET NAMES utf8"
   cur.execute(query)
 
-  query="select id,filename from audioLibrary where tringoUploadProgress=0 and tringoUploadComplete=0 limit 3"
+  query="select id,filename from audioLibrary where ( (tringoUploadProgress=0) or (tringoUploadProgress=1 and TIMESTAMPDIFF(HOUR, tringoUploadDate, now()) > 2 ) ) and tringoUploadComplete=0 limit 3"
   cur.execute(query)
   results = cur.fetchall()
   for row in results:
@@ -176,8 +176,10 @@ def main():
       cur.execute(query)
 #  logger.info("Upload Succesful. FILE_ID[%s]" % file_id)
 
+  driver.close()
   driverFinalize(driver)
   displayFinalize(display)
+  dbFinalize(db) # Make sure you put this if there are other exit paths or errors
   exit(0)
 
 if __name__ == '__main__':
