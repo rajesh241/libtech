@@ -107,8 +107,8 @@ def main():
   curExotelQueue=singleRowQuery(cur,query)
   logger.info("Current Exotel CallQueue %s" % (curExotelQueue))
   if(curExotelQueue < maxExotelCallQueue):
-    logger.info("No more calls will be placed through Exotel")
-    query="select c.callid,c.phone,c.exophone,c.template from callQueue c,broadcasts b,addressbook a where c.phone=a.phone and a.dnd='no' and b.bid=c.bid  and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry limit 1"
+   # logger.info("No more calls will be placed through Exotel")
+    query="select c.callid,c.phone,c.exophone,c.template from callQueue c,broadcasts b,addressbook a where c.phone=a.phone and a.dnd='no' and b.bid=c.bid  and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry limit 50"
     logger.info("Query : %s" % query)
     cur.execute(query)
     results = cur.fetchall()
