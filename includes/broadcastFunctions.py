@@ -91,10 +91,12 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
   minhour='1'
   maxhour='23'
   priority='10'
+  preference='10000'
   if isTest is None:
     priority=str(row[11])
     minhour=str(row[2])
     maxhour=str(row[3])
+    preference='40'
   template=row[13]
   broadcastType=row[1]
   if phone is None:
@@ -146,7 +148,7 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
       print(query)
       cur.execute(query)
       callid=str(cur.lastrowid)
-      query="insert into callQueue (callid,priority,template,vendor,bid,minhour,maxhour,phone,audio,audio1,tringoaudio,exophone) values ("+str(callid)+","+str(priority)+",'"+template+"','"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+audio1+"','"+tringoaudio+"','"+exophone+"');"
+      query="insert into callQueue (callid,priority,preference,template,vendor,bid,minhour,maxhour,phone,audio,audio1,tringoaudio,exophone) values ("+str(callid)+","+str(priority)+","+str(preference)+",'"+template+"','"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+audio1+"','"+tringoaudio+"','"+exophone+"');"
       print(query)
       cur.execute(query)
             
