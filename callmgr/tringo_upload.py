@@ -140,7 +140,7 @@ def main():
   query="SET NAMES utf8"
   cur.execute(query)
 
-  query="select id,filename from audioLibrary where ( (tringoUploadProgress=0) or (tringoUploadProgress=1 and TIMESTAMPDIFF(HOUR, tringoUploadDate, now()) > 2 ) ) and tringoUploadComplete=0 limit 3"
+  query="select id,filename from audioLibrary where ( (tringoUploadProgress=0) or (tringoUploadProgress=1 and TIMESTAMPDIFF(HOUR, tringoUploadDate, now()) > 2 ) ) and tringoUploadComplete=0 order by id DESC limit 3"
   cur.execute(query)
   results = cur.fetchall()
   for row in results:

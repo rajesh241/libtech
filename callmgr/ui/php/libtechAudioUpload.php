@@ -25,9 +25,11 @@ $query="insert into audioLibrary (name) values ('".$imageFileName."');";
 mysqli_query($mydbcon,$query);
 $id=mysqli_insert_id($mydbcon);
 #print $id."</br>";
-$fileName=$id."_".$filteredFileName.".wav";
 
-$target_file=$target_dir.$fileName;
+$fileName=$id."_".$filteredFileName.".wav";
+$fileNameOrig=$id."_orig_".$filteredFileName.".".$imageFileType;
+$target_file=$target_dir.$fileNameOrig;
+$target_wav_file=$target_dir.$fileName;
 #print $target_file;
 if (file_exists($target_file)) {
         echo "Sorry, file already exists.";
@@ -40,7 +42,7 @@ if (file_exists($target_file)) {
 #}
 
 // Allow certain file formats
-if($imageFileType != "wav"   ) {
+if( ($imageFileType != "wav") && ($imageFileType != "mp3")   ) {
                     echo "<h3>Sorry, only wav files are allowed.</h3>";
                         $uploadOk = 0;
 }
@@ -53,6 +55,7 @@ if ($uploadOk == 0) {
   if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
      print "<h4>The file ". basename( $_FILES["fileToUpload"]["name"]). " has been uploaded.</h4>";
      print "<h4>Your File ID is   ". $id.  " </h4>";
+     echo shell_exec("/usr/bin/ffmpeg -i ".$target_file." -ar 8000 -ac 1 ".$target_wav_file."   2>&1");
      $query="update audioLibrary set filename='".$fileName."' where id=".$id;
      mysqli_query($mydbcon,$query);
   } else {
