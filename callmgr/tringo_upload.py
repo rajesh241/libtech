@@ -158,7 +158,7 @@ def main():
       query="update audioLibrary set tringoUploadDate=NOW(),tringoUploadProgress=1 where id=%s" % rowid
       cur.execute(query)
   
-  query="select id,filename from audioLibrary where tringoUploadProgress=1 and tringoUploadComplete=0 "
+  query="select id,filename from audioLibrary where tringoUploadProgress=1 and TIMESTAMPDIFF(MINUTE, tringoUploadDate, now()) < 60 and tringoUploadComplete=0 "
   cur.execute(query)
   results = cur.fetchall()
   for row in results:
