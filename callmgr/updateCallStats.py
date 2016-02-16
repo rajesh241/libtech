@@ -39,13 +39,13 @@ def main():
   query="SET NAMES utf8"
   cur.execute(query)
   
-  query="select id,phone from addressbook "
+  query="select phone,bid from callLogs where DATE(callStartTime) = CURDATE() group by phone "
   cur.execute(query)
   results=cur.fetchall()
   for row in results:
-    rowid=str(row[0])
-    phone=row[1]
-    logger.info("ID  %s  Phone %s " % (rowid,phone)) 
+    #rowid=str(row[0])
+    phone=row[0]
+    logger.info("  Phone %s " % (phone)) 
     query="select count(*) from callLogs where phone='%s'" % (phone)
     totalCalls=singleRowQuery(cur,query)
     query="select count(*) from callLogs where phone='%s' and status='pass'" % (phone)
@@ -56,7 +56,7 @@ def main():
     else:
       successP=0
     logger.info("Total Calls %s Success Calls %s Success Percentage %s " % (str(totalCalls),str(totalSuccessCalls),str(successP)))
-    query="update addressbook set totalCalls='%s',successPercentage='%s'  where id=%s " % (str(totalCalls),str(successP),rowid) 
+    query="update addressbook set totalCalls='%s',successPercentage='%s'  where phone='%s' " % (str(totalCalls),str(successP),phone) 
     cur.execute(query)
 
 if __name__ == '__main__':
