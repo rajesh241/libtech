@@ -53,7 +53,7 @@ def main():
   myhtml+="<h1>Approve Broadcasts Page</h1>"
   myhtml+="<p>Please be careful in approving Broadcasts. If you have selected vendor as 'any' then you need to do seperate test with both exotel and tringo. Or if you have selected broadcast for specific vendor, then you can do the test only with that vendor. Once you successfully receive the callback, go ahead and press the approve button."
   myhtml+="<table>"
-  tableArray=['Broadcast ID', 'Broadcast Name','Vendor','TestExotel','TestTringo','Remarks','Approve','Mark Error'] 
+  tableArray=['Broadcast ID', 'Broadcast Name','Test','Remarks','Approve','Mark Error'] 
   myhtml+=arrayToHTMLLine('th',tableArray)
  # print myhtml
   query="select bid,name,type,groups,district,blocks,panchayats,vendor from broadcasts where bid>1000 and approved=0 and error=0"
@@ -99,11 +99,11 @@ def main():
    # print "Current Bid is"+str(bid)
     #updateBroadcastTable(cur,bid)
     formElement = '<input name="phone" type="text" size="10" ></input>'
-    exotelhtml=getform(str(bid),'exotel',formElement,'Test Exotel')
-    tringohtml=getform(str(bid),'tringo',formElement,'Test Tringo')
+    exotelhtml=getform(str(bid),'exotel',formElement,'Test')
+#    tringohtml=getform(str(bid),'tringo',formElement,'Test Tringo')
     approvehtml=getform(str(bid),'approve',' ','Approve')
     errorhtml=getform(str(bid),'error',' ','Mark Error')
-    tableArray=[bid,name,vendorhtml,exotelhtml,tringohtml,notes,approvehtml,errorhtml] 
+    tableArray=[bid,name,exotelhtml,notes,approvehtml,errorhtml] 
     myhtml+=arrayToHTMLLine('td',tableArray)
     #write csv report
   myhtml+="</table>"
