@@ -107,7 +107,7 @@ while($row=mysqli_fetch_array($results)){
                           </tr>
 
                           <tr>
-                                  <td>Select Vendor
+                                  <td>Select Vendor.  Dont change this value. As of now not used
                                   </td>
                                   <td><select name="vendor" >
                                 <option value="any" selected>Any</option>
@@ -116,13 +116,6 @@ while($row=mysqli_fetch_array($results)){
                                   </td>
                           </tr>
 
-                <tr>
-                                <td>Tringo File ID (You can give multiple file IDs seperated by comma) 
-                                </td>
-                                <td>
-                                        <input  name="tfileid" type="text" size="50"></input>
-                                </td>
-                        </tr>        
                         <tr>
                                 <td>Libtech File ID (You can give multiple file IDs seperated by comma)
                                 </td>

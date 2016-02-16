@@ -18,7 +18,7 @@ if (!$mydbcon){
         $type=$_POST['broadcastType'];
         $template=$_POST['broadcastTemplate'];
         $vendor=$_POST['vendor'];
-        $tfileid=$_POST['tfileid'];
+       # $tfileid=$_POST['tfileid'];
         $fileid=$_POST['fileid'];
         $fileid2=$_POST['fileid2'];
         $district=$_POST['district'];
@@ -53,7 +53,7 @@ if (!$mydbcon){
           print "Please note that if you want to broadcast to all the panchayats, you would have to select all panchayats in the panchayat select";
           print "</br>";
         }
-        if( ($vendor == "any") && (($fileid == "") || ($tfileid == ""))){
+        if( ($vendor == "any") && (($fileid == "") )){
           print "Since you have selected vendor as any you would have to give both Tringo file ID and Libtech File ID";
           print "</br>";
           $error=1;
@@ -63,13 +63,8 @@ if (!$mydbcon){
           print "</br>";
           $error=1;
         }
-        if( ($vendor == "tringo") && ($tfileid == "") ){
-          print "Since you have selected vendor as tringo you have not given Tringo File ID";
-          print "</br>";
-          $error=1;
-        }
         if($error == 0){ 
-        $query="insert into broadcasts (priority,name,vendor,type,template,startDate,endDate,minhour,maxhour,tfileid,fileid,fileid2,groups,district,blocks,panchayats) values (".$priority.",'".$name."','".$vendor."','".$type."','".$template."','".$startDate."','".$endDate."',".$minhour.",".$maxhour.",'".$tfileid."','".$fileid."','".$fileid2."','".$groupString."','".$district."','".$block."','".$panchayatString."');";
+        $query="insert into broadcasts (priority,name,vendor,type,template,startDate,endDate,minhour,maxhour,tfileid,fileid,fileid2,groups,district,blocks,panchayats) values (".$priority.",'".$name."','".$vendor."','".$type."','".$template."','".$startDate."','".$endDate."',".$minhour.",".$maxhour.",' ','".$fileid."','".$fileid2."','".$groupString."','".$district."','".$block."','".$panchayatString."');";
         mysqli_query($mydbcon,$query);
         $id=mysqli_insert_id($mydbcon);
         print "<h4>Congratulations !! Broadcast ".$name." added with ID ".$id."</h4>";
