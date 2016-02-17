@@ -42,10 +42,10 @@ if (file_exists($target_file)) {
 #}
 
 // Allow certain file formats
-if( ($imageFileType != "wav") && ($imageFileType != "mp3")   ) {
-                    echo "<h3>Sorry, only wav files are allowed.</h3>";
-                        $uploadOk = 0;
-}
+#if( ($imageFileType != "wav") && ($imageFileType != "mp3")   ) {
+#                    echo "<h3>Sorry, only wav files are allowed.</h3>";
+#                        $uploadOk = 0;
+#}
 // Check if $uploadOk is set to 0 by an error
 if ($uploadOk == 0) {
             echo "Sorry, your file was not uploaded.";
