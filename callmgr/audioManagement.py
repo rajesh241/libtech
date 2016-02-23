@@ -86,6 +86,23 @@ def getBroadcastDuration(cur,logger):
     query="update broadcasts set totalDuration=%s,durationError=%s where bid=%s" % (str(totalDuration),str(error),bid)
     cur.execute(query)
 
+def uploadAudioToAwaazDe(cur,logger):
+  from awaazde import awaazdeUpload
+  from datetime import datetime, timedelta
+  from time import strftime
+  query="select id,filename,ts,awaazdeUploadDate from audioLibrary where awaazdeUploadComplete=0 and ts > '2016-02-21'" # and TIMESTAMPDIFF(MINUTE, awaazdeUploadComplete, now()) < 60"
+  cur.execute(query)
+  results = cur.fetchall()
+  for (rowid, filename, timestamp, uploadDate)  in results:
+    if uploadDate and uploadDate > datetime.now() - timedelta(minutes=60):
+      continue
+
+    logger.info("rowid[%s], filename[%s], timestamp[%s], uploadDate[%s]" % (rowid, filename, timestamp, uploadDate))
+    awaazdeUpload(filename)
+    query = 'update audioLibrary set awaazdeUploadDate="%s", awaazdeUploadComplete=1 where id="%s"' % (strftime('%Y-%m-%d %H:%M:%S'), rowid)
+    cur.execute(query)
+
+    
 def main():
   logger = loggerFetch()
 
@@ -95,10 +112,11 @@ def main():
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query) 
-  
+
   getAudioLength(cur,logger)
   getBroadcastDuration(cur,logger)
   updateDurationPercentage(cur,logger)
+  uploadAudioToAwaazDe(cur, logger)
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
   exit(0)
 
