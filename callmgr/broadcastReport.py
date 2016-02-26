@@ -64,8 +64,8 @@ def main():
     completed=str(row[1])
     name=row[2]
     print bid+"  "+name+"  "+completed
-    query="select a.district,a.block,a.panchayat,c.phone,DATE_FORMAT(c.callStartTime,'%d-%M-%Y') callTime,c.status,c.attempts,c.duration,f.feedback,c.sid from addressbook a,callSummary c left join callFeedback f on c.sid=f.sid where c.phone=a.phone and bid="+str(bid)
-    if(completed == '0'):
+    query="select a.district,a.block,a.panchayat,c.phone,DATE_FORMAT(c.callStartTime,'%d-%M-%Y') callTime,c.status,c.attempts,c.duration,c.durationPercentage,f.feedback,c.sid from addressbook a,callSummary c left join callFeedback f on c.sid=f.sid where c.phone=a.phone and bid="+str(bid)
+    if(completed == '0' or completed=='1'):
       csvname=broadcastReportFilePath+str(bid)+"_"+name.replace(' ',"")+".csv"
       print csvname
       writecsv(cur,query,csvname)
