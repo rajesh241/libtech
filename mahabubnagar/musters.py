@@ -294,7 +294,7 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
   if main3 == None:
     return
   table3 = main3.find('table')
-  logger.debug("Table2[%s]" % table3)
+  # logger.debug("Table2[%s]" % table3)
   header_row = table3.find('tr')
   row = header_row.findNext('tr')
 
@@ -317,20 +317,20 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
 
     if muster_number == "Works Benifited": # Mynk Gone to the next table - end loop
       break;
-    
-    should_skip = False
+
+    financial_year = 0
     if muster_number == '-': # Mynk suppressing checks - len(muster_number) != 12:
       logger.debug('Invalid Muster Number[%s]' % muster_number)
       # should_skip = True
-      financial_year = "08";
-    else:
-      financial_year = int(muster_number[4:6])  # [4:6] Mynk to test
+      # financial_year = "08";
+    elif len(muster_number) == 12:
+      financial_year = muster_number[4:6]
       logger.debug("financial_year[%s]", financial_year)
 
+      '''
       if financial_year < 15:
         logger.debug('Finanacial Year[20%s-%s]' % (financial_year-1, financial_year))
         # Mynk should_skip = True 
-
       financial_year = str(financial_year)
 
     should_skip = False
@@ -342,7 +342,7 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
         break
       
       continue
-
+    '''
     td = td.findNext('td')
     from_date = td.text.strip()
     logger.debug("From Date[%s]", from_date)
@@ -356,18 +356,19 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
     td = td.findNext('td')
     payorder_date = dateConvert(td.text.strip())
     logger.debug("Payorder Date[%s]", payorder_date)
-    if payorder_date and muster_number == '-': # Mynk suppressing checks - len(muster_number) != 12:
-      from_date = payorder_date
-      to_date = payorder_date
+    if not payorder_date:
+      logger.error("Found null pay order date example")
+    elif muster_number == '-': # Mynk suppressing checks - len(muster_number) != 12:
+      #from_date = payorder_date
+      #to_date = payorder_date
       date_str = str(payorder_date)
-      financial_year = int(date_str[2:4])
-
+      fin_year = int(date_str[2:4])
       month = int(date_str[5:7])
       if month > 3:
-        financial_year += 1
-        muster_number = "20" + str(financial_year-1) + str(financial_year) + "000000"
-        financial_year = str(financial_year);
+        fin_year += 1
+        muster_number = "20" + str(fin_year-1) + str(fin_year) + "000000"
 
+      financial_year = str(fin_year);
       logger.info('Updating Muster Number[%s], finyear[%s] and dates from[%s] to[%s]' % (muster_number, financial_year, from_date, to_date))
 
     td = td.findNext('td')
@@ -378,7 +379,7 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
     if work != '/':
       (work_code, work_name) = work.split(' / ')
     else:
-      (work_code, work_name) = ("DummyWorkCode", "DummyWorkName")
+      (work_code, work_name) = ("", "")
     logger.info("work_code[%s] work_name[%s]", work_code, work_name)
 
     td = td.findNext('td')
@@ -400,7 +401,8 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
     td = td.findNext('td')
     days_worked = td.text.strip()
     logger.debug("days_worked[%s]", days_worked)
-    if days_worked == '-':
+    
+    if days_worked == '-':  # Needs to go? Mynk
       days_worked = "0"
     logger.debug("Updated days_worked[%s]", days_worked)
 
@@ -408,7 +410,7 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
     payorder_amount = td.text.strip()
     logger.debug("payorder_amount[%s]", payorder_amount)
 
-    if days_worked != "0":
+    if days_worked != "0" and days_worked != '-':  # Mynk - should this remain?
       day_wage = int(payorder_amount)/int(days_worked)
     else:
       day_wage = int(payorder_amount)   # Mynk days_worked can be 0 as in http://crawl.libtech.info/data/Telangana/Mahabubnagar/Ghattu/Nandinne/141975701001010236.html
@@ -419,10 +421,12 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
     credit_date = dateConvert(credit_date)
     if not credit_date:
       logger.warning("Credit Date messed")
+      '''
       if payorder_date:
         credit_date = payorder_date
         logger.info("Updating credit_date[%s]", credit_date)
-
+      '''
+      
     td = td.findNext('td')
     disbursed_amount = td.text.strip()
     logger.debug("disbursed_amount[%s]", disbursed_amount)
@@ -433,10 +437,11 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
     disbursed_date = dateConvert2(disbursed_date)
     if not disbursed_date:
       logger.warning("Disbursed Date messed")
+      '''
       if payorder_date:
         disbursed_date = payorder_date
         logger.debug("Update disbursed_date[%s]", disbursed_date)
-    
+      '''
     td = td.findNext('td')    # Skip outsanding_amount
     outsanding_amount = td.text.strip()
     logger.debug("outsanding_amount[%s]", outsanding_amount)
@@ -459,7 +464,6 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
       
     try:
       row = row.findNext('tr')
-      logger.debug("row[%s]" % row)
     except StopIteration:
       break
 
