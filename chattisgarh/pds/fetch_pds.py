@@ -637,6 +637,7 @@ def main():
 
   download_dir = args['directory']
   if download_dir:
+    download_dir = download_dir + '/' + strftime('%B-%Y')
     logger.info('download_dir[%s]' % download_dir)
     if not os.path.exists(download_dir):
       os.makedirs(download_dir)
