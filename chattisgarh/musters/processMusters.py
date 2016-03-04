@@ -10,8 +10,8 @@ import os.path
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
 from settings import dbhost,dbuser,dbpasswd,sid,token
-from globalSettings import datadir
-
+from globalSettings import datadir,nregaDataDir
+from libtechFunctions import singleRowQuery
 #It has two </td> Tags in HTML 
 regex=re.compile(r'</td></font></td>',re.DOTALL)
 #Error File Defination
@@ -21,11 +21,17 @@ testfile = open('/tmp/f.html', 'w')
 districtName="SURGUJA"
 musterfilepath=datadir+districtName+"/"
 #Connect to MySQL Database
-db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, db="surguja",charset='utf8')
+db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, db="libtech",charset='utf8')
 cur=db.cursor()
 db.autocommit(True)
 #Query to set up Database to read Hindi Characters
 query="SET NAMES utf8"
+cur.execute(query)
+
+query="select state from crawlDistricts where name='%s'" % districtName.lower()
+stateName=singleRowQuery(cur,query)
+musterfilepath=nregaDataDir.replace("stateName",stateName.title())+"/"+districtName.upper()+"/"
+query="use %s " % districtName.lower()
 cur.execute(query)
 
 #inblock=sys.argv[1]
