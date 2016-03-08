@@ -14,7 +14,7 @@ import globalSettings
 import settings
 from settings import dbhost,dbuser,dbpasswd,sid,token
 from libtechFunctions import getjcNumber,singleRowQuery,getBlockCodeFromJobcard,getPanchayatCodeFromJobcard,getBlockName,getPanchayatName,addPhoneAddressBook
-from broadcastFunctions import getWageBroadcastAudioArray,scheduleWageBroadcastCall
+from broadcastFunctions import getWageBroadcastAudioArray,scheduleWageBroadcastCall,scheduleGeneralBroadcastCall
 def main():
   print 'Content-type: text/html'
   print 
@@ -29,10 +29,12 @@ def main():
   phone='9246522344'
 #  phone='9845155447'
   phone='9845065241'
+  bid='1434'
 #  phone='9833419391'
   dbname='mahabubnagar'
   dbname='surguja'
-  scheduleWageBroadcastCall(cur,jobcard,phone,dbname,260846,1)
+  scheduleGeneralBroadcastCall(cur,bid,phone)
+# scheduleWageBroadcastCall(cur,jobcard,phone,dbname,260846,1)
 #  getWageBroadcastAudioArray(cur,jobcard)
 # query="use surguja"
 # cur.execute(query)
