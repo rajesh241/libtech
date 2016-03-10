@@ -27,58 +27,107 @@ def awaazdeUpload(file):
     
     #Logic to upload the wave_file for the first time -
     file_url = 'http://libtech.info/audio/' + file
-    print templateMgr.upload_file(template_id, file_url, is_url=True)
                 
     template = templateMgr.getTemplate(template_id)
 
-    print template
+    # print("Template [%s]" % template)
     template_data = {'text': template['text'], 'vocabulary': template['vocabulary'], 'language': template['language']}
-    print template['vocabulary']
+    print("Vocabulary %s" % template['vocabulary'])
 
     filename = file.strip('.wav')  # Strip any other kind of format it might have
     if filename not in template_data['vocabulary']:
+        print templateMgr.upload_file(template_id, file_url, is_url=True)
         template_data['vocabulary'].append(filename)
         print template_data
         print templateMgr.update(template_id, template_data)
-        
+    else:
+        print("File already present [%s]" % file)
 
-def main():
+    return template
+
+def awaazdeStatusCheck(cur_callid=None):
     authdata= AuthData(USERNAME,PASSWORD,WS_URL)    
     templateMgr = TemplateMgr(authdata)
     callMgr = CallMgr(authdata);
-    phone='9845155447'
-    phone='9845065241'
-    #data  = {"recipient":"9845065241", "text":"welcome have you picked rashan for september If you did not get rashan for september press one repeat have you picked rashan for september If you did not get rashan for september press one"}
 
-    template_id = '25'
-    template = templateMgr.getTemplate(template_id)
+    if not cur_callid:
+        vendorcallid='57896'
+        return None
+    else:
+        vendorcallid=cur_callid
 
-#    print template
-#    template_data = {'text': template['text'], 'vocabulary': [], 'language': template['language']}
-    template_data = {'text': template['text'], 'vocabulary': template['vocabulary'], 'language': template['language']}
-    print template['vocabulary']
+    print("Printing details for Call[%s]" % vendorcallid)
+    call_details = callMgr.getCall(str(vendorcallid))
+    status = call_details['status']
+    duration = status['duration']
+    print duration
+
+    attempts = status['attempts']
+    print attempts
+    
+    sent_on = status['sent_on']
+    print sent_on
+    
+    print status['response']
+
+    url = call_details['url']
+    print url
+
+    text = call_details['text']
+    print text
+    
+    print call_details['backup_calls']
+    print call_details['send_on']
+    
+    recipient = call_details['recipient']
+    print recipient
+    
+    callsid = call_details['id']
+    print callsid
+    
+    return duration, attempts, sent_on, url, text, recipient, callsid
+    
+
+def awaazdePlaceCall(phone, wave_file=None, calltime=None):
+    authdata= AuthData(USERNAME,PASSWORD,WS_URL)    
+    templateMgr = TemplateMgr(authdata)
+    callMgr = CallMgr(authdata);
 
     #Logic to upload the wave_file for the first time -
-    wave_file = '1004_anupds.wav'    # This should be done only once for each new file
+    if not wave_file:
+        wave_file = '1308_Rayapuramcampaignbhaskar.wav' # '1431_CgbcstChakeri010316.wav'    # This should be done only once for each new file
+    print("WaveFile[%s]" % wave_file)
     filename = wave_file.strip('.wav')
-    if filename not in template_data['vocabulary']:
-        template_data['vocabulary'].append(filename)
-    print template_data
-
-#    print templateMgr.update(template_id, template_data)
-
-    exit(0)
     
-    data  = {"recipient":"9845155447", 'text':'1004_anupds'}
-    data['recipient']=phone
-#    data['text']=callparams
-    calltime=datetime.datetime.today().strftime("%Y-%m-%dT%H:%M:%S")#Schedule the call for now
-#    data['send_on']=calltime
+    data  = {'recipient': phone, 'text':filename, 'backup_calls':0}  # , 'send_on': calltime}
+#    calltime=datetime.datetime.today().strftime("%Y-%m-%dT%H:%M:%S")#Schedule the call for now
+
     calldata=callMgr.create(data)
     print calldata
-    print "Call ID is "+str(calldata['id'])
     vendorcallid=calldata['id']
-    print vendorcallid
+
+    return vendorcallid
+
+
+def main():
+
+    phone='9845155447'
+
+    #Logic to upload the wave_file for the first time -
+    wave_file = '1431_CgbcstChakeri010316.wav'    # This should be done only once for each new file
+    filename = wave_file.strip('.wav')
+
+    if wave_file:
+        print awaazdeUpload(wave_file)
+
+    if False:
+        vendorcallid = awaazdePlaceCall(phone, wave_file)
+    else:
+        vendorcallid = '57897'
+    print("Call ID [%s]" % vendorcallid)
+
+    callreturn = awaazdeStatusCheck(vendorcallid)
+    print callreturn
 
  
 if __name__ =='__main__':main()

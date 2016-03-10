@@ -108,6 +108,44 @@ def exotelCallStatus (sid,token,callsid):
      
   return callinprogress,callpass,callfail,callStartTime,duration,cost,status
 
+def awaazdeCallStatus (cur_callid):
+  from awaazde import awaazdeStatusCheck
+
+  (callinprogress, callpass, callfail, callStartTime, duration, cost, status) = (1, 0, 0, 0, 0, 0, 'Failed')
+  (duration, attempts, callStartTime, url, text, recipient, callsid) = awaazdeStatusCheck(cur_callid)
+
+  if attempts == 0:
+    return callinprogress,callpass,callfail,callStartTime,duration,cost,status
+
+  if not duration:
+    if callStartTime:
+      callStartTimeEpoch = time.mktime(datetime.datetime.strptime(callStartTime, "%Y-%m-%dT%H:%M:%S").timetuple())
+      cur_time = time.time()
+      diff_time = cur_time - callStartTimeEpoch
+      print("callStartTimeEpoch[%s] - cur_time[%s] = diff_time[%s]" % (callStartTimeEpoch, cur_time, diff_time))
+      if diff_time < 600:  # Check coinciding with a call in progress
+        return callinprogress,callpass,callfail,callStartTime,duration,cost,status
+      else:
+        duration = 0
+        
+  callinprogress = 0
+
+  if duration > 0:
+    callpass=1
+    callfail=0
+    status = 'Success'
+    print "The Call has been completed Spricessfully"
+    
+    #Cost Calculation - 40K for 100K credits 100*30/40 = 75 seconds/rupee, 80 paise per mintue, 40 paise for 30sec
+    cost = ((duration / 30) + 1) * 40
+    print("Cost[%s]" % cost)
+    
+  else:
+    callpass = 0
+    callfail = 1
+    print "The Call has failed"
+     
+  return callinprogress,callpass,callfail,callStartTime,duration,cost,status
 
 def main():
 #Setting some Default Values
@@ -142,11 +180,14 @@ def main():
     tringoaudio=row[8]
     isTest=row[9]
     timeDiff=row[10]
-    if(vendor == 'exotel'):
+    if (vendor == 'exotel'):
       callinprogress,callpass,callfail,callStartTime,duration,cost,vendorCallStatus = exotelCallStatus(sid,token,callsid)
-    elif(vendor == 'tringo'):
+    elif (vendor == 'tringo'):
       callinprogress,callpass,callfail,callStartTime,duration,cost,vendorCallStatus = tringoCallStatus(sid,token,callsid)
-    #Here we need to put additional check to see if the call has errred or not. If the difference between the callRequest time and now() is created that 48 hours then we shall mark the calls as errors 
+    elif (vendor == 'awaazde'):
+      callinprogress,callpass,callfail,callStartTime,duration,cost,vendorCallStatus = awaazdeCallStatus(callsid)
+      
+    #Here we need to put additional check to see if the call has errored or not. If the difference between the callRequest time and now() is created that 48 hours then we shall mark the calls as errors 
     callError=0
     if((timeDiff > 8) and (callinprogress == 1)):
       callinprogress=0

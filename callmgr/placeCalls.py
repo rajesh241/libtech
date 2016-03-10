@@ -7,6 +7,7 @@ sys.path.insert(0, fileDir+'/../includes/')
 from settings import dbhost,dbuser,dbpasswd,sid,token
 import requests
 import xml.etree.ElementTree as ET
+from awaazde import awaazdePlaceCall
 
 def singleRowQuery(cur,query):
   cur.execute(query)
@@ -51,6 +52,7 @@ def handleDNDError(cur,callid):
 def main():
   maxTringoCallQueue=32 #This is the maximum number of calls that can be queued with Tringo
   maxExotelCallQueue=64 #This is the maximum number of calls that can be queued with exotel
+  maxAwaazDeCallQueue=10 #This is the maximum number of calls that can be queued with exotel
   todaydate=datetime.date.today().strftime("%d%B%Y")
   now = datetime.datetime.now()
   curhour = str(now.hour)
@@ -65,7 +67,7 @@ def main():
   curQueue=singleRowQuery(cur,query)
   print "Current Queued Calls in Tringo is "+str(curQueue)
   if(curQueue < maxExotelCallQueue):
-    query="select c.callid,c.phone,a.exophone,c.template from callQueue c,broadcasts b where b.bid=c.bid and (c.vendor='exotel' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry limit 32"
+    query="select c.callid,c.phone,c.exophone,c.template from callQueue c,broadcasts b where b.bid=c.bid and (c.vendor='exotel' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry limit 32"
     print query
     cur.execute(query)
     results = cur.fetchall()
@@ -136,6 +138,27 @@ def main():
         query="update callQueue set sid='"+sid1+"',callRequestTime=NOW(),curVendor='tringo',inprogress=1 where callid="+callid
         print query
         cur.execute(query)
-      
+
+  query="select count(*) from callQueue where inprogress=1 and curVendor='awaazde'"
+  curQueue=singleRowQuery(cur,query)
+  print "Current Queued Calls in Tringo is "+str(curQueue)
+  if(curQueue < maxAwaazDeCallQueue):
+    query="select c.callid,c.phone,c.audio,c.template from addressbook a, callQueue c,broadcasts b where c.phone=a.phone and b.bid=c.bid and (c.vendor='awaazde' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 and a.dnd='yes' order by c.preference DESC,isTest DESC,c.retry limit 32"
+    print query
+    cur.execute(query)
+    results = cur.fetchall()
+
+    for (callid, phone, wave_file, template) in results:
+      print("callid[%s], phone[%s], wave_file[%s], template[%s]" % (callid, phone, wave_file, template))
+      if (template == 'general'):
+        query = 'select awaazdeUploadComplete from audioLibrary where filename="%s"' % wave_file
+        cur.execute(query)
+        upload_complete = cur.fetchone()[0]
+        if upload_complete == 1:
+          sid1 = awaazdePlaceCall(phone, wave_file)
+          query="update callQueue set sid='"+ str(sid1) +"',callRequestTime=NOW(),curVendor='awaazde',inprogress=1 where callid="+str(callid)
+          print query
+          cur.execute(query)
+
 if __name__ == '__main__':
   main()
