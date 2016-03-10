@@ -18,7 +18,7 @@ import globalSettings
 import settings
 from globalSettings import chaupalDataSummaryReportDir,chaupalDashboardLink,chaupalDataDashboardLink,chaupalDataDashboardLimit
 from settings import dbhost,dbuser,dbpasswd,sid,token
-from bootstrap_utils import getString,bsQuery2Html, bsQuery2HtmlV2,htmlWrapper, getForm, getButtonV3, getButtonV2,getCenterAligned
+from bootstrap_utils import getString,bsQuery2Html, bsQuery2HtmlV2,htmlWrapper, getForm, getButtonV3, getButtonV2,getCenterAligned,libtechInsertLink
 from libtechFunctions import writecsv,getPanchayatNameV1,getBlockNameV1
 
 def main():
@@ -117,7 +117,10 @@ def main():
 #
 # myhtml+=queryTable
   myhtml=htmlWrapper(title="View Chaupal Report", head='<h1 aling="center">'+title+'</h1>', body=myhtml)
-  print myhtml.encode('UTF-8')
+  myhtml1=libtechInsertLink(cur,myhtml) 
+  print myhtml1.encode('UTF-8')
+  
+  #print myhtml.encode('UTF-8')
 # 
 
 if __name__ == '__main__':

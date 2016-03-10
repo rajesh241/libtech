@@ -1,3 +1,4 @@
+import re
 def getString(a):
   if isinstance(a, basestring):
     try:
@@ -424,7 +425,22 @@ def bsQuery2HtmlV3(cur, query, query_caption=None, field_names=None, extra=None,
   return table_html
 
 
-
+def libtechInsertLink(cur,myhtml):
+  m=re.findall ( '<td>libtechConvertToLinkMusterNo(.*?)</td>',myhtml, re.DOTALL);
+  for musterID in m:
+    musterLink="http://surguja.libtech.info/nrega/SURGUJA/UDAIPUR/CHAINPUR/MUSTERS/2015-2016/11788.html"
+    query="select b.name,p.name,m.musterNo,m.isDownloaded from musters m, blocks b,panchayats p where m.blockCode=b.blockCode and m.panchayatCode=p.panchayatCode and m.blockCode=p.blockCode and m.id=%s" % musterID
+    cur.execute(query)
+    row=cur.fetchone()
+    blockName=row[0]
+    panchayatName=row[1]
+    musterNo=str(row[2])
+    musterLink="http://surguja.libtech.info/nrega/SURGUJA/%s/%s/MUSTERS/2015-2016/%s" % (blockName.upper(),panchayatName.upper(),musterNo)  
+    linkHTML='< a href="%s"> link </a>' %(musterLink)
+    linkHTML='<a href="'+musterLink+'">'+musterNo+'</a>' 
+    myhtml=myhtml.replace("libtechConvertToLinkMusterNo"+musterID,linkHTML)
+  myhtml1=myhtml
+  return myhtml1
 
 def main():
   testSuite()
