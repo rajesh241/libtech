@@ -27,13 +27,14 @@ def main():
   cur.execute(query)
   jobcard='CH-05-007-026-002/141'
   phone='9246522344'
-#  phone='9845155447'
-  phone='9845065241'
-  bid='1434'
+  phone='9845155447'
+  #phone='9845065241'
+  # bid='1434'  Sabil Bhaiya ka Sandes :)
+  bid='1477'
 #  phone='9833419391'
   dbname='mahabubnagar'
   dbname='surguja'
-  scheduleGeneralBroadcastCall(cur,bid,phone)
+  scheduleGeneralBroadcastCall(cur,bid,phone, isTest=1)
 # scheduleWageBroadcastCall(cur,jobcard,phone,dbname,260846,1)
 #  getWageBroadcastAudioArray(cur,jobcard)
 # query="use surguja"
