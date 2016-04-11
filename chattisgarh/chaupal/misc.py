@@ -30,7 +30,7 @@ def main():
   phone='9845155447'
   #phone='9845065241'
   # bid='1434'  Sabil Bhaiya ka Sandes :)
-  bid='1477'
+  bid='1483'
 #  phone='9833419391'
   dbname='mahabubnagar'
   dbname='surguja'
