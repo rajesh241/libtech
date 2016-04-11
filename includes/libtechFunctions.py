@@ -14,6 +14,13 @@ import xml.etree.ElementTree as ET
 import settings
 from settings import dbhost,dbuser,dbpasswd,sid,token
 from bootstrap_utils import getString
+
+
+def getFullFinYear(shortFinYear):
+  shortFinYear_1 = int(shortFinYear) -1
+  fullFinYear="20%s-20%s" % (str(shortFinYear_1), str(shortFinYear))
+  return fullFinYear
+
 def getOnlyDigits(s):
   digitArray=re.findall(r'\d+', s)
 #  all=string.maketrans('','')
