@@ -110,6 +110,11 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
     else:
       error=1
   else:
+    query="select id from addressbook where phone='"+phone+"'"
+    cur.execute(query)
+    if (cur.rowcount == 0):
+      query="insert into addressbook (phone,exophone,dnd) values ('%s','08033545179','no')" % (phone)
+      cur.execute(query)
     queryMatchString="phone='%s'" % phone
 
 
