@@ -28,25 +28,16 @@ def main():
   url = form['RecordingUrl'].value
   mp3_file = url.split('/')[-1]
   wave_file = mp3_file.replace('.mp3', '.wav')
-  with open('/tmp/z.txt', 'a') as outfile:
-    outfile.write("Before CMD sid[%s], phone[%s], digits[%s], upload_date[%s], url[%s], mp3_file[%s], wave_file[%s]" % (sid, phone, digits, upload_date, url, mp3_file, wave_file))
 
-  import os
   cmd = 'cd /home/libtech/webroot/broadcasts/audio/surgujaVoiceRecordingMP3 && wget ' + url
   os.system(cmd)
-  with open('/tmp/z.txt', 'a') as outfile:
-    outfile.write(str(cmd))
 
   cmd = 'cd /home/libtech/webroot/broadcasts/audio/surgujaVoiceRecordingMP3 && ffmpeg -i ' + mp3_file + ' -ac 1 -ar 8000 ' + wave_file
   os.system(cmd)
-  with open('/tmp/z.txt', 'a') as outfile:
-    outfile.write(str(cmd))
 
   db = dbInitialize(db="libtech")
   cur = db.cursor()
   query = 'insert into exotelRecordings (sid, filename, recordCreateDate, url, phone, exotelUploadDate, exotelRecordingGood) values ("%s", "%s", now(), "%s", "%s", "%s", %s)' % (sid, wave_file, url, phone, upload_date, digits)
-  with open('/tmp/z.txt', 'a') as outfile:
-    outfile.write(query)
   cur.execute(query)
   dbFinalize(db)
     
