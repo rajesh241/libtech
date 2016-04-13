@@ -33,15 +33,17 @@ def connect_customer(sid, token,
             'StatusCallback': callback_url
         })
 
-def handleDNDError(cur,callid):
+def handleDNDError(cur,callid,phone):
 ##First we need to find out if any other vendor other than exotel can be used for this call
   query="select bid from callQueue where callid="+str(callid)
   bid=singleRowQuery(cur,query)
   query="select vendor from broadcasts where bid="+str(bid)
   vendor=singleRowQuery(cur,query)
   if vendor=='any':
-    query="update callQueue set vendor='tringo',preference=0 where callid="+callid
+    query="update callQueue set vendor='any',preference=10000 where callid="+callid
     print query
+    cur.execute(query)
+    query="update addressbook set dnd='yes'  where phone="+phone
     cur.execute(query)
   else:
     query="delete from callQueue where callid="+callid
@@ -50,9 +52,9 @@ def handleDNDError(cur,callid):
     cur.execute(query)
   
 def main():
-  maxTringoCallQueue=32 #This is the maximum number of calls that can be queued with Tringo
-  maxExotelCallQueue=64 #This is the maximum number of calls that can be queued with exotel
-  maxAwaazDeCallQueue=10 #This is the maximum number of calls that can be queued with exotel
+  maxTringoCallQueue=0#32 #This is the maximum number of calls that can be queued with Tringo
+  maxExotelCallQueue=32#64 #This is the maximum number of calls that can be queued with exotel
+  maxAwaazDeCallQueue=0#10 #This is the maximum number of calls that can be queued with exotel
   todaydate=datetime.date.today().strftime("%d%B%Y")
   now = datetime.datetime.now()
   curhour = str(now.hour)
@@ -65,9 +67,9 @@ def main():
   cur.execute(query)
   query="select count(*) from callQueue where inprogress=1 and curVendor='exotel'"
   curQueue=singleRowQuery(cur,query)
-  print "Current Queued Calls in Tringo is "+str(curQueue)
+  print "Current Queued Calls in Exotel is "+str(curQueue)
   if(curQueue < maxExotelCallQueue):
-    query="select c.callid,c.phone,c.exophone,c.template from callQueue c,broadcasts b where b.bid=c.bid and (c.vendor='exotel' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 order by c.preference DESC,isTest DESC,c.retry limit 32"
+    query="select c.callid,c.phone,a.exophone,c.template from callQueue c,broadcasts b,addressbook a where b.bid=c.bid and c.phone=a.phone  and (c.vendor='exotel' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 and a.dnd != 'yes' order by c.preference DESC,isTest DESC,c.retry limit 32"
     print query
     cur.execute(query)
     results = cur.fetchall()
@@ -103,7 +105,7 @@ def main():
         print message1
         if 'TRAI NDNC' in message1:
           print "This seems to be the DND number"
-          handleDNDError(cur,callid)
+          handleDNDError(cur,callid,phone)
       if (r.status_code == 200):
         #print r.content
         root = ET.fromstring(r.content)
@@ -143,7 +145,8 @@ def main():
   curQueue=singleRowQuery(cur,query)
   print "Current Queued Calls in Tringo is "+str(curQueue)
   if(curQueue < maxAwaazDeCallQueue):
-    query="select c.callid,c.phone,c.audio,c.template from addressbook a, callQueue c,broadcasts b where c.phone=a.phone and b.bid=c.bid and (c.vendor='awaazde' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 and a.dnd='yes' order by c.preference DESC,isTest DESC,c.retry limit 32"
+    query="select c.callid,c.phone,c.audio,c.template from addressbook a, callQueue c,broadcasts b where c.phone=a.phone and b.bid=c.bid and (c.vendor='awaazde' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20 and a.dnd='yes' order by c.preference DESC,isTest DESC,c.retry limit 1"
+    query="select c.callid,c.phone,c.audio,c.template from addressbook a, callQueue c,broadcasts b where c.phone=a.phone and b.bid=c.bid and (c.vendor='awaazde' or c.vendor='any') and c.minhour <= "+curhour+" AND c.maxhour > "+curhour+" and b.endDate >= CURDATE() and c.inprogress=0 and c.preference > 20  order by c.preference DESC,isTest DESC,c.retry limit 10"
     print query
     cur.execute(query)
     results = cur.fetchall()
