@@ -3,6 +3,7 @@ broadcastReportFilePath="/home/libtech/webroot/broadcasts/reports/broadcasts/"
 includedir="/home/libtech/repo/includes/"
 datadir="/home/libtech/gDrive/Chattisgarh/data/"
 nregaDataDir="/home/libtech/gDrive/stateName/nrega/"
+reportsDir="/home/libtech/gDrive/stateName/reports/"
 biharAudioDir="/home/libtech/webroot/broadcasts/audio/biharAudio"
 chaupalDataSummaryReportDir="/home/libtech/webroot/chaupalDataDashboard/reports/summary/"
 chaupalDashboardLink='http://chaupal.libtech.info/' 

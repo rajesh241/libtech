@@ -29,7 +29,7 @@ def main():
   titleNoSpace=title.replace(" ","")+".csv"
 
   redirectURL="http://www.google.com"
-  redirectURL="http://chaupal.libtech.info/reports/summary/%s" % titleNoSpace
+  redirectURL="http://surguja.libtech.info/reports/summary/%s" % titleNoSpace
   print 'Content-Type: text/html'
   print 'Location: %s' % redirectURL
   print # HTTP says you have to have a blank line between headers and content
