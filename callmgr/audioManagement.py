@@ -2,7 +2,6 @@ from bs4 import BeautifulSoup
 
 import time
 import os
-import sys
 dirname = os.path.dirname(os.path.realpath(__file__))
 rootdir = os.path.dirname(dirname)
 fileDir=os.path.dirname(os.path.abspath(__file__))

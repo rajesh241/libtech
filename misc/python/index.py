@@ -29,6 +29,8 @@ def main():
   myhtml+=  getCenterAligned('<h3 style="color:green"><a href="./apHome.py">Andhra Pradesh and Telangana Dashboard </a></h3>' )
   myhtml+="</br>"
   myhtml+=  getCenterAligned('<h3 style="color:blue"><a href="./chaupalHome.py">Chattisgarh and Chaupal Dashboard </a></h3>' )
+  myhtml+="</br>"
+  myhtml+=  getCenterAligned('<h3 style="color:blue"><a href="./sathiHome.py">Sathi  Dashboard </a></h3>' )
   myhtml=htmlWrapper(title="Welcome to Libtech", head='<h1 align="center">Welcome to Libtech</h1>', body=myhtml)
   print myhtml.encode('UTF-8')
 if __name__ == '__main__':
