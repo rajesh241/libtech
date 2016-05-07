@@ -63,6 +63,7 @@ def main():
     query="select name from crawlDistricts where state='%s' and name='%s'" %(stateName,districtName.lower())
     myhtml=tabletUIQueryToHTMLTable(cur,query) 
     myhtml=htmlWrapperLocal(title="Select Districts", head='<h1 aling="center">Select District</h1>', body=myhtml)
+    logger.info(indexfile)
     f=open(indexfile,'w')
     f.write(myhtml.encode("UTF-8"))
 

@@ -83,7 +83,7 @@ def main():
         orderClause=queryRow[4]
         groupClause=queryRow[6]
         limit=queryRow[9]
-        limitString=" limit 50 "
+        limitString=" limit 200 "
         if limit ==0:
           limitString=''
   

@@ -56,7 +56,7 @@ def main():
   except:
     os.mkdir(dir1)
   writecsv(cur,query,filename)
-  redirectURL="http://surguja.libtech.info/reports/summary/"+suffix
+  redirectURL="http://surguja.libtech.info/reports1/summary/"+suffix
   print 'Content-Type: text/html'
   print 'Location: %s' % redirectURL
   print # HTTP says you have to have a blank line between headers and content
