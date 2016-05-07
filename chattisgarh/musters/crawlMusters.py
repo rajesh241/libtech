@@ -16,7 +16,7 @@ from settings import dbhost,dbuser,dbpasswd,sid,token
 regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
 sys.path.insert(0, fileDir+'/../../')
 #sys.path.insert(0, rootdir)
-from libtechFunctions import singleRowQuery
+from libtechFunctions import singleRowQuery,getFullFinYear
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
@@ -31,20 +31,8 @@ def argsFetch():
   parser = argparse.ArgumentParser(description='Script for crawling, downloading & parsing musters')
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
-  parser.add_argument('-t', '--timeout', help='Time to wait before a page loads', required=False)
-  parser.add_argument('-b', '--browser', help='Specify the browser to test with', required=False)
-  parser.add_argument('-u', '--url', help='Specify the url to crawl', required=False)
-  parser.add_argument('-d', '--directory', help='Specify directory to download html file to', required=False)
-  parser.add_argument('-q', '--query', help='Query to specify the workset, E.g ... where id=147', required=False)
-  parser.add_argument('-j', '--jobcard', help='Specify the jobcard to download/push', required=False)
-  parser.add_argument('-c', '--crawl', help='Crawl the Disbursement Data', required=False)
-  parser.add_argument('-f', '--fetch', help='Fetch the Jobcard Details', required=False)
-  parser.add_argument('-finyear', '--finyear', help='Download musters for that finyear', required=False)
-  parser.add_argument('-district', '--district', help='District for which you need to Download', required=False)
-  parser.add_argument('-p', '--parse', help='Parse Jobcard HTML for Muster Info', required=False, action='store_const', const=True)
-  parser.add_argument('-r', '--process', help='Process downloaded HTML files for Muster Info', required=False, action='store_const', const=True)
-  parser.add_argument('-P', '--push', help='Push Muster Info into the DB on the go', required=False, action='store_const', const=True)
-  parser.add_argument('-J', '--jobcard-details', help='Fetch the Jobcard Details for DB jobcardDetails table', required=False, action='store_const', const=True)
+  parser.add_argument('-finyear', '--finyear', help='Download musters for that finyear', required=True)
+  parser.add_argument('-district', '--district', help='District for which you need to Download', required=True)
 
   args = vars(parser.parse_args())
   return args
@@ -65,16 +53,10 @@ def main():
   query="SET NAMES utf8"
   cur.execute(query)
 
-  if args['district']:
-    districtName=args['district']
-  else:
-    districtName='surguja'
+  districtName=args['district']
  
   logger.info("DistrictName "+districtName)
-  if args['finyear']:
-    finyear=args['finyear']
-  else:
-    finyear='16'
+  finyear=args['finyear']
   logger.info("finyear "+finyear)
  
 #Query to get all the blocks
@@ -94,15 +76,7 @@ def main():
 #Connect to MySQL Database
 #muster Type list
   musterTypeList= ['10','11','13','14']
-  if finyear=='16':
-    fullfinyear='2015-2016'
-  elif finyear=='15':
-    fullfinyear='2014-2015'
-  elif finyear=='14':
-    fullfinyear='2013-2014'
-  else:
-    fullfinyear='2013-2014'
-
+  fullfinyear=getFullFinYear(finyear)
 #Query to get all the blocks
   query="select stateCode,districtCode,blockCode,name from blocks where isActive=1"
 #query="select stateCode,districtCode,blockCode,name from blocks where blockCode='002'"

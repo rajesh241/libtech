@@ -14,7 +14,7 @@ sys.path.insert(0, fileDir+'/../../')
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
-from libtechFunctions import singleRowQuery
+from libtechFunctions import singleRowQuery,getFullFinYear
 from globalSettings import datadir,nregaDataDir
 
 def argsFetch():
@@ -24,22 +24,10 @@ def argsFetch():
   import argparse
 
   parser = argparse.ArgumentParser(description='Script for crawling, downloading & parsing musters')
-  parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
-  parser.add_argument('-t', '--timeout', help='Time to wait before a page loads', required=False)
-  parser.add_argument('-b', '--browser', help='Specify the browser to test with', required=False)
-  parser.add_argument('-u', '--url', help='Specify the url to crawl', required=False)
-  parser.add_argument('-d', '--directory', help='Specify directory to download html file to', required=False)
-  parser.add_argument('-q', '--query', help='Query to specify the workset, E.g ... where id=147', required=False)
-  parser.add_argument('-j', '--jobcard', help='Specify the jobcard to download/push', required=False)
-  parser.add_argument('-c', '--crawl', help='Crawl the Disbursement Data', required=False)
-  parser.add_argument('-f', '--fetch', help='Fetch the Jobcard Details', required=False)
-  parser.add_argument('-finyear', '--finyear', help='Download musters for that finyear', required=False)
-  parser.add_argument('-district', '--district', help='District for which you need to Download', required=False)
-  parser.add_argument('-p', '--parse', help='Parse Jobcard HTML for Muster Info', required=False, action='store_const', const=True)
-  parser.add_argument('-r', '--process', help='Process downloaded HTML files for Muster Info', required=False, action='store_const', const=True)
-  parser.add_argument('-P', '--push', help='Push Muster Info into the DB on the go', required=False, action='store_const', const=True)
-  parser.add_argument('-J', '--jobcard-details', help='Fetch the Jobcard Details for DB jobcardDetails table', required=False, action='store_const', const=True)
+  parser.add_argument('-f', '--finyear', help='Download musters for that finyear', required=True)
+  parser.add_argument('-d', '--district', help='District for which you need to Download', required=True)
+  parser.add_argument('-limit', '--limit', help='District for which you need to Download', required=False)
 
   args = vars(parser.parse_args())
   return args
@@ -61,15 +49,12 @@ def main():
   query="SET NAMES utf8"
   cur.execute(query)
 
-  if args['finyear']:
-    infinyear=args['finyear']
+  if args['limit']:
+    limitString=" limit %s " % (str(args['limit']))
   else:
-    infinyear='16'
-
-  if args['district']:
-    districtName=args['district']
-  else:
-    districtName='surguja'
+    limitString=" limit 10000 "
+  infinyear=args['finyear']
+  districtName=args['district']
  
   logger.info("DistrictName "+districtName)
   logger.info("Fin year "+infinyear)
@@ -94,7 +79,7 @@ def main():
 
 #Main Muster Query
 
-  query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isActive=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isActive=1 and m.finyear='"+infinyear+"' and m.isError=0 and m.musterType='10' and (m.isDownloaded=0 or (m.isComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) )  order by TIMESTAMPDIFF(DAY, m.downloadAttemptDate, now()) desc limit 10000;"
+  query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isRequired=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 and m.finyear='"+infinyear+"' and m.isError=0 and m.musterType='10' and (m.isDownloaded=0 or (m.isComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) )  order by TIMESTAMPDIFF(DAY, m.downloadAttemptDate, now()) desc %s;" % (limitString)
 #  query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isActive=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isActive=1 and m.id=1"
   logger.info("Query: "+query)
   #cur.execute(query)
@@ -123,16 +108,7 @@ def main():
     datetostring = str(dateTo)
     datefromstring = str(dateFrom)
    
-    #print stateCode+districtCode+blockCode+blockName
-    if finyear=='16':
-      fullfinyear='2015-2016'
-    elif finyear=='15':
-      fullfinyear='2014-2015'
-    elif finyear=='14':
-      fullfinyear='2013-2014'
-    else:
-      fullfinyear='2013-2014'
-  
+    fullfinyear=getFullFinYear(finyear)
 
     musterURL="http://%s/netnrega/citizen_html/musternew.aspx?state_name=%s&district_name=%s&block_name=%s&panchayat_name=%s&workcode=%s&panchayat_code=%s&msrno=%s&finyear=%s&dtfrm=%s&dtto=%s&wn=%s&id=1" % (crawlIP,stateName.upper(),districtName.upper(),blockName.upper(),panchayatName,workCode,fullPanchayatCode,musterNo,fullfinyear,datefromstring,datetostring,worknameplus)
     logger.info("%s   %s   %s   %s   %s" %(districtName,blockName,panchayatName,fullfinyear,musterNo))

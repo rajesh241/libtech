@@ -59,12 +59,17 @@ def main():
     limitSetting='limit 1'
   if args['additionalFilters']:
     additionalFilter=" and "+args['additionalFilters']
-  query="select state from crawlDistricts where name='%s'" % districtName.lower()
+  query="select state,stateShortCode,districtCode from crawlDistricts where name='%s'" % districtName.lower()
   cur.execute(query)
   if cur.rowcount == 0:
     logger.info("INVALID DISTRICT ENTERED")
   else:
-    stateName=singleRowQuery(cur,query)
+    row=cur.fetchone()
+    stateName=row[0]
+    stateShortCode=row[1]
+    districtCode=row[2]
+   # stateName=singleRowQuery(cur,query)
+    reMatchString="%s-%s-" % (stateShortCode,districtCode)
     musterfilepath=nregaDataDir.replace("stateName",stateName.title())+"/"+districtName.upper()+"/"
     query="use %s " % districtName.lower()
     cur.execute(query)
@@ -144,10 +149,11 @@ def main():
                 branchNameOrPOAddress="".join(cols[statusindex-3].text.split())
                 branchCodeOrPOCode="".join(cols[statusindex-2].text.split())
                 wagelistNo="".join(cols[statusindex-1].text.split())
+                paymentDateString="".join(cols[statusindex+1].text.split())
                 creditedDatestring="".join(cols[statusindex+3].text.split())
-                nameandjobcardarray=re.match(r'(.*)CH-05-(.*)',nameandjobcard)
+                nameandjobcardarray=re.match(r'(.*)'+reMatchString+'(.*)',nameandjobcard)
                 name=nameandjobcardarray.groups()[0]
-                jobcard='CH-05-'+nameandjobcardarray.groups()[1]
+                jobcard=reMatchString+nameandjobcardarray.groups()[1]
                 jcNumber=getjcNumber(jobcard)
                 #print str(musterIndex)+"  "+name+"  "+jobcard
                 logger.info(str(musterIndex)+" "+jobcard)
@@ -167,9 +173,20 @@ def main():
                   cur.execute(query)
                 except:
                   logger.info('This Record ALready Exists' + query)
-                query="update workDetails set updateDate=NOW(),blockName='%s',panchayatCode='%s',panchayatName='%s',name='%s',jobcard='%s',jcNumber='%s',workCode='%s',workName='%s',dateFrom='%s',dateTo='%s',daysWorked=%s,dayWage=%s,totalWage=%s,accountNo='%s',wagelistNo='%s',bankNameOrPOName='%s',branchNameOrPOAddress='%s',branchCodeOrPOCode='%s',status='%s' where musterNo=%s and musterIndex=%s and finyear='%s' and blockCode='%s' " % (blockName,panchayatCode,panchayatNameRaw,name,jobcard,jcNumber,workCode,workName,dateFrom,dateTo,str(daysWorked),str(dayWage),str(totalWage),str(accountNo),wagelistNo,bankNameOrPOName,branchNameOrPOAddress,branchCodeOrPOCode,status,musterNo,musterIndex,finyear,blockCode) 
+                query="update workDetails set updateDate=NOW(),blockName='%s',panchayatCode='%s',panchayatName='%s',name='%s',jobcard='%s',jcNumber='%s',workCode='%s',workName='%s',dateFrom='%s',dateTo='%s',daysWorked=%s,dayWage=%s,totalWage=%s,accountNo='%s',wagelistNo='%s',bankNameOrPOName='%s',branchNameOrPOAddress='%s',branchCodeOrPOCode='%s',status='%s' where musterNo=%s and musterIndex=%s and finyear='%s' and blockCode='%s' " % (blockName,panchayatCode,panchayatNameRaw,name,jobcard,jcNumber,workCode,workName.decode('UTF-8'),dateFrom,dateTo,str(daysWorked),str(dayWage),str(totalWage),str(accountNo),wagelistNo,bankNameOrPOName,branchNameOrPOAddress,branchCodeOrPOCode,status,musterNo,musterIndex,finyear,blockCode) 
                 logger.info(query)
                 cur.execute(query)
+
+                if paymentDateString != '':
+                  paymentDate = time.strptime(paymentDateString, '%d/%m/%Y')
+                  paymentDate = time.strftime('%Y-%m-%d %H:%M:%S', paymentDate)
+                  query="update workDetails set paymentDate='%s' where musterNo=%s and musterIndex=%s and finyear='%s' and blockCode='%s'" % (paymentDate,musterNo,musterIndex,finyear,blockCode)
+                  cur.execute(query)
+                else:
+                  query="update workDetails set paymentDate=NULL where musterNo=%s and musterIndex=%s and finyear='%s' and blockCode='%s'" % (musterNo,musterIndex,finyear,blockCode)
+                  cur.execute(query)
+
+
                 if creditedDatestring != '':
                   creditedDate = time.strptime(creditedDatestring, '%d/%m/%Y')
                   creditedDate = time.strftime('%Y-%m-%d %H:%M:%S', creditedDate)
