@@ -38,6 +38,8 @@ def main():
     suffix = (day_of_month - 1) // 7 + 1
   elif(backupType =="monthly"):
     suffix=(time.strftime("%b"))
+  elif(backupType =="latest"):
+    suffix='latest'
 
   
   dbList=dbNames.split(",")
