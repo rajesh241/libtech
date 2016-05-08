@@ -31,8 +31,8 @@ def argsFetch():
   parser = argparse.ArgumentParser(description='Script for crawling, downloading & parsing musters')
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
-  parser.add_argument('-finyear', '--finyear', help='Download musters for that finyear', required=True)
-  parser.add_argument('-district', '--district', help='District for which you need to Download', required=True)
+  parser.add_argument('-f', '--finyear', help='Download musters for that finyear', required=True)
+  parser.add_argument('-d', '--district', help='District for which you need to Download', required=True)
 
   args = vars(parser.parse_args())
   return args
@@ -78,7 +78,7 @@ def main():
   musterTypeList= ['10','11','13','14']
   fullfinyear=getFullFinYear(finyear)
 #Query to get all the blocks
-  query="select stateCode,districtCode,blockCode,name from blocks where isActive=1"
+  query="select stateCode,districtCode,blockCode,name from blocks where isRequired=1"
 #query="select stateCode,districtCode,blockCode,name from blocks where blockCode='002'"
   cur.execute(query)
   results = cur.fetchall()
@@ -89,7 +89,7 @@ def main():
     blockName=row[3]
     logger.info("Block Name "+blockName)
     query="select name,panchayatCode,id from panchayats where isChaupal=1 and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' "
-    query="select name,panchayatCode,id from panchayats where stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' "
+    query="select name,panchayatCode,id from panchayats where isRequired=1 and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' "
     cur.execute(query)
     panchresults = cur.fetchall()
     for panchrow in panchresults:
