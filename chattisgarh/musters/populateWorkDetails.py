@@ -29,6 +29,7 @@ def argsFetch():
   parser.add_argument('-af', '--additionalFilters', help='please enter additional filters', required=False)
   parser.add_argument('-f', '--finyear', help='Please enter the finyear', required=True)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
+  parser.add_argument('-limit', '--limit', help='Limit the number of entries that need to be processed', required=False)
   args = vars(parser.parse_args())
   return args
   
@@ -54,9 +55,10 @@ def main():
   if args['finyear']:
     infinyear=args['finyear'].lower()
   
-  if args['testMode']:
-    logger.info("Test Mode Activated")
-    limitSetting='limit 1'
+  if args['limit']:
+    limitString=" limit %s " % (str(args['limit']))
+  else:
+    limitString=" limit 10000 "
   if args['additionalFilters']:
     additionalFilter=" and "+args['additionalFilters']
   query="select state,stateShortCode,districtCode from crawlDistricts where name='%s'" % districtName.lower()
@@ -74,7 +76,7 @@ def main():
     query="use %s " % districtName.lower()
     cur.execute(query)
    
-    query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode,m.blockCode,p.panchayatCode,m.workName,m.dateFrom,m.dateTo from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.wdProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 %s and finyear='%s' %s" %(additionalFilter,infinyear,limitSetting)
+    query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode,m.blockCode,p.panchayatCode,m.workName,m.dateFrom,m.dateTo from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.wdProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 %s and finyear='%s' %s" %(additionalFilter,infinyear,limitString)
     logger.info(query)
     cur.execute(query)
     if cur.rowcount:
@@ -95,7 +97,7 @@ def main():
         dateTo=str(row[10])
         fullfinyear="20"+str(int(finyear) -1)+"-20"+str(finyear)
         logger.info(fullfinyear) 
-        logger.info(str(musterID)+"   "+musterNo+"  "+blockName+"  "+panchayatName)
+        logger.info("muster ID : %s   musterNo:%s  blockName:%s  panchayatName:%s " % (str(musterID),str(musterNo),blockName,panchayatName))
         musterfilename=musterfilepath+blockName+"/"+panchayatName+"/MUSTERS/"+fullfinyear+"/"+musterNo+".html"
         print logger.info("Muster FileName:"+musterfilename)
         if (os.path.isfile(musterfilename)): 

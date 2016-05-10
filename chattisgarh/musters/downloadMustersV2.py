@@ -79,7 +79,7 @@ def main():
 
 #Main Muster Query
 
-  query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isRequired=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 and m.finyear='"+infinyear+"' and m.isError=0 and m.musterType='10' and (m.isDownloaded=0 or (m.isComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 18 ) )  order by TIMESTAMPDIFF(DAY, m.downloadAttemptDate, now()) desc %s;" % (limitString)
+  query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isRequired=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 and m.finyear='"+infinyear+"'  and m.musterType='10' and (m.isDownloaded=0 or (m.wdComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) )  order by TIMESTAMPDIFF(DAY, m.downloadAttemptDate, now()) desc %s;" % (limitString)
 #  query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isActive=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isActive=1 and m.id=1"
   logger.info("Query: "+query)
   #cur.execute(query)
@@ -131,7 +131,7 @@ def main():
       #print "There is not ERROR here"
     except:
       errorflag=1
-      logger.info("MusterDownloadError Could not fin table")
+      logger.info("MusterDownloadError Could not find table")
       #print "Cannot find the table"
     if errorflag==0:
       logger.info("MusterDownloadSuccess Updating the Status")
@@ -143,7 +143,7 @@ def main():
       f = open(musterfilename, 'w')
       f.write(myhtml1.encode("UTF-8"))
       try:
-        query="update musters set isProcessed=0,isDownloaded=1,downloadDate=NOW() where id="+str(musterid)
+        query="update musters set wdProcessed=0,isDownloaded=1,downloadDate=NOW() where id="+str(musterid)
         logger.info("Update Query : "+ query)
        # print query
         #cur.execute(query)
