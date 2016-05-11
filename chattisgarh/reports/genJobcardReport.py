@@ -15,7 +15,7 @@ from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery
-from globalSettings import datadir,nregaDataDir,reportsDir
+from globalSettings import datadir,nregaDataDir,reportsDir,nregaStaticReportsDir
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapper, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQuery2HTML
 
 
@@ -56,6 +56,7 @@ def main():
     query="use %s " % districtName.lower()
     cur.execute(query)
     jcReportFilePath=reportsDir.replace("stateName",stateName.title())+"/"+districtName.upper()+"/"
+    jcReportFilePath=nregaStaticReportsDir.replace("districtName",districtName.lower())+districtName.upper()+"/"
   
     blockCode='003'
     panchayatCode='007'

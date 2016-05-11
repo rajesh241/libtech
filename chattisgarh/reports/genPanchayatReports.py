@@ -15,7 +15,7 @@ from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery,writecsv
-from globalSettings import datadir,nregaDataDir,reportsDir
+from globalSettings import datadir,nregaDataDir,reportsDir,nregaStaticReportsDir
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIQuery2HTML
 
 
@@ -55,8 +55,7 @@ def main():
     stateName=singleRowQuery(cur,query)
     query="use %s " % districtName.lower()
     cur.execute(query)
-    htmlDir=reportsDir.replace("stateName",stateName.title())+"/"+districtName.upper()+"/"
-    htmlDir=reportsDir.replace("stateName",stateName.title())+"/"
+    htmlDir=nregaStaticReportsDir.replace("districtName",districtName.lower())
 
     query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1"
     #query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1 limit 1"

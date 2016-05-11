@@ -15,7 +15,7 @@ from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery
-from globalSettings import datadir,nregaDataDir,reportsDir
+from globalSettings import datadir,nregaDataDir,reportsDir,nregaStaticReportsDir
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
 
 def argsFetch():
@@ -54,9 +54,8 @@ def main():
     stateName=singleRowQuery(cur,query)
     query="use %s " % districtName.lower()
     cur.execute(query)
-    htmlDir=reportsDir.replace("stateName",stateName.title())+"/"+districtName.upper()+"/"
-    htmlDir=reportsDir.replace("stateName",stateName.title())+"/"
-
+    htmlDir=nregaStaticReportsDir.replace("districtName",districtName.lower())
+    logger.info(htmlDir)
     indexfile=htmlDir+"index.html"
     query="use libtech"
     cur.execute(query)
@@ -87,10 +86,15 @@ def main():
     for row in results:
       blockName=row[0]
       blockCode=row[1]
+      h1title=districtName.upper()+"-"+blockName
       curhtmlfile=htmlDir+districtName.upper()+"/"+blockName.upper()+"/"+blockName.upper()+".html"
+      #Lets print a block Level Reports Page
+      myhtml=""
       query="select name from panchayats where blockCode='%s' and isRequired=1" %(blockCode) 
-      myhtml=tabletUIQueryToHTMLTable(cur,query) 
-      myhtml=htmlWrapperLocal(title="Panchayats Page", head='<h1 aling="center">Select Panchayats</h1>', body=myhtml)
+      myhtml+=tabletUIQueryToHTMLTable(cur,query) 
+      query="select id,title from reportQueries"
+      myhtml+=tabletUIReportTable(cur,query,staticLinkPath="REPORTS") 
+      myhtml=htmlWrapperLocal(title="Panchayats Page", head='<h1 aling="center">'+h1title+'</h1>', body=myhtml)
       if not os.path.exists(os.path.dirname(curhtmlfile)):
         os.makedirs(os.path.dirname(curhtmlfile))
       f=open(curhtmlfile,'w')
