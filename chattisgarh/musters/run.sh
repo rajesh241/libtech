@@ -1,8 +1,8 @@
 while true
 do 
-    date 
-    sleep 20
-    sh downloadMustersWrapper.sh surguja 16
+    date
+    python /home/libtech/repo/chattisgarh/musters/downloadMustersV2.py -f 16 -d surguja -limit 50 
+    #sh downloadMustersWrapper.sh surguja 16
 #    sleep 100
 #    sh downloadMustersWrapper.sh korea 16
 done

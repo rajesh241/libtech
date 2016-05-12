@@ -28,6 +28,9 @@ def argsFetch():
   parser = argparse.ArgumentParser(description='HouseKeeping Script for SurGUJA Database')
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-d', '--district', help='Please enter the district', required=True)
+  parser.add_argument('-b', '--blockCode', help='Please enter the district', required=False)
+  parser.add_argument('-p', '--panchayatCode', help='Please enter the district', required=False)
+  parser.add_argument('-j', '--jobcard', help='Please enter the district', required=False)
 
   args = vars(parser.parse_args())
   return args
@@ -46,6 +49,20 @@ def main():
   cur.execute(query)
   if args['district']:
     districtName=args['district'].lower()
+  inBlockFilter=''
+  inPanchayatFilter=''
+  jobcardFilter=''
+  if args['blockCode']:
+    inBlockCode=args['blockCode'].lower()
+    inBlockFilter=" and p.blockCode='%s' " % inBlockCode
+  if args['panchayatCode']:
+    inPanchayatCode=args['panchayatCode'].lower()
+    inPanchayatFilter=" and p.panchayatCode='%s' " % inPanchayatCode
+
+  if args['jobcard']:
+    injobcard=args['jobcard'].lower()
+    jobcardFilter=" and jobcard='%s' " % injobcard
+
 
   query="select state from crawlDistricts where name='%s'" % districtName.lower()
   cur.execute(query)
@@ -61,7 +78,7 @@ def main():
     blockCode='003'
     panchayatCode='007'
     query="select b.blockCode,b.name,p.panchayatCode,p.name from blocks b, panchayats p where b.blockCode=p.blockCode and p.isRequired=1 and b.blockCode='003' and p.panchayatCode='041'"
-    query="select b.blockCode,b.name,p.panchayatCode,p.name from blocks b, panchayats p where b.blockCode=p.blockCode and p.isRequired=1"
+    query="select b.blockCode,b.name,p.panchayatCode,p.name from blocks b, panchayats p where b.blockCode=p.blockCode and p.isRequired=1 %s %s " % (inBlockFilter,inPanchayatFilter)
     #query="select b.blockCode,b.name,p.panchayatCode,p.name from blocks b, panchayats p where b.blockCode=p.blockCode and p.isRequired=1 and b.blockCode='003' "
     cur.execute(query)
     panchResults=cur.fetchall()
@@ -72,7 +89,7 @@ def main():
       panchayatName=panchRow[3]
       logger.info("Processing blockCode: %s blockName: %s panchayatCode: %s PanchayatName: %s " %(blockCode,blockName,panchayatCode,panchayatName))
       
-      query="select jobcard from jobcardRegister where blockCode='"+blockCode+"' and panchayatCode='"+panchayatCode+"' "
+      query="select jobcard from jobcardRegister where blockCode='"+blockCode+"' and panchayatCode='"+panchayatCode+"' " + jobcardFilter
  #     query="select jobcard from jobcardRegister where blockCode='"+blockCode+"' and panchayatCode='"+panchayatCode+"' and jobcard='CH-05-003-007-001/92-A'  limit 10"
       cur.execute(query)
       results=cur.fetchall()
@@ -109,6 +126,7 @@ def main():
         myhtml+=query_table
 
         query="select name,workName,musterNo,DATE_FORMAT(dateFrom,'%d-%M-%Y') FromDate,DATE_FORMAT(dateTo,'%d-%M-%Y') ToDate,daysWorked,totalWage,accountNo,status,DATE_FORMAT(creditedDate,'%d-%M-%Y') creditedDate,rejectionReason from workDetails where jobcard='"+jobcard+"' order by dateFrom DESC" 
+        logger.info(query)
         query_table = "<br />"
         linkIndex=['2']
         linkType=['muster']
