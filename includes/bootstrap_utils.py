@@ -644,8 +644,9 @@ def tabletUIReportTable(cur, query, staticLinkPath=None,field_names=None, extra=
   for field_name in field_names:
     table_html += "<th >" + field_name.strip() + "</th>"
     i=i+1 
-  table_html += "<th >View HTML</th>"
-  table_html += "<th >Download CSV</th>"
+  table_html += "<th colspan=3>View HTML</th>"
+  table_html += "<th > | </th>"
+  table_html += "<th colspan=3>Download CSV</th>"
   if extra != None:
     table_html += "<th >" + extraLabel + "</th>"
 
@@ -666,6 +667,10 @@ def tabletUIReportTable(cur, query, staticLinkPath=None,field_names=None, extra=
         if staticLinkPath != None:
           targetLink="./%s/%s.html" % (staticLinkPath,rowstripped)
           targetcsv="./%s/%s.csv" % (staticLinkPath,rowstripped)
+          targetLink16="./%s/%s.html" % (staticLinkPath+'16',rowstripped)
+          targetcsv16="./%s/%s.csv" % (staticLinkPath+'16',rowstripped)
+          targetLink17="./%s/%s.html" % (staticLinkPath+'17',rowstripped)
+          targetcsv17="./%s/%s.csv" % (staticLinkPath+'17',rowstripped)
           rowvalue='<a href="./%s/%s.html"> %s </a>' % (staticLinkPath,rowstripped,row[1])
         else:
           rowvalue='<a href="./%s/%s.html"> %s </a>' % (rowstripped.upper(),rowstripped.upper(),row[1])
@@ -675,10 +680,24 @@ def tabletUIReportTable(cur, query, staticLinkPath=None,field_names=None, extra=
         table_html += "<td>" + getString(row[i]) + "</td>"
       i += 1
 
-    myForm=getButtonV3(targetLink,'viewHTML','View HTML')
+    myForm=getButtonV3(targetLink,'viewHTML','All')
+    myForm=myForm.replace("extrainputs","")
+    table_html += "<td>  " + myForm + "</td>"
+    myForm=getButtonV3(targetLink16,'viewHTML','FY16')
     myForm=myForm.replace("extrainputs","")
     table_html += "<td>" + myForm + "</td>"
-    myForm=getButtonV3(targetcsv,'viewCSV','Download CSV')
+    myForm=getButtonV3(targetLink17,'viewHTML','FY17')
+    myForm=myForm.replace("extrainputs","")
+    table_html += "<td>" + myForm + "</td>"
+
+    table_html += "<td > | </td>"
+    myForm=getButtonV3(targetcsv,'viewCSV','All')
+    myForm=myForm.replace("extrainputs","")
+    table_html += "<td>" + myForm + "</td>"
+    myForm=getButtonV3(targetcsv16,'viewCSV','FY16')
+    myForm=myForm.replace("extrainputs","")
+    table_html += "<td>" + myForm + "</td>"
+    myForm=getButtonV3(targetcsv17,'viewCSV','FY17')
     myForm=myForm.replace("extrainputs","")
     table_html += "<td>" + myForm + "</td>"
 

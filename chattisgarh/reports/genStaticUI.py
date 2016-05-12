@@ -108,11 +108,12 @@ def main():
       blockCode=row[1]
       panchayatName=row[2]
       panchayatCode=row[3]
+      h1Title=districtName.upper()+"-"+blockName+"-"+panchayatName.upper()
       curhtmlfile=htmlDir+districtName.upper()+"/"+blockName.upper()+"/"+panchayatName.upper()+"/"+panchayatName.upper()+".html"
       logger.info(curhtmlfile)
       query="select id,title from reportQueries"
       myhtml=tabletUIReportTable(cur,query,staticLinkPath="REPORTS") 
-      myhtml=htmlWrapperLocal(title="Reports Page", head='<h1 aling="center">Panchayat Reports</h1>', body=myhtml)
+      myhtml=htmlWrapperLocal(title="Reports Page", head='<h1 aling="center">'+h1Title+'</h1>', body=myhtml)
       if not os.path.exists(os.path.dirname(curhtmlfile)):
         os.makedirs(os.path.dirname(curhtmlfile))
       f=open(curhtmlfile,'w')

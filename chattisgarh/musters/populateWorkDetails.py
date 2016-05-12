@@ -58,7 +58,7 @@ def main():
   if args['limit']:
     limitString=" limit %s " % (str(args['limit']))
   else:
-    limitString=" limit 10000 "
+    limitString="  "
   if args['additionalFilters']:
     additionalFilter=" and "+args['additionalFilters']
   query="select state,stateShortCode,districtCode from crawlDistricts where name='%s'" % districtName.lower()
@@ -76,7 +76,7 @@ def main():
     query="use %s " % districtName.lower()
     cur.execute(query)
    
-    query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode,m.blockCode,p.panchayatCode,m.workName,m.dateFrom,m.dateTo from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.wdProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 %s and finyear='%s' %s" %(additionalFilter,infinyear,limitString)
+    query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode,m.blockCode,p.panchayatCode,m.workName,m.dateFrom,m.dateTo from musters m,blocks b,panchayats p where m.wdError=0 and m.isDownloaded=1 and m.wdProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 %s and finyear='%s' %s" %(additionalFilter,infinyear,limitString)
     logger.info(query)
     cur.execute(query)
     if cur.rowcount:
