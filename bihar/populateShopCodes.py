@@ -15,6 +15,7 @@ from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery
+from biharFunctions import cleanFPSName
 from globalSettings import datadir,nregaDataDir
 def argsFetch():
   '''
@@ -62,13 +63,13 @@ def main():
       fpsName2 = fpsName1.replace(" ", "_")
       fpsName3 = fpsName2.replace("/", "")
       fpsName = fpsName3.replace(".", "")
-
-      query="select * from pdsShops where fpsCode='%s' " % (fpsVal)
+      whereClause="where fpsCode='%s' and blockCode='%s' and distCode='%s' " % (fpsVal,blockVal,distVal)
+      query="select * from pdsShops %s " % (whereClause)
       cur.execute(query)
       if cur.rowcount == 0:
-        query="insert into pdsShops (fpsCode) values ('%s') " % (fpsVal)
+        query="insert into pdsShops (fpsCode,blockCode,distCode) values ('%s','%s','%s') " % (fpsVal,blockVal,distVal)
         cur.execute(query)
-      query="update pdsShops set distCode='%s',blockCode='%s',distName='%s',blockName='%s',fpsName='%s' where fpsCode='%s' " % (distVal,blockVal,distName,blockName,fpsName,fpsVal)
+      query="update pdsShops set distName='%s',blockName='%s',fpsName='%s' %s " % (distName,blockName,fpsName,whereClause)
       logger.info(query) 
       cur.execute(query)
 
