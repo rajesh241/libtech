@@ -79,7 +79,7 @@ def getaudio(cur,rawlist):
 def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=None):
   query="use libtech"
   cur.execute(query)
-  query="select bid,type,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats,priority,fileid2,template from broadcasts where bid=%s" %(bid)
+  query="select bid,type,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats,priority,fileid2,template,inQuery from broadcasts where bid=%s" %(bid)
   cur.execute(query)
   row = cur.fetchone()
   tringoaudio=gettringoaudio(row[4])
@@ -98,6 +98,7 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
     maxhour=str(row[3])
     preference='40'
   template=row[13]
+  inQuery=row[14]
   broadcastType=row[1]
   if phone is None:
 #If phone is Null then we would need to schedule Broadcast for the entire group or location
@@ -105,6 +106,8 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
       queryMatchString=getGroupQueryMatchString(cur,row[6]) 
     elif (broadcastType == "location"):
       queryMatchString=getLocationQueryMatchString(row[8],row[9],row[10])
+    elif (broadcastType == "queryBased"):
+      queryMatchString=inQuery
     elif (broadcastType == "transactional"):
       queryMatchString='phone is NULL'  #We dont want any calls to be Added to Call Queue
     else:
