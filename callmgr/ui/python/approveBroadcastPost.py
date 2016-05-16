@@ -20,7 +20,7 @@ import broadcastFunctions
 from broadcastFunctions import gettringoaudio,getaudio,scheduleGeneralBroadcastCall 
 from settings import dbhost,dbuser,dbpasswd,sid,token
 from libtechFunctions import gethtmlheader 
-from libtechFunctions import gethtmlfooter 
+from libtechFunctions import gethtmlfooter,checkDND,addPhoneAddressBook 
 from libtechFunctions import singleRowQuery,arrayToHTMLLine,writecsv 
 from globalSettings import broadcastsReportFile,broadcastReportFilePath
 def main():
@@ -52,6 +52,8 @@ def main():
     myhtml+='<h3>Vendor has been updated for %s</h3>' %(str(bid))
   else:
     phone=form["phone"].value
+    a=addPhoneAddressBook(cur,phone,'','','')
+    dnd,exophone=checkDND(phone)
     query="select fileid,tfileid,fileid2,template from broadcasts where bid="+str(bid)
     cur.execute(query)
     result=cur.fetchone()
@@ -59,7 +61,12 @@ def main():
  #   fileid1=result[2]
     template=result[3]
     tfileid=result[1]
-    error=0
+    if dnd == 'no':
+      query="update addressbook set dnd='no' where phone='%s'" % (phone)
+      cur.execute(query)
+      error=0
+    else:
+      error=1
    # tringoaudio=gettringoaudio(tfileid)
   #  audio,error=getaudio(cur,fileid)
   #  audio1,error1=getaudio(cur,fileid1)
@@ -68,7 +75,8 @@ def main():
       minhour='6'
       maxhour='23'
       exophone='02233814264'
-      vendor=formType
+      vendor='exotel'
+      #vendor=formType
       scheduleGeneralBroadcastCall(cur,bid,phone,vendor,1)
       #query="insert into callQueue (isTest,priority,vendor,bid,minhour,maxhour,phone,audio,audio1,template,tringoaudio,exophone) values (1,20,'"+vendor+"',"+str(bid)+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+audio+"','"+template+"','"+tringoaudio+"','"+exophone+"');"
     #  print query 
@@ -76,7 +84,7 @@ def main():
       myhtml+="<h3>Test Call Placed on number %s</h3>" %(phone)
       myhtml+="<p>Please Note that it may take about 5-10 minutes to get the test call based on system load. Please sit back and relax for sometime and ensure that your phone is not on silent</p>"
     else:
-      print "<h4> Some error has occured. Probably the fileID is not correct</h4>";
+      print "<h4> Test Call could not be placed, Your number might be in DND. Kindly enter some other number</h4>";
   #myhtml+="<h1> Thank You for Doing %s</h1>" %(formType) 
   myhtml+='<h3><a href="./approveBroadcast.py"> Return to Approve Broadcast Page</a></h3>'
   myhtml+='<h3><a href="./../html/broadcastsMain.html"> Return to Main Broadcast Page </a></h3>'

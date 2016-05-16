@@ -92,6 +92,7 @@ while($row=mysqli_fetch_array($results)){
                                   <td><select name="broadcastType" id="broadcast-options">
                                 <option value="group" selected>Group</option>
                                 <option value="location">Location </option>
+                                <option value="queryBased">Query Based </option>
                                 <option value="transactional">Transactional </option>
                                   </td>
                           </tr>
@@ -129,6 +130,13 @@ while($row=mysqli_fetch_array($results)){
                                 </td>
                                 <td>
                                         <input  name="fileid2" type="text" size="50"></input>
+                                </td>
+                        </tr>
+                        <tr>
+                                <td>Enter Query for query based Broadcast. For Advanced users. Leave blank in case you are not doing query based broadcast.
+                                </td>
+                                <td>
+                                        <input  name="inQuery" type="text" size="100"></input>
                                 </td>
                         </tr>         
                         <tr>
