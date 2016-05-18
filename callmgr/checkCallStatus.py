@@ -149,7 +149,7 @@ def awaazdeCallStatus (cur_callid):
 
 def main():
 #Setting some Default Values
-  minduration = 10
+  minduration = 5 
   maxretry=10
 
   todaydate=datetime.date.today().strftime("%d%B%Y")

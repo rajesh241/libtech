@@ -22,7 +22,7 @@ def main():
   cur.execute(query)
   query="use libtech"
   cur.execute(query)
-  query="select bid,type,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats,priority,fileid2,template from broadcasts where error=0 and approved=1 and processed=0 and startDate <= CURDATE();"
+  query="select bid,type,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats,priority,fileid2,template,inQuery from broadcasts where error=0 and approved=1 and processed=0 and startDate <= CURDATE();"
   print(query)
   cur.execute(query)
   results = cur.fetchall()

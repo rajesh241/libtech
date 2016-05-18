@@ -56,7 +56,7 @@ def main():
   tableArray=['Broadcast ID', 'Broadcast Name','Test','Remarks','Approve','Mark Error'] 
   myhtml+=arrayToHTMLLine('th',tableArray)
  # print myhtml
-  query="select bid,name,type,groups,district,blocks,panchayats,vendor from broadcasts where bid>1000 and approved=0 and error=0"
+  query="select bid,name,type,groups,district,blocks,panchayats,vendor,inQuery from broadcasts where bid>1000 and approved=0 and error=0"
   #print query
   cur.execute(query)
   results = cur.fetchall()
@@ -64,6 +64,7 @@ def main():
     bid=row[0]
     name=row[1]
     vendor_value=row[7]
+    inQuery=row[8]
     vendor = '''
 <select name="vendorName">
   <option value="any">Any</option>
@@ -81,6 +82,8 @@ def main():
       queryMatchString=getGroupQueryMatchString(cur,row[3]) 
     elif (broadcastType == "location"):
       queryMatchString=getLocationQueryMatchString(row[4],row[5],row[6])
+    elif (broadcastType == "queryBased"):
+      queryMatchString=inQuery
     else:
       queryMatchString=" district='abcd'"
       error=1
