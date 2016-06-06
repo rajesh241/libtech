@@ -14,7 +14,7 @@ fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../../includes/')
 sys.path.insert(0, fileDir+'/../../')
 import settings
-from settings import dbhost,dbuser,dbpasswd,sid,token
+from settings import dbhost,dbuser,dbpasswd,sid,token,crawlDistrict
 from libtechFunctions import singleRowQuery
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapper, getForm, getButton, getButtonV2,getCenterAligned
 
@@ -26,7 +26,7 @@ def main():
   db.autocommit(True)
   query="SET NAMES utf8"
   cur.execute(query)
-  query="use surguja"
+  query="use %s" % (crawlDistrict)
   cur.execute(query)
   myhtml=''
   query="select count(*)  from musters m,blocks b, panchayats p where b.isRequired=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 and m.finyear=16  and m.musterType='10' and (m.isDownloaded=0 or m.wdError=1 or (m.wdComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) )  order by TIMESTAMPDIFF(DAY, m.downloadAttemptDate, now()) desc;"
@@ -41,7 +41,7 @@ def main():
   totalMustersPendingProcess=singleRowQuery(cur,query)
   myhtml+=  getCenterAligned('<h3 style="color:blue">  Total Musters Pending Download FY17     - %s</h3>'  % (str(totalMustersPendingDownload)))
   myhtml+=  getCenterAligned('<h3 style="color:blue">  Total Musters Pending Process  FY17   - %s</h3>'  % (str(totalMustersPendingProcess)))
-  myhtml=htmlWrapper(title="Surguja NREGA Download", head='<h1 aling="center">Surguja NREGA Download Status</h1>', body=myhtml)
+  myhtml=htmlWrapper(title="NREGA Download", head='<h1 aling="center">NREGA Download Status</h1>', body=myhtml)
   print myhtml.encode('UTF-8')
   #print myhtml
 if __name__ == '__main__':

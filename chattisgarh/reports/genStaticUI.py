@@ -63,6 +63,8 @@ def main():
     myhtml=tabletUIQueryToHTMLTable(cur,query) 
     myhtml=htmlWrapperLocal(title="Select Districts", head='<h1 aling="center">Select District</h1>', body=myhtml)
     logger.info(indexfile)
+    if not os.path.exists(os.path.dirname(indexfile)):
+      os.makedirs(os.path.dirname(indexfile))
     f=open(indexfile,'w')
     f.write(myhtml.encode("UTF-8"))
 
