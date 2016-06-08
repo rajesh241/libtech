@@ -168,36 +168,34 @@ def main():
                 else:
                   creditedDateQueryString="creditedDate=NULL"
 
-
-                query="insert into workDetails (musterNo,musterIndex,finyear,blockCode,createDate) values (%s,%s,'%s','%s',NOW()) " % (musterNo,musterIndex,finyear,blockCode)
-                logger.info(query)
-                try:
-                  cur.execute(query)
-                except:
-                  logger.info('This Record ALready Exists' + query)
-                query="update workDetails set updateDate=NOW(),blockName='%s',panchayatCode='%s',panchayatName='%s',name='%s',jobcard='%s',jcNumber='%s',workCode='%s',workName='%s',dateFrom='%s',dateTo='%s',daysWorked=%s,dayWage=%s,totalWage=%s,accountNo='%s',wagelistNo='%s',bankNameOrPOName='%s',branchNameOrPOAddress='%s',branchCodeOrPOCode='%s',status='%s' where musterNo=%s and musterIndex=%s and finyear='%s' and blockCode='%s' " % (blockName,panchayatCode,panchayatNameRaw,name,jobcard,jcNumber,workCode,workName.decode('UTF-8'),dateFrom,dateTo,str(daysWorked),str(dayWage),str(totalWage),str(accountNo),wagelistNo,bankNameOrPOName,branchNameOrPOAddress,branchCodeOrPOCode,status,musterNo,musterIndex,finyear,blockCode) 
-                logger.info(query)
-                cur.execute(query)
-
                 if paymentDateString != '':
                   paymentDate = time.strptime(paymentDateString, '%d/%m/%Y')
                   paymentDate = time.strftime('%Y-%m-%d %H:%M:%S', paymentDate)
-                  query="update workDetails set paymentDate='%s' where musterNo=%s and musterIndex=%s and finyear='%s' and blockCode='%s'" % (paymentDate,musterNo,musterIndex,finyear,blockCode)
-                  cur.execute(query)
+                  paymentDateQueryString = " paymentDate='%s' " % paymentDate
                 else:
-                  query="update workDetails set paymentDate=NULL where musterNo=%s and musterIndex=%s and finyear='%s' and blockCode='%s'" % (musterNo,musterIndex,finyear,blockCode)
-                  cur.execute(query)
+                  paymentDateQueryString=" paymentDate=NULL "
 
-
-                if creditedDatestring != '':
-                  creditedDate = time.strptime(creditedDatestring, '%d/%m/%Y')
-                  creditedDate = time.strftime('%Y-%m-%d %H:%M:%S', creditedDate)
-                  query="update workDetails set creditedDate='%s' where musterNo=%s and musterIndex=%s and finyear='%s' and blockCode='%s'" % (creditedDate,musterNo,musterIndex,finyear,blockCode)
+                #Here first we need to find out if the record already exists
+                logger.info(" muster No: %s  musterIndex : %s  finyear: %s  blockCode: %s " % (musterNo, musterIndex, finyear, blockCode))
+                query="select id from workDetails where musterNo=%s and musterIndex=%s and finyear='%s' and blockCode='%s'" % (musterNo,musterIndex,finyear,blockCode)
+                cur.execute(query)
+                if cur.rowcount == 0:
+                  logger.info("This record does not exist")
+                  query="insert into workDetails (musterNo,musterIndex,finyear,blockCode,createDate) values (%s,%s,'%s','%s',NOW()) " % (musterNo,musterIndex,finyear,blockCode)
+                  logger.info(query)
                   cur.execute(query)
+                  mtID=str(cur.lastrowid)
                 else:
-                  query="update workDetails set creditedDate=NULL where musterNo=%s and musterIndex=%s and finyear='%s' and blockCode='%s'" % (musterNo,musterIndex,finyear,blockCode)
-                  cur.execute(query)
+                  row1=cur.fetchone() 
+                  mtID=str(row1[0])
 
+                logger.info("The musterTransaction ID: %s " % mtID)
+
+                #query="update workDetails set %s,%s,updateDate=NOW(),blockName='%s',panchayatCode='%s',panchayatName='%s',name='%s',jobcard='%s',jcNumber='%s',workCode='%s',workName='%s',dateFrom='%s',dateTo='%s',daysWorked=%s,dayWage=%s,totalWage=%s,accountNo='%s',wagelistNo='%s',bankNameOrPOName='%s',branchNameOrPOAddress='%s',branchCodeOrPOCode='%s',status='%s' where musterNo=%s and musterIndex=%s and finyear='%s' and blockCode='%s' " % (creditedDateQueryString,paymentDateQueryString,blockName,panchayatCode,panchayatNameRaw,name,jobcard,jcNumber,workCode,workName.decode('UTF-8'),dateFrom,dateTo,str(daysWorked),str(dayWage),str(totalWage),str(accountNo),wagelistNo,bankNameOrPOName,branchNameOrPOAddress,branchCodeOrPOCode,status,musterNo,musterIndex,finyear,blockCode) 
+                query="update workDetails set %s,%s,updateDate=NOW(),blockName='%s',panchayatCode='%s',panchayatName='%s',name='%s',jobcard='%s',jcNumber='%s',workCode='%s',workName='%s',dateFrom='%s',dateTo='%s',daysWorked=%s,dayWage=%s,totalWage=%s,accountNo='%s',wagelistNo='%s',bankNameOrPOName='%s',branchNameOrPOAddress='%s',branchCodeOrPOCode='%s',status='%s' where id=%s" % (creditedDateQueryString,paymentDateQueryString,blockName,panchayatCode,panchayatNameRaw,name,jobcard,jcNumber,workCode,workName.decode('UTF-8'),dateFrom,dateTo,str(daysWorked),str(dayWage),str(totalWage),str(accountNo),wagelistNo,bankNameOrPOName,branchNameOrPOAddress,branchCodeOrPOCode,status,mtID) 
+                #logger.info(query)
+                cur.execute(query)
+#
           query="update musters set wdProcessed=1,wdComplete=%s where id=%s" %(str(isComplete),str(musterID))
           logger.info(query)
           cur.execute(query)
