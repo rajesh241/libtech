@@ -29,6 +29,7 @@ def argsFetch():
   parser = argparse.ArgumentParser(description='Crawl Jobcard Register')
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-b', '--browser', help='Specify the browser to test with', required=False)
+  parser.add_argument('-d', '--district', help='District for which you need to Download', required=True)
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
 
   args = vars(parser.parse_args())
@@ -48,14 +49,31 @@ def main():
   cur.execute(query)
   display = displayInitialize(args['visible'])
   driver = driverInitialize(args['browser'])
+  districtName=args['district']
+  logger.info("DistrictName "+districtName)
   
+  query="use libtech"
+  cur.execute(query)
+  query="select crawlIP from crawlDistricts where name='%s'" % districtName.lower()
+  crawlIP=singleRowQuery(cur,query)
+  query="select state from crawlDistricts where name='%s'" % districtName.lower()
+  stateName=singleRowQuery(cur,query)
+  query="select stateShortCode from crawlDistricts where name='%s'" % districtName.lower()
+  stateShortCode=singleRowQuery(cur,query)
+  query="select districtCode from crawlDistricts where name='%s'" % districtName.lower()
+  districtCode=singleRowQuery(cur,query)
+  jobcardPrefix="%s-%s" % (stateShortCode,districtCode)
+  logger.info("crawlIP "+crawlIP)
+  logger.info("State Name "+stateName)
+  query="use %s" % districtName.lower()
+  cur.execute(query)
   #Start Program here
   url="http://nrega.nic.in/netnrega/sthome.aspx"
   driver.get(url)
-  elem = driver.find_element_by_link_text("CHHATTISGARH")
+  elem = driver.find_element_by_link_text(stateName)
   elem.send_keys(Keys.RETURN)
   time.sleep(1)
-  elem = driver.find_element_by_link_text("SURGUJA")
+  elem = driver.find_element_by_link_text(districtName.upper())
   elem.send_keys(Keys.RETURN)
   time.sleep(1)
   #Query to get all the blocks
@@ -110,7 +128,7 @@ def main():
             jclink=link.get('href')
           if len(cols) > 2:
             jcno="".join(cols[1].text.split())
-          if "CH-05" in jcno:
+          if jobcardPrefix in jcno:
             logger.info(jcno)
             query="insert into jobcardRegister (jobcard,stateCode,districtCode,blockCode,panchayatCode) values ('"+jcno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"')"
             try:

@@ -94,7 +94,7 @@ def main():
       query="insert into blocks (name,stateCode,districtCode,blockCode,isActive) values ('%s','%s','%s','%s',1)" % (blockName,stateCode,districtCode,blockCode)
       logger.info(query)
       finyear='2015-2016'
-      #cur.execute(query)
+      cur.execute(query)
       panchayaturl="http://%s/netnrega/Progofficer/PoIndexFrame.aspx?flag_debited=R&lflag=local&District_Code=%s&district_name=%s&state_name=%s&state_Code=%s&finyear=%s&check=1&block_name=%s&Block_Code=%s" %(crawlIP,stateCode+districtCode,districtName.upper(),stateName.upper(),stateCode,finyear,blockName.upper(),stateCode+districtCode+blockCode)
       logger.info("URL "+panchayaturl)
       r  = requests.get(panchayaturl)
