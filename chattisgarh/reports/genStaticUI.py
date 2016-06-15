@@ -56,6 +56,12 @@ def main():
     cur.execute(query)
     htmlDir=nregaStaticReportsDir.replace("districtName",districtName.lower())
     logger.info(htmlDir)
+    myhtml='<h1>Welcome to %s DATA Dashboard </h1><h2><a href="./reports/">Go to Districts </a><h2>' % stateName
+    indexfile=htmlDir+"/../index.html"
+    if not os.path.exists(os.path.dirname(indexfile)):
+      os.makedirs(os.path.dirname(indexfile))
+    f=open(indexfile,'w')
+    f.write(myhtml.encode("UTF-8"))
     indexfile=htmlDir+"index.html"
     query="use libtech"
     cur.execute(query)
@@ -73,7 +79,7 @@ def main():
     cur.execute(query)
     disthtmlfile=htmlDir+districtName.upper()+"/"+districtName.upper()+".html"
     myhtml=''
-    query="select name from blocks where isActive=1"
+    query="select name from blocks where isRequired=1"
     myhtml=tabletUIQueryToHTMLTable(cur,query) 
     myhtml=htmlWrapperLocal(title="Block Page", head='<h1 aling="center">Select Block</h1>', body=myhtml)
     if not os.path.exists(os.path.dirname(disthtmlfile)):
@@ -82,7 +88,7 @@ def main():
     f.write(myhtml.encode("UTF-8"))
     
     #Generate Block Level Pages
-    query="select name,blockCode from blocks where isActive=1"
+    query="select name,blockCode from blocks where isRequired=1"
     cur.execute(query)
     results=cur.fetchall()
     for row in results:
