@@ -22,6 +22,8 @@ from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery
 from biharSettings import pdsDataDir
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
+from urllib import urlencode
+import httplib2
 def argsFetch():
   '''
   Paser for the argument list that returns the args list
@@ -35,11 +37,13 @@ def argsFetch():
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-limit', '--limit', help='limit the number of shops that you want to download', required=False)
   parser.add_argument('-fps', '--fpsCode', help='Enter the FPS code of shop that you want to download data for', required=False)
+  parser.add_argument('-d', '--distCode', help='Enter the Dist code of district that you want to download data for', required=False)
 
   args = vars(parser.parse_args())
   return args
 
 def main():
+  httplib2.debuglevel = 1
   monthLabels=['0','JAN','FEB','MAR','APR','MAY','JUNE','JULY','AUG','SEP','OCT','NOV','DEC']
   now = datetime.datetime.now()
   args = argsFetch()
@@ -66,16 +70,18 @@ def main():
   additionalFilters=""
   if args['fpsCode']:
     additionalFilters=" where fpsCode='%s' " % (args['fpsCode'])
-  display = displayInitialize(args['visible'])
-  driver = driverInitialize(args['browser'])
+  if args['distCode']:
+    additionalFilters=" where distCode='%s' " % (args['distCode'])
+  #display = displayInitialize(args['visible'])
+  #driver = driverInitialize(args['browser'])
  
   #Start Program here
   years=['2015','2016']
-  years=['2016']
+ # years=['2016']
   for inyear in years:
     base_url = "http://sfc.bihar.gov.in/"
    
-    query="select id,distCode,blockCode,fpsCode,distName,blockName,fpsName from pdsShops order by downloadAttemptDate %s %s " % (additionalFilters,limitString)
+    query="select id,distCode,blockCode,fpsCode,distName,blockName,fpsName from pdsShops %s order by downloadAttemptDate %s " % (additionalFilters,limitString)
     logger.info(query)
     cur.execute(query)
     results=cur.fetchall()
@@ -91,8 +97,8 @@ def main():
       query="update pdsShops set downloadAttemptDate=NOW() where id=%s" % (rowid)
       cur.execute(query)
       month=0
-      driver.get("http://sfc.bihar.gov.in/login.htm")
-      driver.get(base_url + "/fpshopsSummaryDetails.htm")
+      #driver.get("http://sfc.bihar.gov.in/login.htm")
+      #driver.get(base_url + "/fpshopsSummaryDetails.htm")
       while month < 12:
         month=month+1
         if ( (now.year > int(inyear)) or ((now.year == int(inyear)) and (now.month >= month)) ):
@@ -115,20 +121,39 @@ def main():
               startDownload=1
               
           if startDownload==1:
-            logger.info("THE data would be downloaded") 
-            Select(driver.find_element_by_id("year")).select_by_visible_text(inyear)
-            time.sleep(2)
-            Select(driver.find_element_by_id("month")).select_by_value(str(month))
-            time.sleep(2)
-            Select(driver.find_element_by_id("district_id")).select_by_value(distCode)
-            time.sleep(2)
-            Select(driver.find_element_by_id("block_id")).select_by_value(blockCode)
-            time.sleep(2)
-            Select(driver.find_element_by_id("fpshop_id")).select_by_value(fpsCode)
-            driver.find_element_by_name("button").click()
-            time.sleep(5)
+            hlib = httplib2.Http('.cache')
+            url = 'http://sfc.bihar.gov.in/fpshopsSummaryDetails.htm'
+
+            data = {
+             'mode':'searchFPShopDetails',
+             'dyna(state_id)':'10',
+             'dyna(fpsCode)':'',
+             'dyna(scheme_code)':'',
+             'dyna(year)':inyear,
+             'dyna(month)':month,
+             'dyna(district_id)':distCode,
+             'dyna(block_id)':blockCode,
+             'dyna(fpshop_id)':fpsCode,
+             }
+
+            #print(urlencode(data))
+            response, fpsHtml = hlib.request(url, 'POST', urlencode(data), headers = {'Content-Type': 'application/x-www-form-urlencoded'})
+
+
+         #  logger.info("THE data would be downloaded") 
+         #  Select(driver.find_element_by_id("year")).select_by_visible_text(inyear)
+         #  time.sleep(2)
+         #  Select(driver.find_element_by_id("month")).select_by_value(str(month))
+         #  time.sleep(2)
+         #  Select(driver.find_element_by_id("district_id")).select_by_value(distCode)
+         #  time.sleep(2)
+         #  Select(driver.find_element_by_id("block_id")).select_by_value(blockCode)
+         #  time.sleep(2)
+         #  Select(driver.find_element_by_id("fpshop_id")).select_by_value(fpsCode)
+         #  driver.find_element_by_name("button").click()
+         #  time.sleep(5)
    
-            fpsHtml = driver.page_source # Saving the result page's source codes
+         #  fpsHtml = driver.page_source # Saving the result page's source codes
             fpsSoup=BeautifulSoup(fpsHtml,"lxml")
             tablehtml=''
             isDownloaded=0
@@ -171,8 +196,8 @@ def main():
    
   # End program here
 
-  driverFinalize(driver)
-  displayFinalize(display)
+  #driverFinalize(driver)
+  #displayFinalize(display)
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
 
 
