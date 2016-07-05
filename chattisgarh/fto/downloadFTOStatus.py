@@ -52,14 +52,10 @@ def main():
     limitString=' limit '+args['limit']
   if args['district']:
     districtName=args['district']
-  else:
-    districtName='surguja'
  
   logger.info("DistrictName "+districtName)
   if args['finyear']:
     finyear=args['finyear']
-  else:
-    finyear='16'
   logger.info("finyear "+finyear)
 #Query to get all the blocks
   query="use libtech"

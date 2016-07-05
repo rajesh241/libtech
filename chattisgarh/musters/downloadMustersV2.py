@@ -92,7 +92,7 @@ def main():
     panchayatNameOnlyLetters=re.sub(r"[^A-Za-z]+", '', panchayatName)
     musterNo=row[2]
     stateCode=row[3]
-    districtCode=row[4]
+    districtCode=row[20]
     blockCode=row[5]
     panchayatCode=row[6]
     finyear=row[7]

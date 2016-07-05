@@ -30,6 +30,7 @@ def argsFetch():
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-limit', '--limit', help='Limit the number of ftos to be downloaded', required=False)
   parser.add_argument('-d', '--district', help='District for which you need to Download', required=True)
+  parser.add_argument('-f', '--finyear', help='Input Financial Year', required=True)
 
   args = vars(parser.parse_args())
   return args
@@ -52,8 +53,8 @@ def main():
     limitString=' limit '+args['limit']
   if args['district']:
     districtName=args['district']
-  else:
-    districtName='surguja'
+  if args['finyear']:
+    infinyear=args['finyear']
  
   logger.info("DistrictName "+districtName)
 #Query to get all the blocks
@@ -73,7 +74,7 @@ def main():
   ftofilepath=nregaDataDir.replace("stateName",stateName.title())+"/"+districtName.upper()+"/"
 #ftofilepath="/home/libtech/libtechdata/CHATTISGARH/"+districtName+"/"
  
-  query=" select f.id,f.ftoNo,b.name,f.finyear from ftoDetails f,blocks b where b.blockCode=f.blockCode and b.isActive=1 and f.isDownloaded=1 and f.isProcessed=0 and f.finyear='16' %s" %limitString
+  query=" select f.id,f.ftoNo,b.name,f.finyear from ftoDetails f,blocks b where b.blockCode=f.blockCode and b.isRequired=1 and f.isDownloaded=1 and f.isProcessed=0 and f.finyear='%s' %s" %(infinyear,limitString)
   cur.execute(query)
   logger.info(query)
   if cur.rowcount:
@@ -112,8 +113,10 @@ def main():
         for tr in rows:
           cols = tr.findAll('td')
           tdtext=''
+          logger.info("Error flag is Zero")
           block= cols[1].string.strip()
-          if blockName==block.upper():
+          logger.info("%s - %s " % (blockName,block.upper()))
+          if blockName.upper()==block.upper():
             srno= cols[0].string.strip()
             jobcardpanchayat="".join(cols[2].text.split())
             referenceNo="".join(cols[3].text.split())
@@ -151,7 +154,7 @@ def main():
               bankprocessdate=''
             logger.info(ftoNo+"  "+jobcard+"  "+panchayat)
             query="insert into ftoTransactionDetails (ftoNo,referenceNo,jobcard,applicantName,primaryAccountHolder,accountNo,wagelistNo,transactionDate,processedDate,status,rejectionReason,utrNo,creditedAmount,bankCode,IFSCCode) values ('"+ftoNo+"','"+referenceNo+"','"+jobcard+"','"+applicantName+"','"+primaryAccountHolder+"','"+accountNo+"','"+wagelistNo+"','"+transactiondate+"','"+processeddate+"','"+status+"','"+rejectionReason+"','"+utrNo+"',"+str(creditedAmount)+",'"+bankCode+"','"+IFSCCode+"');"
-            #print query
+            logger.info(query)
             try:
               cur.execute(query)
             except MySQLdb.IntegrityError,e:

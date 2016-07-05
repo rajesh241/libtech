@@ -47,8 +47,6 @@ def main():
     limitString=' limit '+args['limit']
   if args['district']:
     districtName=args['district']
-  else:
-    districtName='surguja'
  
   logger.info("DistrictName "+districtName)
   if args['finyear']:
@@ -90,13 +88,8 @@ def main():
     fullBlockCode=stateCode+districtCode+blockCode
     fullDistrictCode=stateCode+districtCode
     logger.info(stateCode+districtCode+blockCode+blockName)
-    if finyear=='16':
-      fullfinyear='2015-2016'
-    elif finyear=='15':
-      fullfinyear='2014-2015'
-    else:
-      fullfinyear='2013-2014'
-    url="http://"+crawlIP+"/netnrega/FTO/fto_trasction_dtl.aspx?page=p&rptblk=t&state_code=33&state_name=CHHATTISGARH&district_code="+fullDistrictCode+"&district_name="+districtName.upper()+"&block_code="+fullBlockCode+"&block_name="+blockName+"&flg=W&fin_year="+fullfinyear+"&fto_no="+ftono
+    fullfinyear=getFullFinYear(finyear)
+    url="http://"+crawlIP+"/netnrega/FTO/fto_trasction_dtl.aspx?page=p&rptblk=t&state_code="+stateCode+"&state_name="+stateName.upper()+"&district_code="+fullDistrictCode+"&district_name="+districtName.upper()+"&block_code="+fullBlockCode+"&block_name="+blockName+"&flg=W&fin_year="+fullfinyear+"&fto_no="+ftono
     logger.info(str(ftoid)+"   "+fullfinyear+"  "+ftono)
     logger.info(url)
     ftofilename=ftofilepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftono+".html"

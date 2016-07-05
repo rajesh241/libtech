@@ -64,14 +64,10 @@ def main():
 
   if args['district']:
     districtName=args['district']
-  else:
-    districtName='surguja'
  
   logger.info("DistrictName "+districtName)
   if args['finyear']:
     finyear=args['finyear']
-  else:
-    finyear='16'
   logger.info("finyear "+finyear)
   fullFinyear=getFullFinYear(finyear) 
 #Query to get all the blocks
