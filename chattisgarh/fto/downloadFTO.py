@@ -14,6 +14,7 @@ from libtechFunctions import getFullFinYear,singleRowQuery
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
+from crawlSettings import crawlIP,stateName,stateShortCode,districtCode
 def argsFetch():
   '''
   Paser for the argument list that returns the args list
@@ -36,12 +37,6 @@ def main():
 
   logger.info("BEGIN PROCESSING...")
 
-  db = dbInitialize(db="libtech", charset="utf8")  # The rest is updated automatically in the function
-  cur=db.cursor()
-  db.autocommit(True)
-  #Query to set up Database to read Hindi Characters
-  query="SET NAMES utf8"
-  cur.execute(query)
   limitString=''
   if args['limit']:
     limitString=' limit '+args['limit']
@@ -53,25 +48,21 @@ def main():
     finyear=args['finyear']
   else:
     finyear='16'
+  db = dbInitialize(db=districtName.lower(), charset="utf8")  # The rest is updated automatically in the function
+  cur=db.cursor()
+  db.autocommit(True)
+  #Query to set up Database to read Hindi Characters
+  query="SET NAMES utf8"
+  cur.execute(query)
   logger.info("finyear "+finyear)
   fullFinyear=getFullFinYear(finyear) 
 #Query to get all the blocks
-  query="use libtech"
-  cur.execute(query)
-  query="select crawlIP from crawlDistricts where name='%s'" % districtName.lower()
-  crawlIP=singleRowQuery(cur,query)
-  query="select state from crawlDistricts where name='%s'" % districtName.lower()
-  stateName=singleRowQuery(cur,query)
-  logger.info("crawlIP "+crawlIP)
-  logger.info("State Name "+stateName)
-  query="use %s" % districtName.lower()
-  cur.execute(query)
 
 
 
   ftofilepath=nregaDataDir.replace("stateName",stateName.title())+"/"+districtName.upper()+"/"
 #ftofilepath="/home/libtech/libtechdata/CHATTISGARH/"+districtName+"/"
-  query="select b.name,f.ftoNo,f.stateCode,f.districtCode,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where f.isDownloaded=0 and f.finyear='%s' and f.blockCode=b.blockCode and f.stateCode=b.stateCode and f.districtCode=b.districtCode %s;" % (finyear,limitString)
+  query="select b.name,f.ftoNo,f.stateCode,f.districtCode,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where f.isDownloaded=0 and f.finyear='%s' and f.blockCode=b.blockCode and f.stateCode=b.stateCode and f.districtCode=b.districtCode  %s;" % (finyear,limitString)
   logger.info(query)
 #query="select b.name,f.ftoNo,f.stateCode,f.districtCode,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where f.isDownloaded=0 and f.blockCode=b.blockCode and f.stateCode=b.stateCode and f.districtCode=b.districtCode and b.blockCode='003';"
   cur.execute(query)

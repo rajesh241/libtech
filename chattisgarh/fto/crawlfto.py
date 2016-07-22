@@ -9,6 +9,7 @@ import re
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
 from settings import dbhost,dbuser,dbpasswd,sid,token
+from crawlSettings import crawlIP,stateName
 #Error File Defination
 errorfile = open('/tmp/crawlfto.log', 'w')
 
@@ -26,22 +27,9 @@ def argsFetch():
   import argparse
 
   parser = argparse.ArgumentParser(description='Script for crawling, downloading & parsing musters')
-  parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
-  parser.add_argument('-t', '--timeout', help='Time to wait before a page loads', required=False)
-  parser.add_argument('-b', '--browser', help='Specify the browser to test with', required=False)
-  parser.add_argument('-u', '--url', help='Specify the url to crawl', required=False)
-  parser.add_argument('-d', '--directory', help='Specify directory to download html file to', required=False)
-  parser.add_argument('-q', '--query', help='Query to specify the workset, E.g ... where id=147', required=False)
-  parser.add_argument('-j', '--jobcard', help='Specify the jobcard to download/push', required=False)
-  parser.add_argument('-c', '--crawl', help='Crawl the Disbursement Data', required=False)
-  parser.add_argument('-f', '--fetch', help='Fetch the Jobcard Details', required=False)
-  parser.add_argument('-finyear', '--finyear', help='Download musters for that finyear', required=False)
-  parser.add_argument('-district', '--district', help='District for which you need to Download', required=False)
-  parser.add_argument('-p', '--parse', help='Parse Jobcard HTML for Muster Info', required=False, action='store_const', const=True)
-  parser.add_argument('-r', '--process', help='Process downloaded HTML files for Muster Info', required=False, action='store_const', const=True)
-  parser.add_argument('-P', '--push', help='Push Muster Info into the DB on the go', required=False, action='store_const', const=True)
-  parser.add_argument('-J', '--jobcard-details', help='Fetch the Jobcard Details for DB jobcardDetails table', required=False, action='store_const', const=True)
+  parser.add_argument('-f', '--finyear', help='Download musters for that finyear', required=True)
+  parser.add_argument('-d', '--district', help='District for which you need to Download', required=True)
 
   args = vars(parser.parse_args())
   return args
@@ -55,12 +43,6 @@ def main():
   #This is a Kludge to remove all the input tags from the html because for some reason Beautiful Soup does not parse the html correctly
   regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
 
-  db = dbInitialize(db="libtech", charset="utf8")  # The rest is updated automatically in the function
-  cur=db.cursor()
-  db.autocommit(True)
-  #Query to set up Database to read Hindi Characters
-  query="SET NAMES utf8"
-  cur.execute(query)
 
   if args['district']:
     districtName=args['district']
@@ -68,21 +50,19 @@ def main():
   logger.info("DistrictName "+districtName)
   if args['finyear']:
     finyear=args['finyear']
+
+
   logger.info("finyear "+finyear)
   fullFinyear=getFullFinYear(finyear) 
+  db = dbInitialize(db=districtName.lower(), charset="utf8")  # The rest is updated automatically in the function
+  cur=db.cursor()
+  db.autocommit(True)
+  #Query to set up Database to read Hindi Characters
+  query="SET NAMES utf8"
+  cur.execute(query)
 #Query to get all the blocks
-  query="use libtech"
-  cur.execute(query)
-  query="select crawlIP from crawlDistricts where name='%s'" % districtName.lower()
-  crawlIP=singleRowQuery(cur,query)
-  query="select state from crawlDistricts where name='%s'" % districtName.lower()
-  stateName=singleRowQuery(cur,query)
-  logger.info("crawlIP "+crawlIP)
-  logger.info("State Name "+stateName)
-  query="use %s" % districtName.lower()
-  cur.execute(query)
 
-  query="select stateCode,districtCode,blockCode,name from blocks where isActive=1"
+  query="select stateCode,districtCode,blockCode,name from blocks where isRequired=1"
   cur.execute(query)
   results = cur.fetchall()
   for row in results:

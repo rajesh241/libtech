@@ -437,4 +437,9 @@ def getBlockCodeFromJobcard(jobcard):
 def getPanchayatCodeFromJobcard(jobcard):
   return jobcard[10:13]
 
-
+def writeFile(filename,filedata):
+  if not os.path.exists(os.path.dirname(filename)):
+    os.makedirs(os.path.dirname(filename))
+  myfile = open(filename, "w")
+  myfile.write(filedata.encode("UTF-8"))
+  myfile.close()

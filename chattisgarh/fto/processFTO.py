@@ -20,6 +20,7 @@ from libtechFunctions import getFullFinYear,singleRowQuery
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
+from crawlSettings import crawlIP,stateName,stateShortCode,districtCode
 def argsFetch():
   '''
   Paser for the argument list that returns the args list
@@ -41,8 +42,10 @@ def main():
   logger.info('args: %s', str(args))
 
   logger.info("BEGIN PROCESSING...")
+  if args['district']:
+    districtName=args['district']
 
-  db = dbInitialize(db="libtech", charset="utf8")  # The rest is updated automatically in the function
+  db = dbInitialize(db=districtName.lower(), charset="utf8")  # The rest is updated automatically in the function
   cur=db.cursor()
   db.autocommit(True)
   #Query to set up Database to read Hindi Characters
@@ -51,19 +54,11 @@ def main():
   limitString=''
   if args['limit']:
     limitString=' limit '+args['limit']
-  if args['district']:
-    districtName=args['district']
   if args['finyear']:
     infinyear=args['finyear']
  
   logger.info("DistrictName "+districtName)
 #Query to get all the blocks
-  query="use libtech"
-  cur.execute(query)
-  query="select crawlIP from crawlDistricts where name='%s'" % districtName.lower()
-  crawlIP=singleRowQuery(cur,query)
-  query="select state from crawlDistricts where name='%s'" % districtName.lower()
-  stateName=singleRowQuery(cur,query)
   logger.info("crawlIP "+crawlIP)
   logger.info("State Name "+stateName)
   query="use %s" % districtName.lower()
