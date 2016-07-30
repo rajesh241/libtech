@@ -84,7 +84,7 @@ def main():
     filterClause=' and pd.id=%s ' % rowid
   rowid='19632';
   
-  query="select pd.id,pd.distCode,pd.blockCode,pd.fpsCode,pd.fpsMonth,pd.fpsYear,ps.distName,ps.blockName,ps.fpsName from pdsShopsDownloadStatus pd,pdsShops ps where pd.distCode=ps.distCode and pd.blockCode=ps.blockCode and pd.fpsCode=ps.fpsCode and pd.isDownloaded=1 and pd.isComplete=0 %s %s" % (filterClause,limitString)
+  query="select pd.id,pd.distCode,pd.blockCode,pd.fpsCode,pd.fpsMonth,pd.fpsYear,ps.distName,ps.blockName,ps.fpsName from pdsShopsDownloadStatus pd,pdsShops ps where pd.distCode=ps.distCode and pd.blockCode=ps.blockCode and pd.fpsCode=ps.fpsCode and pd.isDownloaded=1 and (pd.statusRemark != 'completeRecord' or pd.statusRemark is NULL) %s %s" % (filterClause,limitString)
   logger.info(query)
   cur.execute(query)
   results=cur.fetchall()
@@ -152,7 +152,7 @@ def main():
             if isComplete==0:
               statusRemark="deliveryDateAbsent"
             else:
-              statusRemark="CompleteRecord"
+              statusRemark="completeRecord"
             #amount_wheat=table2Cols[4].text.lstrip().rstrip()
             #amount_rice=table2Cols[5].text.lstrip().rstrip()
             logger.info("scheme: %s   wheat : %s rice : %s  status : %s sioStatus: %s" % (scheme,allot_wheat,allot_rice,status,sioStatus))
@@ -185,6 +185,11 @@ def main():
     query="update pdsShopsDownloadStatus set statusRemark='%s' where id=%s " % (finalStatusRemark,str(rowid))
     logger.info(query)
     cur.execute(query)
+    if finalStatusRemark != 'completeRecord':
+      query="update pdsShopsDownloadStatus set isDownloaded=0 where id=%s " %(str(rowid))
+      logger.info(query)
+      cur.execute(query)
+ 
 
 
 
