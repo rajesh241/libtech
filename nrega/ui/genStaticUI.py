@@ -48,52 +48,72 @@ def main():
   query="SET NAMES utf8"
   cur.execute(query)
   
-  crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
   htmlDir=nregaDir.replace("districtName",districtName.lower())
   logger.info(htmlDir)
-  disthtmlfile=htmlDir+districtName.upper()+"/"+districtName.upper()+".html"
-  logger.info(disthtmlfile)
-  query="select name from blocks where isRequired=1"
-  myhtml=tabletUIQueryToHTMLTable(cur,query) 
-  myhtml=htmlWrapperLocal(title="Block Page", head='<h1 aling="center">Select Block</h1>', body=myhtml)
-  writeFile(disthtmlfile,myhtml)
-  
 
-  #Generate Block Level Pages
-  query="select name,blockCode from blocks where isRequired=1"
+  #Generate District Level UI
+  curhtmlfile=htmlDir+"/districts.html"
+  logger.info(curhtmlfile)
+  query="use crawlDistricts"
   cur.execute(query)
-  results=cur.fetchall()
-  for row in results:
-    blockName=row[0]
-    blockCode=row[1]
-    h1title=districtName.upper()+"-"+blockName
-    curhtmlfile=htmlDir+districtName.upper()+"/"+blockName.upper()+"/"+blockName.upper()+".html"
-  
-    #Lets print a block Level Reports Page
-    myhtml=""
-    query="select name from panchayats where blockCode='%s' and isRequired=1" %(blockCode) 
-    myhtml+=tabletUIQueryToHTMLTable(cur,query) 
-    query="select id,title from reportQueries"
-    myhtml+=tabletUIReportTable(cur,query,staticLinkPath="REPORTS") 
-    myhtml=htmlWrapperLocal(title="Panchayats Page", head='<h1 aling="center">'+h1title+'</h1>', body=myhtml)
-    writeFile(curhtmlfile,myhtml)
-  #Generate Panchayat Level Page
- #Generate Panchayat Level Page
-  query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1"
+  query="select name from districts"
+  myhtml=""
+  myhtml+=tabletUIQueryToHTMLTable(cur,query) 
+  myhtml=htmlWrapperLocal(title="Select District", head='<h1 aling="center">Select District</h1>', body=myhtml)
+  writeFile(curhtmlfile,myhtml)
   cur.execute(query)
-  results=cur.fetchall()
-  for row in results:
-    blockName=row[0]
-    blockCode=row[1]
-    panchayatName=row[2]
-    panchayatCode=row[3]
-    h1Title=districtName.upper()+"-"+blockName+"-"+panchayatName.upper()
-    curhtmlfile=htmlDir+districtName.upper()+"/"+blockName.upper()+"/"+panchayatName.upper()+"/"+panchayatName.upper()+".html"
-    logger.info(curhtmlfile)
-    query="select id,title from reportQueries"
-    myhtml=tabletUIReportTable(cur,query,staticLinkPath="REPORTS") 
-    myhtml=htmlWrapperLocal(title="Reports Page", head='<h1 aling="center">'+h1Title+'</h1>', body=myhtml)
-    writeFile(curhtmlfile,myhtml)
+  distResults=cur.fetchall()
+  for distRow in distResults:
+    districtName=distRow[0]
+    crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
+    query="use %s " % districtName.lower()
+    logger.info(query)
+    cur.execute(query) 
+   
+   
+    disthtmlfile=htmlDir+districtName.upper()+"/"+districtName.upper()+".html"
+    logger.info(disthtmlfile)
+    query="select name from blocks where isRequired=1"
+    myhtml=tabletUIQueryToHTMLTable(cur,query) 
+    myhtml=htmlWrapperLocal(title="Block Page", head='<h1 aling="center">'+districtName.upper()+'</h1>', body=myhtml)
+    writeFile(disthtmlfile,myhtml)
+    
+   #Generate Block Level Pages
+    query="select name,blockCode from blocks where isRequired=1"
+    cur.execute(query)
+    results=cur.fetchall()
+    for row in results:
+      blockName=row[0]
+      blockCode=row[1]
+      h1title=districtName.upper()+"-"+blockName
+      curhtmlfile=htmlDir+districtName.upper()+"/"+blockName.upper()+"/"+blockName.upper()+".html"
+    
+      #Lets print a block Level Reports Page
+      myhtml=""
+      query="select name from panchayats where blockCode='%s' and isRequired=1" %(blockCode) 
+      myhtml+=tabletUIQueryToHTMLTable(cur,query) 
+      query="select id,title from reportQueries"
+      myhtml+=tabletUIReportTable(cur,query,staticLinkPath="REPORTS") 
+      myhtml=htmlWrapperLocal(title="Panchayats Page", head='<h1 aling="center">'+h1title+'</h1>', body=myhtml)
+      writeFile(curhtmlfile,myhtml)
+    #Generate Panchayat Level Page
+   #Generate Panchayat Level Page
+    query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1"
+    cur.execute(query)
+    results=cur.fetchall()
+    for row in results:
+      blockName=row[0]
+      blockCode=row[1]
+      panchayatName=row[2]
+      panchayatNameOnlyLetters=re.sub(r"[^A-Za-z]+", '', panchayatName)
+      panchayatCode=row[3]
+      h1Title=districtName.upper()+"-"+blockName+"-"+panchayatName.upper()
+      curhtmlfile=htmlDir+districtName.upper()+"/"+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/"+panchayatNameOnlyLetters.upper()+".html"
+      logger.info(curhtmlfile)
+      query="select id,title from reportQueries"
+      myhtml=tabletUIReportTable(cur,query,staticLinkPath="REPORTS") 
+      myhtml=htmlWrapperLocal(title="Reports Page", head='<h1 aling="center">'+h1Title+'</h1>', body=myhtml)
+      writeFile(curhtmlfile,myhtml)
        
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
   logger.info("...END PROCESSING")     

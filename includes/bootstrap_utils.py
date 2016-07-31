@@ -547,7 +547,6 @@ def tabletUIQueryToHTMLTable(cur, query, staticLinkPath=None,field_names=None, e
   '''
   return table_html
 def tabletUIQuery2HTML(cur, query, query_caption=None, districtName=None,blockName=None,panchayatName=None,field_names=None, extra=None,extraLabel=None,hiddenNames=None,hiddenValues=None):
-
   cur.execute(query)
   results = cur.fetchall()
 

@@ -17,9 +17,9 @@ from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery,getjcNumber
 from globalSettings import nregaDir,datadir,nregaDataDir
 sys.path.insert(0, fileDir+'/../crawlDistricts/')
-from latehar import crawlIP,stateName,stateCode,stateShortCode,districtCode
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
 
+from crawlFunctions import getDistrictParams
 def argsFetch():
   '''
   Paser for the argument list that returns the args list
@@ -58,6 +58,7 @@ def main():
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query)
+  crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
   htmlDir=nregaDir.replace("districtName",districtName.lower())
   musterfilepath=htmlDir+"/"+districtName.upper()+"/"
   if args['limit']:
@@ -106,7 +107,7 @@ def main():
         query="update musters set wdError=1 where id="+str(musterID)
         cur.execute(query)
       else:
-        htmlsoup=BeautifulSoup(musterhtml)
+        htmlsoup=BeautifulSoup(musterhtml,"html.parser")
         try:
           table=htmlsoup.find('table',id="ctl00_ContentPlaceHolder1_grdShowRecords")
           rows = table.findAll('tr')
@@ -126,6 +127,9 @@ def main():
                 statusindex=i
               i=i+1
         isComplete=1
+        #Extracting Paymetn Date
+        paymentTD=htmlsoup.find('td',id="paymentDateTD")
+        paymentDateString=paymentTD.text.replace(" ","")
 
         #Now we need to extract the details from the table
         for tr in rows:
@@ -153,7 +157,7 @@ def main():
               wagelistNo="".join(cols[statusindex-1].text.split())
               #paymentDateString="".join(cols[statusindex+1].text.split())
               #paymentDateString="".join(cols[statusindex+1].text.split())
-              paymentDateString=''
+              #paymentDateString=''
               creditedDatestring="".join(cols[statusindex+1].text.split())
               nameandjobcardarray=re.match(r'(.*)'+reMatchString+'(.*)',nameandjobcard)
               name=nameandjobcardarray.groups()[0]
@@ -193,7 +197,6 @@ def main():
 
               logger.info("The musterTransaction ID: %s " % mtID)
 
-              #query="update workDetails set %s,%s,updateDate=NOW(),blockName='%s',panchayatCode='%s',panchayatName='%s',name='%s',jobcard='%s',jcNumber='%s',workCode='%s',workName='%s',dateFrom='%s',dateTo='%s',daysWorked=%s,dayWage=%s,totalWage=%s,accountNo='%s',wagelistNo='%s',bankNameOrPOName='%s',branchNameOrPOAddress='%s',branchCodeOrPOCode='%s',status='%s' where musterNo=%s and musterIndex=%s and finyear='%s' and blockCode='%s' " % (creditedDateQueryString,paymentDateQueryString,blockName,panchayatCode,panchayatNameRaw,name,jobcard,jcNumber,workCode,workName.decode('UTF-8'),dateFrom,dateTo,str(daysWorked),str(dayWage),str(totalWage),str(accountNo),wagelistNo,bankNameOrPOName,branchNameOrPOAddress,branchCodeOrPOCode,status,musterNo,musterIndex,finyear,blockCode) 
               query="update workDetails set %s,%s,updateDate=NOW(),blockName='%s',panchayatCode='%s',panchayatName='%s',name='%s',jobcard='%s',jcNumber='%s',workCode='%s',workName='%s',dateFrom='%s',dateTo='%s',daysWorked=%s,dayWage=%s,totalWage=%s,accountNo='%s',wagelistNo='%s',bankNameOrPOName='%s',branchNameOrPOAddress='%s',branchCodeOrPOCode='%s',status='%s' where id=%s" % (creditedDateQueryString,paymentDateQueryString,blockName,panchayatCode,panchayatNameRaw,name,jobcard,jcNumber,workCode,workName.decode('UTF-8'),dateFrom,dateTo,str(daysWorked),str(dayWage),str(totalWage),str(accountNo),wagelistNo,bankNameOrPOName,branchNameOrPOAddress,branchCodeOrPOCode,status,mtID) 
               #logger.info(query)
               cur.execute(query)

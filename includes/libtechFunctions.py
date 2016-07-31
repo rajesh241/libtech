@@ -12,7 +12,7 @@ import requests
 import xml.etree.ElementTree as ET
 
 import settings
-from settings import dbhost,dbuser,dbpasswd,sid,token
+from settings import dbhost,dbuser,dbpasswd
 from bootstrap_utils import getString
 
 

@@ -105,12 +105,13 @@ stateCode='%s'
       table1=htmlsoup1.find('table',id="ctl00_ContentPlaceHolder1_gvpanch")
       for eachPanchayat in table1.findAll('a'):
         panchayat=eachPanchayat.contents[0]
+        panchayatNameOnlyLetters=re.sub(r"[^A-Za-z]+", '', panchayat)
         panchayatLink=eachPanchayat.get('href')
         getPanchayat=re.findall(r'(?:Panchayat_Code=)\d{10}',panchayatLink)
         panchayatFullCode=getPanchayat[0]
         panchayatCode=panchayatFullCode[len(panchayatFullCode)-3:len(panchayatFullCode)]
         print panchayat+panchayatCode
-        query="insert into panchayats (isRequired,stateCode,districtCode,blockCode,panchayatCode,name) values (1,'"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"','"+panchayat+"')"
+        query="insert into panchayats (isRequired,stateCode,districtCode,blockCode,panchayatCode,name,rawName) values (1,'"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"','"+panchayatNameOnlyLetters+"','"+panchayat+"')"
         logger.info(query)
         cur.execute(query)
    
