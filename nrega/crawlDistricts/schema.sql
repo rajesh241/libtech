@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 5.7.11, for Linux (x86_64)
 --
--- Host: localhost    Database: latehar
+-- Host: localhost    Database: muzaffarpur
 -- ------------------------------------------------------
 -- Server version	5.7.11-0ubuntu6
 
@@ -211,6 +211,7 @@ CREATE TABLE `panchayats` (
   `totalMobiles` int(11) DEFAULT '0',
   `isRequired` tinyint(1) DEFAULT '0',
   `jobcardDownloadDate` datetime DEFAULT NULL,
+  `rawName` varchar(40) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `PANCHAYATKEY` (`blockCode`,`panchayatCode`)
 ) ;
@@ -302,4 +303,4 @@ CREATE TABLE `workDetails` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-07-30 14:18:44
+-- Dump completed on 2016-07-31 11:23:23
