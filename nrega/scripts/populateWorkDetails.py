@@ -70,7 +70,7 @@ def main():
    # stateName=singleRowQuery(cur,query)
   reMatchString="%s-%s-" % (stateShortCode,districtCode)
  
-  query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode,m.blockCode,p.panchayatCode,m.workName,m.dateFrom,m.dateTo from musters m,blocks b,panchayats p where m.wdError=0 and m.isDownloaded=1 and m.wdProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 %s and finyear='%s' %s" %(additionalFilter,infinyear,limitString)
+  query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode,m.blockCode,p.panchayatCode,m.workName,m.dateFrom,m.dateTo,p.rawName from musters m,blocks b,panchayats p where m.wdError=0 and m.isDownloaded=1 and m.wdProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 %s and finyear='%s' %s" %(additionalFilter,infinyear,limitString)
   logger.info(query)
   cur.execute(query)
   if cur.rowcount:
@@ -90,6 +90,7 @@ def main():
       workName=row[8].replace(","," ")
       dateFrom=str(row[9])
       dateTo=str(row[10])
+      panchayatRawName=str(row[11])
       fullfinyear="20"+str(int(finyear) -1)+"-20"+str(finyear)
       logger.info(fullfinyear) 
       logger.info("muster ID : %s   musterNo:%s  blockName:%s  panchayatName:%s " % (str(musterID),str(musterNo),blockName,panchayatName))
@@ -143,7 +144,7 @@ def main():
             nameandjobcard=cols[1].text.replace('\n',' ')
             nameandjobcard=nameandjobcard.replace("\\","")
             logger.info("Name + Jocbcard %s" % nameandjobcard)
-            if 'JH' in nameandjobcard:
+            if stateShortCode in nameandjobcard:
               totalWage="".join(cols[statusindex-6].text.split())
               dayWage="".join(cols[statusindex-10].text.split())
               status="".join(cols[statusindex].text.split())
@@ -151,9 +152,12 @@ def main():
               daysWorked="".join(cols[statusindex-11].text.split())
               bankNameOrPOName="".join(cols[statusindex-4].text.split())
               bankNameOrPOName=cols[statusindex-4].text
+              bankNameOrPOName=''
               branchNameOrPOAddress="".join(cols[statusindex-3].text.split())
               branchNameOrPOAddress=cols[statusindex-3].text
-              branchCodeOrPOCode="".join(cols[statusindex-2].text.split())
+              #branchCodeOrPOCode="".join(cols[statusindex-2].text.split())
+              branchCodeOrPOCode=cols[statusindex-2].text.replace("\n"," ")
+              branchCodeOrPOCode=''
               wagelistNo="".join(cols[statusindex-1].text.split())
               #paymentDateString="".join(cols[statusindex+1].text.split())
               #paymentDateString="".join(cols[statusindex+1].text.split())
@@ -197,8 +201,8 @@ def main():
 
               logger.info("The musterTransaction ID: %s " % mtID)
 
-              query="update workDetails set %s,%s,updateDate=NOW(),blockName='%s',panchayatCode='%s',panchayatName='%s',name='%s',jobcard='%s',jcNumber='%s',workCode='%s',workName='%s',dateFrom='%s',dateTo='%s',daysWorked=%s,dayWage=%s,totalWage=%s,accountNo='%s',wagelistNo='%s',bankNameOrPOName='%s',branchNameOrPOAddress='%s',branchCodeOrPOCode='%s',status='%s' where id=%s" % (creditedDateQueryString,paymentDateQueryString,blockName,panchayatCode,panchayatNameRaw,name,jobcard,jcNumber,workCode,workName.decode('UTF-8'),dateFrom,dateTo,str(daysWorked),str(dayWage),str(totalWage),str(accountNo),wagelistNo,bankNameOrPOName,branchNameOrPOAddress,branchCodeOrPOCode,status,mtID) 
-              #logger.info(query)
+              query="update workDetails set %s,%s,updateDate=NOW(),blockName='%s',panchayatCode='%s',panchayatName='%s',name='%s',jobcard='%s',jcNumber='%s',workCode='%s',workName='%s',dateFrom='%s',dateTo='%s',daysWorked=%s,dayWage=%s,totalWage=%s,accountNo='%s',wagelistNo='%s',bankNameOrPOName='%s',branchNameOrPOAddress='%s',branchCodeOrPOCode='%s',status='%s' where id=%s" % (creditedDateQueryString,paymentDateQueryString,blockName,panchayatCode,panchayatNameRaw,name,jobcard,jcNumber,workCode,workName,dateFrom,dateTo,str(daysWorked),str(dayWage),str(totalWage),str(accountNo),wagelistNo,bankNameOrPOName,branchNameOrPOAddress,branchCodeOrPOCode,status,mtID) 
+              logger.info(query)
               cur.execute(query)
 
         query="update musters set wdProcessed=1,wdComplete=%s where id=%s" %(str(isComplete),str(musterID))

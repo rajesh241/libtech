@@ -10,7 +10,6 @@ fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
 from settings import dbhost,dbuser,dbpasswd
 sys.path.insert(0, fileDir+'/../crawlDistricts/')
-from latehar import crawlIP,stateName
 #Error File Defination
 errorfile = open('/tmp/crawlfto.log', 'w')
 
@@ -20,6 +19,8 @@ from libtechFunctions import singleRowQuery,getFullFinYear
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
+sys.path.insert(0, fileDir+'/../crawlDistricts/')
+from crawlFunctions import getDistrictParams
 
 def argsFetch():
   '''
@@ -61,6 +62,7 @@ def main():
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query)
+  crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
 #Query to get all the blocks
 
   query="select stateCode,districtCode,blockCode,name from blocks where isRequired=1"

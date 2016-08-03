@@ -1,4 +1,14 @@
 import re
+def getString1(a):
+  if a is None:
+    return ' '
+  else:
+    try:
+      value = int(a)
+      return str(a)
+    except:
+      return a
+
 def getString(a):
   if isinstance(a, basestring):
     try:
@@ -607,7 +617,8 @@ def tabletUIQuery2HTML(cur, query, query_caption=None, districtName=None,blockNa
               baseLinkPath='/nrega/%s/%s/FTO/2015-2016/' % (districtName.upper(),blockName.upper())
               baseLinkTarget=baseLinkPath+rowvalue.replace("/","_")+'.html'
             rowvalue='<a href="%s">%s</a>'%(baseLinkTarget,rowvalue)
-      table_html += "<td>" + getString(rowvalue) + "</td>"
+      table_html += "<td>" + getString1(rowvalue) + "</td>"
+      #table_html += "<td>" + rowvalue + "</td>"
       i += 1
 
     if extra != None:

@@ -80,7 +80,7 @@ def main():
     elem.send_keys(Keys.RETURN)
     time.sleep(1)
   
-    query="select name,panchayatCode,id from panchayats where isRequired=1  and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' order by jobcardCrawlDate"
+    query="select rawName,panchayatCode,id from panchayats where isRequired=1  and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' order by jobcardCrawlDate"
     cur.execute(query)
     panchresults = cur.fetchall()
     for panchrow in panchresults:

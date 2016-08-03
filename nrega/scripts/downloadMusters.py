@@ -17,9 +17,9 @@ from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery,getFullFinYear,writeFile
 from globalSettings import nregaDir,nregaRawDir
 sys.path.insert(0, fileDir+'/../crawlDistricts/')
-from latehar import crawlIP,stateName,stateCode,stateShortCode,districtCode
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
 from crawlFunctions import alterMusterHTML,getMusterPaymentDate
+from crawlFunctions import getDistrictParams
 def argsFetch():
   '''
   Paser for the argument list that returns the args list
@@ -55,6 +55,7 @@ def main():
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query)
+  crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
 
   if args['limit']:
     limitString=" limit %s " % (str(args['limit']))
@@ -88,7 +89,7 @@ def main():
 #Main Muster Query
 
   query="select count(*) from musters m,blocks b, panchayats p where b.isRequired=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1  and m.musterType='10' and (m.isDownloaded=0 or m.wdError=1 or (m.wdComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) )  order by TIMESTAMPDIFF(DAY, m.downloadAttemptDate, now()) desc %s;" % (limitString)
-  query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isRequired=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 and m.finyear='"+infinyear+"'  and m.musterType='10' and (m.isDownloaded=0 or m.wdError=1 or (m.wdComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) ) %s order by TIMESTAMPDIFF(DAY, m.downloadAttemptDate, now()) desc %s;" % (additionalFilters,limitString)
+  query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id,p.rawName from musters m,blocks b, panchayats p where b.isRequired=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 and m.finyear='"+infinyear+"'  and m.musterType='10' and (m.isDownloaded=0 or m.wdError=1 or (m.wdComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) ) %s order by TIMESTAMPDIFF(DAY, m.downloadAttemptDate, now()) desc %s;" % (additionalFilters,limitString)
 #  query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isActive=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isActive=1 and m.id=1"
   logger.info("Query: "+query)
   #cur.execute(query)
@@ -96,8 +97,7 @@ def main():
   results = cur.fetchall()
   for row in results:
     blockName=row[0]
-    panchayatName=row[1]
-    panchayatNameOnlyLetters=re.sub(r"[^A-Za-z]+", '', panchayatName)
+    panchayatName=row[14]
     musterNo=row[2]
     #stateCode=row[3]
     #districtCode=row[2]
@@ -106,10 +106,12 @@ def main():
     finyear=row[7]
     musterType=row[8]
     workCode=row[9]
-    workName=row[10].decode("UTF-8")
+    workName=row[10]
     dateTo=row[12]
     dateFrom=row[11]
     musterid=row[13]
+    panchayatNameOnlyLetters=row[1]
+    #re.sub(r"[^A-Za-z]+", '', panchayatName)
     fullPanchayatCode=stateCode+districtCode+blockCode+panchayatCode
     fullBlockCode=stateCode+districtCode+blockCode
     fullDistrictCode=stateCode+districtCode

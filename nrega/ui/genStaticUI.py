@@ -52,7 +52,7 @@ def main():
   logger.info(htmlDir)
 
   #Generate District Level UI
-  curhtmlfile=htmlDir+"/districts.html"
+  curhtmlfile=htmlDir+"/index.html"
   logger.info(curhtmlfile)
   query="use crawlDistricts"
   cur.execute(query)

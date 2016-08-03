@@ -20,7 +20,7 @@ from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
 sys.path.insert(0, fileDir+'/../crawlDistricts/')
-from latehar import crawlIP,stateName,stateCode,stateShortCode,districtCode
+from crawlFunctions import getDistrictParams
 
 
 def argsFetch():
@@ -54,6 +54,7 @@ def main():
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query)
+  crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
 
  
   logger.info("DistrictName "+districtName)

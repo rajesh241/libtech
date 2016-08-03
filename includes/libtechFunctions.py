@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 
 import settings
 from settings import dbhost,dbuser,dbpasswd
-from bootstrap_utils import getString
+from bootstrap_utils import getString,getString1
 
 
 def getFullFinYear(shortFinYear):
@@ -135,7 +135,7 @@ def writecsv(cur,query,filename):
   for row in results:
     rowEncoded=[]
     for a in row:
-      s=getString(a)
+      s=getString1(a)
       b=s.encode("UTF-8")
       rowEncoded.append(b)
     writer.writerow(rowEncoded) 
