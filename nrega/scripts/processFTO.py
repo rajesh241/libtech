@@ -118,9 +118,9 @@ def main():
             jobcardpanchayat="".join(cols[2].text.split())
             referenceNo="".join(cols[3].text.split())
             transactiondatestring="".join(cols[4].text.split())
-            applicantName="".join(cols[5].text.split())
+            applicantName=" ".join(cols[5].text.split())
             wagelistNo="".join(cols[6].text.split())
-            primaryAccountHolder="".join(cols[7].text.split())
+            primaryAccountHolder=" ".join(cols[7].text.split())
             accountNo="".join(cols[8].text.split())
             bankCode="".join(cols[9].text.split())
             IFSCCode="".join(cols[10].text.split())
@@ -130,7 +130,7 @@ def main():
             processeddatestring="".join(cols[14].text.split())
             bankprocessdatestring="".join(cols[15].text.split())
             utrNo="".join(cols[16].text.split())
-            rejectionReason="".join(cols[17].text.split())
+            rejectionReason=" ".join(cols[17].text.split())
             panchayat=jobcardpanchayat[jobcardpanchayat.index("(") + 1:jobcardpanchayat.rindex(")")]
             jobcard=jobcardpanchayat[0:jobcardpanchayat.index("(")]
             #print panchayat+"  "+jobcard
@@ -142,15 +142,16 @@ def main():
             if processeddatestring != '':
               processeddate = time.strptime(processeddatestring, '%d/%m/%Y')
               processeddate = time.strftime('%Y-%m-%d %H:%M:%S', processeddate)
+              processeddate="'%s'" % processeddate
             else:
-        			processeddate=''
+        			processeddate='NULL'
             if bankprocessdatestring != '':
               bankprocessdate = time.strptime(bankprocessdatestring, '%d/%m/%Y')
               bankprocessdate = time.strftime('%Y-%m-%d %H:%M:%S', bankprocessdate)
             else:
               bankprocessdate=''
             logger.info(ftoNo+"  "+jobcard+"  "+panchayat)
-            query="insert into ftoTransactionDetails (finyear,ftoNo,referenceNo,jobcard,applicantName,primaryAccountHolder,accountNo,wagelistNo,transactionDate,processedDate,status,rejectionReason,utrNo,creditedAmount,bankCode,IFSCCode) values ('"+finyear+"','"+ftoNo+"','"+referenceNo+"','"+jobcard+"','"+applicantName+"','"+primaryAccountHolder+"','"+accountNo+"','"+wagelistNo+"','"+transactiondate+"','"+processeddate+"','"+status+"','"+rejectionReason+"','"+utrNo+"',"+str(creditedAmount)+",'"+bankCode+"','"+IFSCCode+"');"
+            query="insert into ftoTransactionDetails (finyear,ftoNo,referenceNo,jobcard,applicantName,primaryAccountHolder,accountNo,wagelistNo,transactionDate,processedDate,status,rejectionReason,utrNo,creditedAmount,bankCode,IFSCCode) values ('"+finyear+"','"+ftoNo+"','"+referenceNo+"','"+jobcard+"','"+applicantName+"','"+primaryAccountHolder+"','"+accountNo+"','"+wagelistNo+"','"+transactiondate+"',"+processeddate+",'"+status+"','"+rejectionReason+"','"+utrNo+"',"+str(creditedAmount)+",'"+bankCode+"','"+IFSCCode+"');"
             logger.info(query)
             try:
               cur.execute(query)

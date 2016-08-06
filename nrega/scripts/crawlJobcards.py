@@ -118,9 +118,10 @@ def main():
             jclink=link.get('href')
           if len(cols) > 2:
             jcno="".join(cols[1].text.split())
+            headOfFamily=cols[2].text
           if jobcardPrefix in jcno:
             logger.info(jcno)
-            query="insert into jobcardRegister (jobcard,stateCode,districtCode,blockCode,panchayatCode) values ('"+jcno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"')"
+            query="insert into jobcardRegister (headOfFamily,jobcard,stateCode,districtCode,blockCode,panchayatCode) values ('"+headOfFamily+"','"+jcno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"')"
             try:
               cur.execute(query)
             except MySQLdb.IntegrityError,e:

@@ -1,7 +1,19 @@
 import re
+import os
+import datetime
+from globalSettings import nregaDir
+def getFullFinYear(shortFinYear):
+  shortFinYear_1 = int(shortFinYear) -1
+  fullFinYear="20%s-20%s" % (str(shortFinYear_1), str(shortFinYear))
+  return fullFinYear
+
+
+
 def getString1(a):
   if a is None:
     return ' '
+  elif isinstance(a, datetime.date):
+    return str(a)
   else:
     try:
       value = int(a)
@@ -68,6 +80,55 @@ def htmlWrapper(title = None, head = None, body = None):
   html_text = html_text.replace('body_text', body)
 
   return html_text
+
+def htmlWrapperLocalRelativeCSS(relativeCSSPath= None,title = None, head = None, body = None):
+  if relativeCSSPath==None:
+    relativeCSSPath='/'
+  
+  html_text = '''
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    
+    <title>title_text</title>
+
+    <!-- Bootstrap -->
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="css_path/css/bootstrap.min.css">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="css_path/css/bootstrap-theme.min.css">
+
+    <div align="center">head_text</div>
+
+  </head>
+    
+  <body>
+
+    body_text
+    
+    <!-- jQuery (necessary for Bootstrap"s JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+  </body>
+</html>
+'''
+  html_text = html_text.replace('title_text', title)
+  html_text = html_text.replace('css_path', relativeCSSPath)
+  html_text = html_text.replace('head_text', head)
+  html_text = html_text.replace('body_text', body)
+
+  return html_text
+
 
 def htmlWrapperLocal(title = None, head = None, body = None):
   html_text = '''
@@ -498,7 +559,6 @@ def libtechInsertLink(cur,myhtml):
 
 
 def tabletUIQueryToHTMLTable(cur, query, staticLinkPath=None,field_names=None, extra=None,extraLabel=None,hiddenNames=None,hiddenValues=None):
-
   cur.execute(query)
   results = cur.fetchall()
 
@@ -556,7 +616,11 @@ def tabletUIQueryToHTMLTable(cur, query, staticLinkPath=None,field_names=None, e
 </div>
   '''
   return table_html
-def tabletUIQuery2HTML(cur, query, query_caption=None, districtName=None,blockName=None,panchayatName=None,field_names=None, extra=None,extraLabel=None,hiddenNames=None,hiddenValues=None):
+def tabletUIQuery2HTML(cur, query, query_caption=None, districtName=None,blockName=None,panchayatName=None,field_names=None, extra=None,extraLabel=None,hiddenNames=None,hiddenValues=None,isBlock=None):
+  if isBlock==1:
+    relativeBasePath='../../'
+  else:
+    relativeBasePath='../../../'
   cur.execute(query)
   results = cur.fetchall()
 
@@ -608,15 +672,28 @@ def tabletUIQuery2HTML(cur, query, query_caption=None, districtName=None,blockNa
             j=hiddenValues.index(str(i))
             linktype=hiddenNames[j]
             if linktype == 'jobcard':
-              baseLinkTarget='../jobcardRegister/'+rowvalue.replace("/","_")+'.html'
+              if isBlock == 1:
+                baseLinkPath='%s/%s/%s/jobcardRegister/' % (relativeBasePath,blockName.upper(),row[2].upper())
+                filePath="%s/%s/%s/%s/jobcardRegister/%s.html" % (nregaDir,districtName.upper(),blockName.upper(),row[2].upper(),rowvalue.replace("/","_"))
+              else:
+                baseLinkPath='%s/%s/%s/jobcardRegister/' % (relativeBasePath,blockName.upper(),panchayatName.upper())
+                filePath="%s/%s/%s/%s/jobcardRegister/%s.html" % (nregaDir,districtName.upper(),blockName.upper(),panchayatName.upper(),rowvalue.replace("/","_"))
+              baseLinkTarget=baseLinkPath+rowvalue.replace("/","_")+'.html'
             if linktype == 'muster':
-              baseLinkPath='/nrega/%s/%s/%s/MUSTERS/2015-2016/' % (districtName.upper(),blockName.upper(),panchayatName.upper())
+              if isBlock == 1:
+                baseLinkPath='%s/%s/%s/MUSTERS/%s/' % (relativeBasePath,blockName.upper(),row[2].upper(),getFullFinYear(row[0]))
+                filePath="%s/%s/%s/%s/MUSTERS/%s/%s.html" % (nregaDir,districtName.upper(),blockName.upper(),row[2].upper(),getFullFinYear(row[0]),rowvalue.replace("/","_"))
+              else:
+                baseLinkPath='%s/%s/%s/MUSTERS/%s/' % (relativeBasePath,blockName.upper(),panchayatName.upper(),getFullFinYear(row[0]))
+                filePath="%s/%s/%s/%s/MUSTERS/%s/%s.html" % (nregaDir,districtName.upper(),blockName.upper(),panchayatName.upper(),getFullFinYear(row[0]),rowvalue.replace("/","_"))
               #print rowvalue
               baseLinkTarget=baseLinkPath+rowvalue+'.html'
             if linktype == 'fto':
-              baseLinkPath='/nrega/%s/%s/FTO/2015-2016/' % (districtName.upper(),blockName.upper())
+              baseLinkPath='%s/%s/FTO/%s/' % (relativeBasePath,blockName.upper(),getFullFinYear(row[0]))
               baseLinkTarget=baseLinkPath+rowvalue.replace("/","_")+'.html'
-            rowvalue='<a href="%s">%s</a>'%(baseLinkTarget,rowvalue)
+              filePath="%s/%s/%s/FTO/%s/%s.html" % (nregaDir,districtName.upper(),blockName.upper(),getFullFinYear(row[0]),rowvalue.replace("/","_"))
+            if os.path.isfile(filePath):
+              rowvalue='<a href="%s">%s</a>'%(baseLinkTarget,rowvalue)
       table_html += "<td>" + getString1(rowvalue) + "</td>"
       #table_html += "<td>" + rowvalue + "</td>"
       i += 1

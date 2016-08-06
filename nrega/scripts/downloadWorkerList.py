@@ -92,7 +92,7 @@ def main():
     elem.send_keys(Keys.RETURN)
     elem = driver.find_element_by_link_text("List of Worker with Aadhar No.(UID No.)")
     elem.send_keys(Keys.RETURN)
-    time.sleep(5)
+    time.sleep(15)
     query="update panchayats set jobcardDownloadDate=now() where blockCode='%s' and panchayatCode='%s' " % (blockCode,panchayatCode)
     cur.execute(query)
     jcsource = driver.page_source
