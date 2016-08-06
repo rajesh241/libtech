@@ -11,7 +11,6 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
-from settings import dbhost,dbuser,dbpasswd,sid,token
 #This is a Kludge to remove all the input tags from the html because for some reason Beautiful Soup does not parse the html correctly
 regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
 sys.path.insert(0, fileDir+'/../../')
@@ -20,7 +19,8 @@ from libtechFunctions import singleRowQuery,getFullFinYear
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
-from crawlSettings import crawlIP,stateName,stateCode,stateShortCode,districtCode
+sys.path.insert(0, fileDir+'/../crawlDistricts/')
+from crawlFunctions import getDistrictParams
 
 
 def argsFetch():
@@ -54,6 +54,7 @@ def main():
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query)
+  crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
 
  
   logger.info("DistrictName "+districtName)

@@ -1,3 +1,4 @@
+
 import csv
 from bs4 import BeautifulSoup
 import requests
@@ -8,19 +9,17 @@ import os
 import sys
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
-from settings import dbhost,dbuser,dbpasswd,sid,token
 from globalSettings import datadir
 #Error File Defination
 errorfile = open('/tmp/processFTO.log', 'a')
 sys.path.insert(0, fileDir+'/../../')
-from settings import dbhost,dbuser,dbpasswd,sid,token
-from globalSettings import datadir,nregaDataDir
+from globalSettings import nregaDir 
 from libtechFunctions import getFullFinYear,singleRowQuery
 #Connect to MySQL Database
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
-from crawlSettings import crawlIP,stateName,stateShortCode,districtCode
+from crawlFunctions import getDistrictParams
 def argsFetch():
   '''
   Paser for the argument list that returns the args list
@@ -51,6 +50,7 @@ def main():
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query)
+  crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
   limitString=''
   if args['limit']:
     limitString=' limit '+args['limit']
@@ -66,7 +66,9 @@ def main():
 
 
 
-  ftofilepath=nregaDataDir.replace("stateName",stateName.title())+"/"+districtName.upper()+"/"
+  #ftofilepath=nregaDataDir.replace("stateName",stateName.title())+"/"+districtName.upper()+"/"
+  htmlDir=nregaDir.replace("districtName",districtName.lower())
+  ftofilepath=htmlDir+"/"+districtName.upper()+"/"
 #ftofilepath="/home/libtech/libtechdata/CHATTISGARH/"+districtName+"/"
  
   query=" select f.id,f.ftoNo,b.name,f.finyear from ftoDetails f,blocks b where b.blockCode=f.blockCode and b.isRequired=1 and f.isDownloaded=1 and f.isProcessed=0 and f.finyear='%s' %s" %(infinyear,limitString)
@@ -96,7 +98,7 @@ def main():
       else:
         htmlsoup=BeautifulSoup(ftohtml)
         try:
-          table=htmlsoup.find('table',align="center")
+          table=htmlsoup.find('table',id="ftoDetails")
           rows = table.findAll('tr')
           errorflag=0
         except:
@@ -116,9 +118,9 @@ def main():
             jobcardpanchayat="".join(cols[2].text.split())
             referenceNo="".join(cols[3].text.split())
             transactiondatestring="".join(cols[4].text.split())
-            applicantName="".join(cols[5].text.split())
+            applicantName=" ".join(cols[5].text.split())
             wagelistNo="".join(cols[6].text.split())
-            primaryAccountHolder="".join(cols[7].text.split())
+            primaryAccountHolder=" ".join(cols[7].text.split())
             accountNo="".join(cols[8].text.split())
             bankCode="".join(cols[9].text.split())
             IFSCCode="".join(cols[10].text.split())
@@ -128,7 +130,7 @@ def main():
             processeddatestring="".join(cols[14].text.split())
             bankprocessdatestring="".join(cols[15].text.split())
             utrNo="".join(cols[16].text.split())
-            rejectionReason="".join(cols[17].text.split())
+            rejectionReason=" ".join(cols[17].text.split())
             panchayat=jobcardpanchayat[jobcardpanchayat.index("(") + 1:jobcardpanchayat.rindex(")")]
             jobcard=jobcardpanchayat[0:jobcardpanchayat.index("(")]
             #print panchayat+"  "+jobcard
@@ -140,15 +142,16 @@ def main():
             if processeddatestring != '':
               processeddate = time.strptime(processeddatestring, '%d/%m/%Y')
               processeddate = time.strftime('%Y-%m-%d %H:%M:%S', processeddate)
+              processeddate="'%s'" % processeddate
             else:
-        			processeddate=''
+        			processeddate='NULL'
             if bankprocessdatestring != '':
               bankprocessdate = time.strptime(bankprocessdatestring, '%d/%m/%Y')
               bankprocessdate = time.strftime('%Y-%m-%d %H:%M:%S', bankprocessdate)
             else:
               bankprocessdate=''
             logger.info(ftoNo+"  "+jobcard+"  "+panchayat)
-            query="insert into ftoTransactionDetails (ftoNo,referenceNo,jobcard,applicantName,primaryAccountHolder,accountNo,wagelistNo,transactionDate,processedDate,status,rejectionReason,utrNo,creditedAmount,bankCode,IFSCCode) values ('"+ftoNo+"','"+referenceNo+"','"+jobcard+"','"+applicantName+"','"+primaryAccountHolder+"','"+accountNo+"','"+wagelistNo+"','"+transactiondate+"','"+processeddate+"','"+status+"','"+rejectionReason+"','"+utrNo+"',"+str(creditedAmount)+",'"+bankCode+"','"+IFSCCode+"');"
+            query="insert into ftoTransactionDetails (finyear,ftoNo,referenceNo,jobcard,applicantName,primaryAccountHolder,accountNo,wagelistNo,transactionDate,processedDate,status,rejectionReason,utrNo,creditedAmount,bankCode,IFSCCode) values ('"+finyear+"','"+ftoNo+"','"+referenceNo+"','"+jobcard+"','"+applicantName+"','"+primaryAccountHolder+"','"+accountNo+"','"+wagelistNo+"','"+transactiondate+"',"+processeddate+",'"+status+"','"+rejectionReason+"','"+utrNo+"',"+str(creditedAmount)+",'"+bankCode+"','"+IFSCCode+"');"
             logger.info(query)
             try:
               cur.execute(query)

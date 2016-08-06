@@ -8,8 +8,8 @@ import time
 import re
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
-from settings import dbhost,dbuser,dbpasswd,sid,token
-from crawlSettings import crawlIP,stateName
+from settings import dbhost,dbuser,dbpasswd
+sys.path.insert(0, fileDir+'/../crawlDistricts/')
 #Error File Defination
 errorfile = open('/tmp/crawlfto.log', 'w')
 
@@ -19,6 +19,8 @@ from libtechFunctions import singleRowQuery,getFullFinYear
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
+sys.path.insert(0, fileDir+'/../crawlDistricts/')
+from crawlFunctions import getDistrictParams
 
 def argsFetch():
   '''
@@ -26,9 +28,9 @@ def argsFetch():
   '''
   import argparse
 
-  parser = argparse.ArgumentParser(description='Script for crawling, downloading & parsing musters')
+  parser = argparse.ArgumentParser(description='Script for crawling FTOS, you need to pass finyear and district as arguments')
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
-  parser.add_argument('-f', '--finyear', help='Download musters for that finyear', required=True)
+  parser.add_argument('-f', '--finyear', help='Fin Years for which FTOs need to be downloaded', required=True)
   parser.add_argument('-d', '--district', help='District for which you need to Download', required=True)
 
   args = vars(parser.parse_args())
@@ -60,6 +62,7 @@ def main():
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query)
+  crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
 #Query to get all the blocks
 
   query="select stateCode,districtCode,blockCode,name from blocks where isRequired=1"
@@ -76,7 +79,7 @@ def main():
     logger.info(url)
     r  = requests.get(url)
     htmlsource=r.text
-    htmlsoup=BeautifulSoup(htmlsource)
+    htmlsoup=BeautifulSoup(htmlsource,"html.parser")
     for fto in htmlsoup.find_all('a'):
       ftoNo=fto.contents[0]
       #ftoURL="http://164.100.112.66/netnrega/FTO/"+fto.get('href')

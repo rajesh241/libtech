@@ -1,4 +1,3 @@
-#This code will get the Oabcgatat Banes
 import csv
 from bs4 import BeautifulSoup
 import requests
@@ -8,10 +7,8 @@ import os
 import sys
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
-from settings import dbhost,dbuser,dbpasswd,sid,token
+from settings import dbhost,dbuser,dbpasswd
 sys.path.insert(0, fileDir+'/../../')
-#sys.path.insert(0, rootdir)
-from libtechFunctions import singleRowQuery
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
@@ -74,19 +71,13 @@ stateShortCode='%s'
 districtCode='%s'
 stateCode='%s'
   ''' % (districtName,crawlIP,stateName,stateShortCode,districtCode,stateCode)
-  f = open('../../includes/crawlSettings.py', 'w')
+  filename="../crawlDistricts/%s.py" % (districtName.lower())
+  f = open(filename, 'w')
   f.write(s.encode("UTF-8"))
-  
+  query="insert into crawlDistricts.districts (name,crawlIP,state,stateShortCode,stateCode,districtCode) values ('%s','%s','%s','%s','%s','%s')" %(districtName.upper(),crawlIP,stateName,stateShortCode,stateCode,districtCode)
+  logger.info(query)
+  cur.execute(query) 
   r=re.findall('=(.*?)\&',districtURL)
-# query="select * from crawlDistricts where name='%s'" % districtName
-# cur.execute(query)
-# if cur.rowcount != 0: 
-#   logger.info("The District Name Exists")
-# else:
-#   query="insert into crawlDistricts (name,crawlIP,state,stateShortCode,districtCode,stateCode) values ('%s','%s','%s','%s','%s','%s')" % (districtName,crawlIP,stateName,stateShortCode,districtCode,stateCode)
-#   logger.info(query)
-#   cur.execute(query)
-#   #Now we need to fetch the block Page
   query="use %s " % districtName.lower()
   cur.execute(query)
   r=requests.get(districtURL)
@@ -102,7 +93,7 @@ stateCode='%s'
       r=re.findall('block_name=(.*?)\&',str(column))
       blockName=r[0]
       logger.info("Block Code: %s BlockName : %s" % (blockCode,blockName))
-      query="insert into blocks (name,stateCode,districtCode,blockCode,isActive) values ('%s','%s','%s','%s',1)" % (blockName,stateCode,districtCode,blockCode)
+      query="insert into blocks (name,stateCode,districtCode,blockCode,isRequired) values ('%s','%s','%s','%s',1)" % (blockName,stateCode,districtCode,blockCode)
       logger.info(query)
       finyear='2015-2016'
       cur.execute(query)
@@ -114,12 +105,13 @@ stateCode='%s'
       table1=htmlsoup1.find('table',id="ctl00_ContentPlaceHolder1_gvpanch")
       for eachPanchayat in table1.findAll('a'):
         panchayat=eachPanchayat.contents[0]
+        panchayatNameOnlyLetters=re.sub(r"[^A-Za-z]+", '', panchayat)
         panchayatLink=eachPanchayat.get('href')
         getPanchayat=re.findall(r'(?:Panchayat_Code=)\d{10}',panchayatLink)
         panchayatFullCode=getPanchayat[0]
         panchayatCode=panchayatFullCode[len(panchayatFullCode)-3:len(panchayatFullCode)]
         print panchayat+panchayatCode
-        query="insert into panchayats (stateCode,districtCode,blockCode,panchayatCode,name) values ('"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"','"+panchayat+"')"
+        query="insert into panchayats (isRequired,stateCode,districtCode,blockCode,panchayatCode,name,rawName) values (1,'"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"','"+panchayatNameOnlyLetters+"','"+panchayat+"')"
         logger.info(query)
         cur.execute(query)
    

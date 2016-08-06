@@ -1,26 +1,28 @@
+import csv
 from bs4 import BeautifulSoup
 import requests
 import MySQLdb
 import os
-import time
-import re
 import sys
-from MySQLdb import OperationalError
-fileDir=os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, fileDir+'/../../includes/')
-sys.path.insert(0, fileDir+'/../../')
-#sys.path.insert(0, rootdir)
+import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException
-
+fileDir=os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, fileDir+'/../../includes/')
+sys.path.insert(0, fileDir+'/../../')
+from globalSettings import nregaDir,nregaRawDir
+from libtechFunctions import writeFile,getFullFinYear,singleRowQuery
+#Connect to MySQL Database
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
-from libtechFunctions import singleRowQuery
-from globalSettings import datadir,nregaDataDir
-from crawlSettings import crawlIP,stateName,stateShortCode,districtCode
+sys.path.insert(0, fileDir+'/../crawlDistricts/')
+from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
+from crawlFunctions import alterFTOHTML
+from crawlFunctions import getDistrictParams
+
 def argsFetch():
   '''
   Paser for the argument list that returns the args list
@@ -50,6 +52,7 @@ def main():
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query)
+  crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
   display = displayInitialize(args['visible'])
   driver = driverInitialize(args['browser'])
   jobcardPrefix="%s-%s" % (stateShortCode,districtCode)
@@ -77,7 +80,7 @@ def main():
     elem.send_keys(Keys.RETURN)
     time.sleep(1)
   
-    query="select name,panchayatCode,id from panchayats where isRequired=1  and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' order by jobcardCrawlDate"
+    query="select rawName,panchayatCode,id from panchayats where isRequired=1  and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' order by jobcardCrawlDate"
     cur.execute(query)
     panchresults = cur.fetchall()
     for panchrow in panchresults:
@@ -115,9 +118,10 @@ def main():
             jclink=link.get('href')
           if len(cols) > 2:
             jcno="".join(cols[1].text.split())
+            headOfFamily=cols[2].text
           if jobcardPrefix in jcno:
             logger.info(jcno)
-            query="insert into jobcardRegister (jobcard,stateCode,districtCode,blockCode,panchayatCode) values ('"+jcno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"')"
+            query="insert into jobcardRegister (headOfFamily,jobcard,stateCode,districtCode,blockCode,panchayatCode) values ('"+headOfFamily+"','"+jcno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"')"
             try:
               cur.execute(query)
             except MySQLdb.IntegrityError,e:
@@ -130,12 +134,6 @@ def main():
   
     driver.back()
     time.sleep(5)
-
-# url="http://www.google.com"
-# driver.get(url)
-# myhtml=driver.page_source
-# print myhtml
-  # End program here
 
   driverFinalize(driver)
   displayFinalize(display)
@@ -152,96 +150,3 @@ if __name__ == '__main__':
 
 
 
-
-
-
-##This code will get the Oabcgatat Banes
-#import csv
-#from bs4 import BeautifulSoup
-#import requests
-#import MySQLdb
-#import time
-#import re
-#from selenium import webdriver
-#from selenium.webdriver.common.keys import Keys
-##Error File Defination
-#errorfile = open('/home/goli/libtech/logs/crawlJobcards.log', 'w')
-##Connect to MySQL Database
-#db = MySQLdb.connect(host="localhost", user="root", passwd="golani123", db="surguja")
-#cur=db.cursor()
-#db.autocommit(True)
-#
-#driver = webdriver.Firefox()
-#url="http://nrega.nic.in/netnrega/sthome.aspx"
-#print url
-#driver.get(url)
-#elem = driver.find_element_by_link_text("CHHATTISGARH")
-#elem.send_keys(Keys.RETURN)
-#time.sleep(1)
-#elem = driver.find_element_by_link_text("SURGUJA")
-#elem.send_keys(Keys.RETURN)
-#time.sleep(1)
-#
-##Query to get all the blocks
-#query="select stateCode,districtCode,blockCode,name from blocks"
-#cur.execute(query)
-#results = cur.fetchall()
-#for row in results:
-#  stateCode=row[0]
-#  districtCode=row[1]
-#  blockCode=row[2]
-#  blockName=row[3]
-#  elem = driver.find_element_by_link_text(blockName)
-#  elem.send_keys(Keys.RETURN)
-#  time.sleep(1)
-#
-#  query="select name,panchayatCode,id from panchayats where jobcardCrawlStatus=0 and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' "
-#  cur.execute(query)
-#  panchresults = cur.fetchall()
-#  for panchrow in panchresults:
-#    panchayatName=panchrow[0]
-#    panchayatCode=panchrow[1]
-#    panchID=panchrow[2]
-#    print stateCode+districtCode+blockCode+blockName+panchayatCode+panchayatName
-#    elem = driver.find_element_by_link_text(panchayatName)
-#    elem.send_keys(Keys.RETURN)
-#    time.sleep(1)
-#    elem = driver.find_element_by_link_text("Job card/Employment Register")
-#    elem.send_keys(Keys.RETURN)
-#    time.sleep(5)
-#    curtime = time.strftime('%Y-%m-%d %H:%M:%S')
-#    html_source = driver.page_source
-#    htmlsoup=BeautifulSoup(html_source)
-#    try:
-#      table=htmlsoup.find('table',align="center")
-#      rows = table.findAll('tr')
-#      status=1
-#    except:
-#      status=0
-#    query="update panchayats set jobcardCrawlStatus="+str(status)+", jobcardCrawlDate='"+curtime+"' where id="+str(panchID) 
-#    print query
-#    cur.execute(query)
-#    if status==1:
-#      for tr in rows:
-#        cols = tr.findAll('td')
-#        jclink=''
-#        for link in tr.find_all('a'):
-#          jclink=link.get('href')
-#        if len(cols) > 2:
-#          jcno="".join(cols[1].text.split())
-#        if "CH-05" in jcno:
-#          print jcno
-#          query="insert into jobcardRegister (jobcard,stateCode,districtCode,blockCode,panchayatCode) values ('"+jcno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"')"
-#          try:
-#            cur.execute(query)
-#          except MySQLdb.IntegrityError,e:
-#            errormessage=(time.strftime("%d/%m/%Y %H:%M:%S "))+str(e)+"\n"
-#            errorfile.write(errormessage)
-#          continue
-#    driver.back()
-#    driver.back()
-#    time.sleep(5)
-#
-#  driver.back()
-#  time.sleep(5)
-#driver.close()

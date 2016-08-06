@@ -29,6 +29,19 @@ def main():
   query="use biharPDS"
   cur.execute(query)
   myhtml=''
+  myhtml+=  getCenterAligned('<h2 style="color:blue">  Muzaffarpur District</h3>')  
+  query="select count(*) from pdsShops where distCode='1022'"
+  totalShops=singleRowQuery(cur,query)
+  totalDownload=totalShops*5
+  query="select count(*) from pdsShopsDownloadStatus where isDownloaded=1 and distCode='1022'"
+  totalSuccessDownload=singleRowQuery(cur,query)
+  totalPendingDownload=totalDownload-totalSuccessDownload 
+  myhtml+=  getCenterAligned('<h3 style="color:blue">  Total Shops     - %s</h3>'  % (str(totalShops)))
+  myhtml+=  getCenterAligned('<h3 style="color:blue">  Total Downloads - %s</h3>'  % (str(totalDownload)))
+  myhtml+=  getCenterAligned('<h3 style="color:green"> Total Success   - %s</h3>'  % (str(totalSuccessDownload)))
+  myhtml+=  getCenterAligned('<h3 style="color:red">   Total Pending   - %s</h3>'  % (str(totalPendingDownload)))
+
+  myhtml+=  getCenterAligned('<h2 style="color:blue">  Overall bihar</h3>')  
   query="select count(*) from pdsShops"
   totalShops=singleRowQuery(cur,query)
   totalDownload=totalShops*5

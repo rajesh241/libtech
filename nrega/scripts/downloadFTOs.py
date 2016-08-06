@@ -4,17 +4,20 @@ import requests
 import MySQLdb
 import os
 import sys
+import importlib
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
 sys.path.insert(0, fileDir+'/../../')
-from settings import dbhost,dbuser,dbpasswd,sid,token
-from globalSettings import datadir,nregaDataDir
-from libtechFunctions import getFullFinYear,singleRowQuery
+from globalSettings import nregaDir,nregaRawDir
+from libtechFunctions import writeFile,getFullFinYear,singleRowQuery
 #Connect to MySQL Database
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
-from crawlSettings import crawlIP,stateName,stateShortCode,districtCode
+sys.path.insert(0, fileDir+'/../crawlDistricts/')
+from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
+from crawlFunctions import alterFTOHTML
+from crawlFunctions import getDistrictParams
 def argsFetch():
   '''
   Paser for the argument list that returns the args list
@@ -44,10 +47,8 @@ def main():
     districtName=args['district']
  
   logger.info("DistrictName "+districtName)
-  if args['finyear']:
-    finyear=args['finyear']
-  else:
-    finyear='16'
+  finyear=args['finyear']
+  
   db = dbInitialize(db=districtName.lower(), charset="utf8")  # The rest is updated automatically in the function
   cur=db.cursor()
   db.autocommit(True)
@@ -56,11 +57,16 @@ def main():
   cur.execute(query)
   logger.info("finyear "+finyear)
   fullFinyear=getFullFinYear(finyear) 
+  crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
 #Query to get all the blocks
 
 
 
-  ftofilepath=nregaDataDir.replace("stateName",stateName.title())+"/"+districtName.upper()+"/"
+  htmlDir=nregaDir.replace("districtName",districtName.lower())
+  htmlRawDir=nregaRawDir.replace("districtName",districtName.lower())
+
+  ftofilepath=htmlDir+"/"+districtName.upper()+"/"
+  ftorawfilepath=htmlRawDir+"/"+districtName.upper()+"/"
 #ftofilepath="/home/libtech/libtechdata/CHATTISGARH/"+districtName+"/"
   query="select b.name,f.ftoNo,f.stateCode,f.districtCode,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where f.isDownloaded=0 and f.finyear='%s' and f.blockCode=b.blockCode and f.stateCode=b.stateCode and f.districtCode=b.districtCode  %s;" % (finyear,limitString)
   logger.info(query)
@@ -78,6 +84,12 @@ def main():
     ftoid=row[6]
     fullBlockCode=stateCode+districtCode+blockCode
     fullDistrictCode=stateCode+districtCode
+    tableHTML=''
+    classAtt='id = "basic" class = " table table-striped"' 
+    tableHTML+='<table %s">' % classAtt
+    tableHTML+="<tr><th> %s </th><td> %s </td></tr>" %("District Name",districtName.upper())
+    tableHTML+="<tr><th> %s </th><td> %s </td></tr>" %("Block Name",blockName.upper())
+    tableHTML+="<tr><th> %s </th><td> %s </td></tr>" %("FTO NO",ftono)
     logger.info(stateCode+districtCode+blockCode+blockName)
     fullfinyear=getFullFinYear(finyear)
     url="http://"+crawlIP+"/netnrega/FTO/fto_trasction_dtl.aspx?page=p&rptblk=t&state_code="+stateCode+"&state_name="+stateName.upper()+"&district_code="+fullDistrictCode+"&district_name="+districtName.upper()+"&block_code="+fullBlockCode+"&block_name="+blockName+"&flg=W&fin_year="+fullfinyear+"&fto_no="+ftono
@@ -85,13 +97,20 @@ def main():
     logger.info(url)
     ftofilename=ftofilepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftono+".html"
     logger.info(ftofilename)
-    if not os.path.exists(os.path.dirname(ftofilename)):
-      os.makedirs(os.path.dirname(ftofilename))
     r=requests.get(url)
-    f = open(ftofilename, 'w')
-    f.write(r.text)
-    query="update ftoDetails set isDownloaded=1 where id="+str(ftoid)
-    cur.execute(query)
+    inhtml=r.text
+    ftorawfilename=ftorawfilepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftono+".html"
+    writeFile(ftorawfilename,inhtml)
+    errorflag,outhtml=alterFTOHTML(inhtml)
+    if errorflag==0:
+      logger.info("FTO Download Success Updating the Status")
+      ftohtml=''
+      ftohtml+=tableHTML
+      ftohtml+=outhtml
+      ftohtml=htmlWrapperLocal(title="FTO Details", head='<h1 aling="center">'+ftono+'</h1>', body=ftohtml)
+      writeFile(ftofilename,ftohtml)
+      query="update ftoDetails set isDownloaded=1 where id="+str(ftoid)
+      cur.execute(query)
 
 
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors

@@ -1,3 +1,6 @@
+packageDir='/tmp/packageDir/'
+cssPath='/home/libtech/media/'
+nregaArchiveDir="/home/libtech/media/gDrive/reportsArchive/"
 broadcastsReportFile="/home/libtech/webroot/broadcasts/reports/broadcasts/index.html"
 broadcastReportFilePath="/home/libtech/webroot/broadcasts/reports/broadcasts/"
 includedir="/home/libtech/repo/includes/"
@@ -5,6 +8,10 @@ datadir="/home/libtech/gDrive/Chattisgarh/data/"
 nregaDataDir="/home/libtech/gDrive/stateName/nrega/"
 reportsDir="/home/libtech/gDrive/stateName/reports/"
 nregaStaticReportsDir="/home/libtech/gDrive/districtName.libtech/reports/"
+nregaDir="/home/libtech/media/gDrive/nrega/"
+nregaRawDir="/home/libtech/media/gDrive/rawData/"
+nregaDownloadsDir="/home/libtech/gDrive/districtName.libtech/downloads/"
+nregaRawDownloadsDir="/home/libtech/gDrive/rawData/districtName.libtech/downloads/"
 biharAudioDir="/home/libtech/webroot/broadcasts/audio/biharAudio"
 chaupalDataSummaryReportDir="/home/libtech/webroot/chaupalDataDashboard/reports/summary/"
 chaupalDashboardLink='http://chaupal.libtech.info/' 

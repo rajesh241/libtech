@@ -9,15 +9,17 @@ from MySQLdb import OperationalError
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
 sys.path.insert(0, fileDir+'/../../')
+sys.path.insert(0, fileDir+'/../scripts/')
+from globalSettings import datadir,nregaDataDir,reportsDir,nregaDir
+from crawlFunctions import getDistrictParams
 #sys.path.insert(0, rootdir)
 
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
-from libtechFunctions import singleRowQuery,writecsv
+from libtechFunctions import singleRowQuery,writecsv,getFullFinYear
 from globalSettings import datadir,nregaDataDir,reportsDir,nregaStaticReportsDir
-from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIQuery2HTML
-from crawlSettings import crawlIP,stateName,stateCode,stateShortCode,districtCode
+from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocalRelativeCSS, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIQuery2HTML
 
 
 def argsFetch():
@@ -29,20 +31,25 @@ def argsFetch():
   parser = argparse.ArgumentParser(description='HouseKeeping Script for SurGUJA Database')
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-d', '--district', help='Please enter the district', required=True)
+  parser.add_argument('-rid', '--reportID', help='Report ID for the report to be generated', required=False)
+  parser.add_argument('-limit', '--limit', help='Limit the number of entries that need to be processed', required=False)
 
   args = vars(parser.parse_args())
   return args
-def genReport(cur,logger,isBlock,htmlDir,finyear,districtName,blockCode,blockName,panchayatCode,panchayatName):
+def genReport(cur,logger,isBlock,htmlDir,finyear,districtName,blockCode,blockName,panchayatCode,panchayatName,reportIDFilter):
   blockFilterQuery=" and b.blockCode="+str(blockCode)
   panchayatFilterQuery=" and p.panchayatCode="+str(panchayatCode)
-  pdir=panchayatName.upper()+'/'
+  panchayatNameOnlyLetters=re.sub(r"[^A-Za-z]+", '', panchayatName)
+  pdir=panchayatNameOnlyLetters.upper()+'/'
+  relativeCSSPath='../../../'
   if isBlock == 1:
     panchayatFilterQuery=''
     panchayatCode=''
     panchayatName=''
     pdir=''
+    relativeCSSPath='../../'
   logger.info("Processing"+blockName+panchayatName) 
-  query="select title,dbname,selectClause,whereClause,orderClause,dbname,groupClause,linkIndex,linkType,limitResults,finyearFilter from reportQueries" 
+  query="select title,dbname,selectClause,whereClause,orderClause,dbname,groupClause,linkIndex,linkType,limitResults,finyearFilter from reportQueries where isRequired=1 %s"  % (reportIDFilter) 
   cur.execute(query)
   queryResults=cur.fetchall()
   for queryRow in queryResults:
@@ -72,7 +79,7 @@ def genReport(cur,logger,isBlock,htmlDir,finyear,districtName,blockCode,blockNam
       linkIndex=queryRow[7].split(',')
       linkType=queryRow[8].split(',')
       logger.info(query)
-      queryTable=tabletUIQuery2HTML(cur,query,hiddenValues=linkIndex,hiddenNames=linkType,districtName=districtName,blockName=blockName,panchayatName=panchayatName)
+      queryTable=tabletUIQuery2HTML(cur,query,hiddenValues=linkIndex,hiddenNames=linkType,districtName=districtName,blockName=blockName,panchayatName=panchayatName,isBlock=isBlock)
     else:
       queryTable=tabletUIQuery2HTML(cur,query)
     queryTable=queryTable.replace('query_text',query) 
@@ -84,7 +91,7 @@ def genReport(cur,logger,isBlock,htmlDir,finyear,districtName,blockCode,blockNam
   
     curhtmlfile=htmlDir+districtName.upper()+"/"+blockName.upper()+"/"+pdir+rdir+"/"+title.replace(' ','')+".html"
     logger.info(curhtmlfile)
-    myhtml=htmlWrapperLocal(title=title, head='<h1 aling="center">Reports Page</h1>', body=myhtml)
+    myhtml=htmlWrapperLocalRelativeCSS(relativeCSSPath=relativeCSSPath,title=title, head='<h1 aling="center">Reports Page</h1>', body=myhtml)
     if not os.path.exists(os.path.dirname(curhtmlfile)):
       os.makedirs(os.path.dirname(curhtmlfile))
     f=open(curhtmlfile,'w')
@@ -102,17 +109,26 @@ def main():
   logger.info("BEGIN PROCESSING...")
   if args['district']:
     districtName=args['district'].lower()
+  if args['limit']:
+    limitString=" limit %s " % (str(args['limit']))
+  else:
+    limitString="  "
+  if args['reportID']:
+    reportIDFilter= " and id = %s " % args['reportID']
+  else:
+    reportIDFilter= " "
   db = dbInitialize(db=districtName.lower(), charset="utf8")  # The rest is updated automatically in the function
   cur=db.cursor()
   db.autocommit(True)
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query)
+  crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
 
-  htmlDir=nregaStaticReportsDir.replace("districtName",districtName.lower())
+  htmlDir=nregaDir.replace("districtName",districtName.lower())
 
   #block Reports
-  query="select b.name,b.blockCode from blocks b where b.isRequired=1"
+  query="select b.name,b.blockCode from blocks b where b.isRequired=1 %s" % limitString
   #query="select b.name,b.blockCode from blocks b where b.isRequired=1 limit 1"
   #query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1 limit 1"
   #query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1 and b.blockCode='005' "
@@ -122,11 +138,11 @@ def main():
   for row in results:
     blockName=row[0]
     blockCode=row[1]
-    genReport(cur,logger,1,htmlDir,'16',districtName,blockCode,blockName,'','') 
-    genReport(cur,logger,1,htmlDir,'17',districtName,blockCode,blockName,'','') 
-    genReport(cur,logger,1,htmlDir,'all',districtName,blockCode,blockName,'','') 
+    genReport(cur,logger,1,htmlDir,'16',districtName,blockCode,blockName,'','',reportIDFilter) 
+    genReport(cur,logger,1,htmlDir,'17',districtName,blockCode,blockName,'','',reportIDFilter) 
+    genReport(cur,logger,1,htmlDir,'all',districtName,blockCode,blockName,'','',reportIDFilter) 
  
-  query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1"
+  query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1 %s" % limitString
   #query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1 limit 1"
   cur.execute(query)
   results=cur.fetchall()
@@ -136,9 +152,9 @@ def main():
     panchayatName=row[2]
     panchayatCode=row[3]
     finyear='16'
-    genReport(cur,logger,0,htmlDir,'16',districtName,blockCode,blockName,panchayatCode,panchayatName) 
-    genReport(cur,logger,0,htmlDir,'17',districtName,blockCode,blockName,panchayatCode,panchayatName) 
-    genReport(cur,logger,0,htmlDir,'all',districtName,blockCode,blockName,panchayatCode,panchayatName) 
+    genReport(cur,logger,0,htmlDir,'16',districtName,blockCode,blockName,panchayatCode,panchayatName,reportIDFilter) 
+    genReport(cur,logger,0,htmlDir,'17',districtName,blockCode,blockName,panchayatCode,panchayatName,reportIDFilter) 
+    genReport(cur,logger,0,htmlDir,'all',districtName,blockCode,blockName,panchayatCode,panchayatName,reportIDFilter) 
 
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
   logger.info("...END PROCESSING")     
