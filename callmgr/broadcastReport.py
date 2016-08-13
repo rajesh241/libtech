@@ -69,7 +69,13 @@ def main():
       csvname=broadcastReportFilePath+str(bid)+"_"+name.replace(' ',"")+".csv"
       print csvname
       writecsv(cur,query,csvname)
-      updateBroadcastTable(cur,bid) 
+      updateBroadcastTable(cur,bid)
+    query="select bid,vendor,phone,callStartTime,duration,vendorCallStatus,cost from callLogs where bid=%s order by phone" % str(bid) 
+    if(completed == '0' or completed=='1'):
+      csvname=broadcastReportFilePath+str(bid)+"_"+name.replace(' ',"")+"_detailed.csv"
+      print csvname
+      writecsv(cur,query,csvname)
+      #updateBroadcastTable(cur,bid)
 # print "Printing Broadcast reports"
 # myhtml=gethtmlheader()
 # myhtml+="<h1>Summary of Broadcasts</h1>"

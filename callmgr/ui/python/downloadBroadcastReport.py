@@ -23,8 +23,11 @@ def main():
   form = cgi.FieldStorage()
   bid=form["bid"].value
   name=form["name"].value
-
-  nameNoSpace=bid+"_"+name.replace(" ","")+".csv"
+  formType=form["formType"].value
+  if formType == 'downloadDetailReport':
+    nameNoSpace=bid+"_"+name.replace(" ","")+"_detailed.csv"
+  else:
+    nameNoSpace=bid+"_"+name.replace(" ","")+".csv"
   fullurl = os.environ["REQUEST_URI"]
   fullurl= "http://chaupal.libtech.info" 
   o = urlparse(fullurl)
