@@ -12,7 +12,6 @@ from selenium.common.exceptions import NoSuchElementException
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
 sys.path.insert(0, fileDir+'/../../')
-from globalSettings import nregaDir,nregaRawDir
 from libtechFunctions import writeFile,getFullFinYear,singleRowQuery
 #Connect to MySQL Database
 from wrappers.logger import loggerFetch

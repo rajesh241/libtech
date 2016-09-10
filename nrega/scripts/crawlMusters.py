@@ -70,6 +70,7 @@ def main():
 #Connect to MySQL Database
 #muster Type list
   musterTypeList= ['10','11','13','14']
+  musterTypeList= ['10']
   fullfinyear=getFullFinYear(finyear)
 #Query to get all the blocks
   query="select stateCode,districtCode,blockCode,name from blocks where isRequired=1"

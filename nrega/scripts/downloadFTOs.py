@@ -8,7 +8,7 @@ import importlib
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
 sys.path.insert(0, fileDir+'/../../')
-from globalSettings import nregaDir,nregaRawDir
+from nregaSettings import nregaRawDataDir
 from libtechFunctions import writeFile,getFullFinYear,singleRowQuery
 #Connect to MySQL Database
 from wrappers.logger import loggerFetch
@@ -62,11 +62,9 @@ def main():
 
 
 
-  htmlDir=nregaDir.replace("districtName",districtName.lower())
-  htmlRawDir=nregaRawDir.replace("districtName",districtName.lower())
+  ftorawfilepath=nregaRawDataDir.replace("districtName",districtName.lower())
 
-  ftofilepath=htmlDir+"/"+districtName.upper()+"/"
-  ftorawfilepath=htmlRawDir+"/"+districtName.upper()+"/"
+  #ftorawfilepath=htmlRawDir+"/"+districtName.upper()+"/"
 #ftofilepath="/home/libtech/libtechdata/CHATTISGARH/"+districtName+"/"
   query="select b.name,f.ftoNo,f.stateCode,f.districtCode,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where f.isDownloaded=0 and f.finyear='%s' and f.blockCode=b.blockCode and f.stateCode=b.stateCode and f.districtCode=b.districtCode  %s;" % (finyear,limitString)
   logger.info(query)
@@ -95,22 +93,24 @@ def main():
     url="http://"+crawlIP+"/netnrega/FTO/fto_trasction_dtl.aspx?page=p&rptblk=t&state_code="+stateCode+"&state_name="+stateName.upper()+"&district_code="+fullDistrictCode+"&district_name="+districtName.upper()+"&block_code="+fullBlockCode+"&block_name="+blockName+"&flg=W&fin_year="+fullfinyear+"&fto_no="+ftono
     logger.info(str(ftoid)+"   "+fullfinyear+"  "+ftono)
     logger.info(url)
-    ftofilename=ftofilepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftono+".html"
-    logger.info(ftofilename)
+    #ftofilename=ftofilepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftono+".html"
+    #logger.info(ftofilename)
     r=requests.get(url)
     inhtml=r.text
     ftorawfilename=ftorawfilepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftono+".html"
     writeFile(ftorawfilename,inhtml)
-    errorflag,outhtml=alterFTOHTML(inhtml)
-    if errorflag==0:
-      logger.info("FTO Download Success Updating the Status")
-      ftohtml=''
-      ftohtml+=tableHTML
-      ftohtml+=outhtml
-      ftohtml=htmlWrapperLocal(title="FTO Details", head='<h1 aling="center">'+ftono+'</h1>', body=ftohtml)
-      writeFile(ftofilename,ftohtml)
-      query="update ftoDetails set isDownloaded=1 where id="+str(ftoid)
-      cur.execute(query)
+    query="update ftoDetails set isDownloaded=1 where id="+str(ftoid)
+    cur.execute(query)
+#   errorflag,outhtml=alterFTOHTML(inhtml)
+#   if errorflag==0:
+#     logger.info("FTO Download Success Updating the Status")
+#     ftohtml=''
+#     ftohtml+=tableHTML
+#     ftohtml+=outhtml
+#     ftohtml=htmlWrapperLocal(title="FTO Details", head='<h1 aling="center">'+ftono+'</h1>', body=ftohtml)
+#     writeFile(ftofilename,ftohtml)
+#     query="update ftoDetails set isDownloaded=1 where id="+str(ftoid)
+#     cur.execute(query)
 
 
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
