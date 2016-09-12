@@ -67,69 +67,65 @@ def main():
   elem.send_keys(Keys.RETURN)
   time.sleep(1)
   #Query to get all the blocks
-  query="select stateCode,districtCode,blockCode,name from blocks where isRequired=1"
+
+  query="select b.blockCode,b.name,p.rawName,p.panchayatCode,p.id from blocks b, panchayats p where b.blockCode=p.blockCode and p.isRequired=1 order by jobcardCrawlDate"
+  #query="select rawName,panchayatCode,id from panchayats where isRequired=1  and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' order by jobcardCrawlDate"
   cur.execute(query)
-  results = cur.fetchall()
-  for row in results:
-    stateCode=row[0]
-    blockCode=row[2]
-    blockName=row[3]
-    logger.info("Block Name" + blockName)
+  panchresults = cur.fetchall()
+  for panchrow in panchresults:
+    blockCode=panchrow[0]
+    blockName=panchrow[1]
+    panchayatName=panchrow[2]
+    panchayatCode=panchrow[3]
+    panchID=panchrow[4]
+    logger.info(stateCode+districtCode+blockCode+blockName+panchayatCode+panchayatName)
     elem = driver.find_element_by_link_text(blockName)
     elem.send_keys(Keys.RETURN)
     time.sleep(1)
-  
-    query="select rawName,panchayatCode,id from panchayats where isRequired=1  and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' order by jobcardCrawlDate"
+    elem = driver.find_element_by_link_text(panchayatName)
+    elem.send_keys(Keys.RETURN)
+    time.sleep(1)
+    elem = driver.find_element_by_link_text("Job card/Employment Register")
+    elem.send_keys(Keys.RETURN)
+    time.sleep(5)
+    curtime = time.strftime('%Y-%m-%d %H:%M:%S')
+    html_source = driver.page_source
+    htmlsoup=BeautifulSoup(html_source)
+   #logger.info(html_source)
+   #f=open("/tmp/ab.html","w")
+   #f.write(html_source)
+    try:
+      table=htmlsoup.find('table',align="center")
+      rows = table.findAll('tr')
+      status=1
+    except:
+      status=0
+    query="update panchayats set jobcardCrawlStatus="+str(status)+", jobcardCrawlDate='"+curtime+"' where id="+str(panchID) 
+    logger.info(query)
     cur.execute(query)
-    panchresults = cur.fetchall()
-    for panchrow in panchresults:
-      panchayatName=panchrow[0]
-      panchayatCode=panchrow[1]
-      panchID=panchrow[2]
-      logger.info(stateCode+districtCode+blockCode+blockName+panchayatCode+panchayatName)
-      elem = driver.find_element_by_link_text(panchayatName)
-      elem.send_keys(Keys.RETURN)
-      time.sleep(1)
-      elem = driver.find_element_by_link_text("Job card/Employment Register")
-      elem.send_keys(Keys.RETURN)
-      time.sleep(5)
-      curtime = time.strftime('%Y-%m-%d %H:%M:%S')
-      html_source = driver.page_source
-      htmlsoup=BeautifulSoup(html_source)
-     #logger.info(html_source)
-     #f=open("/tmp/ab.html","w")
-     #f.write(html_source)
-      try:
-        table=htmlsoup.find('table',align="center")
-        rows = table.findAll('tr')
-        status=1
-      except:
-        status=0
-      query="update panchayats set jobcardCrawlStatus="+str(status)+", jobcardCrawlDate='"+curtime+"' where id="+str(panchID) 
-      logger.info(query)
-      cur.execute(query)
-      logger.info("Status is " + str(status))
-      if status==1:
-        for tr in rows:
-          cols = tr.findAll('td')
-          jclink=''
-          for link in tr.find_all('a'):
-            jclink=link.get('href')
-          if len(cols) > 2:
-            jcno="".join(cols[1].text.split())
-            headOfFamily=cols[2].text
-          if jobcardPrefix in jcno:
-            logger.info(jcno)
-            query="insert into jobcardRegister (headOfFamily,jobcard,stateCode,districtCode,blockCode,panchayatCode) values ('"+headOfFamily+"','"+jcno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"')"
-            try:
-              cur.execute(query)
-            except MySQLdb.IntegrityError,e:
-              errormessage=(time.strftime("%d/%m/%Y %H:%M:%S "))+str(e)+"\n"
-              #errorfile.write(errormessage)
-            continue
-      driver.back()
-      driver.back()
-      time.sleep(5)
+    logger.info("Status is " + str(status))
+    if status==1:
+      for tr in rows:
+        cols = tr.findAll('td')
+        jclink=''
+        for link in tr.find_all('a'):
+          jclink=link.get('href')
+        if len(cols) > 2:
+          jcno="".join(cols[1].text.split())
+          headOfFamily=cols[2].text.replace("'","")
+        if jobcardPrefix in jcno:
+          logger.info(jcno)
+          query="insert into jobcardRegister (headOfFamily,jobcard,stateCode,districtCode,blockCode,panchayatCode) values ('"+headOfFamily+"','"+jcno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"')"
+          logger.info(query)
+          try:
+            cur.execute(query)
+          except MySQLdb.IntegrityError,e:
+            errormessage=(time.strftime("%d/%m/%Y %H:%M:%S "))+str(e)+"\n"
+            #errorfile.write(errormessage)
+          continue
+    driver.back()
+    driver.back()
+    time.sleep(5)
   
     driver.back()
     time.sleep(5)

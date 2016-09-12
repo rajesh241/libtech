@@ -90,6 +90,15 @@ def main():
     elem = driver.find_element_by_link_text(panchayatName)
     elem.send_keys(Keys.RETURN)
 #    elem = driver.find_element_by_link_text("List of Worker with Aadhar No.(UID No.)")
+    elem = driver.find_element_by_link_text("List of Worker with Aadhar No.(UID No.)")
+    elem.send_keys(Keys.RETURN)
+    time.sleep(15)
+    jcsource = driver.page_source
+    rawhtml=jcsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+    jcfilename=jcReportRawFilePath+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/jobcardRegister/workerList.html"
+    logger.info(jcfilename)
+    writeFile(jcfilename,rawhtml)
+    driver.back()
 
     elem = driver.find_element_by_link_text("Download Panchayatwise MGNREGA Bank A/C Detail")
     elem.send_keys(Keys.RETURN)
@@ -119,11 +128,11 @@ def main():
     jcfilename=jcReportRawFilePath+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/jobcardRegister/workerListCoBank.html"
     logger.info(jcfilename)
     writeFile(jcfilename,rawhtml)
-    
-    
-
-
     driver.back()
+    
+    
+
+
     time.sleep(5)
     driver.back()
     time.sleep(5)
