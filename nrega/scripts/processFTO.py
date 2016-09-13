@@ -10,6 +10,7 @@ import sys
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
 from globalSettings import datadir
+from nregaSettings import nregaRawDataDir
 #Error File Defination
 errorfile = open('/tmp/processFTO.log', 'a')
 sys.path.insert(0, fileDir+'/../../')
@@ -67,7 +68,7 @@ def main():
 
 
   #ftofilepath=nregaDataDir.replace("stateName",stateName.title())+"/"+districtName.upper()+"/"
-  htmlDir=nregaDir.replace("districtName",districtName.lower())
+  ftofilepath=nregaRawDataDir.replace("districtName",districtName.lower())
   ftofilepath=htmlDir+"/"+districtName.upper()+"/"
 #ftofilepath="/home/libtech/libtechdata/CHATTISGARH/"+districtName+"/"
  

@@ -76,7 +76,7 @@ def main():
   elem.send_keys(Keys.RETURN)
   time.sleep(1)
   #Query to get all the blocks
-  query="select b.blockCode,b.name,p.panchayatCode,p.name from blocks b,panchayats p where b.blockCode=p.blockCode and p.isRequired=1 and jobcardCrawlDate is not NULL order by accountCrawlDate %s %s" % (additionalFilters,limitString)
+  query="select b.blockCode,b.name,p.panchayatCode,p.name from blocks b,panchayats p where b.blockCode=p.blockCode and p.isRequired=1 and p.jobcardCrawlDate is not NULL and TIMESTAMPDIFF(HOUR, p.accountCrawlDate, now()) > 10  order by p.accountCrawlDate %s %s" % (additionalFilters,limitString)
   cur.execute(query)
   results = cur.fetchall()
   for row in results:

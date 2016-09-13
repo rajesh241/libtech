@@ -66,7 +66,7 @@ def main():
 
   #ftorawfilepath=htmlRawDir+"/"+districtName.upper()+"/"
 #ftofilepath="/home/libtech/libtechdata/CHATTISGARH/"+districtName+"/"
-  query="select b.name,f.ftoNo,f.stateCode,f.districtCode,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where f.isDownloaded=0 and f.finyear='%s' and f.blockCode=b.blockCode and f.stateCode=b.stateCode and f.districtCode=b.districtCode  %s;" % (finyear,limitString)
+  query="select b.name,f.ftoNo,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where f.isDownloaded=0 and f.finyear='%s' and f.blockCode=b.blockCode   %s;" % (finyear,limitString)
   logger.info(query)
 #query="select b.name,f.ftoNo,f.stateCode,f.districtCode,f.blockCode,f.finyear,f.id from ftoDetails f,blocks b where f.isDownloaded=0 and f.blockCode=b.blockCode and f.stateCode=b.stateCode and f.districtCode=b.districtCode and b.blockCode='003';"
   cur.execute(query)
@@ -75,11 +75,9 @@ def main():
   for row in results:
     blockName=row[0]
     ftono=row[1]
-    stateCode=row[2]
-    districtCode=row[3]
-    blockCode=row[4]
-    finyear=row[5]
-    ftoid=row[6]
+    blockCode=row[2]
+    finyear=row[3]
+    ftoid=row[4]
     fullBlockCode=stateCode+districtCode+blockCode
     fullDistrictCode=stateCode+districtCode
     tableHTML=''
