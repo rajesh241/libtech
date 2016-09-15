@@ -94,6 +94,7 @@ def main():
     #ftofilename=ftofilepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftono+".html"
     #logger.info(ftofilename)
     r=requests.get(url)
+    r=requests.get(url)
     inhtml=r.text
     ftorawfilename=ftorawfilepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftono+".html"
     writeFile(ftorawfilename,inhtml)

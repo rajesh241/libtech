@@ -11,7 +11,13 @@ def getDistrictParams(cur,districtName):
   stateShortCode=row[3]
   districtCode=row[4]
   return crawlIP,stateName,stateCode,stateShortCode,districtCode
-
+def NICToSQLDate(dateString):
+  dateFormat="%d/%m/%Y"
+  if dateString == '':
+    outDate="Null"
+  else:
+    outDate="STR_TO_DATE('%s', '%s')" % (dateString,dateFormat)
+  return outDate
 def alterMISHTML(inhtml):
   htmlsoup=BeautifulSoup(inhtml,"html.parser")
   tableID="Details"
@@ -43,6 +49,16 @@ def tableToCSV(inhtml,tableID):
 
   return mycsv
 
+def genHTMLHeader(headerLabels,headerValues):
+  tableHTML=''
+  classAtt='id = "basic" class = " table table-striped"'
+  tableHTML+='<table %s">' % classAtt
+  i=0
+  for eachHeaderItem in headerValues:
+    tableHTML+="<tr><th> %s </th><td> %s </td></tr>" %(headerLabels[i],eachHeaderItem.upper())
+    i=i+1
+  tableHTML+='</table>'
+  return tableHTML
 
 def alterFTOHTML(inhtml):
   htmlsoup=BeautifulSoup(inhtml,"html.parser")
@@ -56,6 +72,7 @@ def alterFTOHTML(inhtml):
   if errorflag==0:
     outhtml+=stripTableAttributes(table,tableID)
   return errorflag,outhtml
+
 def getMusterPaymentDate(inhtml):
   htmlsoup=BeautifulSoup(inhtml,"html.parser")
   try:

@@ -14,13 +14,15 @@ from nregaSettings import nregaRawDataDir
 #Error File Defination
 errorfile = open('/tmp/processFTO.log', 'a')
 sys.path.insert(0, fileDir+'/../../')
-from globalSettings import nregaDir 
-from libtechFunctions import getFullFinYear,singleRowQuery
+from nregaSettings import nregaWebDir,nregaRawDataDir 
+from libtechFunctions import writeFile,getFullFinYear,singleRowQuery
 #Connect to MySQL Database
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
+from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
 from crawlFunctions import getDistrictParams
+from crawlFunctions import alterFTOHTML,genHTMLHeader,NICToSQLDate
 def argsFetch():
   '''
   Paser for the argument list that returns the args list
@@ -56,7 +58,7 @@ def main():
   if args['limit']:
     limitString=' limit '+args['limit']
   if args['finyear']:
-    infinyear=args['finyear']
+    finyear=args['finyear']
  
   logger.info("DistrictName "+districtName)
 #Query to get all the blocks
@@ -64,54 +66,63 @@ def main():
   logger.info("State Name "+stateName)
   query="use %s" % districtName.lower()
   cur.execute(query)
-
+  fullFinYear=getFullFinYear(finyear)
 
 
   #ftofilepath=nregaDataDir.replace("stateName",stateName.title())+"/"+districtName.upper()+"/"
   ftofilepath=nregaRawDataDir.replace("districtName",districtName.lower())
-  ftofilepath=htmlDir+"/"+districtName.upper()+"/"
+  modifiedFTOFilePath=nregaWebDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
+   
 #ftofilepath="/home/libtech/libtechdata/CHATTISGARH/"+districtName+"/"
  
-  query=" select f.id,f.ftoNo,b.name,f.finyear from ftoDetails f,blocks b where b.blockCode=f.blockCode and b.isRequired=1 and f.isDownloaded=1 and f.isProcessed=0 and f.finyear='%s' %s" %(infinyear,limitString)
+  query=" select f.id,f.ftoNo,b.name from ftoDetails f,blocks b where b.blockCode=f.blockCode and b.isRequired=1 and f.isDownloaded=1 and f.isProcessed=0 and f.finyear='%s' %s" %(finyear,limitString)
   cur.execute(query)
   logger.info(query)
   if cur.rowcount:
     logger.info("The Number of FTOs Processed in is : "+str(cur.rowcount))
     results = cur.fetchall()
     for row in results:
-      ftoid=row[0]
+      isComplete=1
+      rowid=str(row[0])
       ftoNo=row[1]
       blockName=row[2]
-      finyear=row[3]
-      logger.info(str(ftoid)+"  "+finyear+"  "+ftoNo+"  "+blockName)
+      logger.info(str(rowid)+"  "+finyear+"  "+ftoNo+"  "+blockName)
       fullfinyear=getFullFinYear(finyear) 
       ftofilename=ftofilepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftoNo+".html"
+      modifiedFTOFileName=modifiedFTOFilePath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftoNo+".html"
       logger.info(ftofilename)
+
       if (os.path.isfile(ftofilename)): 
         ftohtml=open(ftofilename,'r').read()
       else:
         ftohtml="Timeout expired"
-      if ("Timeout expired" in ftohtml) or ("The Values specified are wrong" in ftohtml):
-        logger.info("This is time out expired file")
+      if ("Timeout expired" in ftohtml) or ("Due to the heavy network traffic" in ftohtml) or ("The Values specified are wrong" in ftohtml) or ("The service is unavailable" in ftohtml):
         errorflag=1
-        query="update ftoDetails set isDownloaded=0 where id="+str(ftoid)
+      else:
+        errorflag,outhtml=alterFTOHTML(ftohtml)
+     
+      if errorflag==1:
+        logger.info("Invalid FTo HTML File please check") 
+        query="update ftoDetails set isDownloaded=0 where id=%s" % rowid 
+        logger.info(query)
         cur.execute(query)
       else:
-        htmlsoup=BeautifulSoup(ftohtml)
-        try:
-          table=htmlsoup.find('table',id="ftoDetails")
-          rows = table.findAll('tr')
-          errorflag=0
-        except:
-          errorflag=1
-          query="update ftoDetails set isDownloaded=0 where id="+str(ftoid)
-          cur.execute(query)
-   
-      if errorflag==0:
+        logger.info("No Errors here, seems to be valid FTO File")
+        htmlHeaderLabels=["District Name","Block Name","FTO No"]
+        htmlHeaderValues=[districtName,blockName,ftoNo]
+        htmlHeader=genHTMLHeader(htmlHeaderLabels,htmlHeaderValues)
+
+        modifiedFTOHTML=htmlHeader+outhtml
+        modifiedFTOHTML=htmlWrapperLocal(title="FTO Details", head='<h1 aling="center">'+ftoNo+'</h1>', body=modifiedFTOHTML)
+        logger.info(modifiedFTOFileName)
+        writeFile(modifiedFTOFileName,modifiedFTOHTML)
+ 
+        htmlsoup=BeautifulSoup(modifiedFTOHTML)
+        table=htmlsoup.find('table',id="ftoDetails")
+        rows = table.findAll('tr')
         for tr in rows:
           cols = tr.findAll('td')
           tdtext=''
-          logger.info("Error flag is Zero")
           block= cols[1].string.strip()
           logger.info("%s - %s " % (blockName,block.upper()))
           if blockName.upper()==block.upper():
@@ -134,36 +145,25 @@ def main():
             rejectionReason=" ".join(cols[17].text.split())
             panchayat=jobcardpanchayat[jobcardpanchayat.index("(") + 1:jobcardpanchayat.rindex(")")]
             jobcard=jobcardpanchayat[0:jobcardpanchayat.index("(")]
-            #print panchayat+"  "+jobcard
-            if transactiondatestring != '':
-              transactiondate = time.strptime(transactiondatestring, '%d/%m/%Y')
-              transactiondate = time.strftime('%Y-%m-%d %H:%M:%S', transactiondate)
-            else:
-              transactiondate=''
-            if processeddatestring != '':
-              processeddate = time.strptime(processeddatestring, '%d/%m/%Y')
-              processeddate = time.strftime('%Y-%m-%d %H:%M:%S', processeddate)
-              processeddate="'%s'" % processeddate
-            else:
-        			processeddate='NULL'
-            if bankprocessdatestring != '':
-              bankprocessdate = time.strptime(bankprocessdatestring, '%d/%m/%Y')
-              bankprocessdate = time.strftime('%Y-%m-%d %H:%M:%S', bankprocessdate)
-            else:
-              bankprocessdate=''
             logger.info(ftoNo+"  "+jobcard+"  "+panchayat)
-            query="insert into ftoTransactionDetails (finyear,ftoNo,referenceNo,jobcard,applicantName,primaryAccountHolder,accountNo,wagelistNo,transactionDate,processedDate,status,rejectionReason,utrNo,creditedAmount,bankCode,IFSCCode) values ('"+finyear+"','"+ftoNo+"','"+referenceNo+"','"+jobcard+"','"+applicantName+"','"+primaryAccountHolder+"','"+accountNo+"','"+wagelistNo+"','"+transactiondate+"',"+processeddate+",'"+status+"','"+rejectionReason+"','"+utrNo+"',"+str(creditedAmount)+",'"+bankCode+"','"+IFSCCode+"');"
-            logger.info(query)
-            try:
-              cur.execute(query)
-            except MySQLdb.IntegrityError,e:
-              errormessage=(time.strftime("%d/%m/%Y %H:%M:%S "))+str(e)+"\n"
-              errorfile.write(errormessage)
-              continue
-        query="update ftoDetails set isProcessed=1 where id="+str(ftoid);
-      #print query
-        cur.execute(query)
+            transactionDate=NICToSQLDate(transactiondatestring)
+            processedDate=NICToSQLDate(processeddatestring)
+            bankProcessedDate=NICToSQLDate(bankprocessdatestring)
+            if processeddatestring == '':
+              isComplete=0
 
+            query="select * from ftoTransactionDetails where ftoNo='%s' and ftoIndex=%s" % (ftoNo,srno)
+            cur.execute(query)
+            if cur.rowcount == 0:
+              query="insert into ftoTransactionDetails (ftoNo,ftoIndex) values ('%s',%s) " % (ftoNo,srno)
+              logger.info(query)
+              cur.execute(query)
+            query="update ftoTransactionDetails set finyear='%s',referenceNo='%s',jobcard='%s',applicantName='%s',primaryAccountHolder='%s',accountNo='%s',wagelistNo='%s',transactionDate=%s,processedDate=%s,bankProcessedDate=%s,status='%s',rejectionReason='%s',utrNo='%s',creditedAmount=%s,bankCode='%s',IFSCCode='%s' where ftoNo='%s' and ftoIndex=%s " % (finyear,referenceNo,jobcard,applicantName,primaryAccountHolder,accountNo,wagelistNo,transactionDate,processedDate,bankProcessedDate,status,rejectionReason,utrNo,str(creditedAmount),bankCode,IFSCCode,ftoNo,srno)
+            logger.info(query)
+            cur.execute(query)
+        query="update ftoDetails set isProcessed=1,isComplete=%s where id=%s " % (str(isComplete),rowid)
+        logger.info(query)
+        cur.execute(query)    
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
   logger.info("...END PROCESSING")     
   exit(0)
