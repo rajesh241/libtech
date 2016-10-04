@@ -180,7 +180,14 @@ def main():
                 isComplete=0      
               paymentDate=NICToSQLDate(paymentDateString)
               creditedDate=NICToSQLDate(creditedDateString)
-
+              #We also need to create entry in WageList Table
+              query="select * from wagelists where wagelistNo='%s' " % (wagelistNo)
+              logger.info(query)
+              cur.execute(query)
+              if cur.rowcount == 0:
+                query="insert into wagelists (blockCode,finyear,wagelistNo) values ('%s','%s','%s') " % (blockCode,finyear,wagelistNo)
+                logger.info(query)
+                cur.execute(query)
               #Here first we need to find out if the record already exists
               logger.info(" muster No: %s  musterIndex : %s  finyear: %s  blockCode: %s " % (musterNo, musterIndex, finyear, blockCode))
               query="select id from workDetails where musterNo=%s and musterIndex=%s and finyear='%s' and blockCode='%s'" % (musterNo,musterIndex,finyear,blockCode)
