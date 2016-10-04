@@ -83,11 +83,19 @@ def main():
     panchayatName=panchrow[2]
     panchayatCode=panchrow[3]
     panchID=panchrow[4]
-    logger.info(stateCode+districtCode+blockCode+blockName+panchayatCode+panchayatName)
+    fullPanchayatCode=stateCode+districtCode+blockCode+panchayatCode
+    logger.info(stateCode+districtCode+blockCode+blockName+panchayatCode+panchayatName+fullPanchayatCode)
     elem = driver.find_element_by_link_text(blockName)
     elem.send_keys(Keys.RETURN)
     time.sleep(1)
-    elem = driver.find_element_by_link_text(panchayatName)
+    compareText="Panchayat_Code=%s" % fullPanchayatCode
+    elems = driver.find_elements_by_xpath("//a[@href]")
+    for elem in elems:
+      hrefLink=str(elem.get_attribute("href"))
+      if compareText in hrefLink:
+        logger.info("Found the Code")
+        break
+    #elem = driver.find_element_by_link_text(panchayatName)
     elem.send_keys(Keys.RETURN)
     time.sleep(1)
     elem = driver.find_element_by_link_text("Job card/Employment Register")
