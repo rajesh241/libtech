@@ -41,12 +41,6 @@ def main():
   #This is a Kludge to remove all the input tags from the html because for some reason Beautiful Soup does not parse the html correctly
   regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
 
-  db = dbInitialize(db="libtech", charset="utf8")  # The rest is updated automatically in the function
-  cur=db.cursor()
-  db.autocommit(True)
-  #Query to set up Database to read Hindi Characters
-  query="SET NAMES utf8"
-  cur.execute(query)
 
   districtURL=args['districtURL']+"&"
   stateShortCode=args['jobcardPrefix']
@@ -65,17 +59,34 @@ def main():
   logger.info("District Code : %s " ,districtCode) 
   logger.info("State Code : %s " ,stateCode) 
   logger.info("District Name : %s " ,districtName) 
-  logger.info("State Name : %s " ,stateName) 
-  r=re.findall('=(.*?)\&',districtURL)
-  query="select * from crawlDistricts where name='%s'" % districtName
+  logger.info("State Name : %s " ,stateName)
+  db = dbInitialize(db=districtName.lower(), charset="utf8")  # The rest is updated automatically in the function
+  cur=db.cursor()
+  db.autocommit(True)
+  #Query to set up Database to read Hindi Characters
+  query="SET NAMES utf8"
   cur.execute(query)
-  if cur.rowcount != 0: 
-    logger.info("The District Name Exists")
-  else:
-    query="insert into crawlDistricts (name,crawlIP,state,stateShortCode,districtCode,stateCode) values ('%s','%s','%s','%s','%s','%s')" % (districtName,crawlIP,stateName,stateShortCode,districtCode,stateCode)
-    logger.info(query)
-    cur.execute(query)
-    #Now we need to fetch the block Page
+  s='''
+districtName='%s'
+crawlIP='%s'
+stateName='%s'
+stateShortCode='%s'
+districtCode='%s'
+stateCode='%s'
+  ''' % (districtName,crawlIP,stateName,stateShortCode,districtCode,stateCode)
+  f = open('../../includes/crawlSettings.py', 'w')
+  f.write(s.encode("UTF-8"))
+  
+  r=re.findall('=(.*?)\&',districtURL)
+# query="select * from crawlDistricts where name='%s'" % districtName
+# cur.execute(query)
+# if cur.rowcount != 0: 
+#   logger.info("The District Name Exists")
+# else:
+#   query="insert into crawlDistricts (name,crawlIP,state,stateShortCode,districtCode,stateCode) values ('%s','%s','%s','%s','%s','%s')" % (districtName,crawlIP,stateName,stateShortCode,districtCode,stateCode)
+#   logger.info(query)
+#   cur.execute(query)
+#   #Now we need to fetch the block Page
   query="use %s " % districtName.lower()
   cur.execute(query)
   r=requests.get(districtURL)

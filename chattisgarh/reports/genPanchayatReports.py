@@ -17,6 +17,7 @@ from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery,writecsv
 from globalSettings import datadir,nregaDataDir,reportsDir,nregaStaticReportsDir
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIQuery2HTML
+from crawlSettings import crawlIP,stateName,stateCode,stateShortCode,districtCode
 
 
 def argsFetch():
@@ -99,53 +100,45 @@ def main():
   logger.info('args: %s', str(args))
 
   logger.info("BEGIN PROCESSING...")
-  db = dbInitialize(db="libtech", charset="utf8")  # The rest is updated automatically in the function
+  if args['district']:
+    districtName=args['district'].lower()
+  db = dbInitialize(db=districtName.lower(), charset="utf8")  # The rest is updated automatically in the function
   cur=db.cursor()
   db.autocommit(True)
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query)
-  if args['district']:
-    districtName=args['district'].lower()
 
-  query="select state from crawlDistricts where name='%s'" % districtName.lower()
+  htmlDir=nregaStaticReportsDir.replace("districtName",districtName.lower())
+
+  #block Reports
+  query="select b.name,b.blockCode from blocks b where b.isRequired=1"
+  #query="select b.name,b.blockCode from blocks b where b.isRequired=1 limit 1"
+  #query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1 limit 1"
+  #query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1 and b.blockCode='005' "
+#  query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1 and b.blockCode='003' and panchayatCode='013'"
   cur.execute(query)
-  if cur.rowcount == 0:
-    logger.info("INVALID DISTRICT ENTERED")
-  else:
-    stateName=singleRowQuery(cur,query)
-    query="use %s " % districtName.lower()
-    cur.execute(query)
-    htmlDir=nregaStaticReportsDir.replace("districtName",districtName.lower())
-
-    #block Reports
-    query="select b.name,b.blockCode from blocks b where b.isRequired=1"
-    #query="select b.name,b.blockCode from blocks b where b.isRequired=1 limit 1"
-    #query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1 limit 1"
-    #query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1 and b.blockCode='005' "
-#    query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1 and b.blockCode='003' and panchayatCode='013'"
-    cur.execute(query)
-    results=cur.fetchall()
-    for row in results:
-      blockName=row[0]
-      blockCode=row[1]
-      genReport(cur,logger,1,htmlDir,'16',districtName,blockCode,blockName,'','') 
-      genReport(cur,logger,1,htmlDir,'17',districtName,blockCode,blockName,'','') 
-      genReport(cur,logger,1,htmlDir,'all',districtName,blockCode,blockName,'','') 
+  results=cur.fetchall()
+  for row in results:
+    blockName=row[0]
+    blockCode=row[1]
+    genReport(cur,logger,1,htmlDir,'16',districtName,blockCode,blockName,'','') 
+    genReport(cur,logger,1,htmlDir,'17',districtName,blockCode,blockName,'','') 
+    genReport(cur,logger,1,htmlDir,'all',districtName,blockCode,blockName,'','') 
  
-    query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1"
-    #query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1 limit 1"
-    cur.execute(query)
-    results=cur.fetchall()
-    for row in results:
-      blockName=row[0]
-      blockCode=row[1]
-      panchayatName=row[2]
-      panchayatCode=row[3]
-      finyear='16'
-      genReport(cur,logger,0,htmlDir,'16',districtName,blockCode,blockName,panchayatCode,panchayatName) 
-      genReport(cur,logger,0,htmlDir,'17',districtName,blockCode,blockName,panchayatCode,panchayatName) 
-      genReport(cur,logger,0,htmlDir,'all',districtName,blockCode,blockName,panchayatCode,panchayatName) 
+  query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1"
+  #query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1 limit 1"
+  cur.execute(query)
+  results=cur.fetchall()
+  for row in results:
+    blockName=row[0]
+    blockCode=row[1]
+    panchayatName=row[2]
+    panchayatCode=row[3]
+    finyear='16'
+    genReport(cur,logger,0,htmlDir,'16',districtName,blockCode,blockName,panchayatCode,panchayatName) 
+    genReport(cur,logger,0,htmlDir,'17',districtName,blockCode,blockName,panchayatCode,panchayatName) 
+    genReport(cur,logger,0,htmlDir,'all',districtName,blockCode,blockName,panchayatCode,panchayatName) 
 
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
   logger.info("...END PROCESSING")     

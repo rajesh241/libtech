@@ -16,6 +16,7 @@ from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displa
 from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery,getFullFinYear
 from globalSettings import datadir,nregaDataDir
+from crawlSettings import crawlIP,stateName,stateCode,stateShortCode,districtCode
 
 def argsFetch():
   '''
@@ -41,8 +42,9 @@ def main():
   logger.info("BEGIN PROCESSING...")
   #This is a Kludge to remove all the input tags from the html because for some reason Beautiful Soup does not parse the html correctly
   regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
+  districtName=args['district']
 
-  db = dbInitialize(db="libtech", charset="utf8")  # The rest is updated automatically in the function
+  db = dbInitialize(db=districtName.lower(), charset="utf8")  # The rest is updated automatically in the function
   cur=db.cursor()
   db.autocommit(True)
   #Query to set up Database to read Hindi Characters
@@ -54,18 +56,11 @@ def main():
   else:
     limitString=" limit 10000 "
   infinyear=args['finyear']
-  districtName=args['district']
  
   logger.info("DistrictName "+districtName)
   logger.info("Fin year "+infinyear)
 
 #Query to get all the blocks
-  query="use libtech"
-  cur.execute(query)
-  query="select crawlIP from crawlDistricts where name='%s'" % districtName.lower()
-  crawlIP=singleRowQuery(cur,query)
-  query="select state from crawlDistricts where name='%s'" % districtName.lower()
-  stateName=singleRowQuery(cur,query)
   logger.info("crawlIP "+crawlIP)
   logger.info("State Name "+stateName)
   query="use %s" % districtName.lower()
@@ -91,8 +86,8 @@ def main():
     panchayatName=row[1]
     panchayatNameOnlyLetters=re.sub(r"[^A-Za-z]+", '', panchayatName)
     musterNo=row[2]
-    stateCode=row[3]
-    districtCode=row[4]
+    #stateCode=row[3]
+    #districtCode=row[2]
     blockCode=row[5]
     panchayatCode=row[6]
     finyear=row[7]

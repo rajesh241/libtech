@@ -11,7 +11,7 @@ if sys.version_info[0] > 2:
 import MySQLdb
 
 from wrappers.logger import loggerFetch
-from includes.settings import dbhost,dbuser,dbpasswd,sid,token
+from includes.settings import dbhost,dbuser,dbpasswd
 
 
 #######################

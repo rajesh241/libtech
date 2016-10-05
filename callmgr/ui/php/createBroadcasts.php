@@ -103,6 +103,7 @@ while($row=mysqli_fetch_array($results)){
                                 <option value="general" selected>General Broadcast</option>
                                 <option value="feedback">Feedback Broadcast </option>
                                 <option value="ghattuFeedback">Ghattu Feedback Broadcast </option>
+                                <option value="rscdFeedback">RSCD Feedback Broadcast </option>
                                 <option value="wageBroadcast">Wage Broadcast </option>
                                 <option value="biharVoiceMail">BiharVOice Mail </option>
                                   </td>

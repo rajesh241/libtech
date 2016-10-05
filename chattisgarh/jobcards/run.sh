@@ -1,7 +1,6 @@
 while true
 do 
     date 
-    python downloadJobcard.py $1
-    sleep 1
+   python /home/libtech/repo/chattisgarh/jobcards/downloadJobcard.py -d latehar -limit 1 
 done
 

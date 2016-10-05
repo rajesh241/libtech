@@ -12,8 +12,8 @@ import requests
 import xml.etree.ElementTree as ET
 
 import settings
-from settings import dbhost,dbuser,dbpasswd,sid,token
-from bootstrap_utils import getString
+from settings import dbhost,dbuser,dbpasswd
+from bootstrap_utils import getString,getString1
 
 
 def getFullFinYear(shortFinYear):
@@ -135,7 +135,7 @@ def writecsv(cur,query,filename):
   for row in results:
     rowEncoded=[]
     for a in row:
-      s=getString(a)
+      s=getString1(a)
       b=s.encode("UTF-8")
       rowEncoded.append(b)
     writer.writerow(rowEncoded) 
@@ -437,4 +437,9 @@ def getBlockCodeFromJobcard(jobcard):
 def getPanchayatCodeFromJobcard(jobcard):
   return jobcard[10:13]
 
-
+def writeFile(filename,filedata):
+  if not os.path.exists(os.path.dirname(filename)):
+    os.makedirs(os.path.dirname(filename))
+  myfile = open(filename, "w")
+  myfile.write(filedata.encode("UTF-8"))
+  myfile.close()

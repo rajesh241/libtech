@@ -151,8 +151,9 @@ def main():
                 branchNameOrPOAddress="".join(cols[statusindex-3].text.split())
                 branchCodeOrPOCode="".join(cols[statusindex-2].text.split())
                 wagelistNo="".join(cols[statusindex-1].text.split())
-                paymentDateString="".join(cols[statusindex+1].text.split())
-                creditedDatestring="".join(cols[statusindex+3].text.split())
+                #paymentDateString="".join(cols[statusindex+1].text.split())
+                paymentDateString=''
+                creditedDatestring="".join(cols[statusindex+1].text.split())
                 nameandjobcardarray=re.match(r'(.*)'+reMatchString+'(.*)',nameandjobcard)
                 name=nameandjobcardarray.groups()[0]
                 jobcard=reMatchString+nameandjobcardarray.groups()[1]

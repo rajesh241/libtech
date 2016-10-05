@@ -31,7 +31,8 @@ def main():
   query="use libtech"
   cur.execute(query)
   query="select bid,name,DATE_FORMAT(startDate,'%d-%M-%Y') startDate,total,pending,success,fail,expired,cost,successP Percentage from broadcasts order by bid desc limit 100"
-  section_html = getButtonV2('./downloadBroadcastReport.py', 'downloadReport', 'downloadReport')
+  section_html = getButtonV2('./downloadBroadcastReport.py', 'downloadReport', 'Summary Report')
+  section_html += getButtonV2('./downloadBroadcastReport.py', 'downloadDetailReport', 'Detailed Report')
   hiddenNames=['bid','name'] 
   hiddenValues=[0,1]
   query_table="</br>"

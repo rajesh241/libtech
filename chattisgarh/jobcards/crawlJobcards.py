@@ -20,6 +20,7 @@ from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displa
 from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery
 from globalSettings import datadir,nregaDataDir
+from crawlSettings import crawlIP,stateName,stateShortCode,districtCode
 def argsFetch():
   '''
   Paser for the argument list that returns the args list
@@ -41,7 +42,9 @@ def main():
   logger.info('args: %s', str(args))
 
   logger.info("BEGIN PROCESSING...")
-  db = dbInitialize(db="surguja", charset="utf8")  # The rest is updated automatically in the function
+  districtName=args['district']
+  logger.info("DistrictName "+districtName)
+  db = dbInitialize(db=districtName.lower(), charset="utf8")  # The rest is updated automatically in the function
   cur=db.cursor()
   db.autocommit(True)
   #Query to set up Database to read Hindi Characters
@@ -49,24 +52,9 @@ def main():
   cur.execute(query)
   display = displayInitialize(args['visible'])
   driver = driverInitialize(args['browser'])
-  districtName=args['district']
-  logger.info("DistrictName "+districtName)
-  
-  query="use libtech"
-  cur.execute(query)
-  query="select crawlIP from crawlDistricts where name='%s'" % districtName.lower()
-  crawlIP=singleRowQuery(cur,query)
-  query="select state from crawlDistricts where name='%s'" % districtName.lower()
-  stateName=singleRowQuery(cur,query)
-  query="select stateShortCode from crawlDistricts where name='%s'" % districtName.lower()
-  stateShortCode=singleRowQuery(cur,query)
-  query="select districtCode from crawlDistricts where name='%s'" % districtName.lower()
-  districtCode=singleRowQuery(cur,query)
   jobcardPrefix="%s-%s" % (stateShortCode,districtCode)
   logger.info("crawlIP "+crawlIP)
   logger.info("State Name "+stateName)
-  query="use %s" % districtName.lower()
-  cur.execute(query)
   #Start Program here
   url="http://nrega.nic.in/netnrega/sthome.aspx"
   driver.get(url)
@@ -82,7 +70,6 @@ def main():
   results = cur.fetchall()
   for row in results:
     stateCode=row[0]
-    districtCode=row[1]
     blockCode=row[2]
     blockName=row[3]
     logger.info("Block Name" + blockName)

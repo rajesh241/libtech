@@ -86,6 +86,8 @@ def main():
         exotelURL='http://my.exotel.in/exoml/start/51210'
       elif (template == 'ghattuFeedback'):
         exotelURL='http://my.exotel.in/exoml/start/62882'
+      elif (template == 'rscdFeedback'):
+        exotelURL='http://my.exotel.in/exoml/start/107221'
       print callid+"  "+phone
       r = connect_customer(
           sid, token,

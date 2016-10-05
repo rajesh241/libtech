@@ -231,4 +231,48 @@ def scheduleWageBroadcastCall(cur,jobcard,phone,dbname,musterTransactionID=None,
       print(query)
       cur.execute(query)
   return callid
+def updateBroadcastStats(cur,logger,bid):
+  query="select count(*) from callSummary where status='success' and bid="+str(bid)
+  success=singleRowQuery(cur,query)
+  query="select count(*) from callSummary where status='failMaxRetry' and bid="+str(bid)
+  failMaxRetry=singleRowQuery(cur,query)
+  query="select count(*) from callSummary where status='expired' and bid="+str(bid)
+  expired=singleRowQuery(cur,query)
+  query="select count(*) from callSummary where status='pending' and bid="+str(bid)
+  pending=singleRowQuery(cur,query)  
+  query="select sum(cost) from callLogs where bid="+str(bid)
+  cost=singleRowQuery(cur,query)
+  query="select TIMESTAMPDIFF(DAY, endDate, now()) from broadcasts where bid="+str(bid)
+  timediff=singleRowQuery(cur,query)
+  if cost == None:
+    cost = 0
+  else:
+    cost = cost/100
+  total=success+expired+failMaxRetry+pending
+  successPercentage=0
+  if (total > 0):
+    successPercentage=math.trunc(success*100/total)
+  logger.info(str(success)+"  "+str(failMaxRetry)+"  "+str(expired)+"  "+str(pending)+"  "+str(total)+"  "+str(cost))
+  isComplete=0
+  if((pending == 0) and (timediff > 2)):
+   isComplete=1
+  query="update broadcasts set successP='"+str(successPercentage)+"',completed="+str(isComplete)+",success="+str(success)+",cost="+str(cost)+",fail="+str(failMaxRetry)+",expired="+str(expired)+",pending="+str(pending)+",total="+str(total)+" where bid="+str(bid) 
+  logger.info(query)
+  cur.execute(query)
 
+
+def updateBroadcastStatus(cur,logger):
+  query="select bid from broadcasts where error=0 and processed=1 and status != 'complete'"
+  cur.execute(query)
+  results=cur.fetchall()
+  for row in results:
+    bid=str(row[0])
+    logger.info("Processing BID %s " % bid)
+    query="select count(*) from callSummary where bid=%s and status='pending'" % (bid)
+    count=singleRowQuery(cur,query)
+    updateBroadcastStats(cur,logger,bid)
+    logger.info("Pending calls for bid: %s is %s " % (bid,str(count)))
+    if count == 0:
+      query="update broadcasts set status='complete' where bid=%s" % bid
+      cur.execute(query) 
+    
