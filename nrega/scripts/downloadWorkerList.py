@@ -76,7 +76,7 @@ def main():
   elem.send_keys(Keys.RETURN)
   time.sleep(1)
   #Query to get all the blocks
-  query="select b.blockCode,b.name,p.panchayatCode,p.name from blocks b,panchayats p where b.blockCode=p.blockCode and p.isRequired=1 and p.jobcardCrawlDate is not NULL and TIMESTAMPDIFF(HOUR, p.accountCrawlDate, now()) > 10  order by p.accountCrawlDate %s %s" % (additionalFilters,limitString)
+  query="select b.blockCode,b.name,p.panchayatCode,p.name from blocks b,panchayats p where b.blockCode=p.blockCode and p.isRequired=1 and (p.accountCrawlDate is NULL or TIMESTAMPDIFF(DAY, p.accountCrawlDate, now()) > 7 ) order by p.accountCrawlDate %s %s" % (additionalFilters,limitString)
   cur.execute(query)
   results = cur.fetchall()
   for row in results:
@@ -85,9 +85,17 @@ def main():
     panchayatCode=row[2]
     panchayatName=row[3]
     panchayatNameOnlyLetters=re.sub(r"[^A-Za-z]+", '', panchayatName)
+    fullPanchayatCode=stateCode+districtCode+blockCode+panchayatCode
     elem = driver.find_element_by_link_text(blockName)
     elem.send_keys(Keys.RETURN)
-    elem = driver.find_element_by_link_text(panchayatName)
+    compareText="Panchayat_Code=%s" % fullPanchayatCode
+    elems = driver.find_elements_by_xpath("//a[@href]")
+    for elem in elems:
+      hrefLink=str(elem.get_attribute("href"))
+      if compareText in hrefLink:
+        logger.info("Found the Code")
+        break
+    #elem = driver.find_element_by_link_text(panchayatName)
     elem.send_keys(Keys.RETURN)
 #    elem = driver.find_element_by_link_text("List of Worker with Aadhar No.(UID No.)")
     elem = driver.find_element_by_link_text("List of Worker with Aadhar No.(UID No.)")

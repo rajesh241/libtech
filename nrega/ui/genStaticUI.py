@@ -18,6 +18,7 @@ from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displa
 from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery,writeFile
 from globalSettings import datadir,nregaDataDir,reportsDir,nregaDir
+from nregaSettings import nregaWebDir,nregaRawDataDir 
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocalRelativeCSS, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
 #from crawlSettings import crawlIP,stateName,stateCode,stateShortCode,districtCode
 def argsFetch():
@@ -56,22 +57,23 @@ def main():
   logger.info(curhtmlfile)
   query="use crawlDistricts"
   cur.execute(query)
-  query="select name from districts where isRequired=1"
+  query="select name from districts limit 1"
   myhtml=""
   myhtml+=tabletUIQueryToHTMLTable(cur,query) 
   myhtml=htmlWrapperLocalRelativeCSS(title="Select District", head='<h1 aling="center">Select District</h1>', body=myhtml)
-  writeFile(curhtmlfile,myhtml)
+ # writeFile(curhtmlfile,myhtml)
   cur.execute(query)
   distResults=cur.fetchall()
   for distRow in distResults:
     districtName=distRow[0]
     crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
+    htmlDir=nregaWebDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
     query="use %s " % districtName.lower()
     logger.info(query)
     cur.execute(query) 
    
    
-    disthtmlfile=htmlDir+districtName.upper()+"/"+districtName.upper()+".html"
+    disthtmlfile=htmlDir+districtName.upper()+".html"
     logger.info(disthtmlfile)
     query="select name from blocks where isRequired=1"
     myhtml=tabletUIQueryToHTMLTable(cur,query) 
@@ -96,7 +98,7 @@ def main():
       logger.info(query)
       myhtml+=tabletUIReportTable(cur,query,staticLinkPath="REPORTS") 
       myhtml=htmlWrapperLocalRelativeCSS(relativeCSSPath='../',title="Panchayats Page", head='<h1 aling="center">'+h1title+'</h1>', body=myhtml)
-      writeFile(curhtmlfile,myhtml)
+      #writeFile(curhtmlfile,myhtml)
     #Generate Panchayat Level Page
    #Generate Panchayat Level Page
     query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode and p.isRequired=1 order by p.name"
@@ -114,7 +116,7 @@ def main():
       query="select id,title from reportQueries where isRequired=1"
       myhtml=tabletUIReportTable(cur,query,staticLinkPath="REPORTS") 
       myhtml=htmlWrapperLocalRelativeCSS(relativeCSSPath='../../',title="Reports Page", head='<h1 aling="center">'+h1Title+'</h1>', body=myhtml)
-      writeFile(curhtmlfile,myhtml)
+      #writeFile(curhtmlfile,myhtml)
        
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
   logger.info("...END PROCESSING")     

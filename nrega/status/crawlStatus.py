@@ -34,7 +34,28 @@ def main():
  
  
   myhtml+=  getCenterAligned('<h2 style="color:blue"> %s</h2>' % (districtName.upper()))
-  
+ 
+  query="select * from panchayats where isRequired=1 and jobcardCrawlDate is NULL"
+  cur.execute(query)
+  if cur.rowcount > 0:
+    myhtml+=  getCenterAligned('<h2 style="color:red"> Jobcard Not Crawled at all for %s panchayats</h2>' % (str(cur.rowcount)))
+    
+  query="select * from panchayats where isRequired=1 and accountCrawlDate is NULL"
+  cur.execute(query)
+  if cur.rowcount > 0:
+    myhtml+=  getCenterAligned('<h2 style="color:red"> Accounts Not Crawled at all for %s panchayats</h2>' % (str(cur.rowcount)))
+
+  myhtml+=  getCenterAligned('<h3 style="color:blue"> Jobcard Crawl Status</h3>')
+  query="select name,DATE_FORMAT(jobcardCrawlDate,'%d-%M-%Y') jobcardCrawlDate from panchayats where isRequired=1 order by jobcardCrawlDate  ASC limit 2;"
+  query_table = "<br />"
+  query_table += bsQuery2HtmlV2(cur, query, query_caption="")
+  myhtml+=query_table
+
+  myhtml+=  getCenterAligned('<h3 style="color:blue"> Account Crawl Status</h3>')
+  query="select name,DATE_FORMAT(accountCrawlDate,'%d-%M-%Y') accountCrawlDate from panchayats where isRequired=1 order by accountCrawlDate  ASC limit 2;"
+  query_table = "<br />"
+  query_table += bsQuery2HtmlV2(cur, query, query_caption="")
+  myhtml+=query_table
 
   myhtml+=  getCenterAligned('<h3 style="color:blue"> Muster Crawl Status</h3>')
   query="select DATE(crawlDate) crawlDate,count(*) count from musters where TIMESTAMPDIFF(DAY, crawlDate, now()) < 14   group by DATE(crawlDate);"

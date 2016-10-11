@@ -126,6 +126,7 @@ def main():
         if len(cols) > 2:
           jcno="".join(cols[1].text.split())
           headOfFamily=cols[2].text.replace("'","")
+        logger.info("%s-%s" % (jcno,jobcardPrefix))
         if jobcardPrefix in jcno:
           logger.info(jcno)
           query="insert into jobcardRegister (headOfFamily,jobcard,stateCode,districtCode,blockCode,panchayatCode) values ('"+headOfFamily+"','"+jcno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"')"
