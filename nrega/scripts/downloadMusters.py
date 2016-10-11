@@ -145,6 +145,7 @@ def main():
       #print "Cannot find the table"
     if errorflag==0:
       musterrawfilename=musterrawfilepath+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/MUSTERS/"+fullfinyear+"/"+musterNo+".html"
+      logger.info("muster file path : %s " % musterrawfilename)
       writeFile(musterrawfilename,myhtml)
       try:
         query="update musters set wdProcessed=0,wdError=0,isDownloaded=1,downloadDate=NOW() where id="+str(musterid)

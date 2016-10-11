@@ -185,7 +185,7 @@ def main():
               logger.info(query)
               cur.execute(query)
               if cur.rowcount == 0:
-                query="insert into wagelists (blockCode,finyear,wagelistNo) values ('%s','%s','%s') " % (blockCode,finyear,wagelistNo)
+                query="insert into wagelists (blockCode,finyear,wagelistNo,createDate) values ('%s','%s','%s',NOW()) " % (blockCode,finyear,wagelistNo)
                 logger.info(query)
                 cur.execute(query)
               #Here first we need to find out if the record already exists
