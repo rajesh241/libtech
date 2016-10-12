@@ -19,6 +19,7 @@ from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displa
 from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery,writecsv,getFullFinYear
 from globalSettings import datadir,nregaDataDir,reportsDir,nregaStaticReportsDir
+from nregaSettings import nregaStaticWebDir,nregaRawDataDir 
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocalRelativeCSS, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIQuery2HTML
 
 
@@ -89,7 +90,7 @@ def genReport(cur,logger,isBlock,htmlDir,finyear,districtName,blockCode,blockNam
     
     myhtml+= queryTable
   
-    curhtmlfile=htmlDir+districtName.upper()+"/"+blockName.upper()+"/"+pdir+rdir+"/"+title.replace(' ','')+".html"
+    curhtmlfile=htmlDir+"/"+blockName.upper()+"/"+pdir+rdir+"/"+title.replace(' ','')+".html"
     logger.info(curhtmlfile)
     myhtml=htmlWrapperLocalRelativeCSS(relativeCSSPath=relativeCSSPath,title=title, head='<h1 aling="center">Reports Page</h1>', body=myhtml)
     if not os.path.exists(os.path.dirname(curhtmlfile)):
@@ -98,7 +99,7 @@ def genReport(cur,logger,isBlock,htmlDir,finyear,districtName,blockCode,blockNam
     f.write(myhtml.encode("UTF-8"))
     query=selectClause+" where "+whereClause+blockFilterQuery+panchayatFilterQuery+finyearFilterQuery+"  order by  "+orderClause
     logger.info(query)
-    curcsvfile=htmlDir+districtName.upper()+"/"+blockName.upper()+"/"+pdir+rdir+"/"+title.replace(' ','')+".csv"
+    curcsvfile=htmlDir+"/"+blockName.upper()+"/"+pdir+rdir+"/"+title.replace(' ','')+".csv"
     writecsv(cur,query,curcsvfile)
  
 def main():
@@ -126,6 +127,7 @@ def main():
   crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
 
   htmlDir=nregaDir.replace("districtName",districtName.lower())
+  htmlDir=nregaStaticWebDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
 
   #block Reports
   query="select b.name,b.blockCode from blocks b where b.isRequired=1 %s" % limitString
