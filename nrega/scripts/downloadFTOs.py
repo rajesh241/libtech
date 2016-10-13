@@ -70,7 +70,7 @@ def main():
   driver.get(url)
   time.sleep(2)
 
-  query="select f.id,f.ftoNo,b.name from ftoDetails f,blocks b where f.blockCode=b.blockCode and f.isDownloaded=0 and finyear='%s' %s %s " % (finyear,additionalFilters,limitString)
+  query="select f.id,f.ftoNo,b.name,b.blockCode from ftoDetails f,blocks b where f.blockCode=b.blockCode and f.isDownloaded=0 and finyear='%s' %s %s " % (finyear,additionalFilters,limitString)
   logger.info(query)
   cur.execute(query)
   results=cur.fetchall()
@@ -78,7 +78,9 @@ def main():
     rowid=str(row[0])
     ftoNo=row[1] 
     blockName=row[2]
+    blockCode=row[3]
     if ftoNo != '':
+      ftoPrefix=stateShortCode+stateCode+districtCode+blockCode
       logger.info(ftoNo)
       maintab = driver.current_window_handle
       Select(driver.find_element_by_id("ddl_search")).select_by_visible_text("Fund Transfer Order (FTO)")
@@ -100,8 +102,12 @@ def main():
         #logger.info(htmlsource)
         # ERROR: Caught exception [ERROR: Unsupported command [waitForPopUp |  | 30000]]
         # ERROR: Caught exception [ERROR: Unsupported command [selectWindow | null | ]]
-        driver.find_element_by_link_text(ftoNo).click() 
-        ftoSelect="%s(Block=%s)" % (ftoNo,blockName.upper())
+        driver.find_element_by_link_text(ftoNo).click()
+        if ftoPrefix in ftoNo:
+          ftoSelect="%s(Block=%s)" % (ftoNo,blockName.upper())
+        else:
+          ftoSelect=ftoNo
+        logger.info("FTO Select = %s " % ftoSelect)
         Select(driver.find_element_by_id("ctl00_ContentPlaceHolder1_Ddfto")).select_by_visible_text(ftoSelect)
         driver.find_element_by_css_selector("option[value="+ftoNo+"]").click()
         htmlsource = driver.page_source

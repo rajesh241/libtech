@@ -68,7 +68,9 @@ def main():
   driver = driverInitialize(args['browser'])
   url="http://164.100.129.6/netnrega/nregasearch1.aspx"
   driver.get(url)
-  time.sleep(2)
+  time.sleep(22)
+  htmlsource = driver.page_source
+  writeFile("/home/libtech/webroot/nreganic.libtech.info/temp/a.html",htmlsource)
 
   query="select w.id,w.wagelistNo,b.name from wagelists w,blocks b where w.blockCode=b.blockCode and w.isDownloaded=0 and finyear='%s' %s %s " % (finyear,additionalFilters,limitString)
   logger.info(query)

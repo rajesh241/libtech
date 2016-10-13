@@ -31,7 +31,7 @@ def main():
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query)
- 
+  finyear='17' 
  
   myhtml+=  getCenterAligned('<h2 style="color:blue"> %s</h2>' % (districtName.upper()))
  
@@ -69,6 +69,20 @@ def main():
   query_table += bsQuery2HtmlV2(cur, query, query_caption="")
   myhtml+=query_table
   
+
+  myhtml+=  getCenterAligned('<h3 style="color:blue"> FTO Download Status</h3>')
+  query="select count(*),isDownloaded,blockCode from ftoDetails where finyear='%s' group by isDownloaded,blockCode" % (finyear)
+  query_table = "<br />"
+  query_table += bsQuery2HtmlV2(cur, query, query_caption="")
+  myhtml+=query_table
+
+
+  myhtml+=  getCenterAligned('<h3 style="color:blue"> Wagelist Download Status</h3>')
+  query="select count(*),isDownloaded,blockCode from wagelists where finyear='%s' group by isDownloaded,blockCode" % (finyear)
+  query_table = "<br />"
+  query_table += bsQuery2HtmlV2(cur, query, query_caption="")
+  myhtml+=query_table
+
 
   myhtml=htmlWrapper(title="NREGA Status", head='<h1 aling="center">Nrega Status</h1>', body=myhtml)
   print myhtml.encode('UTF-8')
