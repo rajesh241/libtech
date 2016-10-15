@@ -85,10 +85,14 @@ def main():
       maintab = driver.current_window_handle
       Select(driver.find_element_by_id("ddl_search")).select_by_visible_text("WageList")
       driver.find_element_by_css_selector("option[value=\"WageList\"]").click()
-      Select(driver.find_element_by_id("ddl_state")).select_by_visible_text("CHHATTISGARH")
-      driver.find_element_by_css_selector("option[value=\"33\"]").click()
-      Select(driver.find_element_by_id("ddl_district")).select_by_visible_text("SURGUJA")
-      driver.find_element_by_css_selector("option[value=\"3305\"]").click()
+      Select(driver.find_element_by_id("ddl_state")).select_by_visible_text(stateName.upper())
+      myvalue='value="%s"' % stateCode
+      #driver.find_element_by_css_selector("option[value=\"33\"]").click()
+      driver.find_element_by_css_selector("option[%s]" % myvalue).click()
+      Select(driver.find_element_by_id("ddl_district")).select_by_visible_text(districtName.upper())
+      myvalue='value="%s"' % (stateCode+districtCode)
+      #driver.find_element_by_css_selector("option[value=\"3305\"]").click()
+      driver.find_element_by_css_selector("option[%s]" % myvalue).click()
       driver.find_element_by_id("txt_keyword2").clear()
       driver.find_element_by_id("txt_keyword2").send_keys(wagelistNo)
       driver.find_element_by_id("btn_go").click()
@@ -102,23 +106,24 @@ def main():
         #logger.info(htmlsource)
         # ERROR: Caught exception [ERROR: Unsupported command [waitForPopUp |  | 30000]]
         # ERROR: Caught exception [ERROR: Unsupported command [selectWindow | null | ]]
-         
-        elem=driver.find_element_by_link_text(wagelistNo)
-        hrefLink=str(elem.get_attribute("href"))
-        logger.info(hrefLink)
-        driver.get(hrefLink)
-        htmlsource = driver.page_source
-        htmlsource=htmlsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
-        success=0
-        if "WageList Agency Code" in htmlsource:
-          filename=filepath+blockName.upper()+"/WAGELIST/"+fullfinyear+"/"+wagelistNo+".html"
-          logger.info(filename)
-          writeFile("/home/libtech/webroot/nreganic.libtech.info/temp/"+wagelistNo+".html",htmlsource)
-          writeFile(filename,htmlsource)
-          success=1
-        query="update wagelists set isDownloaded=%s,downloadAttemptDate=NOW()  where id=%s" %(str(success),str(rowid))
-        logger.info(query)
-        cur.execute(query)
+        elems = driver.find_elements_by_xpath("//a[@href]")
+        if len(elems) > 0: 
+          elem=driver.find_element_by_link_text(wagelistNo)
+          hrefLink=str(elem.get_attribute("href"))
+          logger.info(hrefLink)
+          driver.get(hrefLink)
+          htmlsource = driver.page_source
+          htmlsource=htmlsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+          success=0
+          if "WageList Agency Code" in htmlsource:
+            filename=filepath+blockName.upper()+"/WAGELIST/"+fullfinyear+"/"+wagelistNo+".html"
+            logger.info(filename)
+            writeFile("/home/libtech/webroot/nreganic.libtech.info/temp/"+wagelistNo+".html",htmlsource)
+            writeFile(filename,htmlsource)
+            success=1
+          query="update wagelists set isDownloaded=%s,downloadAttemptDate=NOW()  where id=%s" %(str(success),str(rowid))
+          logger.info(query)
+          cur.execute(query)
         driver.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 'w')
         driver.switch_to_window(maintab) 
           

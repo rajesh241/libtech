@@ -57,7 +57,7 @@ def main():
   logger.info(curhtmlfile)
   query="use crawlDistricts"
   cur.execute(query)
-  query="select name from districts limit 1"
+  query="select name from districts "
   myhtml=""
   myhtml+=tabletUIQueryToHTMLTable(cur,query) 
   myhtml=htmlWrapperLocalRelativeCSS(title="Select District", head='<h1 aling="center">Select District</h1>', body=myhtml)
@@ -81,7 +81,7 @@ def main():
     writeFile(disthtmlfile,myhtml)
     
    #Generate Block Level Pages
-    query="select name,blockCode from blocks where isRequired=1 order by name"
+    query="select name,blockCode from blocks where isRequired=1  order by name"
     cur.execute(query)
     results=cur.fetchall()
     for row in results:
@@ -94,7 +94,7 @@ def main():
       myhtml=""
       query="select name from panchayats where blockCode='%s' and isRequired=1 order by name" %(blockCode) 
       myhtml+=tabletUIQueryToHTMLTable(cur,query) 
-      query="select id,title from reportQueries where isRequired=1"
+      query="select id,title from dashboardQueries where isRequired=1 and type='location'"
       logger.info(query)
       myhtml+=tabletUIReportTable(cur,query,staticLinkPath="REPORTS") 
       myhtml=htmlWrapperLocalRelativeCSS(relativeCSSPath='../',title="Panchayats Page", head='<h1 aling="center">'+h1title+'</h1>', body=myhtml)
@@ -113,7 +113,7 @@ def main():
       h1Title=districtName.upper()+"-"+blockName+"-"+panchayatName.upper()
       curhtmlfile=htmlDir+"/"+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/"+panchayatNameOnlyLetters.upper()+".html"
       logger.info(curhtmlfile)
-      query="select id,title from reportQueries where isRequired=1"
+      query="select id,title from dashboardQueries where isRequired=1 and type='location'"
       myhtml=tabletUIReportTable(cur,query,staticLinkPath="REPORTS") 
       myhtml=htmlWrapperLocalRelativeCSS(relativeCSSPath='../../',title="Reports Page", head='<h1 aling="center">'+h1Title+'</h1>', body=myhtml)
       writeFile(curhtmlfile,myhtml)

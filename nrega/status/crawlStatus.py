@@ -45,6 +45,18 @@ def main():
   if cur.rowcount > 0:
     myhtml+=  getCenterAligned('<h2 style="color:red"> Accounts Not Crawled at all for %s panchayats</h2>' % (str(cur.rowcount)))
 
+  myhtml+=  getCenterAligned('<h3 style="color:red"> Pending Muster Download</h3>')
+  query="select m.finyear,count(*) from musters m,blocks b,panchayats p  where b.isRequired=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1  and m.musterType='10' and (m.isDownloaded=0 or m.wdError=1 or (m.wdComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) ) group by m.finyear"
+  query_table = "<br />"
+  query_table += bsQuery2HtmlV2(cur, query, query_caption="")
+  myhtml+=query_table
+
+  myhtml+=  getCenterAligned('<h3 style="color:red"> Pending Muster Processing</h3>')
+  query="select m.finyear,count(*) from musters m,blocks b,panchayats p where m.wdError=0 and m.isDownloaded=1 and m.wdProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 group by m.finyear"
+  query_table = "<br />"
+  query_table += bsQuery2HtmlV2(cur, query, query_caption="")
+  myhtml+=query_table
+
   myhtml+=  getCenterAligned('<h3 style="color:blue"> Jobcard Crawl Status</h3>')
   query="select name,DATE_FORMAT(jobcardCrawlDate,'%d-%M-%Y') jobcardCrawlDate from panchayats where isRequired=1 order by jobcardCrawlDate  ASC limit 2;"
   query_table = "<br />"
