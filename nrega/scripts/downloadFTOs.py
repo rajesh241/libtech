@@ -85,14 +85,18 @@ def main():
       maintab = driver.current_window_handle
       Select(driver.find_element_by_id("ddl_search")).select_by_visible_text("Fund Transfer Order (FTO)")
       driver.find_element_by_css_selector("option[value=\"FTO\"]").click()
-      Select(driver.find_element_by_id("ddl_state")).select_by_visible_text("CHHATTISGARH")
-      driver.find_element_by_css_selector("option[value=\"33\"]").click()
-      Select(driver.find_element_by_id("ddl_district")).select_by_visible_text("SURGUJA")
-      driver.find_element_by_css_selector("option[value=\"3305\"]").click()
+      Select(driver.find_element_by_id("ddl_state")).select_by_visible_text(stateName.upper())
+      myvalue='value="%s"' % stateCode
+      #driver.find_element_by_css_selector("option[value=\"33\"]").click()
+      driver.find_element_by_css_selector("option[%s]" % myvalue).click()
+      Select(driver.find_element_by_id("ddl_district")).select_by_visible_text(districtName.upper())
+      myvalue='value="%s"' % (stateCode+districtCode)
+      #driver.find_element_by_css_selector("option[value=\"3305\"]").click()
+      driver.find_element_by_css_selector("option[%s]" % myvalue).click()
       driver.find_element_by_id("txt_keyword2").clear()
       driver.find_element_by_id("txt_keyword2").send_keys(ftoNo)
       driver.find_element_by_id("btn_go").click()
-      time.sleep(30)
+      #time.sleep(30)
       logger.info("Currently the number of active tabs are %s" % str(len(driver.window_handles))) 
       if len(driver.window_handles) > 1:
         logger.info("There are multiple tabs")
@@ -104,7 +108,7 @@ def main():
         # ERROR: Caught exception [ERROR: Unsupported command [selectWindow | null | ]]
         driver.find_element_by_link_text(ftoNo).click()
         if ftoPrefix in ftoNo:
-          ftoSelect="%s(Block=%s)" % (ftoNo,blockName.upper())
+          ftoSelect="%s(Block=%s)" % (ftoNo,blockName)
         else:
           ftoSelect=ftoNo
         logger.info("FTO Select = %s " % ftoSelect)
