@@ -21,7 +21,7 @@ sys.path.insert(0, fileDir+'./')
 from settings import dbhost,dbuser,dbpasswd,sid,token
 from globalSettings import dbBackupDir,dbNames
 #BACKUP_PATH="~/backup/data/db/"
-DB_NAMES = '/home/libtech/backup/scripts/dbnames.txt'
+
 def savedb(db,filename,filepath):
   fullfilepath=filepath+filename
   dumpcmd = "mysqldump -h "+dbhost+"  -u " + dbuser + " -p" + dbpasswd + " " + db + " | gzip -c | cat > " + filepath + "/" + filename + ".sql.gz" 

@@ -26,7 +26,8 @@ delay = 0
 url="http://khadya.cg.nic.in/pdsonline/cgfsa/Report/FrmRation_Patra_Allot_VerificationDistWise_Aug14.aspx"
 
 month2number = {
-  "जनवरी":1, "फरवरी":2, "मार्च":3, "अप्रैल":4, "मई":5, "जून":6, "जुलाई":7, "अगस्त":8, "सितम्बर":9, "अक्टूबर":10, "नवम्बर":11, "दिसम्बर":12
+#  "जनवरी":1, "फरवरी":2, "मार्च":3, "अप्रैल":4, "मई":5, "जून":6, "जुलाई":7, "अगस्त":8, "सितम्बर":9, "अक्टूबर":10, "नवम्बर":11, "दिसम्बर":12
+  "जनवरी":1, "फरवरी":2, "मार्च":3, "अप्रैल":4, "मई":5, "जून":6, "जुलाई":7, "अगस्त":8, "सितंबर":9, "अक्टूबर":10, "नवम्बर":11, "दिसंबर":12
 }
 
 blockSelectCode = {
@@ -453,10 +454,11 @@ def pdsReportParse(logger, db, dir=None):
       month = date_str[:year_index].strip("माह").strip()
     else:
       month = date_str[:maah_index].strip()
-    
-    logger.debug("month[%s]", month)
+
+    logger.debug("month[%s]vs[%s]", month, list(month2number.keys())[list(month2number.values()).index(12)])
+    logger.info("month[%s]", month)
     month_number = month2number[month]
-    logger.debug("month_number[%d]", month_number)
+    logger.info("month_number[%d]", month_number)
     date_of_issue = year + "-%02d-" % month_number + "01"  # 1st of the Month - Date of the Report 
     logger.info("date_of_issue[%s]", date_of_issue)
 

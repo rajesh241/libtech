@@ -19,7 +19,7 @@ from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery,writeFile
-from globalSettings import nregaDir,nregaRawDir
+from nregaSettings import nregaRawDataDir
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
 from crawlFunctions import getDistrictParams
 def argsFetch():
@@ -65,8 +65,7 @@ def main():
   jobcardPrefix="%s-%s" % (stateShortCode,districtCode)
   logger.info("crawlIP "+crawlIP)
   logger.info("State Name "+stateName)
-  jcReportFilePath=nregaDir.replace("districtName",districtName.lower())+districtName.upper()+"/"
-  jcReportRawFilePath=nregaRawDir.replace("districtName",districtName.lower())+districtName.upper()+"/"
+  jcReportRawFilePath=nregaRawDataDir.replace("districtName",districtName.lower())
   #Start Program here
   url="http://nrega.nic.in/netnrega/sthome.aspx"
   driver.get(url)
@@ -77,7 +76,7 @@ def main():
   elem.send_keys(Keys.RETURN)
   time.sleep(1)
   #Query to get all the blocks
-  query="select b.blockCode,b.name,p.panchayatCode,p.name from blocks b,panchayats p where b.blockCode=p.blockCode and p.isRequired=1 and jobcardCrawlDate is not NULL order by jobcardDownloadDate %s %s" % (additionalFilters,limitString)
+  query="select b.blockCode,b.name,p.panchayatCode,p.name from blocks b,panchayats p where b.blockCode=p.blockCode and p.isRequired=1 and (p.accountCrawlDate is NULL or TIMESTAMPDIFF(DAY, p.accountCrawlDate, now()) > 7 ) order by p.accountCrawlDate %s %s" % (additionalFilters,limitString)
   cur.execute(query)
   results = cur.fetchall()
   for row in results:
@@ -86,26 +85,69 @@ def main():
     panchayatCode=row[2]
     panchayatName=row[3]
     panchayatNameOnlyLetters=re.sub(r"[^A-Za-z]+", '', panchayatName)
+    fullPanchayatCode=stateCode+districtCode+blockCode+panchayatCode
     elem = driver.find_element_by_link_text(blockName)
     elem.send_keys(Keys.RETURN)
-    elem = driver.find_element_by_link_text(panchayatName)
+    compareText="Panchayat_Code=%s" % fullPanchayatCode
+    elems = driver.find_elements_by_xpath("//a[@href]")
+    for elem in elems:
+      hrefLink=str(elem.get_attribute("href"))
+      if compareText in hrefLink:
+        logger.info("Found the Code")
+        break
+    #elem = driver.find_element_by_link_text(panchayatName)
     elem.send_keys(Keys.RETURN)
+#    elem = driver.find_element_by_link_text("List of Worker with Aadhar No.(UID No.)")
     elem = driver.find_element_by_link_text("List of Worker with Aadhar No.(UID No.)")
     elem.send_keys(Keys.RETURN)
     time.sleep(15)
-    query="update panchayats set jobcardDownloadDate=now() where blockCode='%s' and panchayatCode='%s' " % (blockCode,panchayatCode)
-    cur.execute(query)
     jcsource = driver.page_source
-    driver.back()
-    time.sleep(5)
-    driver.back()
-    time.sleep(5)
-    driver.back()
-    
     rawhtml=jcsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
     jcfilename=jcReportRawFilePath+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/jobcardRegister/workerList.html"
     logger.info(jcfilename)
     writeFile(jcfilename,rawhtml)
+    driver.back()
+
+    elem = driver.find_element_by_link_text("Download Panchayatwise MGNREGA Bank A/C Detail")
+    elem.send_keys(Keys.RETURN)
+    time.sleep(15)
+    jcsource = driver.page_source
+    rawhtml=jcsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+    jcfilename=jcReportRawFilePath+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/jobcardRegister/workerListBank.html"
+    logger.info(jcfilename)
+    writeFile(jcfilename,rawhtml)
+    driver.back()
+    
+    elem = driver.find_element_by_link_text("Download Panchayatwise MGNREGA Post Office Account Detail")
+    elem.send_keys(Keys.RETURN)
+    time.sleep(15)
+    jcsource = driver.page_source
+    rawhtml=jcsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+    jcfilename=jcReportRawFilePath+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/jobcardRegister/workerListPO.html"
+    logger.info(jcfilename)
+    writeFile(jcfilename,rawhtml)
+    driver.back()
+    
+    elem = driver.find_element_by_link_text("Download Panchayat Wise MGNREGA Co-operative Bank A/C Detail")
+    elem.send_keys(Keys.RETURN)
+    time.sleep(15)
+    jcsource = driver.page_source
+    rawhtml=jcsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+    jcfilename=jcReportRawFilePath+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/jobcardRegister/workerListCoBank.html"
+    logger.info(jcfilename)
+    writeFile(jcfilename,rawhtml)
+    driver.back()
+    
+    
+
+
+    time.sleep(5)
+    driver.back()
+    time.sleep(5)
+    driver.back()
+    query="update panchayats set accountCrawlDate=now() where blockCode='%s' and panchayatCode='%s' " % (blockCode,panchayatCode)
+    cur.execute(query)
+    
 
 
 

@@ -18,6 +18,7 @@ from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displa
 from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery,writeFile
 from globalSettings import datadir,nregaDataDir,reportsDir,nregaDir
+from nregaSettings import nregaStaticWebDir,nregaRawDataDir 
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocalRelativeCSS, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
 #from crawlSettings import crawlIP,stateName,stateCode,stateShortCode,districtCode
 def argsFetch():
@@ -56,22 +57,23 @@ def main():
   logger.info(curhtmlfile)
   query="use crawlDistricts"
   cur.execute(query)
-  query="select name from districts where isRequired=1"
+  query="select name from districts "
   myhtml=""
   myhtml+=tabletUIQueryToHTMLTable(cur,query) 
   myhtml=htmlWrapperLocalRelativeCSS(title="Select District", head='<h1 aling="center">Select District</h1>', body=myhtml)
-  writeFile(curhtmlfile,myhtml)
+ # writeFile(curhtmlfile,myhtml)
   cur.execute(query)
   distResults=cur.fetchall()
   for distRow in distResults:
     districtName=distRow[0]
     crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
+    htmlDir=nregaStaticWebDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
     query="use %s " % districtName.lower()
     logger.info(query)
     cur.execute(query) 
    
    
-    disthtmlfile=htmlDir+districtName.upper()+"/"+districtName.upper()+".html"
+    disthtmlfile=htmlDir+districtName.upper()+".html"
     logger.info(disthtmlfile)
     query="select name from blocks where isRequired=1"
     myhtml=tabletUIQueryToHTMLTable(cur,query) 
@@ -79,20 +81,20 @@ def main():
     writeFile(disthtmlfile,myhtml)
     
    #Generate Block Level Pages
-    query="select name,blockCode from blocks where isRequired=1 order by name"
+    query="select name,blockCode from blocks where isRequired=1  order by name"
     cur.execute(query)
     results=cur.fetchall()
     for row in results:
       blockName=row[0]
       blockCode=row[1]
       h1title=districtName.upper()+"-"+blockName
-      curhtmlfile=htmlDir+districtName.upper()+"/"+blockName.upper()+"/"+blockName.upper()+".html"
+      curhtmlfile=htmlDir+"/"+blockName.upper()+"/"+blockName.upper()+".html"
     
       #Lets print a block Level Reports Page
       myhtml=""
       query="select name from panchayats where blockCode='%s' and isRequired=1 order by name" %(blockCode) 
       myhtml+=tabletUIQueryToHTMLTable(cur,query) 
-      query="select id,title from reportQueries where isRequired=1"
+      query="select id,title from dashboardQueries where isRequired=1 and type='location'"
       logger.info(query)
       myhtml+=tabletUIReportTable(cur,query,staticLinkPath="REPORTS") 
       myhtml=htmlWrapperLocalRelativeCSS(relativeCSSPath='../',title="Panchayats Page", head='<h1 aling="center">'+h1title+'</h1>', body=myhtml)
@@ -109,9 +111,9 @@ def main():
       panchayatNameOnlyLetters=re.sub(r"[^A-Za-z]+", '', panchayatName)
       panchayatCode=row[3]
       h1Title=districtName.upper()+"-"+blockName+"-"+panchayatName.upper()
-      curhtmlfile=htmlDir+districtName.upper()+"/"+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/"+panchayatNameOnlyLetters.upper()+".html"
+      curhtmlfile=htmlDir+"/"+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/"+panchayatNameOnlyLetters.upper()+".html"
       logger.info(curhtmlfile)
-      query="select id,title from reportQueries where isRequired=1"
+      query="select id,title from dashboardQueries where isRequired=1 and type='location'"
       myhtml=tabletUIReportTable(cur,query,staticLinkPath="REPORTS") 
       myhtml=htmlWrapperLocalRelativeCSS(relativeCSSPath='../../',title="Reports Page", head='<h1 aling="center">'+h1Title+'</h1>', body=myhtml)
       writeFile(curhtmlfile,myhtml)

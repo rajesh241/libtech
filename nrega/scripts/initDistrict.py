@@ -7,8 +7,8 @@ import os
 import sys
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
-from settings import dbhost,dbuser,dbpasswd
 sys.path.insert(0, fileDir+'/../../')
+from nregaSettings import districtDBInitFile
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
@@ -57,29 +57,23 @@ def main():
   logger.info("State Code : %s " ,stateCode) 
   logger.info("District Name : %s " ,districtName) 
   logger.info("State Name : %s " ,stateName)
-  db = dbInitialize(db=districtName.lower(), charset="utf8")  # The rest is updated automatically in the function
+  db = dbInitialize(db="crawlDistricts", charset="utf8")  # The rest is updated automatically in the function
   cur=db.cursor()
   db.autocommit(True)
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query)
-  s='''
-districtName='%s'
-crawlIP='%s'
-stateName='%s'
-stateShortCode='%s'
-districtCode='%s'
-stateCode='%s'
-  ''' % (districtName,crawlIP,stateName,stateShortCode,districtCode,stateCode)
-  filename="../crawlDistricts/%s.py" % (districtName.lower())
-  f = open(filename, 'w')
-  f.write(s.encode("UTF-8"))
   query="insert into crawlDistricts.districts (name,crawlIP,state,stateShortCode,stateCode,districtCode) values ('%s','%s','%s','%s','%s','%s')" %(districtName.upper(),crawlIP,stateName,stateShortCode,stateCode,districtCode)
   logger.info(query)
   cur.execute(query) 
   r=re.findall('=(.*?)\&',districtURL)
+  #query="create database if not EXISTS %s " % districtName.lower()
+  #cur.execute(query)
   query="use %s " % districtName.lower()
   cur.execute(query)
+  #query="source %s ;" % districtDBInitFile
+  #logger.info(query)
+  #cur.execute(query)
   r=requests.get(districtURL)
   blockHTML=r.text
   htmlsoup=BeautifulSoup(blockHTML)

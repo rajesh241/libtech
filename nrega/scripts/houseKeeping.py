@@ -51,7 +51,7 @@ def updateJCNumber(cur,logger,districtName,finyear,limitString):
 
 def updateFtoNo(cur,logger,districtName,finyear,limitString):
   #match objects jobcard,name,accountNo,amount,wagelistNo
-  query="select id,jobcard,name,accountNo,wagelistNo,totalWage,finyear from workDetails where finyear='%s'  and status !='' %s " % (finyear,limitString)
+  query="select id,jobcard,name,accountNo,wagelistNo,totalWage,finyear from workDetails where finyear='%s'  and ftoMatchStatus is NULL and musterStatus !='' %s " % (finyear,limitString)
   cur.execute(query)
   results=cur.fetchall()
   for row in results:
@@ -71,31 +71,36 @@ def updateFtoNo(cur,logger,districtName,finyear,limitString):
       results1=cur.fetchall()
       nameMatch=0
       accountMatch=0
+      matchStrengthLatched=0
       for row1 in results1:
-        ftoNo=row1[0]
-        ftoName=row1[1]
+        matchStrength=0
         ftoAccountNo=row1[2]
-        primaryAccountHolder=row1[3]
-        referenceNo=row1[4]
-        rejectionReason=row1[5]
+        ftoName=row1[1]
         if ftoAccountNo == accountNo:
           accountMatch=1
-          if applicantName==ftoName:
-            nameMatch=1
-      if nameMatch == 1 and accountMatch==1:
-         status='allMatch'
-      elif accountMatch == 1:
-         status='nameMismatchAccountMatch'
-      elif nameMatch == 1:
-         status='nameMatchAccountMismatch'
-      else:
-         status='nameMisMatchAccountMisMatch'
+          matchStrength = 1
+        if applicantName==ftoName:
+          nameMatch=1
+          matchStrength = 2
+        if nameMatch == 1 and accountMatch==1:
+          matchStrength = 3
+        if matchStrength > matchStrengthLatched:
+          matchStrengthLatched = matchStrength
+          rejectionReason=row1[5]
+          primaryAccountHolder=row1[3]
+          ftoAccountNoLatched=ftoAccountNo
+          ftoNameLatched=ftoName
+          ftoNo=row1[0]
+          referenceNo=row1[4]
+       
+      matchArray=["nameMisMatchAccountMisMatch","nameMismatchAccountMatch","nameMatchAccountMismatch","allMatch"]
+      status=matchArray[matchStrengthLatched]
     logger.info("%s %s" % (rowid,status))
     query="update workDetails set ftoMatchStatus='%s' where id=%s" % (status,rowid)
     cur.execute(query)
-    if status != 'error':
-      query="update workDetails set rejectionReason='%s',primaryAccountHolder='%s',ftoNo='%s',referenceNo='%s',creditedAccountNo='%s' where id=%s" % (rejectionReason,primaryAccountHolder,ftoNo,referenceNo,ftoAccountNo,rowid)
-      cur.execute(query)
+    #if status != 'error':
+    #  query="update workDetails set rejectionReason='%s',primaryAccountHolder='%s',ftoNo='%s',referenceNo='%s',creditedAccountNo='%s' where id=%s" % (rejectionReason,primaryAccountHolder,ftoNo,referenceNo,ftoAccountNo,rowid)
+      #cur.execute(query)
  
 
 
