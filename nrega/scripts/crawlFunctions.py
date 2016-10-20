@@ -13,7 +13,7 @@ def getDistrictParams(cur,districtName):
   return crawlIP,stateName,stateCode,stateShortCode,districtCode
 def NICToSQLDate(dateString):
   dateFormat="%d/%m/%Y"
-  if dateString == '':
+  if (dateString == '') or ("NA" in dateString):
     outDate="Null"
   else:
     outDate="STR_TO_DATE('%s', '%s')" % (dateString,dateFormat)

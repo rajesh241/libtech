@@ -46,7 +46,13 @@ def main():
     myhtml+=  getCenterAligned('<h2 style="color:red"> Accounts Not Crawled at all for %s panchayats</h2>' % (str(cur.rowcount)))
 
   myhtml+=  getCenterAligned('<h3 style="color:red"> Pending Muster Download</h3>')
-  query="select m.finyear,count(*) from musters m,blocks b,panchayats p  where b.isRequired=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1  and m.musterType='10' and (m.isDownloaded=0 or m.wdError=1 or (m.wdComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) ) group by m.finyear"
+  query="select m.finyear,m.blockCode,count(*) from musters m,blocks b,panchayats p  where b.isRequired=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1  and m.musterType='10' and (m.isDownloaded=0 or m.wdError=1 or (m.wdComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) ) group by m.finyear,blockCode"
+  query_table = "<br />"
+  query_table += bsQuery2HtmlV2(cur, query, query_caption="")
+  myhtml+=query_table
+
+  myhtml+=  getCenterAligned('<h3 style="color:red"> Pending Muster Download MusterWise</h3>')
+  query="select m.musterNo,b.blockCode,TIMESTAMPDIFF(HOUR,m.downloadAttemptDate,NOW()),m.downloadAttemptDate from musters m,blocks b,panchayats p  where b.isRequired=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1  and m.musterType='10' and (m.isDownloaded=0 or m.wdError=1 or (m.wdComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) ) order by isDownloaded,TIMESTAMPDIFF(HOUR,m.downloadAttemptDate,NOW()) DESC limit 4"
   query_table = "<br />"
   query_table += bsQuery2HtmlV2(cur, query, query_caption="")
   myhtml+=query_table

@@ -69,19 +69,23 @@ def main():
   fullfinyear=getFullFinYear(finyear)
   
   query="select f.id,f.ftoNo,f.blockCode,b.name from ftoDetails f,blocks b where f.isDownloaded=1 and f.blockCode=b.blockCode and f.isProcessed=0 %s " % (limitString)
+  query="select f.id,f.ftoNo,f.blockCode,b.name from ftoDetails f,blocks b where f.isDownloaded=1 and f.blockCode=b.blockCode and f.id=4 %s " % (limitString)
   logger.info(query)
   cur.execute(query)
   results=cur.fetchall()
   for row in results:
+    error=1
     rowid=str(row[0])
     ftoNo=row[1]
     blockCode=row[2]
     blockName=row[3]
     filename=filepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftoNo+".html"
     logger.info(filename)
-    if (os.path.isfile(filename)): 
-      myhtml=open(filename,'r').read()
+    if (os.path.isfile(filename)):
       error=0
+      matchComplete=1 
+      isComplete=1
+      myhtml=open(filename,'r').read()
       htmlsoup=BeautifulSoup(myhtml,"html.parser")
       myspan=htmlsoup.find('span',id="ctl00_ContentPlaceHolder1_lbl_mode")
       paymentMode=myspan.text.lstrip().rstrip()
@@ -102,48 +106,98 @@ def main():
         if "Name of primary Account holder" in str(table):
           logger.info("Found the Beneficiary Table")
           alltrs=table.findAll('tr')
+          if len(alltrs) == 1:
+            isComplete=0
+          i=0
           for tr in alltrs:
+            
+            i=i+1
             if "Name of primary Account holder" not in str(tr):
               col=tr.findAll('td')
               jobcard=col[1].text.lstrip().rstrip()
+              referenceNo=col[2].text.lstrip().rstrip()
               transactionDateString=col[3].text.lstrip().rstrip()
               primaryAccountHolder=col[5].text.lstrip().rstrip()
               ftoAccountNo=col[7].text.lstrip().rstrip()
               ftoAmount=col[11].text.lstrip().rstrip()
               ftoStatus=col[12].text.lstrip().rstrip()
               processedDateString=col[13].text.lstrip().rstrip()
+              rejectionReason=col[14].text.lstrip().rstrip()
               ftoName=col[4].text.lstrip().rstrip()
               wagelistNo=col[6].text.lstrip().rstrip()
-              #logger.info(jobcard)
-              query="select id,name from workDetails where jobcard='%s' and wagelistNo='%s' and totalWage='%s'" % (jobcard,wagelistNo,ftoAmount)
-              query="select wd.id,wd.name,jd.primaryAccountHolder,jd.accountNo from workDetails wd,jobcardDetails jd where wd.accountNo=jd.accountNo and wd.jobcard=jd.jobcard and wd.jobcard='%s' and wd.wagelistNo='%s' and wd.totalWage='%s'" % (jobcard,wagelistNo,ftoAmount)
+              if ftoStatus == '':
+                isComplete=0
+              
+              logger.info("*********************************")
+              #logger.info("*********************************")
+              logger.info("Jobcard: %s Reference No %s" %(jobcard,referenceNo))
+              query="select id,name,accountNo from workDetails where jobcard='%s' and wagelistNo='%s' and totalWage='%s'" % (jobcard,wagelistNo,ftoAmount)
               #logger.info(query)
               cur.execute(query)
               results=cur.fetchall()
               matchStatus="Fail"
+              matchValueArray=[]
+              matchTypeArray=[]
+              wdIDArray=[]
               for row1 in results:
+                rowid1=row1[0]
                 musterName=row1[1]
-                jdPrimaryAccountHolder=row1[2].lstrip().rstrip()
-                musterAccountNo=row[3]
+                musterAccountNo=row1[2]
+                matchCount=0
+                matchType="noMatch"
                 if ftoName.replace(" ","").lower() in musterName.replace(" ","").lower():
-                  matchStatus="Success"
-                  wdID=str(row1[0])
-                  musterNameLatched=row1[1]
-                  logger.info("name match is Successful %s %s %s" % (wdID,musterName,musterNameLatched))
-                elif primaryAccountHolder == jdPrimaryAccountHolder:
-                  matchStatus="Success"
-                  wdID=str(row1[0])
-                  musterNameLatched=row1[1]
-                  logger.info("AccountHolder match is Successful %s %s %s" % (wdID,musterName,musterNameLatched))
-              if matchStatus=="Success":
-                 logger.info("Match Status Success %s %s %s %s" % (wdID,jobcard,musterNameLatched,ftoName))
-              else:
-                 logger.info("Match Status Fail %s" % query)
+                  matchCount = matchCount +1
+                  matchType="nameMatch"
+                if ftoAccountNo == musterAccountNo:
+                  matchCount = matchCount +1
+                  if matchType=="nameMatch":
+                    matchType="nameAccountMatch"
+                  else:
+                    matchType="accountMatch"
+                matchValueArray.append(matchCount)
+                matchTypeArray.append(matchType)   
+                wdIDArray.append(rowid1)
+              #logger.info("Match Value Array: %s " %str(matchValueArray)) 
+              #logger.info("Match Type Array: %s " %str(matchTypeArray))
+
+              #If there is only one element with 2 or only one element with score 1 then we have a good match
+              matchType="noMatch"
+              if matchValueArray.count(2) == 1:
+                matchIndex=matchValueArray.index(2)
+                matchType=matchTypeArray[matchIndex]
+                wdID=str(wdIDArray[matchIndex])
+              elif matchValueArray.count(1) == 1:
+                matchIndex=matchValueArray.index(1)
+                matchType=matchTypeArray[matchIndex]
+                wdID=str(wdIDArray[matchIndex])
+              elif matchValueArray.count(1) != 1:
+                query="select id from ftoTransactionDetails where ftoNo='%s' and applicantName='%s' and creditedAmount=%s and jobcard='%s' " % (ftoNo,ftoName,ftoAmount,jobcard)
+                cur.execute(query)
+                if cur.rowcount == matchValueArray.count(1):
+                  logger.info("Counts are Matching")
                 
-
-
+                
+              	 
+              if matchType!="noMatch":
+                logger.info("%s %s  %s %s %s " % (str(i),matchType,wdID,jobcard,ftoName))
+                query="update workDetails set ftoNo='%s',ftoMatchStatus='%s',primaryAccountHolder='%s',rejectionReason='%s',paymentMode='%s',ftoAccountNo='%s',ftoStatus='%s',ftoAmount='%s',referenceNo='%s',ftoName='%s',updateDate=NOW() where id=%s" % (ftoNo,matchType,primaryAccountHolder,rejectionReason,paymentMode,ftoAccountNo,ftoStatus,ftoAmount,referenceNo,ftoName,wdID)
+                logger.info(query)
+                cur.execute(query)
+                query="update workDetails set firstSignatoryDate=%s,secondSignatoryDate=%s,transactionDate=%s,bankProcessedDate=%s,processedDate=%s,updateDate=NOW() where id=%s" % (NICToSQLDate(firstSignatoryDateString),NICToSQLDate(secondSignatoryDateString),NICToSQLDate(transactionDateString),NICToSQLDate(toFinAgencyDateString),NICToSQLDate(processedDateString),wdID)
+                logger.info(query) 
+                cur.execute(query)
+              else:
+                matchComplete=0
+                logger.info("Match Status Fail %s" % query)
+    if error==1:
+      query="update ftoDetails set isDownloaded=0 where id=%s " % rowid
     else:
-      error=1
+      query="update ftoDetails set processedDate=NOW(),isProcessed=1,isComplete=%s,matchComplete=%s where id=%s" % (str(isComplete),str(matchComplete),rowid)
+    logger.info(query)
+    cur.execute(query)
+              
+
+
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
   logger.info("...END PROCESSING")     
   exit(0)

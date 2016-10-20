@@ -194,16 +194,6 @@ def main():
 
   htmlDir=nregaStaticWebDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
   finyear='17'
-  #block Reports
-  query="select b.name,b.blockCode from blocks b where b.isRequired=1 %s" % limitString
-  cur.execute(query)
-  results=cur.fetchall()
-  for row in results:
-    blockName=row[0]
-    blockCode=row[1]
-    genAllReports(cur,logger,reportIDFilter,'17',districtName,blockCode=blockCode,blockName=blockName,htmlDir=htmlDir)
-    genAllReports(cur,logger,reportIDFilter,'16',districtName,blockCode=blockCode,blockName=blockName,htmlDir=htmlDir)
-    genAllReports(cur,logger,reportIDFilter,'all',districtName,blockCode=blockCode,blockName=blockName,htmlDir=htmlDir)
     
   query="select b.name,b.blockCode,p.name,p.panchayatCode from panchayats p, blocks b where b.blockCode=p.blockCode  and p.isRequired=1 %s" % limitString
   cur.execute(query)
@@ -215,9 +205,19 @@ def main():
     panchayatCode=row[3]
     genJobcardReports(cur,logger,districtName,blockCode,blockName,panchayatCode,panchayatName,htmlDir)
     genAllReports(cur,logger,reportIDFilter,'17',districtName,blockCode=blockCode,blockName=blockName,panchayatCode=panchayatCode,panchayatName=panchayatName,htmlDir=htmlDir)
-    genAllReports(cur,logger,reportIDFilter,'16',districtName,blockCode=blockCode,blockName=blockName,panchayatCode=panchayatCode,panchayatName=panchayatName,htmlDir=htmlDir)
-    genAllReports(cur,logger,reportIDFilter,'all',districtName,blockCode=blockCode,blockName=blockName,panchayatCode=panchayatCode,panchayatName=panchayatName,htmlDir=htmlDir)
+#    genAllReports(cur,logger,reportIDFilter,'16',districtName,blockCode=blockCode,blockName=blockName,panchayatCode=panchayatCode,panchayatName=panchayatName,htmlDir=htmlDir)
+ #   genAllReports(cur,logger,reportIDFilter,'all',districtName,blockCode=blockCode,blockName=blockName,panchayatCode=panchayatCode,panchayatName=panchayatName,htmlDir=htmlDir)
  
+  #block Reports
+  query="select b.name,b.blockCode from blocks b where b.isRequired=1 %s" % limitString
+  cur.execute(query)
+  results=cur.fetchall()
+  for row in results:
+    blockName=row[0]
+    blockCode=row[1]
+    genAllReports(cur,logger,reportIDFilter,'17',districtName,blockCode=blockCode,blockName=blockName,htmlDir=htmlDir)
+  #  genAllReports(cur,logger,reportIDFilter,'16',districtName,blockCode=blockCode,blockName=blockName,htmlDir=htmlDir)
+  #  genAllReports(cur,logger,reportIDFilter,'all',districtName,blockCode=blockCode,blockName=blockName,htmlDir=htmlDir)
 
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
   logger.info("...END PROCESSING")     

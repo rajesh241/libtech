@@ -32,6 +32,7 @@ def argsFetch():
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-b', '--browser', help='Specify the browser to test with', required=False)
   parser.add_argument('-d', '--district', help='District for which you need to Download', required=True)
+  parser.add_argument('-af', '--additionalFilters', help='please enter additional filters', required=False)
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-limit', '--limit', help='Limit the number of panchayats to be processed', required=False)
 
@@ -47,8 +48,11 @@ def main():
   districtName=args['district']
   logger.info("DistrictName "+districtName)
   limitString=''
+  additionalFilter=''
   if args['limit']:
     limitString=" limit %s " % args['limit']
+  if args['additionalFilters']:
+    additionalFilter=" and "+args['additionalFilters']
   db = dbInitialize(db=districtName.lower(), charset="utf8")  # The rest is updated automatically in the function
   cur=db.cursor()
   db.autocommit(True)
@@ -73,7 +77,7 @@ def main():
   #Query to get all the blocks
 
   query="select b.blockCode,b.name,p.rawName,p.panchayatCode,p.id from blocks b, panchayats p where b.blockCode=p.blockCode and p.isRequired=1 order by jobcardCrawlDate"
-  query="select b.blockCode,b.name,p.rawName,p.panchayatCode,p.id,p.jobcardCrawlDate from blocks b, panchayats p where b.blockCode=p.blockCode and p.isRequired=1 and (jobcardCrawlDate is NULL or (TIMESTAMPDIFF(DAY,jobcardCrawlDate,NOW() ) >= 7) ) %s" % limitString
+  query="select b.blockCode,b.name,p.rawName,p.panchayatCode,p.id,p.jobcardCrawlDate from blocks b, panchayats p where b.blockCode=p.blockCode and p.isRequired=1 %s and (jobcardCrawlDate is NULL or (TIMESTAMPDIFF(DAY,jobcardCrawlDate,NOW() ) >= 7) ) %s" % (additionalFilter,limitString)
   #query="select rawName,panchayatCode,id from panchayats where isRequired=1  and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' order by jobcardCrawlDate"
   cur.execute(query)
   panchresults = cur.fetchall()
