@@ -1,4 +1,5 @@
-dbBackupDir="/home/libtech/nregaData/buckets/dbdump/"
+#dbBackupDir="/home/libtech/nregaData/buckets/dbdump/"
+dbBackupDir="/home/libtech/backup/"
 dbNames="surguja,crawlDistricts,palamu,latehar,muzaffarpur"
 packageDir='/tmp/packageDir/'
 cssPath='/home/libtech/media/'

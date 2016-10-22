@@ -134,7 +134,7 @@ def genAllReports(cur,logger,reportIDFilter,finyear,districtName,blockCode=None,
     writecsv(cur,reportQuery,curcsvfile)
 
 def genJobcardReports(cur,logger,districtName,blockCode,blockName,panchayatCode,panchayatName,htmlDir):
-  query="select jobcard from jobcardRegister where blockCode='"+blockCode+"' and panchayatCode='"+panchayatCode+"' " 
+  query="select jobcard from jobcardRegister where blockCode='"+blockCode+"' and panchayatCode='"+panchayatCode+"' limit 5" 
   cur.execute(query)
   results1=cur.fetchall()
   relativeCSSPath='../../../'
@@ -209,7 +209,7 @@ def main():
  #   genAllReports(cur,logger,reportIDFilter,'all',districtName,blockCode=blockCode,blockName=blockName,panchayatCode=panchayatCode,panchayatName=panchayatName,htmlDir=htmlDir)
  
   #block Reports
-  query="select b.name,b.blockCode from blocks b where b.isRequired=1 %s" % limitString
+  query="select b.name,b.blockCode from blocks b where b.blockCode='009' and b.isRequired=1 %s" % limitString
   cur.execute(query)
   results=cur.fetchall()
   for row in results:

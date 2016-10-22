@@ -25,9 +25,9 @@ def argsFetch():
 
   parser = argparse.ArgumentParser(description='HouseKeeping Script for SurGUJA Database')
   parser.add_argument('-cp', '--copyPhones', help='Copies the phones from Libtech Addressbook to Surguja JobCardRegister', required=False,action='store_const', const=1)
-  parser.add_argument('-urr', '--updateRejectionReason', help='updates rejectionReason on workDetails', required=False,action='store_const', const=1)
+  parser.add_argument('-rfi', '--revertFTOInformation', help='Revert back FTO information, if rfiID is give it will revert back only for that ID', required=False,action='store_const', const=1)
   parser.add_argument('-ujc', '--updateJCNumber', help='updates JCNumber in jobcardRegister', required=False,action='store_const', const=1)
-  parser.add_argument('-ufn', '--updateFtoNo', help='Updates FTONo to Work Details', required=False,action='store_const', const=1)
+  parser.add_argument('-rfiID', '--revertWorkID', help='revert FTO Information for Work Details ID', required=False)
   parser.add_argument('-upa', '--updatePrimaryAccountHolder', help='Updates Primary Account HOlder', required=False,action='store_const', const=1)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-limit', '--limit', help='Limit the number of log entries', required=False)
@@ -102,7 +102,10 @@ def updateFtoNo(cur,logger,districtName,finyear,limitString):
     #  query="update workDetails set rejectionReason='%s',primaryAccountHolder='%s',ftoNo='%s',referenceNo='%s',creditedAccountNo='%s' where id=%s" % (rejectionReason,primaryAccountHolder,ftoNo,referenceNo,ftoAccountNo,rowid)
       #cur.execute(query)
  
-
+def revertFTOInformation(cur,logger,wdID):
+  query="update workDetails set ftoNo=NULL,ftoMatchStatus=NULL,primaryAccountHolder=NULL,rejectionReason=NULL,paymentMode=NULL,ftoAccountNo=NULL,ftoStatus=NULL,ftoAmount=NULL,referenceNo=NULL,ftoName=NULL,firstSignatoryDate=NULL,secondSignatoryDate=NULL,transactionDate=NULL,bankProcessedDate=NULL,processedDate=NULL,updateDate=NOW() where id=%s" % (str(wdID))
+  #logger.info(query)
+  cur.execute(query)
 
 def main():
   args = argsFetch()
@@ -132,9 +135,18 @@ def main():
 # if args['updateFinYear']:
 #   logger.info("This loop will update financial year in workDetails")
 #   updateFinYear(cur,logger,districtName,limitString)
-  if args['updateFtoNo']:
-    logger.info("This loop will update FTONo")
-    updateFtoNo(cur,logger,districtName,finyear,limitString)
+  if args['revertFTOInformation']:
+    logger.info("This loop will update FTO Information")
+    if args['revertWorkID']:
+      wdID=args['revertWorkID']
+      revertFTOInformation(cur,logger,wdID)
+    else:
+      query="select id from workDetails where finyear='%s' order by id DESC %s" % (finyear,limitString)
+      cur.execute(query)
+      results=cur.fetchall()
+      for row in results:
+        wdID=row[0]
+        revertFTOInformation(cur,logger,wdID)
   if args['updateJCNumber']:
     logger.info("This will update jcNumber")
     updateJCNumber(cur,logger,districtName,finyear,limitString)

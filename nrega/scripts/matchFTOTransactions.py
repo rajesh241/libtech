@@ -38,75 +38,6 @@ def argsFetch():
   args = vars(parser.parse_args())
   return args
 
-def getMaxArrayIndex(myArray):
-  curmax=0
-  j=0
-  for i in myArray:
-    if i>curmax:
-      curmax=i
-      curindex=j
-    j=j+1
-  return curindex
-
-def matchFunction(cur,logger,matchAlgo,jobcard,wagelistNo,ftoAmount,ftoNo,ftoName,ftoAccountNo):
-  query="select id,name,accountNo from workDetails where jobcard='%s' and wagelistNo='%s' and totalWage='%s' and matchInProgress=0" % (jobcard,wagelistNo,ftoAmount)
-  logger.info(query)
-  cur.execute(query)
-  results=cur.fetchall()
-  matchStatus="Fail"
-  matchValueArray=[]
-  matchTypeArray=[]
-  wdIDArray=[]
-  for row1 in results:
-    rowid1=row1[0]
-    musterName=row1[1]
-    musterAccountNo=row1[2]
-    matchCount=0
-    matchType="noMatch"
-    if ftoName.replace(" ","").lower() in musterName.replace(" ","").lower():
-      matchCount = matchCount +1
-      matchType="nameMatch"
-    if ftoAccountNo == musterAccountNo:
-      matchCount = matchCount +1
-      if matchType=="nameMatch":
-        matchType="nameAccountMatch"
-      else:
-        matchType="accountMatch"
-    matchValueArray.append(matchCount)
-    matchTypeArray.append(matchType)   
-    wdIDArray.append(rowid1)
-  #logger.info("Match Value Array: %s " %str(matchValueArray)) 
-  #logger.info("Match Type Array: %s " %str(matchTypeArray))
-  
-  #If there is only one element with 2 or only one element with score 1 then we have a good match
-  matchType="noMatch"
-  wdID=None
-  if len(matchValueArray) > 0:
-    if matchAlgo=="single":
-      if matchValueArray.count(2) == 1:
-        matchIndex=matchValueArray.index(2)
-        matchType=matchTypeArray[matchIndex]
-        wdID=str(wdIDArray[matchIndex])
-      elif matchValueArray.count(1) == 1:
-        matchIndex=matchValueArray.index(1)
-        matchType=matchTypeArray[matchIndex]
-        wdID=str(wdIDArray[matchIndex])   
-      elif len(matchValueArray) == 1:
-        matchIndex=0
-        matchType="nameAccountMismatch"
-        wdID=str(wdIDArray[matchIndex])   
-    elif matchAlgo=="multiple" and max(matchValueArray) > 0:
-      matchIndex=getMaxArrayIndex(matchValueArray)
-      matchType=matchTypeArray[matchIndex]
-      wdID=str(wdIDArray[matchIndex])    
-  
-  if matchType != "noMatch":
-    query="update workDetails set matchInProgress=1 where id=%s" % (str(wdID))
-    cur.execute(query)
-  else:
-    wdID="NULL" 
-  return matchType,wdID
-
 
 def main():
   args = argsFetch()
@@ -135,61 +66,181 @@ def main():
   cur.execute(query)
   crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
 
-  filepath=nregaRawDataDir.replace("districtName",districtName.lower())
   fullfinyear=getFullFinYear(finyear)
   
-  query="select count(*) count, jobcard, applicantName, creditedAmount,wagelistNo,accountNo,ftoNo from ftoTransactionDetails where creditedAmount is not NULL and ((ftoMatchStatus is NULL) or (ftoMatchStatus='noMatch')) %s group by jobcard,applicantName,creditedAmount,wagelistNo,accountNo,ftoNo" % (additionalFilter) 
-#  query="select count(*) count, jobcard, applicantName, creditedAmount,wagelistNo,accountNo,ftoNo from ftoTransactionDetails where creditedAmount is not NULL and ( (ftoMatchStatus='noMatch')) %s group by jobcard,applicantName,creditedAmount,wagelistNo,accountNo,ftoNo" % (additionalFilter) 
-  query="select count(*) count, jobcard, applicantName, creditedAmount,wagelistNo,accountNo,ftoNo from ftoTransactionDetails where creditedAmount is not NULL and ( (ftoMatchStatus is NULL)) %s group by jobcard,applicantName,creditedAmount,wagelistNo,accountNo,ftoNo" % (additionalFilter) 
+  query="select count(*),jobcard,wagelistNo,ftoNo from ftoTransactionDetails where finyear='%s' and matchType is NULL group by jobcard,wagelistNo,ftoNo %s " % (finyear,limitString)
+  query="select count(*),jobcard,wagelistNo,ftoNo from ftoTransactionDetails where finyear='%s' %s and wdRecordAbsent=0 and perfectMatch=0 and matchComplete=0 group by jobcard,wagelistNo,ftoNo %s " % (finyear,additionalFilter,limitString)
   logger.info(query)
   cur.execute(query)
   results=cur.fetchall()
-  for row in results:
-    count = row[0]
-    jobcard=row[1]
-    ftoName=row[2]
-    ftoAmount=str(row[3])
-    wagelistNo=row[4]
-    ftoAccountNo=row[5]
-    ftoNo=row[6]
-      
-    if count == 1:
-      matchAlgo="single"
-    else:
-      matchAlgo="multiple"
+  for row1 in results:
+    count = row1[0]
+    jobcard = row1[1]
+    wagelistNo = row1[2]
+    ftoNo =row1[3]
 
-    #Need to make all matchInProgress=0
-    query="update workDetails set matchInProgress=0"
+    query="select * from workDetails where jobcard='%s' and wagelistNo='%s'" % (jobcard,wagelistNo)
     cur.execute(query)
-    query="select id,primaryAccountHolder,rejectionReason,paymentMode,status,referenceNo,firstSignatoryDate,secondSignatoryDate,bankProcessedDate,transactionDate,processedDate from ftoTransactionDetails where jobcard='%s' and applicantName='%s' and creditedAmount=%s and wagelistNo='%s' and accountNo='%s' and ftoNo='%s'" % (jobcard,ftoName,ftoAmount,wagelistNo,ftoAccountNo,ftoNo)
-    logger.info(query)
-    cur.execute(query)
-    results1=cur.fetchall()
-    for row1 in results1:
-      ftID=str(row1[0])
-      matchType,wdID=matchFunction(cur,logger,matchAlgo,jobcard,wagelistNo,ftoAmount,ftoNo,ftoName,ftoAccountNo)
-      logger.info(" %s : %s : %s : %s : %s" % (ftID,jobcard,str(count),matchType,str(wdID)) )
-      query="update ftoTransactionDetails set updateWorkDetails=1,ftoMatchStatus='%s',wdID=%s where id=%s" % (matchType,str(wdID),ftID)
-      logger.info(query)
+    wdCount = cur.rowcount
+    
+    logger.info("WagelistNo: %s   ftoNo: %s  jobcard: %s    count: %s  wdCount=%s" % (wagelistNo,ftoNo,jobcard,str(count),str(wdCount)))
+
+
+    if wdCount == 0:
+      query="update ftoTransactionDetails set wdRecordAbsent=1  where jobcard='%s' and wagelistNo='%s' and ftoNo='%s' " % (jobcard,wagelistNo,ftoNo)
       cur.execute(query)
-#     if matchType != "noMatch":
-#       primaryAccountHolder=row1[1]
-#       rejectionReason=row1[2]
-#       paymentMode=row1[3]
-#       ftoStatus=row1[4]
-#       referenceNo=row1[5]
-#       firstSignatoryDateString=str(row1[6])
-#       secondSignatoryDateString=str(row1[7])
-#       bankProcessedDateString=str(row1[8])
-#       transactionDateString=str(row1[9])
-#       processedDateString=str(row1[10])
-#       query="update workDetails set ftoNo='%s',ftoMatchStatus='%s',primaryAccountHolder='%s',rejectionReason='%s',paymentMode='%s',ftoAccountNo='%s',ftoStatus='%s',ftoAmount='%s',referenceNo='%s',ftoName='%s',updateDate=NOW() where id=%s" % (ftoNo,matchType,primaryAccountHolder,rejectionReason,paymentMode,ftoAccountNo,ftoStatus,ftoAmount,referenceNo,ftoName,wdID)
-#       logger.info(query)
-#       cur.execute(query)
-#       query="update workDetails set firstSignatoryDate='%s',secondSignatoryDate='%s',transactionDate='%s',bankProcessedDate='%s',processedDate='%s',updateDate=NOW() where id=%s" % (firstSignatoryDateString,secondSignatoryDateString,transactionDateString,bankProcessedDateString,processedDateString,wdID)
-#       logger.info(query) 
-#       cur.execute(query)
+
+    if count >0 and wdCount > 0:#== wdCount:
+      logger.info("The counts are Matching, so we can make perfect co relation")
+      matchMatrix=[]  # This is a Two Dimensional Array
+      wdIDMatrix=[]
+      matchStringMatrix=[]
+      maxIndexArray=[]
+      query="select id,applicantName,accountNo,status,creditedAmount from ftoTransactionDetails where jobcard='%s' and wagelistNo='%s' and ftoNo='%s' " % (jobcard,wagelistNo,ftoNo)
+      cur.execute(query)
+      ftoResults=cur.fetchall()
+      i=0
+      ftIDArray=[]
+      equalMatch=0
+      for ftoRow in ftoResults:
+        ftID= ftoRow[0]
+        ftoName=ftoRow[1]
+        ftoAccountNo=ftoRow[2]
+        ftoStatus=ftoRow[3]
+        ftoAmount=ftoRow[4]
+        ftIDArray.append(ftID)
+        matchMatrix.append([]) 
+        matchStringMatrix.append([])
+        wdIDMatrix.append([])
+        query="select id,name,accountNo,totalWage,musterStatus from workDetails where jobcard='%s' and wagelistNo='%s'" % (jobcard,wagelistNo)
+        cur.execute(query)
+        musterResults=cur.fetchall()
+        for musterRow in musterResults:
+          wdID=musterRow[0]
+          musterName=musterRow[1]
+          musterAccountNo=musterRow[2]
+          musterAmount=musterRow[3]
+          musterStatus=musterRow[4]
+          matchCount=0
+          matchString=''
+          if ftoName.replace(" ","").lower() in musterName.replace(" ","").lower():
+            matchCount = matchCount +1
+            matchString+="nameMatch"
+          else:
+            matchString+="nameMismatch"
+          if ftoAccountNo == musterAccountNo:
+            matchCount = matchCount +1
+            matchString+="AccountMatch"
+          else:
+            matchString+="AccountMismatch"
+          if (ftoAmount is not None) and (int(ftoAmount)==int(musterAmount)):
+            matchCount = matchCount + 1
+          if musterStatus == 'Credited':
+             musterStatus="Processed"
+          if ( (musterStatus==ftoStatus.replace(" ",""))  and (musterStatus != '') ):
+            matchCount = matchCount + 1
+          matchMatrix[i].append(matchCount)
+          matchStringMatrix[i].append(matchString)
+          wdIDMatrix[i].append(wdID)
+
+        maxMatch=max(matchMatrix[i])
+        maxCount=matchMatrix[i].count(maxMatch)
         
+        if maxCount == 1:
+          maxIndex=matchMatrix[i].index(maxMatch)
+        else:
+          maxIndex=None
+          equalMatch=1
+        maxIndexArray.append(maxIndex) 
+        i=i+1
+        
+      i=0
+      logger.info("MatchMatrix : %s " % str(matchMatrix))
+      logger.info("maxIndex Array : %s " % str(maxIndexArray))
+
+# Now we shall do the Mappint
+
+      if len(maxIndexArray) == len(set(maxIndexArray)):
+         logger.info("Perfect Matching")
+         query="update ftoTransactionDetails set perfectMatch=1  where jobcard='%s' and wagelistNo='%s' and ftoNo='%s' " % (jobcard,wagelistNo,ftoNo)
+         cur.execute(query) 
+         
+         #If for some case equal match is there, we need to match it to pending one.
+         if (equalMatch == 1) and (count==wdCount):
+           pendingArray=[]
+           equalMatchIndex=maxIndexArray.index(None)
+           i=0
+           while i < wdCount:
+             if i not in maxIndexArray:
+               pendingArray.append(i)
+             i=i+1
+           if len(pendingArray) == 1:
+             maxIndexArray[equalMatchIndex]=pendingArray[0]
+             equalMatch=0
+           logger.info("Number of Equal Matches: %s Pending Array : %s " % ( str(equalMatchIndex),str(pendingArray)))
+         #Lets do the ftoID and musterID Matching
+         ftoIndex=0
+         if equalMatch==0:
+           for maxIndex in maxIndexArray:
+             curFTID=ftIDArray[ftoIndex]
+             curWDID=wdIDMatrix[ftoIndex][maxIndex]
+             curMatchString=matchStringMatrix[ftoIndex][maxIndex]
+             ftoIndex=ftoIndex+1
+             logger.info("Matching FTOID : %s  WorkDetails ID : %s curMatchString = %s " % (str(curFTID),str(curWDID),curMatchString))
+             query="update ftoTransactionDetails set matchComplete=1,workDetailsID=%s,matchType='%s' where id=%s " %(str(curWDID),curMatchString,str(curFTID))
+             logger.info(query)
+             cur.execute(query)
+           
+      else:
+         logger.info("Not a Great Match")
+         # Here we wold need to write the logic when the number of Nones is greater than 1
+         if (equalMatch == 1) and (count == wdCount):
+           pendingArray=[]
+           i=0
+           while i < wdCount:
+             if i not in maxIndexArray:
+               pendingArray.append(i)
+             i=i+1
+           logger.info("Pending array: %s " % (str(pendingArray)))
+           
+         if count > wdCount:
+           logger.info("Few workDetails available") 
+           if wdCount == 1:
+             i=0
+             maxValue=0
+             maxIndex=None
+             while i < count:
+               if matchMatrix[i][0] > maxValue:
+                 maxValue=matchMatrix[i][0]
+                 maxIndex=i
+               i=i+1
+                   
+             if maxIndex is not None:
+               curFTID=ftIDArray[maxIndex]
+               curWDID=wdIDMatrix[maxIndex][0]  
+               curMatchString=matchStringMatrix[maxIndex][0]  
+               logger.info("Matching FTOID : %s  WorkDetails ID : %s curMatchString = %s " % (str(curFTID),str(curWDID),curMatchString))
+               query="update ftoTransactionDetails set matchComplete=1,workDetailsID=%s,matchType='%s' where id=%s " %(str(curWDID),curMatchString,str(curFTID))
+               logger.info(query)
+               cur.execute(query)
+             #For other elements in this list we need to make them matchNotFound
+             i=0
+             while i < count:
+               if i != maxIndex:
+                 curFTID=ftIDArray[i]
+                 query="update ftoTransactionDetails set wdRecordAbsent=1 where id=%s " % (str(curFTID))
+                 logger.info(query)
+                 cur.execute(query)
+               i = i+1
+
+    else:
+      b=1
+     # logger.info("The counts are not Matching Yet so we will still need to figure out")
+    #Example Query
+    query="select id,applicantName,accountNo,creditedAmount,status from ftoTransactionDetails where jobcard='%s' and wagelistNo='%s' " % (jobcard,wagelistNo)
+    logger.info(query) 
+    query="select id,name,accountNo,totalWage,musterStatus from workDetails where jobcard='%s' and wagelistNo='%s' " % (jobcard,wagelistNo)
+    logger.info(query) 
                 
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
   logger.info("...END PROCESSING")     
