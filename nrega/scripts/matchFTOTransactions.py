@@ -67,9 +67,9 @@ def main():
   crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
 
   fullfinyear=getFullFinYear(finyear)
-  
+  whereClause="and wdRecordAbsent=0 and perfectMatch=0 and matchComplete=0 " 
   query="select count(*),jobcard,wagelistNo,ftoNo from ftoTransactionDetails where finyear='%s' and matchType is NULL group by jobcard,wagelistNo,ftoNo %s " % (finyear,limitString)
-  query="select count(*),jobcard,wagelistNo,ftoNo from ftoTransactionDetails where finyear='%s' %s and wdRecordAbsent=0 and perfectMatch=0 and matchComplete=0 group by jobcard,wagelistNo,ftoNo %s " % (finyear,additionalFilter,limitString)
+  query="select count(*),jobcard,wagelistNo,ftoNo from ftoTransactionDetails where finyear='%s' %s %s group by jobcard,wagelistNo,ftoNo %s " % (finyear,additionalFilter,whereClause,limitString)
   logger.info(query)
   cur.execute(query)
   results=cur.fetchall()
@@ -79,7 +79,7 @@ def main():
     wagelistNo = row1[2]
     ftoNo =row1[3]
 
-    query="select * from workDetails where jobcard='%s' and wagelistNo='%s'" % (jobcard,wagelistNo)
+    query="select * from workDetails where jobcard='%s' and wagelistNo='%s' and matchComplete=0" % (jobcard,wagelistNo)
     cur.execute(query)
     wdCount = cur.rowcount
     
@@ -96,7 +96,7 @@ def main():
       wdIDMatrix=[]
       matchStringMatrix=[]
       maxIndexArray=[]
-      query="select id,applicantName,accountNo,status,creditedAmount from ftoTransactionDetails where jobcard='%s' and wagelistNo='%s' and ftoNo='%s' " % (jobcard,wagelistNo,ftoNo)
+      query="select id,applicantName,accountNo,status,creditedAmount from ftoTransactionDetails where jobcard='%s' and wagelistNo='%s' and ftoNo='%s' %s" % (jobcard,wagelistNo,ftoNo,whereClause)
       cur.execute(query)
       ftoResults=cur.fetchall()
       i=0
@@ -112,7 +112,7 @@ def main():
         matchMatrix.append([]) 
         matchStringMatrix.append([])
         wdIDMatrix.append([])
-        query="select id,name,accountNo,totalWage,musterStatus from workDetails where jobcard='%s' and wagelistNo='%s'" % (jobcard,wagelistNo)
+        query="select id,name,accountNo,totalWage,musterStatus from workDetails where jobcard='%s' and wagelistNo='%s' and matchComplete=0" % (jobcard,wagelistNo)
         cur.execute(query)
         musterResults=cur.fetchall()
         for musterRow in musterResults:
@@ -190,18 +190,57 @@ def main():
              query="update ftoTransactionDetails set matchComplete=1,workDetailsID=%s,matchType='%s' where id=%s " %(str(curWDID),curMatchString,str(curFTID))
              logger.info(query)
              cur.execute(query)
+             query="update workDetails set matchComplete=1 where id='%s' " % (str(curWDID))
+             logger.info(query)
+             cur.execute(query)
            
       else:
          logger.info("Not a Great Match")
-         # Here we wold need to write the logic when the number of Nones is greater than 1
-         if (equalMatch == 1) and (count == wdCount):
-           pendingArray=[]
+         #Here we will write login if all the matrix Elements are same
+         if count == wdCount:
            i=0
-           while i < wdCount:
-             if i not in maxIndexArray:
-               pendingArray.append(i)
+           j=0
+           curValue=matchMatrix[0][0]
+           allSame=1
+           while i < count:
+             while j < wdCount:
+               if matchMatrix[i][j] != curValue:
+                 allSame=0
+               j=j+1
              i=i+1
-           logger.info("Pending array: %s " % (str(pendingArray)))
+           if allSame == 1:
+             logger.info("All are Same values")
+             ftoIndex=0
+             while ftoIndex < count:
+               curFTID=ftIDArray[ftoIndex]
+               curWDID=wdIDMatrix[ftoIndex][ftoIndex]
+               curMatchString=matchStringMatrix[ftoIndex][ftoIndex]
+               ftoIndex=ftoIndex+1
+               logger.info("Matching FTOID : %s  WorkDetails ID : %s curMatchString = %s " % (str(curFTID),str(curWDID),curMatchString))
+               query="update ftoTransactionDetails set matchComplete=1,workDetailsID=%s,matchType='%s' where id=%s " %(str(curWDID),curMatchString,str(curFTID))
+               logger.info(query)
+               cur.execute(query)
+               query="update workDetails set matchComplete=1 where id='%s' " % (str(curWDID))
+               logger.info(query)
+               cur.execute(query)
+               
+         # Here we wold need to write the logic when the number of Nones is greater than 1
+         ftoIndex=0
+         if (equalMatch == 1) and (count == wdCount):
+           for maxIndex in maxIndexArray:
+             if maxIndex is not None:
+               curFTID=ftIDArray[ftoIndex]
+               curWDID=wdIDMatrix[ftoIndex][maxIndex]
+               curMatchString=matchStringMatrix[ftoIndex][maxIndex]
+               logger.info("Matching FTOID : %s  WorkDetails ID : %s curMatchString = %s " % (str(curFTID),str(curWDID),curMatchString))
+               query="update ftoTransactionDetails set matchComplete=1,workDetailsID=%s,matchType='%s' where id=%s " %(str(curWDID),curMatchString,str(curFTID))
+               logger.info(query)
+               cur.execute(query)
+               query="update workDetails set matchComplete=1 where id='%s' " % (str(curWDID))
+               logger.info(query)
+               cur.execute(query)
+             ftoIndex=ftoIndex+1
+           
            
          if count > wdCount:
            logger.info("Few workDetails available") 
@@ -221,6 +260,9 @@ def main():
                curMatchString=matchStringMatrix[maxIndex][0]  
                logger.info("Matching FTOID : %s  WorkDetails ID : %s curMatchString = %s " % (str(curFTID),str(curWDID),curMatchString))
                query="update ftoTransactionDetails set matchComplete=1,workDetailsID=%s,matchType='%s' where id=%s " %(str(curWDID),curMatchString,str(curFTID))
+               logger.info(query)
+               cur.execute(query)
+               query="update workDetails set matchComplete=1 where id='%s' " % (str(curWDID))
                logger.info(query)
                cur.execute(query)
              #For other elements in this list we need to make them matchNotFound

@@ -758,7 +758,7 @@ def tabletUIReportTable(cur, query, staticLinkPath=None,field_names=None, extra=
           targetcsv16="./%s/%s.csv" % (staticLinkPath+'16',rowstripped)
           targetLink17="./%s/%s.html" % (staticLinkPath+'17',rowstripped)
           targetcsv17="./%s/%s.csv" % (staticLinkPath+'17',rowstripped)
-          rowvalue='<a href="./%s/%s.html"> %s </a>' % (staticLinkPath,rowstripped,row[1])
+          rowvalue='<a href="./%s/%s.html"> %s </a>' % (staticLinkPath+"17",rowstripped,row[1])
         else:
           rowvalue='<a href="./%s/%s.html"> %s </a>' % (rowstripped.upper(),rowstripped.upper(),row[1])
        # rowvalue=linkValue.replace("linktext",row[i])
