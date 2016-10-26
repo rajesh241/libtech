@@ -28,6 +28,53 @@ def argsFetch():
   parser.add_argument('-limit', '--limit', help='Limit the number of entries that need to be processed', required=False)
   args = vars(parser.parse_args())
   return args
+
+def getSmallSquareMatrix(logger,inMatrix):
+  matchCountArray=[]
+  for index,eachList in enumerate(inMatrix):
+    logger.info("%s,%s" % (str(index),str(eachList)))
+    count=0
+    for a in inMatrix:
+      if a == eachList:
+        count=count+1
+    matchCountArray.append(count)
+
+  maxCount=max(matchCountArray)
+  maxCountIndexArray=[]
+  for index,count in enumerate(matchCountArray):
+    if count==maxCount:
+      maxCountIndexArray.append(index)
+  
+  if len(maxCountIndexArray) == 0:
+    maxIndex=maxCountIndexArray[0]
+  else:
+    rowSum=0
+    for eachIndex in maxCountIndexArray:
+      curSum=sum(inMatrix[eachIndex])
+      if curSum > rowSum:
+        rowSum=curSum
+        maxIndex=eachIndex
+
+  logger.info(str(maxCount)+"-"+str(maxIndex))
+  maxRow=inMatrix[maxIndex]
+  maxValueinRow=max(maxRow)
+  maxValueinRowCount=maxRow.count(maxValueinRow)
+  hasSmallSquareMatrix=0
+  if maxValueinRowCount == maxCount:
+    logger.info("This would give us a perfect square Matrix Matrix to Match")
+    hasSmallSquareMatrix=1
+  validRowArray=[]
+  validColumnArray=[]
+  for index,r in enumerate(inMatrix):
+    if r==maxRow:
+      validRowArray.append(index)
+  for index,c in enumerate(maxRow):
+    if c==maxValueinRow:
+      validColumnArray.append(index)
+
+  logger.info("Valid Columns : %s, Valid Rows %s " % (str(validColumnArray),str(validRowArray)))
+  return hasSmallSquareMatrix,validRowArray,validColumnArray
+
 def isSingleValueMatrix(logger,inMatrix):
   totalElements=len(inMatrix) * len(inMatrix[0])
   firstValue=inMatrix[0][0]
@@ -77,9 +124,9 @@ def main():
     wagelistNo = row1[2]
     ftoNo =row1[3]
     if row1[4] is None:
-      ftoCreditedAmount="NULL"
+      ftoCreditedAmountClause="creditedAmount is NULL"
     else:
-      ftoCreditedAmount=row1[4]
+      ftoCreditedAmountClause="creditedAmount=%s " % row1[4]
     
 
     query="select * from workDetails where jobcard='%s' and wagelistNo='%s' and matchComplete=0" % (jobcard,wagelistNo)
@@ -89,7 +136,7 @@ def main():
 
     #Now First we need to see if we have any entries in Work Details table matching the wagelist and Jobcard, if the count is zero then we need to update ftoTransactionDetails Table with wdRecordAbsent
     if wdCount == 0:
-      query="update ftoTransactionDetails set wdRecordAbsent=1  where jobcard='%s' and wagelistNo='%s' and ftoNo='%s' and creditedAmount=%s" % (jobcard,wagelistNo,ftoNo,str(ftoCreditedAmount))
+      query="update ftoTransactionDetails set wdRecordAbsent=1  where jobcard='%s' and wagelistNo='%s' and ftoNo='%s' and %s %s" % (jobcard,wagelistNo,ftoNo,ftoCreditedAmountClause,whereClause)
       cur.execute(query)
 
     #Need to create a Matrix in case the Work Details count does not equal to zero    
@@ -98,7 +145,8 @@ def main():
       wdIDMatrix=[]
       matchStringMatrix=[]
       maxIndexArray=[]
-      query="select id,applicantName,accountNo,status,creditedAmount from ftoTransactionDetails where jobcard='%s' and wagelistNo='%s' and ftoNo='%s' and creditedAmount=%s %s" % (jobcard,wagelistNo,ftoNo,ftoCreditedAmount,whereClause)
+      query="select id,applicantName,accountNo,status,creditedAmount from ftoTransactionDetails where jobcard='%s' and wagelistNo='%s' and ftoNo='%s' and %s %s" % (jobcard,wagelistNo,ftoNo,ftoCreditedAmountClause,whereClause)
+      logger.info(query)
       cur.execute(query)
       ftoResults=cur.fetchall()
       i=0
@@ -116,6 +164,7 @@ def main():
         matchStringMatrix.append([])
         wdIDMatrix.append([])
         query="select id,name,accountNo,totalWage,musterStatus from workDetails where jobcard='%s' and wagelistNo='%s' and matchComplete=0" % (jobcard,wagelistNo)
+        logger.info(query)
         cur.execute(query)
         musterResults=cur.fetchall()
         for musterRow in musterResults:
@@ -159,13 +208,13 @@ def main():
         maxIndexArray.append(maxIndex) 
         i=i+1
 
-      maxIndexArrayWithoutNone=[x for x in maxIndexArray if x != None]
-      singleValueMatrix=isSingleValueMatrix(logger,matchMatrix)
-      logger.info("Single Value Matrix : %s " % (singleValueMatrix))
       logger.info("MatchMatrix : %s " % str(matchMatrix))
       logger.info("matchStringMatrix : %s " % str(matchStringMatrix))
       logger.info("maxIndex Array : %s " % str(maxIndexArray))
-     
+      maxIndexArrayWithoutNone=[x for x in maxIndexArray if x != None]
+      singleValueMatrix=isSingleValueMatrix(logger,matchMatrix)
+      logger.info("Single Value Matrix : %s " % (singleValueMatrix))
+      hasSmallSquareMatrix,validRowArray,validColumnArray=getSmallSquareMatrix(logger,matchMatrix) 
       doMatch=0
      # if (len(maxIndexArray) == len(set(maxIndexArray))) and (None not in maxIndexArray):
       if ((len(maxIndexArrayWithoutNone) == len(set(maxIndexArrayWithoutNone))) and (len(maxIndexArrayWithoutNone) != 0)):
@@ -194,6 +243,11 @@ def main():
           ftValidMatchArray[ftoIndex] = 1
           ftoIndex=ftoIndex+1
         doMatch=1 
+      elif (hasSmallSquareMatrix == 1):
+        for index,r in enumerate(validRowArray):
+          ftValidMatchArray[r] = 1
+          maxIndexArray[r] = validColumnArray[index]
+        doMatch=1
 
   
       logger.info("FT Valid Match Array %s " % str(ftValidMatchArray)) 
@@ -214,7 +268,7 @@ def main():
           ftoIndex=ftoIndex+1
            
       #Reference Queries
-      query="select id,applicantName,accountNo,creditedAmount,status from ftoTransactionDetails where jobcard='%s' and wagelistNo='%s' and ftoNo='%s' and creditedAmount=%s" % (jobcard,wagelistNo,ftoNo,ftoCreditedAmount)
+      query="select id,applicantName,accountNo,creditedAmount,status from ftoTransactionDetails where jobcard='%s' and wagelistNo='%s' and ftoNo='%s' and %s" % (jobcard,wagelistNo,ftoNo,ftoCreditedAmountClause)
       logger.info(query) 
       query="select id,name,accountNo,totalWage,musterStatus from workDetails where jobcard='%s' and wagelistNo='%s' " % (jobcard,wagelistNo)
       logger.info(query) 
