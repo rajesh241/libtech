@@ -70,7 +70,7 @@ def main():
   driver.get(url)
   time.sleep(2)
 
-  query="select f.id,f.ftoNo,b.name,b.blockCode from ftoDetails f,blocks b where f.blockCode=b.blockCode and f.isDownloaded=0 and finyear='%s' %s %s " % (finyear,additionalFilters,limitString)
+  query="select f.id,f.ftoNo,b.name,b.blockCode from ftoDetails f,blocks b where f.blockCode=b.blockCode and ( (f.isDownloaded=0) or ((f.isComplete=0 and TIMESTAMPDIFF(HOUR, f.downloadAttemptDate, now()) > 48 ) )) and finyear='%s' %s order by isDownloaded %s " % (finyear,additionalFilters,limitString)
   logger.info(query)
   cur.execute(query)
   results=cur.fetchall()
@@ -117,6 +117,7 @@ def main():
         htmlsource = driver.page_source
         htmlsource=htmlsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
         success=0
+        isPopulatedString=''
         writeFile("/home/libtech/webroot/nreganic.libtech.info/temp/"+ftoNo+".html",htmlsource)
         if "FTO_Acc_signed_dt_p2w" in htmlsource:
           filename=filepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftoNo+".html"
@@ -124,7 +125,8 @@ def main():
           writeFile("/home/libtech/webroot/nreganic.libtech.info/temp/"+ftoNo+".html",htmlsource)
           writeFile(filename,htmlsource)
           success=1
-        query="update ftoDetails set isDownloaded=%s,downloadAttemptDate=NOW()  where id=%s" %(str(success),str(rowid))
+          isPopulatedString="isPopulated=0,"
+        query="update ftoDetails set isDownloaded=%s,%sdownloadAttemptDate=NOW()  where id=%s" %(str(success),str(isPopulatedString),str(rowid))
         logger.info(query)
         cur.execute(query)
         driver.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 'w')

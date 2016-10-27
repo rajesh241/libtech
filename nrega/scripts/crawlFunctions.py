@@ -89,7 +89,23 @@ def getMusterPaymentDate(inhtml):
     sanctionDate=''
   return paymentDate,sanctionNo,sanctionDate
 
-  
+def alterHTMLTables(inhtml):
+  outhtml=''
+  outhtml+=rewriteAllTables(inhtml)
+  return outhtml
+
+def rewriteAllTables(inhtml):
+  htmlsoup=BeautifulSoup(inhtml,"html.parser")
+  i=0
+  myhtml=''
+  tables=htmlsoup.findAll('table')
+  for table in tables:
+    tableID="libtechTable%s" % str(i)
+    myhtml+=  getCenterAligned('<h3 style="color:green"> %s</h3>' %tableID )
+    myhtml+=stripTableAttributes(table,tableID)
+    i=i+1
+  return myhtml
+ 
 def alterMusterHTML(inhtml):
   htmlsoup=BeautifulSoup(inhtml,"html.parser")
   outhtml=''

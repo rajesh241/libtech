@@ -20,7 +20,7 @@ sys.path.insert(0, fileDir+'/../crawlDistricts/')
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
 
 from crawlFunctions import getDistrictParams
-from crawlFunctions import alterMusterHTML,getMusterPaymentDate
+from crawlFunctions import alterMusterHTML,getMusterPaymentDate,alterHTMLTables
 from crawlFunctions import alterFTOHTML,genHTMLHeader,NICToSQLDate
 def argsFetch():
   '''
@@ -66,6 +66,7 @@ def main():
   crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
 
   filepath=nregaRawDataDir.replace("districtName",districtName.lower())
+  modifiedFilepath=nregaWebDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
   fullfinyear=getFullFinYear(finyear)
   
   query="select f.id,f.ftoNo,f.blockCode,b.name from ftoDetails f,blocks b where f.isDownloaded=1 and f.blockCode=b.blockCode and f.isPopulated=0 %s " % (limitString)
@@ -80,12 +81,25 @@ def main():
     blockCode=row[2]
     blockName=row[3]
     filename=filepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftoNo+".html"
+    modifiedFilename=modifiedFilepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftoNo+".html"
     logger.info(filename)
     if (os.path.isfile(filename)):
       error=0
       matchComplete=1 
       isComplete=1
       myhtml=open(filename,'r').read()
+      
+      #To Rewrite wagelist HTML
+      htmlHeaderLabels=["District Name","Block Name","FTO No"]
+      htmlHeaderValues=[districtName,blockName,ftoNo]
+      htmlHeader=genHTMLHeader(htmlHeaderLabels,htmlHeaderValues)
+      outhtml=alterHTMLTables(myhtml)
+      modifiedHTML=htmlHeader+outhtml
+      modifiedHTML=htmlWrapperLocal(title="FTO Details", head='<h1 aling="center">'+ftoNo+'</h1>', body=modifiedHTML)
+      logger.info("Modified File Name %s " % modifiedFilename)
+      writeFile(modifiedFilename,modifiedHTML)
+
+
       htmlsoup=BeautifulSoup(myhtml,"html.parser")
       myspan=htmlsoup.find('span',id="ctl00_ContentPlaceHolder1_lbl_mode")
       paymentMode=myspan.text.lstrip().rstrip()

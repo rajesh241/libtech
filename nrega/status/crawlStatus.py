@@ -90,13 +90,14 @@ def main():
 
   myhtml+=  getCenterAligned('<h3 style="color:blue"> FTO Download Status</h3>')
   query="select count(*),isDownloaded,blockCode from ftoDetails where finyear='%s' group by isDownloaded,blockCode" % (finyear)
+  query="select count(*),b.blockCode from ftoDetails f,blocks b where f.blockCode=b.blockCode and ( (f.isDownloaded=0) or ((f.isComplete=0 and TIMESTAMPDIFF(HOUR, f.downloadAttemptDate, now()) > 48 ) )) and finyear='%s'  group by b.blockCode  " % (finyear)
   query_table = "<br />"
   query_table += bsQuery2HtmlV2(cur, query, query_caption="")
   myhtml+=query_table
 
 
   myhtml+=  getCenterAligned('<h3 style="color:blue"> Wagelist Download Status</h3>')
-  query="select count(*),isDownloaded,blockCode from wagelists where finyear='%s' group by isDownloaded,blockCode" % (finyear)
+  query="select count(*),w.isDownloaded,w.blockCode  from wagelists w,blocks b where w.blockCode=b.blockCode and ( (w.isDownloaded=0) or (w.isComplete=0 and TIMESTAMPDIFF(HOUR, w.downloadAttemptDate, now()) > 48 )) and finyear='%s' group by w.isDownloaded,w.blockCode " % (finyear)
   query_table = "<br />"
   query_table += bsQuery2HtmlV2(cur, query, query_caption="")
   myhtml+=query_table

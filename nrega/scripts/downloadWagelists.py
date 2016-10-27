@@ -72,7 +72,7 @@ def main():
   htmlsource = driver.page_source
   writeFile("/home/libtech/webroot/nreganic.libtech.info/temp/a.html",htmlsource)
 
-  query="select w.id,w.wagelistNo,b.name from wagelists w,blocks b where w.blockCode=b.blockCode and w.isDownloaded=0 and finyear='%s' %s %s " % (finyear,additionalFilters,limitString)
+  query="select w.id,w.wagelistNo,b.name from wagelists w,blocks b where w.blockCode=b.blockCode and ( (w.isDownloaded=0) or (w.isComplete=0 and TIMESTAMPDIFF(HOUR, w.downloadAttemptDate, now()) > 48 )) and finyear='%s' %s order by w.isDownloaded %s " % (finyear,additionalFilters,limitString)
   logger.info(query)
   cur.execute(query)
   results=cur.fetchall()
@@ -115,13 +115,15 @@ def main():
           htmlsource = driver.page_source
           htmlsource=htmlsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
           success=0
+          isPopulatedString=''
           if "WageList Agency Code" in htmlsource:
             filename=filepath+blockName.upper()+"/WAGELIST/"+fullfinyear+"/"+wagelistNo+".html"
             logger.info(filename)
             writeFile("/home/libtech/webroot/nreganic.libtech.info/temp/"+wagelistNo+".html",htmlsource)
             writeFile(filename,htmlsource)
             success=1
-          query="update wagelists set isDownloaded=%s,downloadAttemptDate=NOW()  where id=%s" %(str(success),str(rowid))
+            isPopulatedString="isProcessed=0,"
+          query="update wagelists set isDownloaded=%s,%sdownloadAttemptDate=NOW()  where id=%s" %(str(success),isPopulatedString,str(rowid))
           logger.info(query)
           cur.execute(query)
         driver.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 'w')
