@@ -31,7 +31,7 @@ def main():
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query)
- 
+  finyear='17' 
  
   myhtml+=  getCenterAligned('<h2 style="color:blue"> %s</h2>' % (districtName.upper()))
  
@@ -44,6 +44,24 @@ def main():
   cur.execute(query)
   if cur.rowcount > 0:
     myhtml+=  getCenterAligned('<h2 style="color:red"> Accounts Not Crawled at all for %s panchayats</h2>' % (str(cur.rowcount)))
+
+  myhtml+=  getCenterAligned('<h3 style="color:red"> Pending Muster Download</h3>')
+  query="select m.finyear,m.blockCode,count(*) from musters m,blocks b,panchayats p  where b.isRequired=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1  and m.musterType='10' and (m.isDownloaded=0 or m.wdError=1 or (m.wdComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) ) group by m.finyear,blockCode"
+  query_table = "<br />"
+  query_table += bsQuery2HtmlV2(cur, query, query_caption="")
+  myhtml+=query_table
+
+  myhtml+=  getCenterAligned('<h3 style="color:red"> Pending Muster Download MusterWise</h3>')
+  query="select m.musterNo,b.blockCode,TIMESTAMPDIFF(HOUR,m.downloadAttemptDate,NOW()),m.downloadAttemptDate from musters m,blocks b,panchayats p  where b.isRequired=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1  and m.musterType='10' and (m.isDownloaded=0 or m.wdError=1 or (m.wdComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) ) order by isDownloaded,TIMESTAMPDIFF(HOUR,m.downloadAttemptDate,NOW()) DESC limit 4"
+  query_table = "<br />"
+  query_table += bsQuery2HtmlV2(cur, query, query_caption="")
+  myhtml+=query_table
+
+  myhtml+=  getCenterAligned('<h3 style="color:red"> Pending Muster Processing</h3>')
+  query="select m.finyear,count(*) from musters m,blocks b,panchayats p where m.wdError=0 and m.isDownloaded=1 and m.wdProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 group by m.finyear"
+  query_table = "<br />"
+  query_table += bsQuery2HtmlV2(cur, query, query_caption="")
+  myhtml+=query_table
 
   myhtml+=  getCenterAligned('<h3 style="color:blue"> Jobcard Crawl Status</h3>')
   query="select name,DATE_FORMAT(jobcardCrawlDate,'%d-%M-%Y') jobcardCrawlDate from panchayats where isRequired=1 order by jobcardCrawlDate  ASC limit 2;"
@@ -69,6 +87,21 @@ def main():
   query_table += bsQuery2HtmlV2(cur, query, query_caption="")
   myhtml+=query_table
   
+
+  myhtml+=  getCenterAligned('<h3 style="color:blue"> FTO Download Status</h3>')
+  query="select count(*),isDownloaded,blockCode from ftoDetails where finyear='%s' group by isDownloaded,blockCode" % (finyear)
+  query="select count(*),b.blockCode from ftoDetails f,blocks b where f.blockCode=b.blockCode and ( (f.isDownloaded=0) or ((f.isComplete=0 and TIMESTAMPDIFF(HOUR, f.downloadAttemptDate, now()) > 48 ) )) and finyear='%s'  group by b.blockCode  " % (finyear)
+  query_table = "<br />"
+  query_table += bsQuery2HtmlV2(cur, query, query_caption="")
+  myhtml+=query_table
+
+
+  myhtml+=  getCenterAligned('<h3 style="color:blue"> Wagelist Download Status</h3>')
+  query="select count(*),w.isDownloaded,w.blockCode  from wagelists w,blocks b where w.blockCode=b.blockCode and ( (w.isDownloaded=0) or (w.isComplete=0 and TIMESTAMPDIFF(HOUR, w.downloadAttemptDate, now()) > 48 )) and finyear='%s' group by w.isDownloaded,w.blockCode " % (finyear)
+  query_table = "<br />"
+  query_table += bsQuery2HtmlV2(cur, query, query_caption="")
+  myhtml+=query_table
+
 
   myhtml=htmlWrapper(title="NREGA Status", head='<h1 aling="center">Nrega Status</h1>', body=myhtml)
   print myhtml.encode('UTF-8')

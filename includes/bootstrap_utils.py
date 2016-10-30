@@ -758,7 +758,7 @@ def tabletUIReportTable(cur, query, staticLinkPath=None,field_names=None, extra=
           targetcsv16="./%s/%s.csv" % (staticLinkPath+'16',rowstripped)
           targetLink17="./%s/%s.html" % (staticLinkPath+'17',rowstripped)
           targetcsv17="./%s/%s.csv" % (staticLinkPath+'17',rowstripped)
-          rowvalue='<a href="./%s/%s.html"> %s </a>' % (staticLinkPath,rowstripped,row[1])
+          rowvalue='<a href="./%s/%s.html"> %s </a>' % (staticLinkPath+"17",rowstripped,row[1])
         else:
           rowvalue='<a href="./%s/%s.html"> %s </a>' % (rowstripped.upper(),rowstripped.upper(),row[1])
        # rowvalue=linkValue.replace("linktext",row[i])
@@ -769,10 +769,12 @@ def tabletUIReportTable(cur, query, staticLinkPath=None,field_names=None, extra=
 
     myForm=getButtonV3(targetLink,'viewHTML','All')
     myForm=myForm.replace("extrainputs","")
-    table_html += "<td>  " + myForm + "</td>"
+  #  table_html += "<td>  " + myForm + "</td>"
+    table_html += "<td>     </td>"
     myForm=getButtonV3(targetLink16,'viewHTML','FY16')
     myForm=myForm.replace("extrainputs","")
-    table_html += "<td>" + myForm + "</td>"
+    table_html += "<td>     </td>"
+   # table_html += "<td>" + myForm + "</td>"
     myForm=getButtonV3(targetLink17,'viewHTML','FY17')
     myForm=myForm.replace("extrainputs","")
     table_html += "<td>" + myForm + "</td>"
@@ -780,10 +782,12 @@ def tabletUIReportTable(cur, query, staticLinkPath=None,field_names=None, extra=
     table_html += "<td > | </td>"
     myForm=getButtonV3(targetcsv,'viewCSV','All')
     myForm=myForm.replace("extrainputs","")
-    table_html += "<td>" + myForm + "</td>"
+    table_html += "<td>     </td>"
+  #  table_html += "<td>" + myForm + "</td>"
     myForm=getButtonV3(targetcsv16,'viewCSV','FY16')
     myForm=myForm.replace("extrainputs","")
-    table_html += "<td>" + myForm + "</td>"
+    table_html += "<td>     </td>"
+  #  table_html += "<td>" + myForm + "</td>"
     myForm=getButtonV3(targetcsv17,'viewCSV','FY17')
     myForm=myForm.replace("extrainputs","")
     table_html += "<td>" + myForm + "</td>"

@@ -19,7 +19,7 @@ from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import writeFile,getFullFinYear,singleRowQuery
-from nregaSettings import nregaRawDataDir
+from nregaSettings import nregaRawDataDir,searchIP
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
 from crawlFunctions import getDistrictParams
 def argsFetch():
@@ -64,13 +64,17 @@ def main():
   crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
   filepath=nregaRawDataDir.replace("districtName",districtName.lower())
   fullfinyear=getFullFinYear(finyear)
+  fullDistrictCode=stateCode+districtCode
   display = displayInitialize(args['visible'])
   driver = driverInitialize(args['browser'])
   url="http://164.100.129.6/netnrega/nregasearch1.aspx"
   driver.get(url)
-  time.sleep(2)
+  time.sleep(22)
+  htmlsource = driver.page_source
+  writeFile("/home/libtech/webroot/nreganic.libtech.info/temp/a.html",htmlsource)
 
-  query="select w.id,w.wagelistNo,b.name from wagelists w,blocks b where w.blockCode=b.blockCode and w.isDownloaded=0 and finyear='%s' %s %s " % (finyear,additionalFilters,limitString)
+  query="select w.id,w.wagelistNo,b.name from wagelists w,blocks b where w.blockCode=b.blockCode and ( (w.isDownloaded=0) or (w.isComplete=0 and TIMESTAMPDIFF(HOUR, w.downloadAttemptDate, now()) > 48 )) and finyear='%s' %s order by w.isDownloaded %s " % (finyear,additionalFilters,limitString)
+  query="select w.id,w.wagelistNo,b.name from wagelists w,blocks b where w.blockCode=b.blockCode and w.id=1 and finyear='%s' %s order by w.isDownloaded limit 1 " % (finyear,additionalFilters)
   logger.info(query)
   cur.execute(query)
   results=cur.fetchall()
@@ -78,15 +82,20 @@ def main():
     rowid=str(row[0])
     wagelistNo=row[1] 
     blockName=row[2]
+    logger.info("Same WagelistNo %s " % wagelistNo)
     if wagelistNo != '':
-      logger.info(wagelistNo)
+     # logger.info(wagelistNo)
       maintab = driver.current_window_handle
       Select(driver.find_element_by_id("ddl_search")).select_by_visible_text("WageList")
       driver.find_element_by_css_selector("option[value=\"WageList\"]").click()
-      Select(driver.find_element_by_id("ddl_state")).select_by_visible_text("CHHATTISGARH")
-      driver.find_element_by_css_selector("option[value=\"33\"]").click()
-      Select(driver.find_element_by_id("ddl_district")).select_by_visible_text("SURGUJA")
-      driver.find_element_by_css_selector("option[value=\"3305\"]").click()
+      Select(driver.find_element_by_id("ddl_state")).select_by_visible_text(stateName.upper())
+      myvalue='value="%s"' % stateCode
+      #driver.find_element_by_css_selector("option[value=\"33\"]").click()
+      driver.find_element_by_css_selector("option[%s]" % myvalue).click()
+      Select(driver.find_element_by_id("ddl_district")).select_by_visible_text(districtName.upper())
+      myvalue='value="%s"' % (stateCode+districtCode)
+      #driver.find_element_by_css_selector("option[value=\"3305\"]").click()
+      driver.find_element_by_css_selector("option[%s]" % myvalue).click()
       driver.find_element_by_id("txt_keyword2").clear()
       driver.find_element_by_id("txt_keyword2").send_keys(wagelistNo)
       driver.find_element_by_id("btn_go").click()
@@ -100,23 +109,57 @@ def main():
         #logger.info(htmlsource)
         # ERROR: Caught exception [ERROR: Unsupported command [waitForPopUp |  | 30000]]
         # ERROR: Caught exception [ERROR: Unsupported command [selectWindow | null | ]]
-         
-        elem=driver.find_element_by_link_text(wagelistNo)
-        hrefLink=str(elem.get_attribute("href"))
-        logger.info(hrefLink)
-        driver.get(hrefLink)
-        htmlsource = driver.page_source
-        htmlsource=htmlsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
-        success=0
-        if "WageList Agency Code" in htmlsource:
-          filename=filepath+blockName.upper()+"/WAGELIST/"+fullfinyear+"/"+wagelistNo+".html"
-          logger.info(filename)
-          writeFile("/home/libtech/webroot/nreganic.libtech.info/temp/"+wagelistNo+".html",htmlsource)
-          writeFile(filename,htmlsource)
-          success=1
-        query="update wagelists set isDownloaded=%s,downloadAttemptDate=NOW()  where id=%s" %(str(success),str(rowid))
-        logger.info(query)
-        cur.execute(query)
+        elems = driver.find_elements_by_xpath("//a[@href]")
+        if len(elems) > 0:
+          query="select w.id,w.wagelistNo,b.name,b.blockCode from wagelists w,blocks b where w.blockCode=b.blockCode and ( (w.isDownloaded=0) or (w.isComplete=0 and TIMESTAMPDIFF(HOUR, w.downloadAttemptDate, now()) > 48 )) and finyear='%s' %s order by w.isDownloaded %s " % (finyear,additionalFilters,limitString)
+          cur.execute(query)
+          results1=cur.fetchall()
+          for row1 in results1:
+            rowid=str(row1[0])
+            wagelistNo=row1[1] 
+            blockName=row1[2]
+            blockCode=row1[3]
+            jobcardPrefix="%s-%s-%s-" % (stateShortCode,districtCode,blockCode)
+            logger.info("Jobcard Prefix : %s " % jobcardPrefix)
+            fullBlockCode=stateCode+districtCode+blockCode
+            if wagelistNo != '':
+              logger.info(wagelistNo)
+              wurl="http://%s/netnrega/srch_wg_dtl.aspx?state_code=&district_code=%s&state_name=%s&district_name=%s&block_code=%s&wg_no=%s&short_name=%s&fin_year=%s&mode=wg" % (searchIP,fullDistrictCode,stateName.upper(),districtName.upper(),fullBlockCode,wagelistNo,stateShortCode,fullfinyear)
+              logger.info("URL: %s " % wurl)
+              driver.get(wurl)
+              htmlsource = driver.page_source
+              htmlsource=htmlsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+              success=0
+              isPopulatedString=''
+              if ("WageList Agency Code" in htmlsource) and (jobcardPrefix in htmlsource):
+                filename=filepath+blockName.upper()+"/WAGELIST/"+fullfinyear+"/"+wagelistNo+".html"
+                logger.info(filename)
+                writeFile("/home/libtech/webroot/nreganic.libtech.info/temp/"+wagelistNo+".html",htmlsource)
+                writeFile(filename,htmlsource)
+                success=1
+                isPopulatedString="isProcessed=0,"
+              query="update wagelists set isDownloaded=%s,%sdownloadAttemptDate=NOW()  where id=%s" %(str(success),isPopulatedString,str(rowid))
+              logger.info(query)
+              cur.execute(query)
+           
+        # elem=driver.find_element_by_link_text(wagelistNo)
+        # hrefLink=str(elem.get_attribute("href"))
+        # logger.info(hrefLink)
+        # driver.get(hrefLink)
+        # htmlsource = driver.page_source
+        # htmlsource=htmlsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+        # success=0
+        # isPopulatedString=''
+        # if "WageList Agency Code" in htmlsource:
+        #   filename=filepath+blockName.upper()+"/WAGELIST/"+fullfinyear+"/"+wagelistNo+".html"
+        #   logger.info(filename)
+        #   writeFile("/home/libtech/webroot/nreganic.libtech.info/temp/"+wagelistNo+".html",htmlsource)
+        #   writeFile(filename,htmlsource)
+        #   success=1
+        #   isPopulatedString="isProcessed=0,"
+        # query="update wagelists set isDownloaded=%s,%sdownloadAttemptDate=NOW()  where id=%s" %(str(success),isPopulatedString,str(rowid))
+        # logger.info(query)
+        # cur.execute(query)
         driver.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 'w')
         driver.switch_to_window(maintab) 
           

@@ -13,7 +13,7 @@ def getDistrictParams(cur,districtName):
   return crawlIP,stateName,stateCode,stateShortCode,districtCode
 def NICToSQLDate(dateString):
   dateFormat="%d/%m/%Y"
-  if dateString == '':
+  if (dateString == '') or ("NA" in dateString):
     outDate="Null"
   else:
     outDate="STR_TO_DATE('%s', '%s')" % (dateString,dateFormat)
@@ -89,7 +89,23 @@ def getMusterPaymentDate(inhtml):
     sanctionDate=''
   return paymentDate,sanctionNo,sanctionDate
 
-  
+def alterHTMLTables(inhtml):
+  outhtml=''
+  outhtml+=rewriteAllTables(inhtml)
+  return outhtml
+
+def rewriteAllTables(inhtml):
+  htmlsoup=BeautifulSoup(inhtml,"html.parser")
+  i=0
+  myhtml=''
+  tables=htmlsoup.findAll('table')
+  for table in tables:
+    tableID="libtechTable%s" % str(i)
+    myhtml+=  getCenterAligned('<h3 style="color:green"> %s</h3>' %tableID )
+    myhtml+=stripTableAttributes(table,tableID)
+    i=i+1
+  return myhtml
+ 
 def alterMusterHTML(inhtml):
   htmlsoup=BeautifulSoup(inhtml,"html.parser")
   outhtml=''

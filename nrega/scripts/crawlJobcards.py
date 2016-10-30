@@ -12,7 +12,7 @@ from selenium.common.exceptions import NoSuchElementException
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
 sys.path.insert(0, fileDir+'/../../')
-from libtechFunctions import writeFile,getFullFinYear,singleRowQuery
+from libtechFunctions import writeFile,getFullFinYear,singleRowQuery,getjcNumber
 #Connect to MySQL Database
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
@@ -32,6 +32,7 @@ def argsFetch():
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-b', '--browser', help='Specify the browser to test with', required=False)
   parser.add_argument('-d', '--district', help='District for which you need to Download', required=True)
+  parser.add_argument('-af', '--additionalFilters', help='please enter additional filters', required=False)
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-limit', '--limit', help='Limit the number of panchayats to be processed', required=False)
 
@@ -47,8 +48,11 @@ def main():
   districtName=args['district']
   logger.info("DistrictName "+districtName)
   limitString=''
+  additionalFilter=''
   if args['limit']:
     limitString=" limit %s " % args['limit']
+  if args['additionalFilters']:
+    additionalFilter=" and "+args['additionalFilters']
   db = dbInitialize(db=districtName.lower(), charset="utf8")  # The rest is updated automatically in the function
   cur=db.cursor()
   db.autocommit(True)
@@ -73,7 +77,7 @@ def main():
   #Query to get all the blocks
 
   query="select b.blockCode,b.name,p.rawName,p.panchayatCode,p.id from blocks b, panchayats p where b.blockCode=p.blockCode and p.isRequired=1 order by jobcardCrawlDate"
-  query="select b.blockCode,b.name,p.rawName,p.panchayatCode,p.id,p.jobcardCrawlDate from blocks b, panchayats p where b.blockCode=p.blockCode and p.isRequired=1 and (jobcardCrawlDate is NULL or (TIMESTAMPDIFF(DAY,jobcardCrawlDate,NOW() ) >= 7) ) %s" % limitString
+  query="select b.blockCode,b.name,p.rawName,p.panchayatCode,p.id,p.jobcardCrawlDate from blocks b, panchayats p where b.blockCode=p.blockCode and p.isRequired=1 %s and (jobcardCrawlDate is NULL or (TIMESTAMPDIFF(DAY,jobcardCrawlDate,NOW() ) >= 7) ) %s" % (additionalFilter,limitString)
   #query="select rawName,panchayatCode,id from panchayats where isRequired=1  and stateCode='"+stateCode+"' and districtCode='"+districtCode+"' and blockCode='"+blockCode+"' order by jobcardCrawlDate"
   cur.execute(query)
   panchresults = cur.fetchall()
@@ -90,55 +94,59 @@ def main():
     time.sleep(1)
     compareText="Panchayat_Code=%s" % fullPanchayatCode
     elems = driver.find_elements_by_xpath("//a[@href]")
+    foundCode=0
     for elem in elems:
       hrefLink=str(elem.get_attribute("href"))
       if compareText in hrefLink:
         logger.info("Found the Code")
+        foundCode=1
         break
     #elem = driver.find_element_by_link_text(panchayatName)
-    elem.send_keys(Keys.RETURN)
-    time.sleep(1)
-    elem = driver.find_element_by_link_text("Job card/Employment Register")
-    elem.send_keys(Keys.RETURN)
-    time.sleep(5)
-    curtime = time.strftime('%Y-%m-%d %H:%M:%S')
-    html_source = driver.page_source
-    htmlsoup=BeautifulSoup(html_source)
-   #logger.info(html_source)
-   #f=open("/tmp/ab.html","w")
-   #f.write(html_source)
-    try:
-      table=htmlsoup.find('table',align="center")
-      rows = table.findAll('tr')
-      status=1
-    except:
-      status=0
-    query="update panchayats set jobcardCrawlStatus="+str(status)+", jobcardCrawlDate='"+curtime+"' where id="+str(panchID) 
-    logger.info(query)
-    cur.execute(query)
-    logger.info("Status is " + str(status))
-    if status==1:
-      for tr in rows:
-        cols = tr.findAll('td')
-        jclink=''
-        for link in tr.find_all('a'):
-          jclink=link.get('href')
-        if len(cols) > 2:
-          jcno="".join(cols[1].text.split())
-          headOfFamily=cols[2].text.replace("'","")
-        logger.info("%s-%s" % (jcno,jobcardPrefix))
-        if jobcardPrefix in jcno:
-          logger.info(jcno)
-          query="insert into jobcardRegister (headOfFamily,jobcard,stateCode,districtCode,blockCode,panchayatCode) values ('"+headOfFamily+"','"+jcno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"')"
-          logger.info(query)
-          try:
-            cur.execute(query)
-          except MySQLdb.IntegrityError,e:
-            errormessage=(time.strftime("%d/%m/%Y %H:%M:%S "))+str(e)+"\n"
-            #errorfile.write(errormessage)
-          continue
-    driver.back()
-    driver.back()
+    if foundCode==1:
+      elem.send_keys(Keys.RETURN)
+      time.sleep(1)
+      elem = driver.find_element_by_link_text("Job card/Employment Register")
+      elem.send_keys(Keys.RETURN)
+      time.sleep(5)
+      curtime = time.strftime('%Y-%m-%d %H:%M:%S')
+      html_source = driver.page_source
+      htmlsoup=BeautifulSoup(html_source)
+     #logger.info(html_source)
+     #f=open("/tmp/ab.html","w")
+     #f.write(html_source)
+      try:
+        table=htmlsoup.find('table',align="center")
+        rows = table.findAll('tr')
+        status=1
+      except:
+        status=0
+      query="update panchayats set jobcardCrawlStatus="+str(status)+", jobcardCrawlDate='"+curtime+"' where id="+str(panchID) 
+      logger.info(query)
+      cur.execute(query)
+      logger.info("Status is " + str(status))
+      if status==1:
+        for tr in rows:
+          cols = tr.findAll('td')
+          jclink=''
+          for link in tr.find_all('a'):
+            jclink=link.get('href')
+          if len(cols) > 2:
+            jcno="".join(cols[1].text.split())
+            headOfFamily=cols[2].text.replace("'","").lstrip().rstrip()
+          logger.info("%s-%s" % (jcno,jobcardPrefix))
+          if jobcardPrefix in jcno:
+            logger.info(jcno)
+            jcNumber=getjcNumber(jcno)
+            query="insert into jobcardRegister (headOfFamily,jobcard,stateCode,districtCode,blockCode,panchayatCode,jcNumber) values ('"+headOfFamily+"','"+jcno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"',"+jcNumber+")"
+            logger.info(query)
+            try:
+              cur.execute(query)
+            except MySQLdb.IntegrityError,e:
+              errormessage=(time.strftime("%d/%m/%Y %H:%M:%S "))+str(e)+"\n"
+              #errorfile.write(errormessage)
+            continue
+      driver.back()
+      driver.back()
     time.sleep(5)
   
     driver.back()

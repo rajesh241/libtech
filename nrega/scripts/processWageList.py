@@ -20,7 +20,7 @@ sys.path.insert(0, fileDir+'/../crawlDistricts/')
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
 
 from crawlFunctions import getDistrictParams
-from crawlFunctions import alterMusterHTML,getMusterPaymentDate
+from crawlFunctions import alterMusterHTML,getMusterPaymentDate,alterHTMLTables
 from crawlFunctions import alterFTOHTML,genHTMLHeader,NICToSQLDate
 def argsFetch():
   '''
@@ -64,6 +64,7 @@ def main():
   cur.execute(query)
   crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
   filepath=nregaRawDataDir.replace("districtName",districtName.lower())
+  modifiedFilepath=nregaWebDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
   fullfinyear=getFullFinYear(finyear)
   ftoPrefix=stateShortCode+stateCode+districtCode
   logger.info(ftoPrefix)
@@ -79,8 +80,19 @@ def main():
     blockCode=row[2]
     blockName=row[3]
     filename=filepath+blockName.upper()+"/WAGELIST/"+fullfinyear+"/"+wagelistNo+".html"
+    modifiedFilename=modifiedFilepath+blockName.upper()+"/WAGELIST/"+fullfinyear+"/"+wagelistNo+".html"
     logger.info(filename)
     myhtml=open(filename,'r').read()
+    #To Rewrite wagelist HTML
+    htmlHeaderLabels=["District Name","Block Name","Wagelist No"]
+    htmlHeaderValues=[districtName,blockName,wagelistNo]
+    htmlHeader=genHTMLHeader(htmlHeaderLabels,htmlHeaderValues)
+    outhtml=alterHTMLTables(myhtml)
+    modifiedHTML=htmlHeader+outhtml
+    modifiedHTML=htmlWrapperLocal(title="Wagelist Details", head='<h1 aling="center">'+wagelistNo+'</h1>', body=modifiedHTML)
+    logger.info("Modified File Name %s " % modifiedFilename)
+    writeFile(modifiedFilename,modifiedHTML)
+
     htmlsoup=BeautifulSoup(myhtml,"html.parser")
     tables=htmlsoup.findAll('table')
     for table in tables:
@@ -90,33 +102,14 @@ def main():
           cols=row.findAll('td')
           jobcard=cols[8].text.strip().lstrip().rstrip()
           if jobcard != "Reg No.":
-            applicantName=cols[9].text.strip().lstrip().rstrip()
-            totalWage=cols[11].text.strip().lstrip().rstrip()
             ftoNo=cols[12].text.strip().lstrip().rstrip()
             if ftoPrefix in ftoNo:
-              query="select id,name from workDetails where jobcard='%s' and wagelistNo='%s' and totalWage='%s'" % (jobcard,wagelistNo,totalWage)
+              query="select * from ftoDetails where ftoNo='%s' and blockCode='%s' and finyear='%s'" % (ftoNo,blockCode,finyear)
               cur.execute(query)
-              results=cur.fetchall()
-              matchStatus="Fail"
-              for row in results:
-                musterName=row[1]
-                if applicantName in musterName:
-                  matchStatus="Success"
-                  wdID=str(row[0])
-              if matchStatus=="Success":
-                logger.info(jobcard+applicantName+totalWage+ftoNo+matchStatus+wdID)
-                query="update workDetails set ftoNo='%s' where id=%s" % (ftoNo,wdID)
-                logger.info(query)
-               # cur.execute(query)
-                query="select * from ftoDetails where ftoNo='%s' and blockCode='%s' and finyear='%s'" % (ftoNo,blockCode,finyear)
+              if cur.rowcount==0:
+                logger.info("FTo Record does not exists")
+                query="insert into ftoDetails (ftoNo,blockCode,finyear) values ('%s','%s','%s')" % (ftoNo,blockCode,finyear)
                 cur.execute(query)
-                if cur.rowcount==0:
-                  logger.info("FTo Record does not exists")
-                  query="insert into ftoDetails (ftoNo,blockCode,finyear) values ('%s','%s','%s')" % (ftoNo,blockCode,finyear)
-                  cur.execute(query)
-              else:
-                logger.info(jobcard+applicantName+totalWage+ftoNo+matchStatus)
-                wagelistError=1
             else:
               isComplete=0
     query="update wagelists set processedDate=NOW(),isProcessed=1,isError=%s,isComplete=%s where id=%s" % (str(wagelistError),str(isComplete),str(rowid))

@@ -2,6 +2,12 @@
 
 from bs4 import BeautifulSoup
 from time import strftime,strptime
+
+import sys
+if sys.version_info[0] > 2:
+  import pymysql
+  pymysql.install_as_MySQLdb()
+import MySQLdb     
 from MySQLdb import IntegrityError
 
 import os
@@ -279,7 +285,7 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
           logger.info('Executing query[%s]' % query)
           try:
             cur.execute(query)
-          except IntegrityError, e:
+          except IntegrityError as e:
             logger.warning('Attempting Duplicate Entry[%s]', e)
 
           try:
@@ -423,7 +429,7 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
     logger.info('Executing query[%s]' % query)
     try:
       cur.execute(query)
-    except IntegrityError, e:
+    except IntegrityError as e:
       logger.warning('Attempting Duplicate Entry[%s]', e)
 
     cur = db.cursor()
@@ -431,7 +437,7 @@ def pushMusterInfo(logger, db, html_source, jobcard, panchayat_code=None, fetch_
     logger.info('Executing query[%s]' % query)
     try:
       cur.execute(query)
-    except IntegrityError, e:
+    except IntegrityError as e:
       logger.warning('Attempting Duplicate Entry[%s]', e)
       
     try:
