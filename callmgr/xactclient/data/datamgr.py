@@ -11,6 +11,7 @@ import simplejson as json
 TEMPLATE_WS_URL = '/templates'
 CALL_WS_URL = '/calls'
 FILE_WS_URL = '/files'
+WEBHOOK_WS_URL = '/webhook'
 
 class TemplateMgr:
     '''
@@ -191,3 +192,55 @@ class CallMgr:
         else:
             return response.text
         
+        
+        
+class WebhookMgr:
+    '''
+    Webhook - creates webhook
+    '''
+    def __init__(self, authdata):
+        self.authdata = authdata
+    
+
+    def getAll(self):
+        response = requests.get(self.authdata.getUrl() + WEBHOOK_WS_URL, auth=(self.authdata.getUsername(), self.authdata.getPassword()))
+        if response.status_code == 200:
+            return response.json()['results']
+        else:
+            return response.text
+    
+    
+    def get(self, id):
+        response = requests.get(self.authdata.getUrl() + WEBHOOK_WS_URL + '/' + str(id) + "/", auth=(self.authdata.getUsername(), self.authdata.getPassword()))
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return response.text
+        
+    def create(self, url):
+        headers = {'content-type': 'application/json'}
+        data = {'url': url}
+        response = requests.post(self.authdata.getUrl() + WEBHOOK_WS_URL + "/", data=json.dumps(data), headers=headers, auth=(self.authdata.getUsername(), self.authdata.getPassword()))
+        if response.status_code == 201:
+            return response.json()
+        else:
+            return response.text
+        
+    
+    def update(self, id, new_url):
+        headers = {'content-type': 'application/json'}
+        data = {'url': new_url}
+        response = requests.put(self.authdata.getUrl() + WEBHOOK_WS_URL + '/' + str(id) + "/", data=json.dumps(data), headers=headers, auth=(self.authdata.getUsername(), self.authdata.getPassword()))
+        if response.status_code == 201:
+            return response.json()
+        else:
+            return response.text
+        
+    
+    def delete(self, id):
+        headers = {'content-type': 'application/json'}
+        response = requests.delete(self.authdata.getUrl() + WEBHOOK_WS_URL + '/' + str(id) + "/", headers=headers, auth=(self.authdata.getUsername(), self.authdata.getPassword()))
+        if response.status_code == 204:
+            return "true"
+        else:
+            return response.text

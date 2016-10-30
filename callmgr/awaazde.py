@@ -1,3 +1,4 @@
+
 #===============================================================================
 #    Copyright (c) 2014 Awaaz.De
 #    Sample SDK to call awaaz.de xact api in python
@@ -6,6 +7,7 @@
 #
 #===============================================================================
 
+import time
 
 from xactclient.data.datamgr import TemplateMgr
 from xactclient.data.datamgr import CallMgr
@@ -58,6 +60,9 @@ def awaazdeStatusCheck(cur_callid=None):
 
     print("Printing details for Call[%s]" % vendorcallid)
     call_details = callMgr.getCall(str(vendorcallid))
+
+    print call_details
+    
     status = call_details['status']
     duration = status['duration']
     print duration
@@ -70,8 +75,8 @@ def awaazdeStatusCheck(cur_callid=None):
     
     print status['response']
 
-    url = call_details['url']
-    print url
+    # url = call_details['url']
+    # print "DeliveryStatus[%s]" % url
 
     text = call_details['text']
     print text
@@ -85,7 +90,7 @@ def awaazdeStatusCheck(cur_callid=None):
     callsid = call_details['id']
     print callsid
     
-    return duration, attempts, sent_on, url, text, recipient, callsid
+    return duration, attempts, sent_on, text, recipient, callsid #, url
     
 
 def awaazdePlaceCall(phone, wave_file=None, calltime=None):
@@ -114,7 +119,7 @@ def main():
     phone='9845155447'
 
     #Logic to upload the wave_file for the first time -
-    wave_file = '1431_CgbcstChakeri010316.wav'    # This should be done only once for each new file
+    wave_file = '1459_Venky18MAR2016MittadodiPanchayat.wav' # '1431_CgbcstChakeri010316.wav'    # This should be done only once for each new file
     filename = wave_file.strip('.wav')
 
     if wave_file:
@@ -122,10 +127,12 @@ def main():
 
     if False:
         vendorcallid = awaazdePlaceCall(phone, wave_file)
+        time.sleep(10)
     else:
-        vendorcallid = '57897'
+        vendorcallid = '71489' # '70239' # '70221' # '57897'
     print("Call ID [%s]" % vendorcallid)
 
+#    callreturn = awaazdeStatusCheck('70217')
     callreturn = awaazdeStatusCheck(vendorcallid)
     print callreturn
 
