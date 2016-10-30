@@ -1,14 +1,14 @@
 from bs4 import BeautifulSoup
 
-import time
 import os
+import sys
+import time
 dirname = os.path.dirname(os.path.realpath(__file__))
 rootdir = os.path.dirname(dirname)
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../includes/')
 import libtechFunctions
 
-import sys
 sys.path.insert(0, rootdir)
 
 import wave
@@ -89,15 +89,16 @@ def uploadAudioToAwaazDe(cur,logger):
   from awaazde import awaazdeUpload
   from datetime import datetime, timedelta
   from time import strftime
-  query="select id,filename,ts,awaazdeUploadDate from audioLibrary where awaazdeUploadComplete=0 and ts > '2016-02-21'" # and TIMESTAMPDIFF(MINUTE, awaazdeUploadComplete, now()) < 60"
+  query="select id,filename,ts,awaazdeUploadDate from audioLibrary where awaazdeUploadComplete=0 and ts > '2016-10-29'" # and TIMESTAMPDIFF(MINUTE, awaazdeUploadComplete, now()) < 60"
   cur.execute(query)
   results = cur.fetchall()
+  logger.info("results[%s]", results)
   for (rowid, filename, timestamp, uploadDate)  in results:
     if uploadDate and uploadDate > datetime.now() - timedelta(minutes=60):
       continue
 
     logger.info("rowid[%s], filename[%s], timestamp[%s], uploadDate[%s]" % (rowid, filename, timestamp, uploadDate))
-    awaazdeUpload(filename)
+    awaazdeUpload(logger, filename)
     query = 'update audioLibrary set awaazdeUploadDate="%s", awaazdeUploadComplete=1 where id="%s"' % (strftime('%Y-%m-%d %H:%M:%S'), rowid)
     cur.execute(query)
 
