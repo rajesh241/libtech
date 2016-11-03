@@ -2,6 +2,7 @@ import re
 import os
 import sys
 import datetime
+import time
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
 sys.path.insert(0, fileDir+'/../../')
@@ -57,9 +58,9 @@ def htmlWrapperLocalRelativeCSS(relativeCSSPath= None,title = None, head = None,
     <div align="center">head_text</div>
 
   </head>
-    
   <body>
 
+  generate_date  
     body_text
     
     <!-- jQuery (necessary for Bootstrap"s JavaScript plugins) -->
@@ -72,10 +73,14 @@ def htmlWrapperLocalRelativeCSS(relativeCSSPath= None,title = None, head = None,
   </body>
 </html>
 '''
+  today = datetime.datetime.today()
+  reportGenerateDate=today.strftime('%d-%b-%Y  %H:%M:%S')
+  reportGenerationDateString= getCenterAligned('<h3 style="color:green"> Report Generated On: %s</h3>' % (reportGenerateDate))
   html_text = html_text.replace('title_text', title)
   html_text = html_text.replace('css_path', relativeCSSPath)
   html_text = html_text.replace('head_text', head)
   html_text = html_text.replace('body_text', body)
+  html_text = html_text.replace('generate_date', reportGenerationDateString)
 
   return html_text
 

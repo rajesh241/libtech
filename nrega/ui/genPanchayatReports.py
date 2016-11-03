@@ -131,10 +131,14 @@ def genAllReports(cur,logger,reportIDFilter,finyear,districtName,blockCode=None,
     logger.info(curhtmlfile)
     myhtml=htmlWrapperLocalRelativeCSS(relativeCSSPath=relativeCSSPath,title=title, head='<h1 aling="center">%s</h1>' %(title), body=myhtml)
     writeFile(curhtmlfile,myhtml)
+    reportQuery=reportQuery.replace("limit 200 ","")
+    logger.info("ReportQulery: %s " % reportQuery)
     writecsv(cur,reportQuery,curcsvfile)
+    #curcsvfile="/home/libtech/webroot/nreganic.libtech.info/temp/a/%s_%s.csv" % (panchayatName.upper(),title.replace(' ',''))
+    #writecsv(cur,reportQuery,curcsvfile)
 
 def genJobcardReports(cur,logger,districtName,blockCode,blockName,panchayatCode,panchayatName,htmlDir):
-  query="select jobcard from jobcardRegister where blockCode='"+blockCode+"' and panchayatCode='"+panchayatCode+"' limit 5" 
+  query="select jobcard from jobcardRegister where blockCode='"+blockCode+"' and panchayatCode='"+panchayatCode+"' " 
   cur.execute(query)
   results1=cur.fetchall()
   relativeCSSPath='../../../'
@@ -209,7 +213,7 @@ def main():
  #   genAllReports(cur,logger,reportIDFilter,'all',districtName,blockCode=blockCode,blockName=blockName,panchayatCode=panchayatCode,panchayatName=panchayatName,htmlDir=htmlDir)
  
   #block Reports
-  query="select b.name,b.blockCode from blocks b where b.blockCode='009' and b.isRequired=1 %s" % limitString
+  query="select b.name,b.blockCode from blocks b where b.isRequired=1 %s" % limitString
   cur.execute(query)
   results=cur.fetchall()
   for row in results:

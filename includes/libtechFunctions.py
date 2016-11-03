@@ -10,7 +10,7 @@ import re
 import string	
 import requests
 import xml.etree.ElementTree as ET
-
+import datetime
 import settings
 from settings import dbhost,dbuser,dbpasswd
 from bootstrap_utils import getString,getString1
@@ -122,10 +122,18 @@ def getcountquery(cur,query):
   countrow=cur.fetchone()
   return countrow[0]
 
+def getTodayDatetimeString():
+  today = datetime.datetime.today()
+  reportGenerateDate=today.strftime('%d-%b-%Y  %H:%M:%S')
+  return reportGenerateDate
+ 
 def writecsv(cur,query,filename):
   f=open(filename,"w");
   writer = csv.writer(f)
   cur.execute(query)
+  metainfolist=[]
+  metainfolist.append("Report Generated on : %s " % getTodayDatetimeString())
+  writer.writerow(metainfolist)
   headerlist=[];
   #writer.writerow( ('Block', 'Panchayat', 'jobcard','HeadOfFamily','Caste','Issue Date','Village','Applicant No','Applicant Name', 'Age','Gender','Account No','Bank Name') )
   for header in cur.description:
