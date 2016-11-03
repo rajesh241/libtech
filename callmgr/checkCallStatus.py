@@ -70,6 +70,7 @@ def tringoCallStatus (sid,token,callsid):
 
 def exotelCallStatus (sid,token,callsid):
   url="https://"+sid+":"+token+"@twilix.exotel.in/v1/Accounts/"+sid+"/Calls/"+callsid
+  print url
   r = requests.get(url)
   print "Request Status"+str(r.status_code)
   callinprogress=1
@@ -105,7 +106,14 @@ def exotelCallStatus (sid,token,callsid):
      price = float(price.strip(' "'))  
      cost=price*100   # Store in paise
      print("Cost[%s]" % cost)
-     
+  else:
+    callpass=0
+    callfail=0
+    callinprogress=1
+    callStartTime=''
+    duration=0
+    cost=0
+    status=""
   return callinprogress,callpass,callfail,callStartTime,duration,cost,status
 
 def awaazdeCallStatus (cur_callid):
