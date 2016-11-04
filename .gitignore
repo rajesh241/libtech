@@ -9,7 +9,6 @@ include/
 lib/
 img/
 fonts/
-misc/
 .DS_STORE
 *.json
 *~
