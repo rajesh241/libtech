@@ -38,7 +38,10 @@ def argsFetch():
   args = vars(parser.parse_args())
   return args
   
- 
+def eraseFTOFields(cur,logger,wdID):
+  query="update workDetails set matchComplete=0,ftoNo=NULL,ftoMatchStatus=NULL,primaryAccountHolder=NULL,rejectionReason=NULL,paymentMode=NULL,ftoAccountNo=NULL,ftoStatus=NULL,ftoAmount=NULL,referenceNo=NULL,ftoName=NULL,firstSignatoryDate=NULL,secondSignatoryDate=NULL,transactionDate=NULL,bankProcessedDate=NULL,processedDate=NULL,updateDate=NOW() where id=%s" % (str(wdID))
+  logger.info(query)
+  cur.execute(query)
 def main():
   regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
   regex1=re.compile(r'</td></font></td>',re.DOTALL)
@@ -73,7 +76,7 @@ def main():
    # stateName=singleRowQuery(cur,query)
   reMatchString="%s-%s-" % (stateShortCode,districtCode)
  
-  query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode,m.blockCode,p.panchayatCode,m.workName,m.dateFrom,m.dateTo,p.rawName from musters m,blocks b,panchayats p where m.wdError=0 and m.isDownloaded=1 and m.wdProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 %s and finyear='%s' %s" %(additionalFilter,infinyear,limitString)
+  query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode,m.blockCode,p.panchayatCode,m.workName,m.dateFrom,m.dateTo,p.rawName from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.wdProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 %s and finyear='%s' %s" %(additionalFilter,infinyear,limitString)
   logger.info(query)
   cur.execute(query)
   if cur.rowcount:
@@ -117,7 +120,7 @@ def main():
 
       if errorflag==1:
         logger.info("This is a invalid Muste rFile")
-        query="update musters set wdError=1 where id="+str(musterID)
+        query="update musters set wdError=1,isDownloaded=0 where id="+str(musterID)
         cur.execute(query)
       else:
         logger.info("Muster HTML Looks good, now we shall process it")
@@ -201,14 +204,30 @@ def main():
               else:
                 row1=cur.fetchone() 
                 mtID=str(row1[0])
-  
+              #****************************************
+              #Need to check if Wagelist is Regenerated or not
+              query="select wagelistNo,wagelistCount from workDetails where id=%s" % mtID
+              logger.info(query)
+              cur.execute(query)
+              wagelistRow=cur.fetchone()
+              curWagelist=wagelistRow[0]
+              wagelistCount=wagelistRow[1]
+              wagelistPrefix=stateCode+districtCode
+              logger.info("Wagelist Prefix %s " % wagelistPrefix)
+              if wagelistPrefix in wagelistNo:
+                if curWagelist != wagelistNo:
+                  logger.info("This is Regenerated Wagelist")
+                  wagelistCount=wagelistCount+1
+                  eraseFTOFields(cur,logger,mtID) 
+              #****************************************
+ 
               logger.info("The musterTransaction ID: %s " % mtID)
-              query="update workDetails set aadharNo='%s',creditedDate=%s,paymentDate=%s,updateDate=NOW(),blockName='%s',panchayatCode='%s',panchayatName='%s',name='%s',jobcard='%s',jcNumber='%s',workCode='%s',workName='%s',dateFrom='%s',dateTo='%s',daysWorked=%s,dayWage=%s,totalWage=%s,accountNo='%s',wagelistNo='%s',bankNameOrPOName='%s',branchNameOrPOAddress='%s',branchCodeOrPOCode='%s',musterStatus='%s' where id=%s" % (aadharNo,creditedDate,paymentDate,blockName,panchayatCode,panchayatNameRaw.upper(),name,jobcard,jcNumber,workCode,workName,dateFrom,dateTo,str(daysWorked),str(dayWage),str(totalWage),str(accountNo),wagelistNo,bankNameOrPOName,branchNameOrPOAddress,branchCodeOrPOCode,status,mtID) 
+              query="update workDetails set wagelistCount=%s,aadharNo='%s',creditedDate=%s,paymentDate=%s,updateDate=NOW(),blockName='%s',panchayatCode='%s',panchayatName='%s',name='%s',jobcard='%s',jcNumber='%s',workCode='%s',workName='%s',dateFrom='%s',dateTo='%s',daysWorked=%s,dayWage=%s,totalWage=%s,accountNo='%s',wagelistNo='%s',bankNameOrPOName='%s',branchNameOrPOAddress='%s',branchCodeOrPOCode='%s',musterStatus='%s' where id=%s" % (str(wagelistCount),aadharNo,creditedDate,paymentDate,blockName,panchayatCode,panchayatNameRaw.upper(),name,jobcard,jcNumber,workCode,workName,dateFrom,dateTo,str(daysWorked),str(dayWage),str(totalWage),str(accountNo),wagelistNo,bankNameOrPOName,branchNameOrPOAddress,branchCodeOrPOCode,status,mtID) 
               logger.info(query)
               cur.execute(query)
 
 
-        query="update musters set wdProcessed=1,wdComplete=%s where id=%s" %(str(isComplete),str(musterID))
+        query="update musters set wdProcessed=1,wdError=0,wdComplete=%s where id=%s" %(str(isComplete),str(musterID))
         logger.info(query)
         cur.execute(query)
 #
