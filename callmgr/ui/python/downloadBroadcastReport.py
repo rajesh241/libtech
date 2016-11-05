@@ -29,12 +29,12 @@ def main():
   else:
     nameNoSpace=bid+"_"+name.replace(" ","")+".csv"
   fullurl = os.environ["REQUEST_URI"]
-  fullurl= "http://chaupal.libtech.info" 
+  fullurl= "http://callmgr.libtech.info" 
   o = urlparse(fullurl)
   baseURL="http://"+o.netloc
   redirectURL="http://www.google.com"
   #redirectURL="http://chaupal.libtech.info/reports/summary/%s" % nameNoSpace 
-  redirectURL=baseURL+"/broadcasts/reports/broadcasts/%s" % nameNoSpace
+  redirectURL=baseURL+"/auth/broadcastReports/%s" % nameNoSpace
 #  redirectURL="/broadcasts/reports/broadcasts/%s" % nameNoSpace 
   print 'Content-Type: text/html'
   print 'Location: %s' % redirectURL

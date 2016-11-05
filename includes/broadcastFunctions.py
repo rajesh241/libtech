@@ -156,7 +156,7 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
       vendor=requestedVendor;
     print("phone "+phone+" skip"+str(skip)+"vendor "+vendor)
     if len(phone) == 10 and phone.isdigit() and skip == 0:
-      query="insert into callSummary (bid,phone) values ("+bid+",'"+phone+"');"
+      query="insert into callSummary (bid,phone,callRequestTime) values ("+bid+",'"+phone+"',NOW());"
       print(query)
       cur.execute(query)
       callid=str(cur.lastrowid)

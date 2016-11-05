@@ -1,5 +1,5 @@
 <?php
-$dbserver="dbserver";
+$dbserver="localhost";
 $dbuser="dbadmin";
 $dbpasswd="sharedata";
 ?>

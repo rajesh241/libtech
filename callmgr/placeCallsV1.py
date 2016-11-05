@@ -12,7 +12,6 @@ fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../includes/')
 
 from wrappers.logger import loggerFetch
-from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize
 from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery
 from settings import sid,token
