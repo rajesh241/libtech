@@ -48,7 +48,7 @@ def main():
       elif (Circle =="MU"):
         exophone="02233814264"
       else:
-        exophone="08033545179"
+        exophone="08030459560"
 
       query="update addressbook set dnd='"+DND.lower()+"',circle='"+Circle+"',operatorName='"+OperatorName+"',exophone='"+exophone+"' where phone='"+phone+"';"
       cur.execute(query)

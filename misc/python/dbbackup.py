@@ -40,7 +40,8 @@ def main():
     suffix=(time.strftime("%b"))
   elif(backupType =="latest"):
     suffix='latest'
-
+  elif(backupType == "random"):
+    suffix=todaydate=datetime.date.today().strftime("%d%B%Y")
   
   dbList=dbNames.split(",")
   for db in dbList:

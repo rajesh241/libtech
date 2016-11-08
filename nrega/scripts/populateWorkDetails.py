@@ -38,7 +38,17 @@ def argsFetch():
   args = vars(parser.parse_args())
   return args
   
- 
+def eraseFTOFields(cur,logger,wdID):
+  query="update workDetails set matchComplete=0,ftoNo=NULL,ftoMatchStatus=NULL,primaryAccountHolder=NULL,rejectionReason=NULL,paymentMode=NULL,ftoAccountNo=NULL,ftoStatus=NULL,ftoAmount=NULL,referenceNo=NULL,ftoName=NULL,firstSignatoryDate=NULL,secondSignatoryDate=NULL,transactionDate=NULL,bankProcessedDate=NULL,processedDate=NULL,updateDate=NOW() where id=%s" % (str(wdID))
+  logger.info(query)
+  cur.execute(query)
+
+def getNewWDID(cur,query):
+  cur.execute(query)
+  mtID=str(cur.lastrowid)
+  return mtID
+
+
 def main():
   regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
   regex1=re.compile(r'</td></font></td>',re.DOTALL)
@@ -73,7 +83,7 @@ def main():
    # stateName=singleRowQuery(cur,query)
   reMatchString="%s-%s-" % (stateShortCode,districtCode)
  
-  query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode,m.blockCode,p.panchayatCode,m.workName,m.dateFrom,m.dateTo,p.rawName from musters m,blocks b,panchayats p where m.wdError=0 and m.isDownloaded=1 and m.wdProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 %s and finyear='%s' %s" %(additionalFilter,infinyear,limitString)
+  query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode,m.blockCode,p.panchayatCode,m.workName,m.dateFrom,m.dateTo,p.rawName from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.wdProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 %s and finyear='%s' %s" %(additionalFilter,infinyear,limitString)
   logger.info(query)
   cur.execute(query)
   if cur.rowcount:
@@ -117,7 +127,7 @@ def main():
 
       if errorflag==1:
         logger.info("This is a invalid Muste rFile")
-        query="update musters set wdError=1 where id="+str(musterID)
+        query="update musters set wdError=1,isDownloaded=0 where id="+str(musterID)
         cur.execute(query)
       else:
         logger.info("Muster HTML Looks good, now we shall process it")
@@ -188,27 +198,55 @@ def main():
                 query="insert into wagelists (blockCode,finyear,wagelistNo,createDate) values ('%s','%s','%s',NOW()) " % (blockCode,finyear,wagelistNo)
                 logger.info(query)
                 cur.execute(query)
-              #Here first we need to find out if the record already exists
+
+
+              #****************************************
+              #Need to check if Wagelist is Regenerated or not
               logger.info(" muster No: %s  musterIndex : %s  finyear: %s  blockCode: %s " % (musterNo, musterIndex, finyear, blockCode))
-              query="select id from workDetails where musterNo=%s and musterIndex=%s and finyear='%s' and blockCode='%s'" % (musterNo,musterIndex,finyear,blockCode)
+              recordStatus=None
+              mtID=None
+              wagelistPrefix=stateCode+districtCode
+              insertQuery="insert into workDetails (musterNo,musterIndex,finyear,blockCode,createDate) values (%s,%s,'%s','%s',NOW()) " % (musterNo,musterIndex,finyear,blockCode)
+              query="select id,wagelistNo,wagelistCount from workDetails where isArchive=0 and musterNo=%s and musterIndex=%s and finyear='%s' and blockCode='%s'" % (musterNo,musterIndex,finyear,blockCode)
               cur.execute(query)
               if cur.rowcount == 0:
                 logger.info("This record does not exist")
-                query="insert into workDetails (musterNo,musterIndex,finyear,blockCode,createDate) values (%s,%s,'%s','%s',NOW()) " % (musterNo,musterIndex,finyear,blockCode)
-                logger.info(query)
-                cur.execute(query)
-                mtID=str(cur.lastrowid)
+                recordStatus="newRecord"
+                mtID=getNewWDID(cur,insertQuery)
+                wagelistCount=0
+                if wagelistPrefix in wagelistNo:
+                  recordStatus="newRecordFirstWagelist"
+                  wagelistCount=1
               else:
-                row1=cur.fetchone() 
-                mtID=str(row1[0])
-  
-              logger.info("The musterTransaction ID: %s " % mtID)
-              query="update workDetails set aadharNo='%s',creditedDate=%s,paymentDate=%s,updateDate=NOW(),blockName='%s',panchayatCode='%s',panchayatName='%s',name='%s',jobcard='%s',jcNumber='%s',workCode='%s',workName='%s',dateFrom='%s',dateTo='%s',daysWorked=%s,dayWage=%s,totalWage=%s,accountNo='%s',wagelistNo='%s',bankNameOrPOName='%s',branchNameOrPOAddress='%s',branchCodeOrPOCode='%s',musterStatus='%s' where id=%s" % (aadharNo,creditedDate,paymentDate,blockName,panchayatCode,panchayatNameRaw.upper(),name,jobcard,jcNumber,workCode,workName,dateFrom,dateTo,str(daysWorked),str(dayWage),str(totalWage),str(accountNo),wagelistNo,bankNameOrPOName,branchNameOrPOAddress,branchCodeOrPOCode,status,mtID) 
+                wagelistRow=cur.fetchone()
+                curWagelist=wagelistRow[1]
+                oldWagelistCount=wagelistRow[2]
+                wagelistPrefix=stateCode+districtCode
+                if (wagelistPrefix in wagelistNo):
+                  if (curWagelist != wagelistNo) and (wagelistPrefix in curWagelist):#This is RegeneratedWagelist
+                    recordStatus="RegeneratedWagelist"
+                    wagelistCount=oldWagelistCount+1
+                    oldmtID=str(wagelistRow[0])
+                    query="update workDetails set isArchive=1 where id=%s " % oldmtID
+                    cur.execute(query)
+                    mtID=getNewWDID(cur,insertQuery)
+                  else:
+                    recordStatus="firstWagelist"
+                    wagelistCount=1
+                    mtID=str(wagelistRow[0])
+                else:
+                    recordStatus="wagelistNotGenerated"
+                    mtID=str(wagelistRow[0])
+                    wagelistCount=0
+              #****************************************
+ 
+              logger.info("The Record Status: %s musterTransaction ID: %s " % (recordStatus,mtID))
+              query="update workDetails set recordStatus='%s',wagelistCount=%s,aadharNo='%s',creditedDate=%s,paymentDate=%s,updateDate=NOW(),blockName='%s',panchayatCode='%s',panchayatName='%s',name='%s',jobcard='%s',jcNumber='%s',workCode='%s',workName='%s',dateFrom='%s',dateTo='%s',daysWorked=%s,dayWage=%s,totalWage=%s,accountNo='%s',wagelistNo='%s',bankNameOrPOName='%s',branchNameOrPOAddress='%s',branchCodeOrPOCode='%s',musterStatus='%s' where id=%s" % (recordStatus,str(wagelistCount),aadharNo,creditedDate,paymentDate,blockName,panchayatCode,panchayatNameRaw.upper(),name,jobcard,jcNumber,workCode,workName,dateFrom,dateTo,str(daysWorked),str(dayWage),str(totalWage),str(accountNo),wagelistNo,bankNameOrPOName,branchNameOrPOAddress,branchCodeOrPOCode,status,mtID) 
               logger.info(query)
               cur.execute(query)
 
 
-        query="update musters set wdProcessed=1,wdComplete=%s where id=%s" %(str(isComplete),str(musterID))
+        query="update musters set wdProcessed=1,wdError=0,wdComplete=%s where id=%s" %(str(isComplete),str(musterID))
         logger.info(query)
         cur.execute(query)
 #

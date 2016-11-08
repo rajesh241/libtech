@@ -104,12 +104,15 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
 #If phone is Null then we would need to schedule Broadcast for the entire group or location
     if (broadcastType == "group"):
       queryMatchString=getGroupQueryMatchString(cur,row[6]) 
+      phoneQuery="select phone,exophone,dnd from addressbook where "+queryMatchString+" "
     elif (broadcastType == "location"):
       queryMatchString=getLocationQueryMatchString(row[8],row[9],row[10])
+      phoneQuery="select phone,exophone,dnd from addressbook where "+queryMatchString+" "
     elif (broadcastType == "queryBased"):
-      queryMatchString=inQuery
+      phoneQuery=inQuery
     elif (broadcastType == "transactional"):
       queryMatchString='phone is NULL'  #We dont want any calls to be Added to Call Queue
+      phoneQuery="select phone,exophone,dnd from addressbook where "+queryMatchString+" "
     else:
       error=1
   else:
@@ -119,6 +122,7 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
       query="insert into addressbook (phone,exophone,dnd) values ('%s','08033545179','no')" % (phone)
       cur.execute(query)
     queryMatchString="phone='%s'" % phone
+    phoneQuery="select phone,exophone,dnd from addressbook where "+queryMatchString+" "
 
 
   print("Printing Debug Information"+str(bid))
@@ -133,7 +137,7 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
  
   query="select phone,exophone,dnd from addressbook where "+queryMatchString+" "
   print(query)
-  cur.execute(query)
+  cur.execute(phoneQuery)
   results1 = cur.fetchall()
   for r in results1:
     phone=r[0]
@@ -152,7 +156,7 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
       vendor=requestedVendor;
     print("phone "+phone+" skip"+str(skip)+"vendor "+vendor)
     if len(phone) == 10 and phone.isdigit() and skip == 0:
-      query="insert into callSummary (bid,phone) values ("+bid+",'"+phone+"');"
+      query="insert into callSummary (bid,phone,callRequestTime) values ("+bid+",'"+phone+"',NOW());"
       print(query)
       cur.execute(query)
       callid=str(cur.lastrowid)

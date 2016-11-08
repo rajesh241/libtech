@@ -12,7 +12,7 @@ $query="use libtech";
 mysqli_query($mydbcon,$query);
 
 $target_dir = "/tmp/";
-$target_dir = $_SERVER["DOCUMENT_ROOT"]."/broadcasts/audio/";
+$target_dir = $_SERVER["DOCUMENT_ROOT"]."/open/audio/";
 $target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
 $uploadOk = 1;
 $imageFileType = pathinfo($target_file,PATHINFO_EXTENSION);
