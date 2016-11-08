@@ -37,15 +37,8 @@ filename = 'fto.html'
 def nic_fetch_fto(logger,):
     response = urlopen(url)
     html_source = response.read()
-#    html_source = driver.page_source.replace('<head>',
-#                                             '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
     logger.debug("HTML Fetched [%s]" % html_source)
 
-    '''
-    with open(filename, 'wb') as html_file:
-      logger.info('Writing [%s]' % filename)
-      html_file.write(html_source)
-    '''
     bs = BeautifulSoup(html_source, "html.parser")
     state = bs.find(id='__VIEWSTATE').get('value')
     logger.info('state[%s]' % state)
