@@ -451,3 +451,9 @@ def writeFile(filename,filedata):
   myfile = open(filename, "w")
   myfile.write(filedata.encode("UTF-8"))
   myfile.close()
+def writeFile3(filename,filedata):
+  if not os.path.exists(os.path.dirname(filename)):
+    os.makedirs(os.path.dirname(filename))
+  myfile = open(filename, "wb")
+  myfile.write(filedata)
+  myfile.close()
