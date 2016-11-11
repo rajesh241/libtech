@@ -82,7 +82,7 @@ def main():
   db.autocommit(True)
   additionalFilters = ''
   if args['blockCode']:
-    additionalFilters=" and b.blockCode='%s' " % args['blockCode']
+    additionalFilters=" and f.blockCode='%s' " % args['blockCode']
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query)
@@ -90,16 +90,23 @@ def main():
   filepath=nregaRawDataDir.replace("districtName",districtName.lower())
   fullfinyear=getFullFinYear(finyear)
 
-  query="select f.id,f.ftoNo,b.name,b.blockCode from ftoDetails f,blocks b where f.blockCode=b.blockCode and ( (f.isDownloaded=0) or ((f.isComplete=0 and TIMESTAMPDIFF(HOUR, f.downloadAttemptDate, now()) > 48 ) )) and finyear='%s' %s order by isDownloaded %s " % (finyear,additionalFilters,limitString)
+  query="select f.id,f.ftoNo,f.isDistrictFTO,f.blockCode from ftoDetails f where   ( (f.isDownloaded=0) or ((f.isComplete=0 and TIMESTAMPDIFF(HOUR, f.downloadAttemptDate, now()) > 48 ) )) and finyear='%s' %s order by isDownloaded %s " % (finyear,additionalFilters,limitString)
   logger.info(query)
   cur.execute(query)
   results=cur.fetchall()
   for row in results:
     rowid=str(row[0])
     ftoNo=row[1] 
-    blockName=row[2]
+    isDistrictFTO=row[2]
     blockCode=row[3]
     if ftoNo != '':
+      filename=filepath+"/FTO/"+fullfinyear+"/"+ftoNo+".html"
+      if isDistrictFTO == 0:
+        query="select name from blocks where blockCode=%s " % blockCode
+        cur.execute(query)
+        blockrow=cur.fetchone()
+        blockName=blockrow[0]
+        filename=filepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftoNo+".html"
       logger.info("Downloading FTO: %s " % ftoNo)
       htmlresponse,htmlsource = getFTO(fullfinyear,stateCode,ftoNo)
       logger.info("Response = %s " % htmlresponse)
@@ -109,9 +116,8 @@ def main():
         logger.info("Status is 200")
         isPopulatedString="isPopulated=0,"
         success=1
-        filename=filepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftoNo+".html"
         writeFile3(filename,htmlsource)
-        writeFile3("/home/libtech/webroot/nreganic.libtech.info/temp/"+ftoNo+".html",htmlsource)
+        #writeFile3("/home/libtech/webroot/nreganic.libtech.info/temp/"+ftoNo+".html",htmlsource)
       query="update ftoDetails set isDownloaded=%s,%sdownloadAttemptDate=NOW()  where id=%s" %(str(success),str(isPopulatedString),str(rowid))
       logger.info(query)
       cur.execute(query)

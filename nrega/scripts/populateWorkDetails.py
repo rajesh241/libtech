@@ -32,6 +32,7 @@ def argsFetch():
   parser.add_argument('-t', '--testMode', help='Script will run in TestMode', required=False,action='store_const', const=1)
   parser.add_argument('-d', '--district', help='Please enter the district', required=True)
   parser.add_argument('-af', '--additionalFilters', help='please enter additional filters', required=False)
+  parser.add_argument('-b', '--blockCode', help='please enter the block Code ', required=False)
   parser.add_argument('-f', '--finyear', help='Please enter the finyear', required=True)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-limit', '--limit', help='Limit the number of entries that need to be processed', required=False)
@@ -80,10 +81,13 @@ def main():
     limitString="  "
   if args['additionalFilters']:
     additionalFilter=" and "+args['additionalFilters']
+  blockFilter=''
+  if args['blockCode']:
+    blockFilter=" and  b.blockCode='%s' " % args['blockCode'] 
    # stateName=singleRowQuery(cur,query)
   reMatchString="%s-%s-" % (stateShortCode,districtCode)
  
-  query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode,m.blockCode,p.panchayatCode,m.workName,m.dateFrom,m.dateTo,p.rawName from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.wdProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 %s and finyear='%s' %s" %(additionalFilter,infinyear,limitString)
+  query=" select m.id,m.finyear,m.musterNo,p.name,b.name,m.workCode,m.blockCode,p.panchayatCode,m.workName,m.dateFrom,m.dateTo,p.rawName from musters m,blocks b,panchayats p where m.isDownloaded=1 and m.wdProcessed=0  and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 %s %s and finyear='%s' %s" %(blockFilter,additionalFilter,infinyear,limitString)
   logger.info(query)
   cur.execute(query)
   if cur.rowcount:
@@ -211,12 +215,13 @@ def main():
               cur.execute(query)
               if cur.rowcount == 0:
                 logger.info("This record does not exist")
-                recordStatus="newRecord"
                 mtID=getNewWDID(cur,insertQuery)
-                wagelistCount=0
                 if wagelistPrefix in wagelistNo:
                   recordStatus="newRecordFirstWagelist"
                   wagelistCount=1
+                else:
+                  recordStatus="wagelistNotGenerated"
+                  wagelistCount=0
               else:
                 wagelistRow=cur.fetchone()
                 curWagelist=wagelistRow[1]
@@ -230,6 +235,7 @@ def main():
                     query="update workDetails set isArchive=1 where id=%s " % oldmtID
                     cur.execute(query)
                     mtID=getNewWDID(cur,insertQuery)
+                    logger.info("Regeneated Wagelist old ID: %s  new ID %s " % (str(oldmtID),str(mtID)))
                   else:
                     recordStatus="firstWagelist"
                     wagelistCount=1

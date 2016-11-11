@@ -69,7 +69,7 @@ def main():
   modifiedFilepath=nregaWebDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
   fullfinyear=getFullFinYear(finyear)
   
-  query="select f.id,f.ftoNo,f.blockCode,b.name from ftoDetails f,blocks b where f.isDownloaded=1 and f.blockCode=b.blockCode and f.isPopulated=0 %s " % (limitString)
+  query="select f.id,f.ftoNo,f.blockCode,isDistrictFTO from ftoDetails f where f.isDownloaded=1  and f.finyear='%s' and f.isPopulated=0 %s %s " % (finyear,additionalFilter,limitString)
 #  query="select f.id,f.ftoNo,f.blockCode,b.name from ftoDetails f,blocks b where f.isDownloaded=1 and f.blockCode=b.blockCode and f.id=4 %s " % (limitString)
   logger.info(query)
   cur.execute(query)
@@ -79,9 +79,20 @@ def main():
     rowid=str(row[0])
     ftoNo=row[1]
     blockCode=row[2]
-    blockName=row[3]
+    isDistrictFTO=row[3]
+    if isDistrictFTO == 1:
+      blockName=''
+    else:
+      query="select name from blocks where blockCode=%s " % blockCode
+      cur.execute(query)
+      blockrow=cur.fetchone()
+      blockName=blockrow[0]
+
     filename=filepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftoNo+".html"
     modifiedFilename=modifiedFilepath+blockName.upper()+"/FTO/"+fullfinyear+"/"+ftoNo+".html"
+    if isDistrictFTO == 1:
+      filename=filepath+"/FTO/"+fullfinyear+"/"+ftoNo+".html"
+      modifiedFilename=modifiedFilepath+"/FTO/"+fullfinyear+"/"+ftoNo+".html"
     logger.info(filename)
     if (os.path.isfile(filename)):
       error=0
@@ -154,8 +165,8 @@ def main():
               else:
                 row1=cur.fetchone() 
                 ftID=str(row1[0])
-              
-              query="update ftoTransactionDetails set jobcard='%s',finyear='%s',applicantName='%s',primaryAccountHolder='%s',accountNo='%s',wagelistNo='%s',transactionDate=%s,processedDate=%s,status='%s',rejectionReason='%s',creditedAmount=%s where id=%s" % (jobcard,finyear,ftoName,primaryAccountHolder,ftoAccountNo,wagelistNo,NICToSQLDate(transactionDateString),NICToSQLDate(processedDateString),ftoStatus,rejectionReason,ftoAmount,ftID)
+              blockCode=jobcard[6:9] 
+              query="update ftoTransactionDetails set updateWorkDetails=1,blockCode='%s',jobcard='%s',finyear='%s',applicantName='%s',primaryAccountHolder='%s',accountNo='%s',wagelistNo='%s',transactionDate=%s,processedDate=%s,status='%s',rejectionReason='%s',creditedAmount=%s where id=%s" % (blockCode,jobcard,finyear,ftoName,primaryAccountHolder,ftoAccountNo,wagelistNo,NICToSQLDate(transactionDateString),NICToSQLDate(processedDateString),ftoStatus,rejectionReason,ftoAmount,ftID)
               logger.info(query)
               cur.execute(query)
               query="update ftoTransactionDetails set firstSignatoryDate=%s,secondSignatoryDate=%s,bankProcessedDate=%s,paymentMode='%s' where id=%s " % (NICToSQLDate(firstSignatoryDateString),NICToSQLDate(secondSignatoryDateString),NICToSQLDate(toFinAgencyDateString),paymentMode,ftID)

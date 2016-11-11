@@ -111,7 +111,7 @@ def main():
   crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
 
 
-  whereClause="and wdRecordAbsent=0 and perfectMatch=0 and matchComplete=0 " 
+  whereClause="and wdRecordAbsent=0 and matchComplete=0 " 
 
   query="select count(*),jobcard,wagelistNo,creditedAmount from ftoTransactionDetails where finyear='%s' %s %s group by jobcard,wagelistNo,creditedAmount order by wagelistNo,jobcard,creditedAmount DESC %s" % (finyear,additionalFilter,whereClause,limitString)
   logger.info(query)
@@ -130,6 +130,7 @@ def main():
     
 
     query="select * from workDetails where jobcard='%s' and wagelistNo='%s' %s and matchComplete=0" % (jobcard,wagelistNo,totalWageClause)
+    logger.info(query)
     cur.execute(query)
     wdCount = cur.rowcount
     logger.info("WagelistNo: %s     jobcard: %s    count: %s  wdCount=%s" % (wagelistNo,jobcard,str(count),str(wdCount)))

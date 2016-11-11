@@ -104,11 +104,17 @@ def main():
           if jobcard != "Reg No.":
             ftoNo=cols[12].text.strip().lstrip().rstrip()
             if ftoPrefix in ftoNo:
+              blockCode=blockCode=ftoNo[6:9]
+              isDistrictFTO=0
+              if (blockCode=='000') or (blockCode=='999'):
+                isDistrictFTO=1
               query="select * from ftoDetails where ftoNo='%s' and blockCode='%s' and finyear='%s'" % (ftoNo,blockCode,finyear)
+              logger.info(query)
               cur.execute(query)
               if cur.rowcount==0:
                 logger.info("FTo Record does not exists")
-                query="insert into ftoDetails (ftoNo,blockCode,finyear) values ('%s','%s','%s')" % (ftoNo,blockCode,finyear)
+                query="insert into ftoDetails (ftoNo,blockCode,finyear,isDistrictFTO) values ('%s','%s','%s',%s)" % (ftoNo,blockCode,finyear,str(isDistrictFTO))
+                logger.info(query)
                 cur.execute(query)
             else:
               isComplete=0

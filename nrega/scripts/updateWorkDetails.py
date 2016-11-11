@@ -71,7 +71,7 @@ def main():
   cur.execute(query)
   crawlIP,stateName,stateCode,stateShortCode,districtCode=getDistrictParams(cur,districtName)
 
-  query="select id,primaryAccountHolder,rejectionReason,paymentMode,status,referenceNo,firstSignatoryDate,secondSignatoryDate,bankProcessedDate,transactionDate,processedDate,applicantName,accountNo,ftoNo,creditedAmount,ftoMatchStatus,wdID from ftoTransactionDetails where ftoMatchStatus is not NULL and ftoMatchStatus != 'noMatch' and updateWorkDetails=1 and finyear='%s' %s %s" % (finyear,additionalFilter,limitString)
+  query="select id,primaryAccountHolder,rejectionReason,paymentMode,status,referenceNo,firstSignatoryDate,secondSignatoryDate,bankProcessedDate,transactionDate,processedDate,applicantName,accountNo,ftoNo,creditedAmount,matchType,workDetailsID from ftoTransactionDetails where matchComplete=1 and updateWorkDetails=1 and finyear='%s' %s %s" % (finyear,additionalFilter,limitString)
   logger.info(query)
   cur.execute(query)
   results=cur.fetchall()
@@ -91,9 +91,13 @@ def main():
     ftoName=row1[11]
     ftoAccountNo=row1[12]
     ftoNo=row1[13]
-    ftoAmount=str(row1[14])
+    ftoAmount=row1[14]
+    if ftoAmount is None:
+      ftoAmountString="ftoAmount = NULL"
+    else:
+      ftoAmountString="ftoAmount = %s" %str(row1[14])
     matchType=row1[15]
-    query="update workDetails set ftoNo='%s',ftoMatchStatus='%s',primaryAccountHolder='%s',rejectionReason='%s',paymentMode='%s',ftoAccountNo='%s',ftoStatus='%s',ftoAmount='%s',referenceNo='%s',ftoName='%s',updateDate=NOW() where id=%s" % (ftoNo,matchType,primaryAccountHolder,rejectionReason,paymentMode,ftoAccountNo,ftoStatus,ftoAmount,referenceNo,ftoName,wdID)
+    query="update workDetails set ftoNo='%s',ftoMatchStatus='%s',primaryAccountHolder='%s',rejectionReason='%s',paymentMode='%s',ftoAccountNo='%s',ftoStatus='%s',%s,referenceNo='%s',ftoName='%s',updateDate=NOW() where id=%s" % (ftoNo,matchType,primaryAccountHolder,rejectionReason,paymentMode,ftoAccountNo,ftoStatus,ftoAmountString,referenceNo,ftoName,wdID)
     logger.info(query)
     cur.execute(query)
     query="update workDetails set firstSignatoryDate=%s,secondSignatoryDate=%s,transactionDate=%s,bankProcessedDate=%s,processedDate=%s,updateDate=NOW() where id=%s" % (firstSignatoryDateString,secondSignatoryDateString,transactionDateString,bankProcessedDateString,processedDateString,wdID)

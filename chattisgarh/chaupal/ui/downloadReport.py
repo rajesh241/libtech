@@ -16,6 +16,7 @@ sys.path.insert(0, fileDir+'/../../')
 import libtechFunctions
 import globalSettings
 import settings
+from nregaSettings import tempDir
 from globalSettings import chaupalDataSummaryReportDir,chaupalDashboardLink,chaupalDataDashboardLink,chaupalDataDashboardLimit
 from settings import dbhost,dbuser,dbpasswd,sid,token
 from bootstrap_utils import getString,bsQuery2Html, bsQuery2HtmlV2,htmlWrapper, getForm, getButtonV3, getButtonV2,getCenterAligned
@@ -41,13 +42,16 @@ def main():
   title1=title.replace(" ","")
   if reportType=='misc':
     suffix=reportType+"/"+title1+".csv"
+    filename=tempDir+"/"+suffix
+    redirectURL="http://nregaweb.libtech.info/temp/"+suffix
   else:
     blockName=form["blockName"].value
     panchayatName=form["panchayatName"].value
     blockName1=blockName.replace(" ","")
     panchayatName1=panchayatName.replace(" ","")
     suffix=title1+"/"+title1+"_"+blockName1+"_"+panchayatName1+".csv"
-  filename=chaupalDataSummaryReportDir+"/"+suffix
+    filename=chaupalDataSummaryReportDir+"/"+suffix
+    redirectURL="http://surguja.libtech.info/reports1/summary/"+suffix
   #filename=filename.lower()
   dir1 = os.path.dirname(filename)
 
@@ -56,7 +60,6 @@ def main():
   except:
     os.mkdir(dir1)
   writecsv(cur,query,filename)
-  redirectURL="http://surguja.libtech.info/reports1/summary/"+suffix
   print 'Content-Type: text/html'
   print 'Location: %s' % redirectURL
   print # HTTP says you have to have a blank line between headers and content
