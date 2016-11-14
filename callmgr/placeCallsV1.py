@@ -127,6 +127,8 @@ def main():
         exotelURL='http://my.exotel.in/exoml/start/62882'
       elif (template == 'rscdFeedback'):
         exotelURL='http://my.exotel.in/exoml/start/107221'
+      elif (template == 'voiceMail'):
+        exotelURL='http://my.exotel.in/exoml/start/117346'
 
       logger.info("Placing Call callid: %s phone: %s " % (callid,phone))
       r = connect_customer(

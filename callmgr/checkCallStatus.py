@@ -188,6 +188,7 @@ def main():
     tringoaudio=row[8]
     isTest=row[9]
     timeDiff=row[10]
+    print vendor
     if (vendor == 'exotel'):
       callinprogress,callpass,callfail,callStartTime,duration,cost,vendorCallStatus = exotelCallStatus(sid,token,callsid)
     elif (vendor == 'tringo'):

@@ -55,7 +55,7 @@ def main():
   cur.execute(query)
   query="use libtech"
   cur.execute(query)
-  query="select bid,completed,name from broadcasts where bid>1000 and error=0 and approved=1 and completed=0 order by bid DESC "
+  query="select bid,completed,name from broadcasts where bid>1000 and error=0 and approved=1 and processed=1 and completed=0 order by bid DESC "
   print query
   cur.execute(query)
   results = cur.fetchall()

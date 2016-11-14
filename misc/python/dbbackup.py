@@ -19,7 +19,8 @@ fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
 sys.path.insert(0, fileDir+'./')
 from settings import dbhost,dbuser,dbpasswd,sid,token
-from globalSettings import dbBackupDir,dbNames
+from globalSettings import dbBackupDir
+from dbNames import dbNames
 #BACKUP_PATH="~/backup/data/db/"
 
 def savedb(db,filename,filepath):

@@ -92,11 +92,17 @@ def main():
       additionalQuery=" dnd = 'no' and "
     else:
       additionalQuery=''
-    query="select count(*) from addressbook where "+additionalQuery+queryMatchString+" "
-    #print query
-    cur.execute(query)
-    row1=cur.fetchone()
-    notes=str(row1[0])+" calls will be scheduled"
+    if broadcastType=="queryBased":
+       query=inQuery
+       cur.execute(query)
+       totalCalls=cur.rowcount
+    else:
+      query="select count(*) from addressbook where "+additionalQuery+queryMatchString+" "
+      #print query
+      cur.execute(query)
+      row1=cur.fetchone()
+      totalCalls=row1[0]
+    notes=str(totalCalls)+" calls will be scheduled"
 
 
    # print "Current Bid is"+str(bid)

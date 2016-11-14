@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 import settings
 from settings import dbhost,dbuser,dbpasswd,sid,token
 import libtechFunctions
-from libtechFunctions import singleRowQuery,checkLocalDND,getNumberString,getOnlyDigits,getjcNumber
+from libtechFunctions import singleRowQuery,checkLocalDND,getNumberString,getOnlyDigits,getjcNumber,addPhoneAddressBook
 
 def gettringoaudio(rawlist):
   tringofilelist=rawlist.rstrip(',')
@@ -76,7 +76,7 @@ def getaudio(cur,rawlist):
     audio=audio.rstrip(',')
   return audio,error
 
-def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=None):
+def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=None,sid=None):
   query="use libtech"
   cur.execute(query)
   query="select bid,type,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats,priority,fileid2,template,inQuery from broadcasts where bid=%s" %(bid)
@@ -130,13 +130,16 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
   print("Tringo audio is "+tringoaudio)
   print("audiolist"+audio)
   print("Broadcast Type "+broadcastType)
-  print("QueryMatchString "+queryMatchString)
+  print("Query "+phoneQuery)
   print("Vendor "+requestedVendor)
             
       
- 
-  query="select phone,exophone,dnd from addressbook where "+queryMatchString+" "
-  print(query)
+  if sid is not None:
+    phone=phone[-10:]
+    addPhoneAddressBook(cur,phone,'','','')
+  
+  #query="select phone,exophone,dnd from addressbook where "+queryMatchString+" "
+  print(phoneQuery)
   cur.execute(phoneQuery)
   results1 = cur.fetchall()
   for r in results1:
@@ -145,6 +148,10 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
     if exophone is None:
       exophone="08033545179"
     dnd=r[2]
+    if sid is not None:
+      exophone="08033545179"
+      dnd="no"
+      
     skip=0
     if(dnd == 'yes'):
       if( (requestedVendor == "any") or (requestedVendor =="tringo")):
@@ -155,12 +162,16 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
     else:
       vendor=requestedVendor;
     print("phone "+phone+" skip"+str(skip)+"vendor "+vendor)
+
     if len(phone) == 10 and phone.isdigit() and skip == 0:
       query="insert into callSummary (bid,phone,callRequestTime) values ("+bid+",'"+phone+"',NOW());"
       print(query)
       cur.execute(query)
       callid=str(cur.lastrowid)
-      query="insert into callQueue (callid,priority,preference,template,vendor,bid,minhour,maxhour,phone,audio,audio1,tringoaudio,exophone) values ("+str(callid)+","+str(priority)+","+str(preference)+",'"+template+"','"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+audio1+"','"+tringoaudio+"','"+exophone+"');"
+      if sid is not None:
+        query="insert into callQueue (callid,priority,preference,template,vendor,bid,minhour,maxhour,phone,audio,audio1,tringoaudio,exophone,inprogress,callRequestTime,curVendor,isTest,sid) values ("+str(callid)+","+str(priority)+","+str(preference)+",'"+template+"','exotel',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+audio1+"','"+tringoaudio+"','"+exophone+"',1,NOW(),'exotel',1,'"+sid+"');"
+      else:
+        query="insert into callQueue (callid,priority,preference,template,vendor,bid,minhour,maxhour,phone,audio,audio1,tringoaudio,exophone) values ("+str(callid)+","+str(priority)+","+str(preference)+",'"+template+"','"+vendor+"',"+bid+","+minhour+","+maxhour+",'"+phone+"','"+audio+"','"+audio1+"','"+tringoaudio+"','"+exophone+"');"
       print(query)
       cur.execute(query)
             
