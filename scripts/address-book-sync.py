@@ -66,13 +66,20 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
-def pull_from_google_sheet(logger, db):
+def pull_from_google_sheet(logger, db, spreadsheet_id=None, range_name=None):
     """Shows basic usage of the Sheets API.
 
     Creates a Sheets API service object and prints the names and majors of
     students in a sample spreadsheet:
     https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
     """
+
+    if not spreadsheet_id:
+        spreadsheet_id = '13NWtMv211Yf3tSIzS9LoDmrar93NgwDaBA8LUvdE3Ec'
+
+    if not range_name:
+        range_name = 'Sheet1!A:J'
+
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
@@ -80,19 +87,18 @@ def pull_from_google_sheet(logger, db):
     service = discovery.build('sheets', 'v4', http=http,
                               discoveryServiceUrl=discoveryUrl)
 
-    spreadsheetId = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms'
-    rangeName = 'Class Data!A2:E'
     result = service.spreadsheets().values().get(
-        spreadsheetId=spreadsheetId, range=rangeName).execute()
+        spreadsheetId=spreadsheet_id, range=range_name).execute()
     values = result.get('values', [])
-
+    logger.debug(values)
+    
     if not values:
         logger.info('No data found.')
     else:
-        logger.info('Name, Major:')
+        logger.info('phone, name, district, block, panchayat, designation, gender, TotalCalls, SuccessCalls, SuccessPercentage')
         for row in values:
-            # Print columns A and E, which correspond to indices 0 and 4.
-            logger.info('%s, %s' % (row[0], row[4]))
+            # Print columns A thru J as desired
+            logger.info('%s, %s, %s, %s, %s, %s, %s, %s, %s, %s' % (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9])) # row[10]))
 
     return 'SUCCESS'
 
