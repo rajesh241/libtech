@@ -149,7 +149,7 @@ def main():
                 ftoAmount="NULL"
               ftoStatus=col[12].text.lstrip().rstrip()
               processedDateString=col[13].text.lstrip().rstrip()
-              rejectionReason=col[14].text.lstrip().rstrip()
+              rejectionReason=col[15].text.lstrip().rstrip()
               ftoName=col[4].text.lstrip().rstrip()
               wagelistNo=col[6].text.lstrip().rstrip()
               if ftoStatus == '':
