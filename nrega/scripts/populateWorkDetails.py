@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
+import datetime
 import MySQLdb
 import os
 import time
@@ -15,7 +16,7 @@ from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery,getjcNumber,getFullFinYear,writeFile
-from nregaSettings import nregaWebDir,nregaRawDataDir 
+from nregaSettings import nregaWebDir,nregaRawDataDir,tempDir 
 sys.path.insert(0, fileDir+'/../crawlDistricts/')
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
 
@@ -142,6 +143,11 @@ def main():
         modifiedHTML=htmlHeader+outhtml
         modifiedHTML=htmlWrapperLocal(title="Muster Details", head='<h1 aling="center">'+musterNo+'</h1>', body=modifiedHTML)
         logger.info(modifiedMusterFileName)
+        if (os.path.isfile(modifiedMusterFileName)): 
+          oldmusterhtml=open(modifiedMusterFileName,'r').read().decode("UTF-8")
+          appendString=datetime.date.today().strftime("%d%B%Y")
+          oldMusterFileName=tempDir+"/oldMusters/Modified/"+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/MUSTERS/"+fullfinyear+"/"+musterNo+"_"+appendString+".html"
+          writeFile(oldMusterFileName,oldmusterhtml)
         writeFile(modifiedMusterFileName,modifiedHTML)
 
 
@@ -195,7 +201,7 @@ def main():
               paymentDate=NICToSQLDate(paymentDateString)
               creditedDate=NICToSQLDate(creditedDateString)
               #We also need to create entry in WageList Table
-              query="select * from wagelists where wagelistNo='%s' " % (wagelistNo)
+              query="select * from wagelists where wagelistNo='%s' and finyear='%s'" % (wagelistNo,finyear)
               logger.info(query)
               cur.execute(query)
               if cur.rowcount == 0:
