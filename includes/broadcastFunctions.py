@@ -79,7 +79,7 @@ def getaudio(cur,rawlist):
 def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=None,sid=None):
   query="use libtech"
   cur.execute(query)
-  query="select bid,type,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats,priority,fileid2,template,inQuery from broadcasts where bid=%s" %(bid)
+  query="select bid,type,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats,priority,fileid2,template,inQuery,region from broadcasts where bid=%s" %(bid)
   cur.execute(query)
   row = cur.fetchone()
   tringoaudio=gettringoaudio(row[4])
@@ -99,20 +99,21 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
     preference='40'
   template=row[13]
   inQuery=row[14]
+  region=row[15]
   broadcastType=row[1]
   if phone is None:
 #If phone is Null then we would need to schedule Broadcast for the entire group or location
     if (broadcastType == "group"):
       queryMatchString=getGroupQueryMatchString(cur,row[6]) 
-      phoneQuery="select phone,exophone,dnd from addressbook where "+queryMatchString+" "
+      phoneQuery="select phone  from addressbook where "+queryMatchString+" "
     elif (broadcastType == "location"):
       queryMatchString=getLocationQueryMatchString(row[8],row[9],row[10])
-      phoneQuery="select phone,exophone,dnd from addressbook where "+queryMatchString+" "
+      phoneQuery="select phone  from addressbook where "+queryMatchString+" "
     elif (broadcastType == "queryBased"):
       phoneQuery=inQuery
     elif (broadcastType == "transactional"):
       queryMatchString='phone is NULL'  #We dont want any calls to be Added to Call Queue
-      phoneQuery="select phone,exophone,dnd from addressbook where "+queryMatchString+" "
+      phoneQuery="select phone  from addressbook where "+queryMatchString+" "
     else:
       error=1
   else:
@@ -122,7 +123,7 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
       query="insert into addressbook (phone,exophone,dnd) values ('%s','08033545179','no')" % (phone)
       cur.execute(query)
     queryMatchString="phone='%s'" % phone
-    phoneQuery="select phone,exophone,dnd from addressbook where "+queryMatchString+" "
+    phoneQuery="select phone  from addressbook where "+queryMatchString+" "
 
 
   print("Printing Debug Information"+str(bid))
@@ -142,12 +143,16 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
   print(phoneQuery)
   cur.execute(phoneQuery)
   results1 = cur.fetchall()
+  dnd="no"
   for r in results1:
     phone=r[0]
-    exophone=r[1]
+    query="select exophone from regions where region='%s' " % region
+    cur.execute(query)
+    rowdnd=cur.fetchone()
+    exophone=rowdnd[0]
+    
     if exophone is None:
       exophone="08033545179"
-    dnd=r[2]
     if sid is not None:
       exophone="08033545179"
       dnd="no"
@@ -162,9 +167,10 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
     else:
       vendor=requestedVendor;
     print("phone "+phone+" skip"+str(skip)+"vendor "+vendor)
-
+    skip =0
     if len(phone) == 10 and phone.isdigit() and skip == 0:
-      query="insert into callSummary (bid,phone,callRequestTime) values ("+bid+",'"+phone+"',NOW());"
+      #query="insert into callSummary (bid,phone,callRequestTime) values ("+bid+",'"+phone+"',NOW());"
+      query="insert into callSummary (bid,phone,callRequestTime,template,audio,audio1,region) values (%s,'%s',NOW(),'%s','%s','%s','%s');" % (bid,phone,template,audio,audio1,region)
       print(query)
       cur.execute(query)
       callid=str(cur.lastrowid)
