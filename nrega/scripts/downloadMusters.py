@@ -10,12 +10,12 @@ fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
 sys.path.insert(0, fileDir+'/../../')
 #sys.path.insert(0, rootdir)
-
+import datetime
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
 from libtechFunctions import singleRowQuery,getFullFinYear,writeFile
-from nregaSettings import nregaRawDataDir
+from nregaSettings import nregaRawDataDir,tempDir
 sys.path.insert(0, fileDir+'/../crawlDistricts/')
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
 from crawlFunctions import alterMusterHTML,getMusterPaymentDate
@@ -146,6 +146,11 @@ def main():
     if errorflag==0:
       musterrawfilename=musterrawfilepath+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/MUSTERS/"+fullfinyear+"/"+musterNo+".html"
       logger.info("muster file path : %s " % musterrawfilename)
+      if (os.path.isfile(musterrawfilename)): 
+        oldmusterhtml=open(musterrawfilename,'r').read().decode("UTF-8")
+        appendString=datetime.date.today().strftime("%d%B%Y")
+        oldMusterFileName=tempDir+"/oldMusters/Raw/"+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/MUSTERS/"+fullfinyear+"/"+musterNo+"_"+appendString+".html"
+        writeFile(oldMusterFileName,oldmusterhtml)
       writeFile(musterrawfilename,myhtml)
       try:
         query="update musters set wdProcessed=0,wdError=0,isDownloaded=1,downloadDate=NOW() where id="+str(musterid)

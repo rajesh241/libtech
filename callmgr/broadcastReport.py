@@ -40,7 +40,7 @@ def updateBroadcastTable(cur,bid):
     successPercentage=math.trunc(success*100/total)
   print str(success)+"  "+str(failMaxRetry)+"  "+str(expired)+"  "+str(pending)+"  "+str(total)+"  "+str(cost)
   isComplete=0
-  if((pending == 0) and (timediff > 2)):
+  if((pending == 0) and (timediff > 0)):
    isComplete=1
   query="update broadcasts set successP='"+str(successPercentage)+"',completed="+str(isComplete)+",success="+str(success)+",cost="+str(cost)+",fail="+str(failMaxRetry)+",expired="+str(expired)+",pending="+str(pending)+",total="+str(total)+" where bid="+str(bid) 
   print query

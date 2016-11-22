@@ -109,6 +109,21 @@ while($row=mysqli_fetch_array($results)){
                                 <option value="voiceMail">Generic voiceMail </option>
                                   </td>
                           </tr>
+    <tr>
+                                  <td>Broadcast Region
+                                  </td>
+                                  <td><select name="region" >
+                                <option value="undefined" selected>Select Region</option>
+                                <option value="apvvu" >APVVU</option>
+                                <option value="ghattu">Ghattu </option>
+                                <option value="rscd">RSCD </option>
+                                <option value="spss">Sanjay Sahni SPSS </option>
+                                <option value="jjss">Araria JJSS </option>
+                                <option value="chaupal">Chaupal and Chattisgarh </option>
+                                <option value="grakoos">Abhay Grakoos </option>
+                                  </td>
+                          </tr>
+
 
                           <tr>
                                   <td>Select Vendor.  Dont change this value. As of now not used
