@@ -31,8 +31,8 @@ except ImportError:
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/sheets.googleapis.com-python-quickstart.json
-SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly'
-CLIENT_SECRET_FILE = 'client_secret.json'
+SCOPES = 'https://www.googleapis.com/auth/spreadsheets' # .readonly'
+CLIENT_SECRET_FILE = '~/.credentials/client_secret.json'
 APPLICATION_NAME = 'Google Sheets API Python Quickstart'
 
 
@@ -68,19 +68,9 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
-def pull_from_google_sheet(logger, db, region, spreadsheet_id=None, range_name=None):
-    """Shows basic usage of the Sheets API.
-
-    Creates a Sheets API service object and prints the names and majors of
-    students in a sample spreadsheet:
-    https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
+def sync_google_sheet(logger, db, region, spreadsheet_id, range_name):
+    """ To sync our DB with the corresponding Google Sheet
     """
-
-    if not spreadsheet_id:
-        spreadsheet_id = '13NWtMv211Yf3tSIzS9LoDmrar93NgwDaBA8LUvdE3Ec'
-
-    if not range_name:
-        range_name = 'Sheet1!A:J'
 
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
@@ -94,8 +84,6 @@ def pull_from_google_sheet(logger, db, region, spreadsheet_id=None, range_name=N
     values = result.get('values', [])
     logger.debug(values)
 
-# Mynk    master_query = 'select * from addressbook where region="%s"' % region
-    
     if not values:
         logger.info('No data found.')
     else:
@@ -116,46 +104,47 @@ def pull_from_google_sheet(logger, db, region, spreadsheet_id=None, range_name=N
             logger.debug(row)
 
             (phone, name, district, block, panchayat, designation, gender, total_calls, success_percentage, timestamp) = row
-
+            timestamp = strftime('%Y-%m-%d %H:%M:%S')
+            
             # Print columns A thru J as desired
             # logger.info('%s, %s, %s, %s, %s, %s, %s, %s, %s, %s' % (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]))
-            logger.info('%s, %s, %s, %s, %s, %s, %s, %s, %s, %s' % (phone, name, district, block, panchayat, designation, gender, total_calls, success_percentage, timestamp))
-            phone='9845155447'
+            logger.debug('%s, %s, %s, %s, %s, %s, %s, %s, %s, %s' % (phone, name, district, block, panchayat, designation, gender, total_calls, success_percentage, timestamp))
+
             query = 'select totalCalls, successPercentage from addressbook where region="%s" and phone="%s"' % (region, phone)
             cur = db.cursor()
-            logger.info('Executing query[%s]' % query)
+            logger.debug('Executing query[%s]' % query)
             cur.execute(query)
             res = cur.fetchall()
-            logger.info(res)
-            timestamp = strftime('%Y-%m-%d %H:%M:%S')
+            logger.debug(res)
+
             if res:
-                # Update (totalCalls, successPercentage) = res[0]
-                (row[7], row[8]) = res[0]
+                # Update                
+                (row[7], row[8]) = (total_calls, success_percentage) = res[0]
                 
                 # Add timestamp to the excel
                 row[9] = timestamp 
-                print(row)
-                query = 'update addressbook set name="%s", district="%s", block="%s", panchayat="%s", designation="%s", gender="%s", ts="%s" where phone="%s"' % (name, district, block, panchayat, designation, gender, timestamp, phone)
-                print(query)
+                logger.debug('FetchedRow[%s, %s, %s, %s, %s, %s, %s, %s, %s, %s]' % (phone, name, district, block, panchayat, designation, gender, total_calls, success_percentage, timestamp))
+
+                query = 'update addressbook set name="%s", district="%s", block="%s", panchayat="%s", designation="%s", gender="%s", ts="%s" where region="%s" and phone="%s"' % (name, district, block, panchayat, designation, gender, timestamp, region, phone)
             else:                
-                query = 'insert into addressbook (phone, name, district, block, panchayat, designation , gender, ts) values ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s")' % (phone, name, district, block, panchayat, designation, gender, timestamp)
-                print(query)
+                query = 'insert into addressbook (phone, name, district, block, panchayat, designation , gender, ts, region) values ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s")' % (phone, name, district, block, panchayat, designation, gender, timestamp, region)
 
-#          query = 'insert into jobcardDetails (jobcard, applicantNo, age, applicantName, gender, accountNo, aadharNo, bankNameOrPOName, IFSCCodeOrEMOCode, branchNameOrPOAddress, isDisabled) values ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s")' % (jobcard, worker_id, age, worker_name, gender, account_no, uid_no, paying_agency, ifsc_code, branch, is_disabled) + ' ON DUPLICATE KEY update jobcard="%s", applicantNo="%s", age="%s", applicantName="%s", gender="%s", accountNo="%s", aadharNo="%s", bankNameOrPOName="%s", IFSCCodeOrEMOCode="%s", branchNameOrPOAddress="%s", isDisabled="%s"' % (jobcard, worker_id, age, worker_name, gender, account_no, uid_no, paying_agency, ifsc_code, branch, is_disabled)
+            cur = db.cursor()
+            logger.info('Executing query[%s]' % query)
+            cur.execute(query)
 
+    logger.debug(values)
+    body = {
+          'values': values
+    }
+    range_name = 'Sheet2!A:J'
 
-
-            return 0
-
-        #logger.info(values)
-
+    logger.info('Updating the Sheet2 for SpreadSheet[%s]' % spreadsheet_id)
+    result = service.spreadsheets().values().update(
+        spreadsheetId=spreadsheet_id, range=range_name,
+        valueInputOption='RAW', body=body).execute()
 
     return 'SUCCESS'
-    result = service.spreadsheets().values().get(
-        spreadsheetId=spreadsheet_id, range=range_name).execute()
-    values = result.get('values', [])
-    logger.debug(values)
-
 
 
 #############
@@ -174,7 +163,7 @@ class TestSuite(unittest.TestCase):
     self.logger.info('...END PROCESSING')
     
   def test_fetch(self):
-    result = pull_from_google_sheet(self.logger, self.db, 'rscd')
+    result = sync_google_sheet(self.logger, self.db, 'rscd',  '13NWtMv211Yf3tSIzS9LoDmrar93NgwDaBA8LUvdE3Ec', 'Sheet1!A:J')
     
     self.assertEqual('SUCCESS', result)
 
