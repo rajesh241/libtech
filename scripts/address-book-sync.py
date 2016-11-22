@@ -88,7 +88,7 @@ def sync_google_sheet(logger, db, region, spreadsheet_id, range_name):
         logger.info('No data found.')
     else:
         # See the column names below for reference
-        logger.debug('phone, name, district, block, panchayat, designation, gender, total_calls, success_percentage, updated')
+        logger.debug('phone, name, district, block, panchayat, designation, gender, total_calls, success_percentage, updated, cost')
         for row in values:
             ncols = len(row)
             logger.debug("RowCount[%d]" % ncols)
@@ -96,21 +96,22 @@ def sync_google_sheet(logger, db, region, spreadsheet_id, range_name):
 
             if row[0] == 'phone':
                 row.append('updated')
+                row.append('cost')
                 continue
             else:
-                while ncols < 10:
+                while ncols < 11:
                     row.append('')
                     ncols += 1
             logger.debug(row)
 
-            (phone, name, district, block, panchayat, designation, gender, total_calls, success_percentage, timestamp) = row
+            (phone, name, district, block, panchayat, designation, gender, total_calls, success_percentage, timestamp, cost) = row
             timestamp = strftime('%Y-%m-%d %H:%M:%S')
             
             # Print columns A thru J as desired
             # logger.info('%s, %s, %s, %s, %s, %s, %s, %s, %s, %s' % (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]))
             logger.debug('%s, %s, %s, %s, %s, %s, %s, %s, %s, %s' % (phone, name, district, block, panchayat, designation, gender, total_calls, success_percentage, timestamp))
 
-            query = 'select totalCalls, successPercentage from addressbook where region="%s" and phone="%s"' % (region, phone)
+            query = 'select totalCalls, successPercentage, cost from addressbook where region="%s" and phone="%s"' % (region, phone)
             cur = db.cursor()
             logger.debug('Executing query[%s]' % query)
             cur.execute(query)
@@ -119,15 +120,15 @@ def sync_google_sheet(logger, db, region, spreadsheet_id, range_name):
 
             if res:
                 # Update                
-                (row[7], row[8]) = (total_calls, success_percentage) = res[0]
+                (row[7], row[8], row[10]) = (total_calls, success_percentage, cost) = res[0]
                 
                 # Add timestamp to the excel
-                row[9] = timestamp 
-                logger.debug('FetchedRow[%s, %s, %s, %s, %s, %s, %s, %s, %s, %s]' % (phone, name, district, block, panchayat, designation, gender, total_calls, success_percentage, timestamp))
+                row[9] = timestamp
+                logger.debug('FetchedRow[%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s]' % (phone, name, district, block, panchayat, designation, gender, total_calls, success_percentage, timestamp, cost))
 
-                query = 'update addressbook set name="%s", district="%s", block="%s", panchayat="%s", designation="%s", gender="%s", ts="%s" where region="%s" and phone="%s"' % (name, district, block, panchayat, designation, gender, timestamp, region, phone)
+                query = 'update addressbook set name="%s", district="%s", block="%s", panchayat="%s", designation="%s", gender="%s", ts="%s", status="active" where region="%s" and phone="%s"' % (name, district, block, panchayat, designation, gender, timestamp, region, phone)
             else:                
-                query = 'insert into addressbook (phone, name, district, block, panchayat, designation , gender, ts, region) values ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s")' % (phone, name, district, block, panchayat, designation, gender, timestamp, region)
+                query = 'insert into addressbook (phone, name, district, block, panchayat, designation , gender, ts, region, status) values ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "active")' % (phone, name, district, block, panchayat, designation, gender, timestamp, region)
 
             cur = db.cursor()
             logger.info('Executing query[%s]' % query)
@@ -137,12 +138,17 @@ def sync_google_sheet(logger, db, region, spreadsheet_id, range_name):
     body = {
           'values': values
     }
-    range_name = 'Sheet2!A:J'
+    range_name = 'Sheet2!A:K'
 
     logger.info('Updating the Sheet2 for SpreadSheet[%s]' % spreadsheet_id)
     result = service.spreadsheets().values().update(
         spreadsheetId=spreadsheet_id, range=range_name,
         valueInputOption='RAW', body=body).execute()
+
+    query = 'delete from addressbook where region="rscd" and status!="active"'
+    cur = db.cursor()
+    logger.info('Executing query[%s]' % query)
+    # Mynk cur.execute(query)
 
     return 'SUCCESS'
 
