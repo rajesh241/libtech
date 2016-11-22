@@ -14,7 +14,7 @@ rootdir = os.path.dirname(dirname)
 import sys
 sys.path.insert(0, rootdir)
 
-import gspread
+from time import strftime
 
 from wrappers.db import dbInitialize, dbFinalize
 from wrappers.logger import loggerFetch
@@ -94,40 +94,68 @@ def pull_from_google_sheet(logger, db, region, spreadsheet_id=None, range_name=N
     values = result.get('values', [])
     logger.debug(values)
 
-    query = 'select * from addressbook where region="%s"' % region
-    cur = db.cursor()
-    cur.execute(query)
-    res = cur.fetchall()
-    logger.debug(res)
+# Mynk    master_query = 'select * from addressbook where region="%s"' % region
     
     if not values:
         logger.info('No data found.')
     else:
-        logger.info('phone, name, district, block, panchayat, designation, gender, TotalCalls, SuccessPercentage')
+        # See the column names below for reference
+        logger.debug('phone, name, district, block, panchayat, designation, gender, total_calls, success_percentage, updated')
         for row in values:
             ncols = len(row)
             logger.debug("RowCount[%d]" % ncols)
             logger.debug(row)
-            while ncols < 9:
-                row.append('')
-                ncols += 1
+
+            if row[0] == 'phone':
+                row.append('updated')
+                continue
+            else:
+                while ncols < 10:
+                    row.append('')
+                    ncols += 1
             logger.debug(row)
 
-            
-            for i in range(len(row)):
-                pass
-                #print(row[i] + ', ')
-                    
-                
+            (phone, name, district, block, panchayat, designation, gender, total_calls, success_percentage, timestamp) = row
+
             # Print columns A thru J as desired
-            # logger.info('%s, %s, %s, %s, %s, %s, %s, %s, %s, %s' % (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9])) # row[10]))
-            # logger.info('%s, %s, %s, %s, %s, %s, %s' % (row[0], row[1], row[2], row[3], row[4], row[5], row[6]))
-            logger.info('%s, %s, %s, %s, %s, %s, %s, %s, %s' % (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8]))
+            # logger.info('%s, %s, %s, %s, %s, %s, %s, %s, %s, %s' % (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]))
+            logger.info('%s, %s, %s, %s, %s, %s, %s, %s, %s, %s' % (phone, name, district, block, panchayat, designation, gender, total_calls, success_percentage, timestamp))
+            phone='9845155447'
+            query = 'select totalCalls, successPercentage from addressbook where region="%s" and phone="%s"' % (region, phone)
+            cur = db.cursor()
+            logger.info('Executing query[%s]' % query)
+            cur.execute(query)
+            res = cur.fetchall()
+            logger.info(res)
+            timestamp = strftime('%Y-%m-%d %H:%M:%S')
+            if res:
+                # Update (totalCalls, successPercentage) = res[0]
+                (row[7], row[8]) = res[0]
+                
+                # Add timestamp to the excel
+                row[9] = timestamp 
+                print(row)
+                query = 'update addressbook set name="%s", district="%s", block="%s", panchayat="%s", designation="%s", gender="%s", ts="%s" where phone="%s"' % (name, district, block, panchayat, designation, gender, timestamp, phone)
+                print(query)
+            else:                
+                query = 'insert into addressbook (phone, name, district, block, panchayat, designation , gender, ts) values ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s")' % (phone, name, district, block, panchayat, designation, gender, timestamp)
+                print(query)
+
+#          query = 'insert into jobcardDetails (jobcard, applicantNo, age, applicantName, gender, accountNo, aadharNo, bankNameOrPOName, IFSCCodeOrEMOCode, branchNameOrPOAddress, isDisabled) values ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s")' % (jobcard, worker_id, age, worker_name, gender, account_no, uid_no, paying_agency, ifsc_code, branch, is_disabled) + ' ON DUPLICATE KEY update jobcard="%s", applicantNo="%s", age="%s", applicantName="%s", gender="%s", accountNo="%s", aadharNo="%s", bankNameOrPOName="%s", IFSCCodeOrEMOCode="%s", branchNameOrPOAddress="%s", isDisabled="%s"' % (jobcard, worker_id, age, worker_name, gender, account_no, uid_no, paying_agency, ifsc_code, branch, is_disabled)
+
+
+
+            return 0
 
         #logger.info(values)
 
 
     return 'SUCCESS'
+    result = service.spreadsheets().values().get(
+        spreadsheetId=spreadsheet_id, range=range_name).execute()
+    values = result.get('values', [])
+    logger.debug(values)
+
 
 
 #############
