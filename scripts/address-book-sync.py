@@ -14,7 +14,9 @@ rootdir = os.path.dirname(dirname)
 import sys
 sys.path.insert(0, rootdir)
 
-from wrappers.db import dbInitialize,dbFinalize
+import gspread
+
+from wrappers.db import dbInitialize, dbFinalize
 from wrappers.logger import loggerFetch
 
 #######################
@@ -66,7 +68,7 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
-def pull_from_google_sheet(logger, db, spreadsheet_id=None, range_name=None):
+def pull_from_google_sheet(logger, db, region, spreadsheet_id=None, range_name=None):
     """Shows basic usage of the Sheets API.
 
     Creates a Sheets API service object and prints the names and majors of
@@ -91,14 +93,39 @@ def pull_from_google_sheet(logger, db, spreadsheet_id=None, range_name=None):
         spreadsheetId=spreadsheet_id, range=range_name).execute()
     values = result.get('values', [])
     logger.debug(values)
+
+    query = 'select * from addressbook where region="%s"' % region
+    cur = db.cursor()
+    cur.execute(query)
+    res = cur.fetchall()
+    logger.debug(res)
     
     if not values:
         logger.info('No data found.')
     else:
-        logger.info('phone, name, district, block, panchayat, designation, gender, TotalCalls, SuccessCalls, SuccessPercentage')
+        logger.info('phone, name, district, block, panchayat, designation, gender, TotalCalls, SuccessPercentage')
         for row in values:
+            ncols = len(row)
+            logger.debug("RowCount[%d]" % ncols)
+            logger.debug(row)
+            while ncols < 9:
+                row.append('')
+                ncols += 1
+            logger.debug(row)
+
+            
+            for i in range(len(row)):
+                pass
+                #print(row[i] + ', ')
+                    
+                
             # Print columns A thru J as desired
-            logger.info('%s, %s, %s, %s, %s, %s, %s, %s, %s, %s' % (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9])) # row[10]))
+            # logger.info('%s, %s, %s, %s, %s, %s, %s, %s, %s, %s' % (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9])) # row[10]))
+            # logger.info('%s, %s, %s, %s, %s, %s, %s' % (row[0], row[1], row[2], row[3], row[4], row[5], row[6]))
+            logger.info('%s, %s, %s, %s, %s, %s, %s, %s, %s' % (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8]))
+
+        #logger.info(values)
+
 
     return 'SUCCESS'
 
@@ -111,15 +138,15 @@ def pull_from_google_sheet(logger, db, spreadsheet_id=None, range_name=None):
 class TestSuite(unittest.TestCase):
   def setUp(self):
     self.logger = loggerFetch('info')
-    self.db = dbInitialize(db="mahabubnagar")
+    self.db = dbInitialize(host='localhost', user='libtech', passwd='lt123', db='libtech')
     self.logger.info('BEGIN PROCESSING...')
 
   def tearDown(self):
     dbFinalize(self.db)
-    self.logger.info("...END PROCESSING")
+    self.logger.info('...END PROCESSING')
     
   def test_fetch(self):
-    result = pull_from_google_sheet(self.logger, self.db)
+    result = pull_from_google_sheet(self.logger, self.db, 'rscd')
     
     self.assertEqual('SUCCESS', result)
 
