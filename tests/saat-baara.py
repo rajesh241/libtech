@@ -1,8 +1,11 @@
 from bs4 import BeautifulSoup
 
-import os
 import time
+import csv
+import json
+import ast
 
+import os
 dirname = os.path.dirname(os.path.realpath(__file__))
 rootdir = os.path.dirname(dirname)
 
@@ -44,7 +47,6 @@ cmd = '''curl 'https://mahabhulekh.maharashtra.gov.in/Konkan/Home.aspx/getSnos' 
 def runTestSuite():
   logger = loggerFetch("info")
   logger.info("BEGIN PROCESSING...")
-
   
   """
   for gat in range(1,200):
@@ -60,8 +62,8 @@ def runTestSuite():
   display = displayInitialize(0)
   driver = driverInitialize()
 
-  driver.get(url)
   logger.info("Fetching...[%s]" % url)
+  driver.get(url)
 
   driver.find_element_by_xpath("//form[@id='aspnetForm']/div[3]/div/div/div[3]/a[3]/p").click()
   Select(driver.find_element_by_id("distSelect")).select_by_visible_text(dn)
@@ -70,57 +72,58 @@ def runTestSuite():
   driver.find_element_by_css_selector("option[value=\"string:273200030399810000\"]").click()
   driver.find_element_by_id("rbsryno").click()
   driver.find_element_by_xpath("//input[@type='number']").clear()
-  driver.find_element_by_xpath("//input[@type='number']").send_keys(shodha)
-  driver.find_element_by_css_selector("input[type=\"button\"]").click()
-  Select(driver.find_element_by_xpath("//form[@id='aspnetForm']/div[3]/div/div/div[3]/div/div[3]/table/tbody/tr[3]/td/select")).select_by_visible_text(sno)
-  driver.find_element_by_css_selector("td.last-rows > input[type=\"button\"]").click()
 
-  time.sleep(1)
+  content = csv.reader(open('/tmp/gats jsons.csv', 'r'), delimiter=',', quotechar='"')
+  for (gat, d) in content:
+    if gat == '114' or gat == '115':
+      continue
+    driver.find_element_by_xpath("//input[@type='number']").send_keys(gat)
+    driver.find_element_by_css_selector("input[type=\"button\"]").click()
+    sno_dict = ast.literal_eval(d)
+    sno_list = sno_dict["d"]
+    logger.info("Gat[%s], Details[%s]" % (gat, sno_list)) # .get("d")))
 
-  parent_handle = driver.current_window_handle
-  print("Handles : ", driver.window_handles, "Number : ", len(driver.window_handles))
+    data = json.loads(sno_list)
+    logger.debug(data)
 
-  if len(driver.window_handles) == 2:
-    driver.switch_to_window(driver.window_handles[-1])
-  else:
-    logger.error("Handlers gone wrong [" + str(driver.window_handles) + "]")
-    driver.save_screenshot('z.png')
+    time.sleep(5)
+    for sno_dict in data:
+      logger.debug(sno_dict)
+      logger.info("sno[%s], snov[%s]" % (sno_dict["sno"], sno_dict["snov"]))
+      sno = sno_dict["sno"]
+      filename = './html/%s.html' % sno.replace('/','_')
+      if os.path.exists(filename):
+        #time.sleep(1)
+        continue
+      Select(driver.find_element_by_xpath("//form[@id='aspnetForm']/div[3]/div/div/div[3]/div/div[3]/table/tbody/tr[3]/td/select")).select_by_visible_text(sno)
+      #logger.info(driver.find_element_by_link_text(sno))
+      driver.find_element_by_css_selector("td.last-rows > input[type=\"button\"]").click()
+      time.sleep(1)
+      
+      parent_handle = driver.current_window_handle
+      logger.info("Handles : %s Number : %s" % (driver.window_handles, len(driver.window_handles)))
 
-  html_source = driver.page_source.encode('utf-8')
-#  html_source = driver.page_source.replace('<head>',
-#                                           '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
-  logger.debug("HTML Fetched [%s]" % html_source)
+      if len(driver.window_handles) == 2:
+        driver.switch_to_window(driver.window_handles[-1])
+      else:
+        logger.error("Handlers gone wrong [" + str(driver.window_handles) + "]")
+        driver.save_screenshot('z.png')
+
+      html_source = driver.page_source.encode('utf-8')
+      logger.debug("HTML Fetched [%s]" % html_source)
+
+      with open(filename, 'wb') as html_file:
+        logger.info('Writing [%s]' % filename)
+        html_file.write(html_source)
     
-  with open(filename, 'wb') as html_file:
-    logger.info('Writing [%s]' % filename)
-    html_file.write(html_source)
-    
-  driver.close()
-  driver.switch_to_window(parent_handle)
+      driver.close()
+      driver.switch_to_window(parent_handle)
+      time.sleep(1)
+    time.sleep(1)
 
-    
-  '''
-  bs = BeautifulSoup(html_source, "html.parser")
-  tr_list = bs.findAll('tr', attrs={'class':['normalRow', 'alternateRow']})
-  logger.debug(str(tr_list))
+#      break
+#    break
 
-  for tr in tr_list:
-    td = tr.find('td')
-    td = td.findNext('td')
-    panchayat = td.text.strip()
-    logger.info("Panchayat[%s]", panchayat)
-
-    elem = driver.find_element_by_link_text(panchayat)
-    elem.click()
-    
-    filename="/tmp/%s.html" % panchayat
-    with open(filename, 'w') as html_file:
-      logger.info("Writing [%s]" % filename)
-      html_file.write(driver.page_source.encode('utf-8'))
-
-    driver.back()
-    '''
-    
   driverFinalize(driver)
   displayFinalize(display)
 
