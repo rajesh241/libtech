@@ -119,7 +119,7 @@ def main():
           query="insert into panchayats (fullPanchayatCode) values ('%s') " % fullPanchayatCode
           logger.info(query)
           cur.execute(query)
-        query="update panchayats set panchayatName='%s',rawPanchayatName='%s',blockName='%s',rawBlockName='%s',districtName='%s',rawDistrictName='%s',stateName='%s',stateCode='%s',districtCode='%s',blockCode='%s',panchayatCode='%s' where fullPanchayatCode='%s'" % (formatName(rawPanchayatName),rawPanchayatName,formatName(rawBlockName),rawBlockName,formatName(rawDistrictName),rawDistrictName,stateName,stateCode,districtCode,blockCode,panchayatCode,fullPanchayatCode)
+        query="update panchayats set stateShortCode='%s',crawlIP='%s',panchayatName='%s',rawPanchayatName='%s',blockName='%s',rawBlockName='%s',districtName='%s',rawDistrictName='%s',stateName='%s',stateCode='%s',districtCode='%s',blockCode='%s',panchayatCode='%s' where fullPanchayatCode='%s'" % (stateShortCode,crawlIP,formatName(rawPanchayatName),rawPanchayatName,formatName(rawBlockName),rawBlockName,formatName(rawDistrictName),rawDistrictName,stateName,stateCode,districtCode,blockCode,panchayatCode,fullPanchayatCode)
         logger.info(query)
         cur.execute(query)
    
