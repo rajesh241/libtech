@@ -3,6 +3,7 @@ import multiprocessing, time
 import requests
 import MySQLdb
 import os
+import os.path
 import time
 import re
 import sys
@@ -15,8 +16,12 @@ import datetime
 from wrappers.logger import loggerFetch
 from wrappers.db import dbInitialize,dbFinalize
 from crawlSettings import nregaDB 
+from crawlSettings import nregaWebDir,nregaRawDataDir
+from crawlFunctions import alterHTMLTables,writeFile
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
-from libtechFunctions import singleRowQuery,getFullFinYear,writeFile
+from libtechFunctions import singleRowQuery,getFullFinYear
+regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
+regex1=re.compile(r'</td></font></td>',re.DOTALL)
 def argsFetch():
   '''
   Paser for the argument list that returns the args list
@@ -49,7 +54,6 @@ class musterProcess(multiprocessing.Process):
         while True:
             next_task = self.task_queue.get()
             if next_task is None:
-                logger.info('Tasks Complete')
                 self.task_queue.task_done()
                 dbFinalize(self.pyConn) # Make sure you put this if there are other exit paths or errors
                 break            
@@ -64,18 +68,78 @@ class Task(object):
   def __call__(self,connection=None):
     pyConn = connection
     pyCursor1 = pyConn.cursor()
+    myURL = downloadMuster(pyCursor1,self.a)
     query = 'select musterNo,workName from musters where id=%d' % (self.a)
     pyCursor1.execute(query)
     row=pyCursor1.fetchone()
-    return str(row[0])+"_"+str(self.a)
+    return str(row[0])+"_"+str(self.a)+"_"+myURL
 
+def downloadMuster(cur,mid):
+  query="select fullBlockCode,panchayatCode,musterNo,workName,DATE_FORMAT(dateFrom,'%d/%m/%Y'),DATE_FORMAT(dateTo,'%d/%m/%Y'),workCode,finyear from musters where id="+str(mid)
+  cur.execute(query)
+  row=cur.fetchone()
+  fullPanchayatCode=row[0]+row[1]
+  fullBlockCode=row[0]
+  panchayatCode=row[1]
+  musterNo=str(row[2])
+  workName=row[3].replace(" ","+")
+  dateFrom=str(row[4])
+  dateTo=str(row[5])
+  workCode=row[6]
+  fullFinYear=getFullFinYear(row[7]) 
+  query="select crawlIP,stateName,rawDistrictName,rawBlockName,rawPanchayatName,stateShortCode,stateCode,districtCode,blockCode,panchayatName from panchayats where fullPanchayatCode='%s'" % (fullPanchayatCode)
+  cur.execute(query)
+  row=cur.fetchone()
+  crawlIP=row[0]
+  stateName=row[1]
+  districtName=row[2]
+  blockName=row[3]
+  panchayatName=row[4] 
+  stateShortCode=row[5]
+  stateCode=row[6]
+  districtCode=row[7]
+  blockCode=row[8]
+  panchayatNameAltered=row[9]
+
+  musterURL="http://%s/netnrega/citizen_html/musternew.aspx?state_name=%s&district_name=%s&block_name=%s&panchayat_name=%s&workcode=%s&panchayat_code=%s&msrno=%s&finyear=%s&dtfrm=%s&dtto=%s&wn=%s&id=1" % (crawlIP,stateName.upper(),districtName.upper(),blockName.upper(),panchayatName,workCode,fullPanchayatCode,musterNo,fullFinYear,dateFrom,dateTo,workName)
+  r=requests.get(musterURL)
+  #Irrespective of result of download lets set downloadAttemptDate
+  query="update musters set downloadAttemptDate=NOW() where id="+str(mid)
+  cur.execute(query)
+
+  mustersource=r.text
+  myhtml=mustersource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+
+  myhtml=re.sub(regex,"",myhtml)
+  myhtml=re.sub(regex1,"</font></td>",myhtml)
+
+  jobcardPrefix="%s-%s-%s-%s" % (stateShortCode,districtCode,blockCode,panchayatCode)
+  s=''
+  if jobcardPrefix in myhtml:
+    s="Muster Downloaded SuccessFully"
+    title="Muster No : %s,  %s-%s-%s " % (str(musterNo),districtName,blockName,panchayatName)
+    orightml=myhtml
+    tableIDs=["ctl00_ContentPlaceHolder1_grdShowRecords"]
+    myhtml=alterHTMLTables(myhtml,title,tableIDs)
+    modifiedMusterFilePath=nregaWebDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
+    fileName=modifiedMusterFilePath+blockName.upper()+"/MUSTERS/"+fullFinYear+"/"+musterNo+".html"
+    fileName1=modifiedMusterFilePath+blockName.upper()+"/MUSTERS/"+fullFinYear+"/"+musterNo+"_orig.html"
+    s+=fileName
+    fileExists=0
+    if (os.path.isfile(fileName)):
+      fileExists=1
+    #if fileExists == 0:
+    writeFile(fileName,myhtml) 
+    writeFile(fileName1,orightml) 
+  htmlsoup=BeautifulSoup(myhtml,"lxml")
+  return s+musterURL+jobcardPrefix
 
 def main():
   regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
   args = argsFetch()
   finyear=args['finyear']
   if args['limit']:
-    limit = args['limit']
+    limit = int(args['limit'])
   else:
     limit =500
   fullfinyear=getFullFinYear(finyear)
@@ -92,7 +156,7 @@ def main():
   cur.execute(query)
   tasks = multiprocessing.JoinableQueue()
   results = multiprocessing.Queue()
-  maxProcess=5
+  maxProcess=1
   myProcesses=[musterProcess(tasks, results) for i in range(maxProcess)]
   for eachProcess in myProcesses:
     eachProcess.start()
