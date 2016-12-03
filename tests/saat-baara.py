@@ -62,21 +62,18 @@ def runTestSuite():
   display = displayInitialize(0)
   driver = driverInitialize()
 
-  logger.info("Fetching...[%s]" % url)
-  driver.get(url)
-
-  driver.find_element_by_xpath("//form[@id='aspnetForm']/div[3]/div/div/div[3]/a[3]/p").click()
-  Select(driver.find_element_by_id("distSelect")).select_by_visible_text(dn)
-  Select(driver.find_element_by_id("talSelect")).select_by_visible_text(tn)
-  Select(driver.find_element_by_id("vilSelect")).select_by_visible_text(vn)
-  driver.find_element_by_css_selector("option[value=\"string:273200030399810000\"]").click()
-  driver.find_element_by_id("rbsryno").click()
-  driver.find_element_by_xpath("//input[@type='number']").clear()
-
   content = csv.reader(open('/tmp/gats jsons.csv', 'r'), delimiter=',', quotechar='"')
   for (gat, d) in content:
-    if gat == '114' or gat == '115':
-      continue
+    logger.info("Fetching...[%s]" % url)
+    driver.get(url)
+
+    driver.find_element_by_xpath("//form[@id='aspnetForm']/div[3]/div/div/div[3]/a[3]/p").click()
+    Select(driver.find_element_by_id("distSelect")).select_by_visible_text(dn)
+    Select(driver.find_element_by_id("talSelect")).select_by_visible_text(tn)
+    Select(driver.find_element_by_id("vilSelect")).select_by_visible_text(vn)
+    driver.find_element_by_css_selector("option[value=\"string:273200030399810000\"]").click()
+    driver.find_element_by_id("rbsryno").click()
+    driver.find_element_by_xpath("//input[@type='number']").clear()
     driver.find_element_by_xpath("//input[@type='number']").send_keys(gat)
     driver.find_element_by_css_selector("input[type=\"button\"]").click()
     sno_dict = ast.literal_eval(d)
@@ -109,8 +106,29 @@ def runTestSuite():
         logger.error("Handlers gone wrong [" + str(driver.window_handles) + "]")
         driver.save_screenshot('z.png')
 
-      html_source = driver.page_source.encode('utf-8')
+      html_source = driver.page_source.replace('<head>',
+                                               '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>').encode('utf-8')
+#      html_source = driver.page_source
       logger.debug("HTML Fetched [%s]" % html_source)
+      if(driver.title != '७/१२'):
+        logger.error(driver.title)
+        continue
+        
+      bs = BeautifulSoup(html_source, "html.parser")
+      body = bs.find('tbody')
+      try:
+        body = body.findNext('tbody')
+      except:
+        logger.error('Empty body for [%s]' % sno)
+        continue
+      body = body.findNext('tbody')
+      logger.info(body)
+      td = body.find('td')
+      td = td.findAll('td')
+      #print(td)
+      logger.info("Checking [%s]" % td[2].text)
+      if(sno != td[2].text):
+        continue
 
       with open(filename, 'wb') as html_file:
         logger.info('Writing [%s]' % filename)
