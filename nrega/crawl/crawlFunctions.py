@@ -1,6 +1,20 @@
 import re
 from bs4 import BeautifulSoup
 import os
+def NICToSQLDate(dateString):
+  dateFormat="%d/%m/%Y"
+  if dateString is not None:
+    if (dateString == '') or ("NA" in dateString):
+      outDate="Null"
+    else:
+      outDate="STR_TO_DATE('%s', '%s')" % (dateString,dateFormat)
+  else:
+    outDate="Null"
+  return outDate
+def getjcNumber(jobcard):
+  jobcardArray=jobcard.split('/')
+  jcNumber=re.sub("[^0-9]", "", jobcardArray[1])
+  return jcNumber
 
 def formatName(name):
   formatName=re.sub(r"[^A-Za-z]+", '', name).lower()
@@ -39,7 +53,7 @@ def getCenterAligned(text):
 def stripTableAttributes(inhtml,tableID):
   tableHTML=''
   classAtt='id = "%s" border=1 class = " table table-striped"' % tableID
-  tableHTML+='<table %s">' % classAtt
+  tableHTML+='<table %s>' % classAtt
   rows=inhtml.findAll('tr')
   for eachRow in rows:
     thCols=eachRow.findAll('th')
