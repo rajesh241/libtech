@@ -17,7 +17,7 @@ from wrappers.logger import loggerFetch
 from wrappers.db import dbInitialize,dbFinalize
 from crawlSettings import nregaDB 
 from crawlSettings import nregaWebDir,nregaRawDataDir
-from crawlFunctions import alterHTMLTables,writeFile
+from crawlFunctions import alterHTMLTables,writeFile,getjcNumber,NICToSQLDate
 from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
 from libtechFunctions import singleRowQuery,getFullFinYear
 regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
@@ -34,6 +34,8 @@ def argsFetch():
   parser.add_argument('-d', '--district', help='District for which you need to Download', required=False)
   parser.add_argument('-b', '--blockCode', help='BlockCode for  which you need to Download', required=False)
   parser.add_argument('-p', '--panchayatCode', help='panchayatCode for  which you need to Download', required=False)
+  parser.add_argument('-mid', '--musterID', help='Muster Id that needs to be downloaded', required=False)
+  parser.add_argument('-n', '--maxProcess', help='No of Simultaneous Process to Run', required=False)
   parser.add_argument('-limit', '--limit', help='District for which you need to Download', required=False)
 
   args = vars(parser.parse_args())
@@ -68,13 +70,153 @@ class Task(object):
   def __call__(self,connection=None):
     pyConn = connection
     pyCursor1 = pyConn.cursor()
-    myURL = downloadMuster(pyCursor1,self.a)
-    query = 'select musterNo,workName from musters where id=%d' % (self.a)
-    pyCursor1.execute(query)
-    row=pyCursor1.fetchone()
-    return str(row[0])+"_"+str(self.a)+"_"+myURL
+    myLog = downloadMuster(pyCursor1,self.a)
+    return myLog
+
+def updatePaymentDate(cur,mid,orightml):
+  htmlsoup=BeautifulSoup(orightml,"html.parser")
+  
+  paymentTD=htmlsoup.find('span',id="ctl00_ContentPlaceHolder1_lblPayDate")
+  paymentDateString=paymentTD.text
+  paymentDate=NICToSQLDate(paymentDateString)
+  query="update musters set paymentDate=%s where id=%s " % (paymentDate,str(mid))
+  myLog="Update Payment Date QUery %s \n" %query
+  cur.execute(query)
+  return myLog
+def getWDID(cur,finyear,fullBlockCode,musterNo,musterIndex,isAltered):
+  wdID=None
+  myLog=''
+  doInsert=0
+  whereClause="where finyear='%s' and fullBlockCode='%s' and musterNo='%s' and musterIndex='%s' and isArchive=0" % (finyear,fullBlockCode,musterNo,musterIndex)
+  query="select id from workDetails %s " % whereClause
+  cur.execute(query)
+  if cur.rowcount == 0:
+    doInsert=1
+  elif (isAltered == 1):
+    doInsert=1
+    query="update workDetails set isArchive=1 %s " %whereClause
+    cur.execute(query)
+  if doInsert == 1:
+    query="insert into workDetails (finyear,fullBlockCode,musterNo,musterIndex) values ('%s','%s','%s','%s')" % (finyear,fullBlockCode,musterNo,musterIndex)
+    myLog+="Insert Query %s \n" % query 
+    cur.execute(query)
+    query="select id from workDetails %s " % whereClause
+    cur.execute(query)
+    row=cur.fetchone()
+    wdID=row[0]
+    myLog+="New work Details ID : %s \n" % str(wdID) 
+  return wdID,myLog
+
+
+def updateWageLists(cur,wagelistArray,stateCode,districtCode,blockCode,finyear):
+  fullBlockCode=stateCode+districtCode+blockCode
+  for wagelistNo in set(wagelistArray):
+    whereClause="where finyear='%s' and fullBlockCode='%s' and wagelistNo='%s'" % (finyear,fullBlockCode,wagelistNo)
+    query="select * from wagelists %s " % whereClause
+    cur.execute(query)
+    if cur.rowcount == 0:
+      query="insert into wagelists (finyear,fullBlockCode,wagelistNo,stateCode,districtCode,blockCode) values ('%s','%s','%s','%s','%s','%s')" % (finyear,fullBlockCode,wagelistNo,stateCode,districtCode,blockCode)
+      cur.execute(query)
+
+
+def updateWorkDetails(cur,mid,myhtml,updateMode,diffArray):
+  myLog=''
+  query="select p.stateName,p.districtName,p.blockName,p.panchayatName,p.stateCode,p.districtCode,p.blockCode,p.panchayatCode,p.stateShortCode,m.fullBlockCode,m.musterNo,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),workCode,m.finyear,DATE_FORMAT(m.paymentDate,'%d/%m/%Y') from musters m,panchayats p where m.stateCode=p.stateCode and p.districtCode=m.districtCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and m.id= "+ str(mid)
+  cur.execute(query)
+  row=cur.fetchone()
+  [stateName,districtName,blockName,panchayatName,stateCode,districtCode,blockCode,panchayatCode,stateShortCode,fullBlockCode,musterNo,workName,dateFromString,dateToString,workCode,finyear,paymentDateString] = row
+
+  reMatchString="%s-%s-" % (stateShortCode,districtCode)
+  wagelistArray=[]
+  bs1 = BeautifulSoup(myhtml, "html.parser")
+  mytable=bs1.find('table',id="ctl00_ContentPlaceHolder1_grdShowRecords")
+  tr_list = mytable.findAll('tr')
+  if updateMode=="create":
+    for i in range(len(tr_list)):
+      diffArray.append(i)
+
+  for tr in tr_list: #This loop is to find staus Index
+    cols = tr.findAll('th')
+    if len(cols) > 7:
+      i=0
+      while i < len(cols):
+        value="".join(cols[i].text.split())
+        if "Status" in value:
+          statusindex=i
+        i=i+1
+  isComplete=1
+  for i in range(len(tr_list)):
+    cols=tr_list[i].findAll("td")
+    if len(cols) > 7:
+      nameandjobcard=cols[1].text.lstrip().rstrip()
+      if stateShortCode in nameandjobcard:
+        status=cols[statusindex].text.lstrip().rstrip()
+        if status != 'Credited':
+          isComplete=0      
+        if i in diffArray:
+          musterIndex=cols[0].text.lstrip().rstrip()
+          nameandjobcard=cols[1].text.lstrip().rstrip()
+          aadharNo=cols[2].text.strip().lstrip().rstrip()
+          nameandjobcard=nameandjobcard.replace('\n',' ')
+          nameandjobcard=nameandjobcard.replace("\\","")
+          nameandjobcardarray=re.match(r'(.*)'+reMatchString+'(.*)',nameandjobcard)
+          name=nameandjobcardarray.groups()[0]
+          jobcard=reMatchString+nameandjobcardarray.groups()[1]
+          jcNumber=getjcNumber(jobcard)
+          totalWage=cols[statusindex-6].text.lstrip().rstrip()
+          dayWage=cols[statusindex-10].text.lstrip().rstrip()
+          accountNo=cols[statusindex-5].text.lstrip().rstrip()
+          daysWorked=cols[statusindex-11].text.lstrip().rstrip()
+          bankNamePostOffice=cols[statusindex-4].text.lstrip().rstrip()
+          branchNamePostOfficeCode=cols[statusindex-3].text.lstrip().rstrip()
+          branchCodePostOfficeAddress=cols[statusindex-2].text.lstrip().rstrip()
+          wagelistNo=cols[statusindex-1].text.lstrip().rstrip()
+          wagelistArray.append(wagelistNo)
+          creditedDateString=cols[statusindex+1].text.lstrip().rstrip()
+          creditedDate=NICToSQLDate(creditedDateString)
+          dateFrom=NICToSQLDate(dateFromString)
+          dateTo=NICToSQLDate(dateToString)
+          paymentDate=NICToSQLDate(paymentDateString)
+          if i in diffArray:
+            isAltered=1
+          else:
+            isAltered=0 
+          #Here we need to reate a record if it does not exists
+          wdID,wdIDLog=getWDID(cur,finyear,fullBlockCode,musterNo,musterIndex,isAltered)
+          myLog+=wdIDLog
+          if wdID is not None:
+            query="update workDetails set updateDate=NOW(),stateCode='%s',districtCode='%s',blockCode='%s',panchayatCode='%s',stateName='%s',districtName='%s',blockName='%s',panchayatName='%s',workCode='%s',workName='%s',name='%s',aadharNo='%s',jobcard='%s',jcNumber='%s',daysWorked='%s',dayWage='%s',totalWage='%s',accountNo='%s',wagelistNo='%s',musterStatus='%s',bankNamePostOffice='%s',branchNamePostOfficeCode='%s',branchCodePostOfficeAddress='%s',dateFrom=%s,dateTo=%s,paymentDate=%s,creditedDate=%s where id=%s" % (stateCode,districtCode,blockCode,panchayatCode,stateName,districtName,blockName,panchayatName,workCode,workName,name,aadharNo,jobcard,str(jcNumber),str(daysWorked),str(dayWage),str(totalWage),accountNo,wagelistNo,status,bankNamePostOffice,branchNamePostOfficeCode,branchCodePostOfficeAddress,dateFrom,dateTo,paymentDate,creditedDate,str(wdID))
+            cur.execute(query)
+
+  updateWageLists(cur,wagelistArray,stateCode,districtCode,blockCode,finyear)
+  query="update musters set isDownloaded=1,downloadDate=NOW(),wdProcessed=1,wdComplete=%s where id=%s " % (str(isComplete),str(mid))
+  myLog+="Muster Update Query %s \n" %query
+  cur.execute(query)
+  return myLog
+
+def getDiff(html1,html2):
+  myLog="Starting to do the Difference"
+  bs1 = BeautifulSoup(html1, "html.parser")
+  bs2 = BeautifulSoup(html2, "html.parser")
+  table1=bs1.find('table',id="ctl00_ContentPlaceHolder1_grdShowRecords")
+  table2=bs2.find('table',id="ctl00_ContentPlaceHolder1_grdShowRecords")
+  tr_list1 = table1.findAll('tr')
+  tr_list2 = table2.findAll('tr')
+  diffArray=[]
+  for i in range(len(tr_list1)):
+
+    tr1 = tr_list1[i]
+    tr2 = tr_list2[i]
+    if (tr1 != tr2):
+      myLog+="NOT SAME row[%d] " %(i)
+      diffArray.append(i)
+    else:
+      myLog+="same row[%d]" %(i)
+  return diffArray,myLog
 
 def downloadMuster(cur,mid):
+  myLog=''
+  myLog+="Download Muster ID %s \n" % str(mid)
   query="select fullBlockCode,panchayatCode,musterNo,workName,DATE_FORMAT(dateFrom,'%d/%m/%Y'),DATE_FORMAT(dateTo,'%d/%m/%Y'),workCode,finyear from musters where id="+str(mid)
   cur.execute(query)
   row=cur.fetchone()
@@ -102,6 +244,7 @@ def downloadMuster(cur,mid):
   panchayatNameAltered=row[9]
 
   musterURL="http://%s/netnrega/citizen_html/musternew.aspx?state_name=%s&district_name=%s&block_name=%s&panchayat_name=%s&workcode=%s&panchayat_code=%s&msrno=%s&finyear=%s&dtfrm=%s&dtto=%s&wn=%s&id=1" % (crawlIP,stateName.upper(),districtName.upper(),blockName.upper(),panchayatName,workCode,fullPanchayatCode,musterNo,fullFinYear,dateFrom,dateTo,workName)
+  myLog+="%s\n" % musterURL
   r=requests.get(musterURL)
   #Irrespective of result of download lets set downloadAttemptDate
   query="update musters set downloadAttemptDate=NOW() where id="+str(mid)
@@ -112,27 +255,60 @@ def downloadMuster(cur,mid):
 
   myhtml=re.sub(regex,"",myhtml)
   myhtml=re.sub(regex1,"</font></td>",myhtml)
-
-  jobcardPrefix="%s-%s-%s-%s" % (stateShortCode,districtCode,blockCode,panchayatCode)
-  s=''
+  jobcardPrefix="%s-%s-%s" % (stateShortCode,districtCode,blockCode)
+  myLog+="Jobcard Prefix = %s \n" % jobcardPrefix
   if jobcardPrefix in myhtml:
-    s="Muster Downloaded SuccessFully"
+    myLog+="Muster Downloaded SuccessFully\n"
     title="Muster No : %s,  %s-%s-%s " % (str(musterNo),districtName,blockName,panchayatName)
     orightml=myhtml
     tableIDs=["ctl00_ContentPlaceHolder1_grdShowRecords"]
     myhtml=alterHTMLTables(myhtml,title,tableIDs)
     modifiedMusterFilePath=nregaWebDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
     fileName=modifiedMusterFilePath+blockName.upper()+"/MUSTERS/"+fullFinYear+"/"+musterNo+".html"
-    fileName1=modifiedMusterFilePath+blockName.upper()+"/MUSTERS/"+fullFinYear+"/"+musterNo+"_orig.html"
-    s+=fileName
+    archiveMusterFilePath=nregaRawDataDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
+    curDate=time.strftime("%d%b%Y")
+    archiveFileName=archiveMusterFilePath+blockName.upper()+"/MUSTERS/"+fullFinYear+"/"+musterNo+"_"+curDate+"_orig.html"
+    archiveFileNameModified=archiveMusterFilePath+blockName.upper()+"/MUSTERS/"+fullFinYear+"/"+musterNo+"_"+curDate+".html"
+    myLog+="fileName %s \n" % fileName
     fileExists=0
+    updateMode="create"
     if (os.path.isfile(fileName)):
       fileExists=1
-    #if fileExists == 0:
-    writeFile(fileName,myhtml) 
-    writeFile(fileName1,orightml) 
-  htmlsoup=BeautifulSoup(myhtml,"lxml")
-  return s+musterURL+jobcardPrefix
+      updateMode="edit"
+
+    #Here we will see if we do need to write the New File or Not
+    if fileExists==0:
+      doFileWrite=1
+      diffArray=[]
+    else:
+      #Here we will read the old html and see if anything has changed
+      f=open(fileName,"rb")
+      oldhtml=f.read()
+      f.close()
+      diffArray,diffLog=getDiff(myhtml,oldhtml)
+      myLog+=diffLog
+      if len(diffArray) == 0:
+        doFileWrite=0
+      else:
+        doFileWrite=1
+    myLog+="Value of File Write is  %s \n" % str(doFileWrite)
+    if doFileWrite == 1:
+      writeFile(fileName,myhtml)
+      try:
+        writeFile(archiveFileName,orightml) 
+        writeFile(archiveFileNameModified,myhtml)
+        error=0
+      except:
+        error=1
+        myLog+="Unable to Write File"
+      if error==0:
+        myLog+="Write File SuccessFul"
+        myLog+=updatePaymentDate(cur,mid,orightml)
+        myLog+=updateWorkDetails(cur,mid,myhtml,updateMode,diffArray)
+
+    #Here we will see if we do need to write the New File or Not2 
+    
+  return myLog
 
 def main():
   regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
@@ -141,7 +317,15 @@ def main():
   if args['limit']:
     limit = int(args['limit'])
   else:
-    limit =500
+    limit =50000
+  if args['musterID']:
+    mid=args['musterID']
+  else:
+    mid=None
+  if args['maxProcess']:
+    maxProcess=int(args['maxProcess'])
+  else:
+    maxProcess=1
   fullfinyear=getFullFinYear(finyear)
   logger = loggerFetch(args.get('log_level'))
   logger.info('args: %s', str(args))
@@ -156,12 +340,14 @@ def main():
   cur.execute(query)
   tasks = multiprocessing.JoinableQueue()
   results = multiprocessing.Queue()
-  maxProcess=1
   myProcesses=[musterProcess(tasks, results) for i in range(maxProcess)]
   for eachProcess in myProcesses:
     eachProcess.start()
-
-  query="select id from musters limit %s" % str(limit)
+  if mid is None:
+    query="select m.id from musters m where m.finyear='%s' and (m.isDownloaded=0  or (m.wdComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 )) order by isDownloaded,m.downloadAttemptDate limit %s" % (finyear,str(limit))
+  else:
+    query="select m.id from musters m where m.id=%s " % str(mid)
+  logger.info(query) 
   cur.execute(query)
   results1=cur.fetchall()
   for row in results1:
