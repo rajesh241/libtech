@@ -17,9 +17,7 @@ from wrappers.logger import loggerFetch
 from wrappers.db import dbInitialize,dbFinalize
 from crawlSettings import nregaDB 
 from crawlSettings import nregaWebDir,nregaRawDataDir
-from crawlFunctions import alterHTMLTables,writeFile,getjcNumber,NICToSQLDate
-from bootstrap_utils import bsQuery2Html, bsQuery2HtmlV2,htmlWrapperLocal, getForm, getButton, getButtonV2,getCenterAligned,tabletUIQueryToHTMLTable,tabletUIReportTable
-from libtechFunctions import singleRowQuery,getFullFinYear
+from crawlFunctions import alterHTMLTables,writeFile,getjcNumber,NICToSQLDate,getFullFinYear
 regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
 regex1=re.compile(r'</td></font></td>',re.DOTALL)
 def argsFetch():
@@ -242,23 +240,27 @@ def downloadMuster(cur,mid):
   districtCode=row[7]
   blockCode=row[8]
   panchayatNameAltered=row[9]
+  jobcardPrefix="%s-%s-%s" % (stateShortCode,districtCode,blockCode)
 
   musterURL="http://%s/netnrega/citizen_html/musternew.aspx?state_name=%s&district_name=%s&block_name=%s&panchayat_name=%s&workcode=%s&panchayat_code=%s&msrno=%s&finyear=%s&dtfrm=%s&dtto=%s&wn=%s&id=1" % (crawlIP,stateName.upper(),districtName.upper(),blockName.upper(),panchayatName,workCode,fullPanchayatCode,musterNo,fullFinYear,dateFrom,dateTo,workName)
   myLog+="%s\n" % musterURL
-  r=requests.get(musterURL)
-  #Irrespective of result of download lets set downloadAttemptDate
-  query="update musters set downloadAttemptDate=NOW() where id="+str(mid)
-  cur.execute(query)
-
-  mustersource=r.text
-  myhtml=mustersource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
-
-  myhtml=re.sub(regex,"",myhtml)
-  myhtml=re.sub(regex1,"</font></td>",myhtml)
-  jobcardPrefix="%s-%s-%s" % (stateShortCode,districtCode,blockCode)
-  myLog+="Jobcard Prefix = %s \n" % jobcardPrefix
-  if jobcardPrefix in myhtml:
+  try:
+    r=requests.get(musterURL)
+    #Irrespective of result of download lets set downloadAttemptDate
+    query="update musters set downloadAttemptDate=NOW() where id="+str(mid)
+    cur.execute(query)
+    
+    mustersource=r.text
+    myhtml=mustersource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+    
+    myhtml=re.sub(regex,"",myhtml)
+    myhtml=re.sub(regex1,"</font></td>",myhtml)
+    downloadError=0
     myLog+="Muster Downloaded SuccessFully\n"
+  except:
+    downloadError=1
+  if (downloadError==0) and (jobcardPrefix in myhtml):
+    myLog+="Muster Detail table found in Muster HTML\n"
     title="Muster No : %s,  %s-%s-%s " % (str(musterNo),districtName,blockName,panchayatName)
     orightml=myhtml
     tableIDs=["ctl00_ContentPlaceHolder1_grdShowRecords"]
@@ -326,6 +328,9 @@ def main():
     maxProcess=int(args['maxProcess'])
   else:
     maxProcess=1
+  additionalFilters=''
+  if args['district']:
+    additionalFilters+= " and b.districtName='%s' " % args['district']
   fullfinyear=getFullFinYear(finyear)
   logger = loggerFetch(args.get('log_level'))
   logger.info('args: %s', str(args))
@@ -344,7 +349,7 @@ def main():
   for eachProcess in myProcesses:
     eachProcess.start()
   if mid is None:
-    query="select m.id from musters m where m.finyear='%s' and (m.isDownloaded=0  or (m.wdComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 )) order by isDownloaded,m.downloadAttemptDate limit %s" % (finyear,str(limit))
+    query="select m.id from musters m,blocks b where m.fullBlockCode=b.fullBlockCode and m.finyear='%s' and (m.isDownloaded=0  or (m.wdComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 )) %s order by isDownloaded,m.downloadAttemptDate limit %s" % (finyear,additionalFilters,str(limit))
   else:
     query="select m.id from musters m where m.id=%s " % str(mid)
   logger.info(query) 
