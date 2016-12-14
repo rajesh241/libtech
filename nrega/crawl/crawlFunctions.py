@@ -1,6 +1,13 @@
 import re
 from bs4 import BeautifulSoup
 import os
+
+
+def getFullFinYear(shortFinYear):
+  shortFinYear_1 = int(shortFinYear) -1
+  fullFinYear="20%s-20%s" % (str(shortFinYear_1), str(shortFinYear))
+  return fullFinYear
+
 def NICToSQLDate(dateString):
   dateFormat="%d/%m/%Y"
   if dateString is not None:

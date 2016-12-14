@@ -113,6 +113,13 @@ def main():
         #fullPanchayatCode=getPanchayat[0]
         #panchayatCode=fullPanchayatCode[len(fullPanchayatCode)-3:len(fullPanchayatCode)]
         print rawPanchayatName+panchayatCode
+        query="select * from panchayatStatus where fullPanchayatCode='%s' " % fullPanchayatCode
+        cur.execute(query)
+        if cur.rowcount == 0:
+          query="insert into panchayatStatus (fullPanchayatCode,rawPanchayatName) values ('%s','%s') " % (fullPanchayatCode,rawPanchayatName)
+          logger.info(query)
+          cur.execute(query)
+
         query="select * from panchayats where fullPanchayatCode='%s' " % fullPanchayatCode
         cur.execute(query)
         if cur.rowcount == 0:
