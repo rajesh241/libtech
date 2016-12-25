@@ -132,7 +132,7 @@ def updateWorkDetails(cur,mid,myhtml,updateMode,diffArray):
   if updateMode=="create":
     for i in range(len(tr_list)):
       diffArray.append(i)
-
+  myLog+="diffAray is %s "% str(diffArray)
   for tr in tr_list: #This loop is to find staus Index
     cols = tr.findAll('th')
     if len(cols) > 7:
@@ -295,7 +295,6 @@ def downloadMuster(cur,mid):
         doFileWrite=1
     myLog+="Value of File Write is  %s \n" % str(doFileWrite)
     if doFileWrite == 1:
-      writeFile(fileName,myhtml)
       try:
         writeFile(archiveFileName,orightml) 
         writeFile(archiveFileNameModified,myhtml)
@@ -306,7 +305,10 @@ def downloadMuster(cur,mid):
       if error==0:
         myLog+="Write File SuccessFul"
         myLog+=updatePaymentDate(cur,mid,orightml)
+        updateMode="create"
+        diffArray=[]
         myLog+=updateWorkDetails(cur,mid,myhtml,updateMode,diffArray)
+        writeFile(fileName,myhtml)
 
     #Here we will see if we do need to write the New File or Not2 
     
@@ -354,6 +356,7 @@ def main():
     query="select m.id from musters m where m.id=%s " % str(mid)
   logger.info(query) 
   cur.execute(query)
+  noOfTasks=cur.rowcount
   results1=cur.fetchall()
   for row in results1:
     musterID=row[0]
@@ -362,10 +365,10 @@ def main():
   for i in range(maxProcess):
     tasks.put(None)
 
-  while limit:
+  while noOfTasks:
     result = results.get()
     logger.info(result)
-    limit -= 1
+    noOfTasks -= 1
 
 
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors

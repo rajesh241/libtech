@@ -26,6 +26,7 @@ def argsFetch():
   parser = argparse.ArgumentParser(description='Script for crawling, downloading & parsing musters')
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
+  parser.add_argument('-fpc', '--fullPanchayatCode', help='Full PanchayatCode', required=False)
   parser.add_argument('-f', '--finyear', help='Download musters for that finyear', required=True)
 
   args = vars(parser.parse_args())
@@ -35,7 +36,10 @@ def main():
   regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
   args = argsFetch()
   finyear=args['finyear']
+  additionalFilters=''
   fullfinyear=getFullFinYear(finyear)
+  if args['fullPanchayatCode']:
+    additionalFilters= " and fullPanchayatCode='%s' " % args['fullPanchayatCode']
   logger = loggerFetch(args.get('log_level'))
   logger.info('args: %s', str(args))
   logger.info("BEGIN PROCESSING...")
@@ -58,7 +62,7 @@ def main():
     stateCode=row[3]
     musterType='10'
     logger.info("DistrictCode: %s Crawl IP %s " % (districtCode,crawlIP))
-    query="select stateName,blockCode,rawDistrictName,rawBlockName,rawPanchayatName,fullPanchayatCode,panchayatCode from panchayats where isRequired=1 and stateCode='%s' and districtCode='%s'" % (stateCode,districtCode)
+    query="select stateName,blockCode,rawDistrictName,rawBlockName,rawPanchayatName,fullPanchayatCode,panchayatCode from panchayats where isRequired=1 and stateCode='%s' and districtCode='%s' %s" % (stateCode,districtCode,additionalFilters)
     cur.execute(query)
     results1=cur.fetchall()
     for row1 in results1:
@@ -110,14 +114,15 @@ def main():
               dateto=''
             #worknameworkcodearray=re.match(r'(.*)\(330(.*)\)',worknameworkcode)
             worknameworkcodearray=re.match(r'(.*)\('+stateCode+r'(.*)\)',worknameworkcode)
-            workName=worknameworkcodearray.groups()[0]
-            workCode=stateCode+worknameworkcodearray.groups()[1]
-            logger.info(emusterno+" "+datefromstring+"  "+datetostring+"  "+workCode)
-            query="select * from musters where finyear='%s' and fullBlockCode='%s' and musterNo='%s'" % (finyear,fullBlockCode,emusterno)
-            cur.execute(query)
-            if cur.rowcount == 0:
-              query="insert into musters (fullBlockCode,musterNo,stateCode,districtCode,blockCode,panchayatCode,musterType,finyear,workCode,workName,dateFrom,dateTo,crawlDate) values ('"+fullBlockCode+"','"+emusterno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"','"+musterType+"','"+finyear+"','"+workCode+"','"+workName+"','"+datefrom+"','"+dateto+"',NOW())"
+            if worknameworkcodearray is not None:
+              workName=worknameworkcodearray.groups()[0]
+              workCode=stateCode+worknameworkcodearray.groups()[1]
+              logger.info(emusterno+" "+datefromstring+"  "+datetostring+"  "+workCode)
+              query="select * from musters where finyear='%s' and fullBlockCode='%s' and musterNo='%s'" % (finyear,fullBlockCode,emusterno)
               cur.execute(query)
+              if cur.rowcount == 0:
+                query="insert into musters (fullBlockCode,musterNo,stateCode,districtCode,blockCode,panchayatCode,musterType,finyear,workCode,workName,dateFrom,dateTo,crawlDate) values ('"+fullBlockCode+"','"+emusterno+"','"+stateCode+"','"+districtCode+"','"+blockCode+"','"+panchayatCode+"','"+musterType+"','"+finyear+"','"+workCode+"','"+workName+"','"+datefrom+"','"+dateto+"',NOW())"
+                cur.execute(query)
 #   
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
   logger.info("...END PROCESSING")     

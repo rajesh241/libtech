@@ -1,0 +1,5 @@
+python initDistrict.py -jp "CH" -u "http://164.100.129.4/netnrega/Homedist.aspx?flag_debited=R&is_statefund=Y&lflag=local&district_code=3305&district_name=SURGUJA&state_name=CHHATTISGARH&state_Code=33"
+python initDistrict.py -jp "JH" -u "http://164.100.128.68/netnrega/Homedist.aspx?flag_debited=D&is_statefund=Y&lflag=local&district_code=3406&district_name=LATEHAR&state_name=JHARKHAND&state_Code=34"
+python initDistrict.py -jp "JH" -u "http://164.100.128.68/netnrega/Homedist.aspx?flag_debited=D&is_statefund=Y&lflag=local&district_code=3405&district_name=PALAMU&state_name=JHARKHAND&state_Code=34"
+python initDistrict.py -jp "BH" -u "http://164.100.128.68/netnrega/Homedist.aspx?flag_debited=S&is_statefund=Y&lflag=eng&district_code=0515&district_name=MUZAFFARPUR&state_name=BIHAR&state_Code=05"
+python initDistrict.py -jp "BH" -u "http://164.100.128.68/netnrega/Homedist.aspx?flag_debited=S&is_statefund=Y&lflag=eng&district_code=0541&district_name=ARARIA&state_name=BIHAR&state_Code=05"
