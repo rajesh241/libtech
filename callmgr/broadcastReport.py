@@ -75,6 +75,9 @@ def main():
       csvname=broadcastReportFilePath+str(bid)+"_"+name.replace(' ',"")+"_detailed.csv"
       print csvname
       writecsv(cur,query,csvname)
+  dbFinalize(db) # Make sure you put this if there are other exit paths or errors
+  logger.info("...END PROCESSING")     
+  exit(0)
       #updateBroadcastTable(cur,bid)
 # print "Printing Broadcast reports"
 # myhtml=gethtmlheader()

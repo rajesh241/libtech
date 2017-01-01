@@ -40,6 +40,6 @@ def main():
     for audio in audioFileList:
       print "http://callmgr.libtech.info/open/audio/%s" % audio;
   else:
-    print "http://callmgr.libtech.info/open/audio/1579_chinmaybiharjune.wav"
+    print "http://callmgr.libtech.info/open/audio/1653_ResearchRSCDR2p28000.wav"
 if __name__ == '__main__':
   main()
