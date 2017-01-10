@@ -20,7 +20,7 @@ import unittest
 #######################
 
 start_date = date(2015, 11, 9)
-end_date = date(2015, 12, 23)
+end_date = date(2016, 1, 10)
 
 disbursement_url = 'http://www.nrega.telangana.gov.in/Nregs/FrontServlet?requestType=SmartCardreport_engRH&actionVal=debitLoagReport&type=%s'
 workers_url = 'http://www.nrega.telangana.gov.in/Nregs/FrontServlet?requestType=DemandRH&actionVal=labourworkd&type=%s'
@@ -78,11 +78,13 @@ def generate_report(logger, driver):
 
     row = '%s, %s, %s' % (date_str, disbursement_2015, workers_2015)
 
-    date_str  = d.strftime('%d/%m/2016')
+    year = int(d.strftime('%Y')) + 1
+    date_format = '%d/%m/' + str(year)
+    date_str  = d.strftime(date_format)
+    logger.info("DATE[%s]" % date_str)
     url = disbursement_url % date_str
     disbursement_2016 = fetch_total(logger, driver, url, date_str, 'disbursement')
 
-    date_str =  d.strftime('%d/%m/2016')
     url = workers_url % date_str
     workers_2016 = fetch_total(logger, driver, url, date_str, 'workers')
 
