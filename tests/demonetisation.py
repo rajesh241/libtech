@@ -19,8 +19,8 @@ import unittest
 # Global Declarations
 #######################
 
-start_date = date(2015, 11, 9)
-end_date = date(2015, 12, 19)
+start_date = date(2014, 11, 9)
+end_date = date(2014, 12, 23)
 
 disbursement_url = 'http://www.nrega.telangana.gov.in/Nregs/FrontServlet?requestType=SmartCardreport_engRH&actionVal=debitLoagReport&type=%s'
 workers_url = 'http://www.nrega.telangana.gov.in/Nregs/FrontServlet?requestType=DemandRH&actionVal=labourworkd&type=%s'
@@ -34,20 +34,27 @@ filename = './z.csv'
 def date_range(start_date, end_date):
   return (start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1))
 
-def fetch_total(logger, driver, url, date_str):
-  driver.get(url)
-  logger.info("Fetching...[%s]" % url)
-  
-  driver.get(url)    # A double refresh required for the page to load
-  logger.info("Refreshing...[%s]" % url)
+def fetch_total(logger, driver, url, date_str, type):
+  html_fname = 'html/' + type + '_' + date_str.replace('/', '_') + '.html'
 
-  html_source = driver.page_source.replace('<head>',
+  if os.path.exists(html_fname):
+    with open(html_fname, 'r') as html_file:
+      logger.info('Reading [%s]' % html_fname)
+      html_source = html_file.read()
+  else:
+    driver.get(url)
+    logger.info("Fetching...[%s]" % url)
+    
+    driver.get(url)    # A double refresh required for the page to load
+    logger.info("Refreshing...[%s]" % url)
+
+    html_source = driver.page_source.replace('<head>',
                                              '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
-  logger.debug("HTML Fetched [%s]" % html_source)
+    logger.debug("HTML Fetched [%s]" % html_source)
 
-  with open('html/' + date_str.replace('/', '_') + '.html', 'w') as html_file:
-    logger.info('Writing [%s]' % filename)
-    html_file.write(html_source)
+    with open(html_fname, 'w') as html_file:
+      logger.info('Writing [%s]' % html_fname)
+      html_file.write(html_source)
     
   bs = BeautifulSoup(html_source, "html.parser")
   tfoot = bs.find('tfoot')
@@ -57,33 +64,36 @@ def fetch_total(logger, driver, url, date_str):
   return td.text
 
 def generate_report(logger, driver):
-  report = 'date, disbursement_2015, workers_2015, date, disbursement_2016, workers_2016, disbursement drop, disbursement % drop, workers drop, workers % drop' + '\n'
+  report = 'date, disbursement_2014, workers_2014, date, disbursement_2016, workers_2016, disbursement drop, disbursement % drop, workers drop, workers % drop' + '\n'
   for d in date_range(start_date, end_date):
     logger.info(d.strftime('%Y/%m/%d'))
 
     date_str = d.strftime('%d/%m/%Y')
     url = disbursement_url % date_str
-    disbursement_2015 = fetch_total(logger, driver, url, date_str)
+    disbursement_2015 = fetch_total(logger, driver, url, date_str, 'disbursement')
 
     date_str =  d.strftime('%d/%m/%Y')
     url = workers_url % date_str
-    workers_2015 = fetch_total(logger, driver, url, date_str)
+    workers_2015 = fetch_total(logger, driver, url, date_str, 'workers')
 
     row = '%s, %s, %s' % (date_str, disbursement_2015, workers_2015)
 
     date_str  = d.strftime('%d/%m/2016')
     url = disbursement_url % date_str
-    disbursement_2016 = fetch_total(logger, driver, url, date_str)
+    disbursement_2016 = fetch_total(logger, driver, url, date_str, 'disbursement')
 
     date_str =  d.strftime('%d/%m/2016')
     url = workers_url % date_str
-    workers_2016 = fetch_total(logger, driver, url, date_str)
+    workers_2016 = fetch_total(logger, driver, url, date_str, 'workers')
 
     disbursed_drop = int(disbursement_2015) - int(disbursement_2016)
     disbursed_drop_per = (disbursed_drop * 100)/int(disbursement_2015)
     workers_drop = int(workers_2015) - int(workers_2016)
     if int(workers_2015) != 0:
       workers_drop_per = (workers_drop * 100)/int(workers_2015)
+    else:
+      workers_drop_per = 0
+
 
     row = row + ', %s, %s, %s, %s, %s, %s, %s' % (date_str, disbursement_2016, workers_2016, disbursed_drop, disbursed_drop_per, workers_drop, workers_drop_per)
     
