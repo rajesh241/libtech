@@ -30,7 +30,7 @@ def argsFetch():
   '''
   import argparse
 
-  parser = argparse.ArgumentParser(description='Script for crawling, downloading & parsing musters')
+  parser = argparse.ArgumentParser(description='Script for crawling, downloading & parsing Jobcards')
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-b', '--browser', help='Specify the browser to test with', required=False)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
