@@ -68,7 +68,7 @@ def fetch_total(logger, driver, url, date_str, type, mandal):
     td = a.parent
   except Exception as e:
     logger.error(e)
-    return 1
+    return 0
   logger.debug('@@ %s @@' % td)
 
   for i in range(0, 10):
@@ -143,7 +143,11 @@ def generate_report(logger, driver, mandal, district_id):
     workers_2016 = fetch_worker_total(logger, driver, url, date_str, 'worker_' + district_id, mandal)
 
     disbursed_drop = int(disbursement_2015) - int(disbursement_2016)
-    disbursed_drop_per = (disbursed_drop * 100)/int(disbursement_2015)
+    if int(disbursement_2015) != 0:
+      disbursed_drop_per = (disbursed_drop * 100)/int(disbursement_2015)
+    else:
+      disbursed_drop_per = 0
+      
     workers_drop = int(workers_2015) - int(workers_2016)
     if int(workers_2015) != 0:
       workers_drop_per = (workers_drop * 100)/int(workers_2015)
@@ -175,6 +179,11 @@ def runTestSuite():
     with open(filename, 'wb') as csv_file:
       logger.info("Writing to [%s]" % filename)
       csv_file.write(report.encode('utf-8'))
+
+    if final_report[0][0] == '':
+      
+    rows = report.split('|')
+    
 
   driverFinalize(driver)
   displayFinalize(display)
