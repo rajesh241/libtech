@@ -43,7 +43,6 @@ def argsFetch():
   return args
 
 def main():
-  monthLabels=['0','JAN','FEB','MAR','APR','MAY','JUNE','JULY','AUG','SEP','OCT','NOV','DEC']
   args = argsFetch()
   logger = loggerFetch(args.get('log_level'))
   logger.info('args: %s', str(args))
