@@ -59,6 +59,8 @@ def checkAudioFiles(logger):
     logger.info("THe audioPresent : %s " % str(audioPresent))
     query="update fpsShops set audioPresent=%s where id=%s " % (str(audioPresent),rowid)
     cur.execute(query)
+    query="update fpsStatus set audioPresent=%s where fpsCode=%s " % (str(audioPresent),fpsCode)
+    cur.execute(query)
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
 
 def genWebReport(logger):
