@@ -75,7 +75,7 @@ def genWebReport(logger):
   filename="%s/index.html" % (pdsUIDir)
   csvname="%s/fps.csv" % (pdsUIDir)
   myhtml=''
-  query="select f.districtName,f.blockName,f.fpsName,f.village,fs.year,fs.month,DATE_FORMAT(fs.deliveryDate,'%d/%m/%Y') deliveryDate,f.totalNumbers,fs.fpsCode from fpsShops f, fpsStatus fs where f.cRequired=1 and f.fpsCode=fs.fpsCode order by fs.deliveryDate DESC limit 100"
+  query="select f.districtName,f.blockName,f.fpsName,f.village,fs.year,fs.month,DATE_FORMAT(fs.deliveryDate,'%d/%m/%Y') deliveryDate,f.totalNumbers,fs.fpsCode,fs.audioPresent from fpsShops f, fpsStatus fs where f.cRequired=1 and f.fpsCode=fs.fpsCode order by fs.deliveryDate DESC limit 100"
   queryTable=bsQuery2Html(cur,query)
   myhtml+="<h2><a href='./fps.csv'> Download CSV </a></h2>"
   myhtml+=queryTable
