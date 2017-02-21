@@ -134,8 +134,5 @@ def main():
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
   logger.info("...END PROCESSING")     
   exit(0)
-
-
-
 if __name__ == '__main__':
   main()
