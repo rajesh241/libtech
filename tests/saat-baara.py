@@ -62,12 +62,17 @@ def runTestSuite():
   display = displayInitialize(0)
   driver = driverInitialize()
 
-  content = csv.reader(open('/tmp/gats jsons.csv', 'r'), delimiter=',', quotechar='"')
+  content = csv.reader(open('./gats.csv', 'r'), delimiter=',', quotechar='"')
   for (gat, d) in content:
     logger.info("Fetching...[%s]" % url)
     driver.get(url)
 
-    driver.find_element_by_xpath("//form[@id='aspnetForm']/div[3]/div/div/div[3]/a[3]/p").click()
+    try:
+      driver.find_element_by_xpath("//form[@id='aspnetForm']/div[3]/div/div/div[3]/a[3]/p").click()
+    except:
+      logger.error('Cant find element for [%s]' % gat)
+      continue
+      
     Select(driver.find_element_by_id("distSelect")).select_by_visible_text(dn)
     Select(driver.find_element_by_id("talSelect")).select_by_visible_text(tn)
     Select(driver.find_element_by_id("vilSelect")).select_by_visible_text(vn)
@@ -88,7 +93,7 @@ def runTestSuite():
       logger.debug(sno_dict)
       logger.info("sno[%s], snov[%s]" % (sno_dict["sno"], sno_dict["snov"]))
       sno = sno_dict["sno"]
-      filename = './html/%s.html' % sno.replace('/','_')
+      filename = '/home/mayank/wd/SaatBaara/7-12-mahabhulekh/%s.html' % sno.replace('/','_')
       if os.path.exists(filename):
         #time.sleep(1)
         continue
