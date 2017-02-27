@@ -40,6 +40,8 @@ vn = "वावे तर्फे खेड"
 
 cmd = '''curl 'https://mahabhulekh.maharashtra.gov.in/Konkan/Home.aspx/getSnos' -X POST -H 'Accept: application/json, text/plain, */*' -H 'Accept-Encoding: gzip, deflate, br' -H 'Accept-Language: en-US,en;q=0.5' -H 'Connection: keep-alive' -H 'Content-Length: 60' -H 'Content-Type: application/json;charset=utf-8' -H 'Cookie: ASP.NET_SessionId=xgahrcwef0hoicteddbwrxxo' -H 'Host: mahabhulekh.maharashtra.gov.in' -H 'Referer: https://mahabhulekh.maharashtra.gov.in/Konkan/Home.aspx' -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/50.0' -d "{'ptxt':'%s','vid':'273200030399810000','did':'32','tid':'3'}" -o %s.json ''' % (gat, gat)
 
+gat_list = [ 1, 2, 3, 4, 5, 6, 7, 13, 21, 23, 25, 26, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 53, 54, 55, 56, 57, 59, 60, 61, 62, 63, 64, 72, 86, 91, 92, 93, 94, 95, 96, 97, 98, 105, 128, 129, 143, 149, 150, 151, 152, 153, 154, 155, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 175, 176, 177, 178, 179, 180, 182, 186, 188, 191, 192, 193, 194, 196, 197, 198, ]
+
 #############
 # Functions
 #############
@@ -48,22 +50,29 @@ def runTestSuite():
   logger = loggerFetch("info")
   logger.info("BEGIN PROCESSING...")
   
-  """
-  for gat in range(1,200):
-    cmd = '''curl 'https://mahabhulekh.maharashtra.gov.in/Konkan/Home.aspx/getSnos' -X POST -H 'Accept: application/json, text/plain, */*' -H 'Accept-Encoding: gzip, deflate, br' -H 'Accept-Language: en-US,en;q=0.5' -H 'Connection: keep-alive' -H 'Content-Length: 60' -H 'Content-Type: application/json;charset=utf-8' -H 'Cookie: ASP.NET_SessionId=xgahrcwef0hoicteddbwrxxo' -H 'Host: mahabhulekh.maharashtra.gov.in' -H 'Referer: https://mahabhulekh.maharashtra.gov.in/Konkan/Home.aspx' -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/50.0' -d "{'ptxt':'%s','vid':'273200030399810000','did':'32','tid':'3'}" ''' # -o ./json/%s.json ''' % (gat, gat)
-    logger.info('Executing [%s]' % cmd)
-    json = os.system(cmd)
-    print(json)
-    break
-
-  return
-  """
-
   display = displayInitialize(0)
   driver = driverInitialize()
 
+  '''
   content = csv.reader(open('./gats.csv', 'r'), delimiter=',', quotechar='"')
   for (gat, d) in content:
+  '''
+  
+  for gat in gat_list:
+    json_file = './json/%s.json' % gat
+
+    if gat >= 179 or not os.path.exists(json_file):
+#      cmd = '''curl -s 'https://mahabhulekh.maharashtra.gov.in/Konkan/Home.aspx/getSnos' -X POST -H 'Accept: application/json, text/plain, */*' -H 'Accept-Encoding: gzip, deflate, br' -H 'Accept-Language: en-US,en;q=0.5' -H 'Connection: keep-alive' -H 'Content-Length: 60' -H 'Content-Type: application/json;charset=utf-8' -H 'Cookie: ASP.NET_SessionId=iiu3ekqoppg0tbdmoq0pwovv' -H 'Host: mahabhulekh.maharashtra.gov.in' -H 'Referer: https://mahabhulekh.maharashtra.gov.in/Konkan/Home.aspx' -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/50.0' -d "{'ptxt':'%s','vid':'273200030399810000','did':'32','tid':'3'}" -o %s ''' % (gat, json_file)
+      cmd = '''curl -s 'https://mahabhulekh.maharashtra.gov.in/Konkan/Home.aspx/getSnos' -X POST -H 'Host: mahabhulekh.maharashtra.gov.in' -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:51.0) Gecko/20100101 Firefox/51.0' -H 'Accept: application/json, text/plain, */*' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate, br' -H 'Content-Type: application/json;charset=utf-8' -H 'Referer: https://mahabhulekh.maharashtra.gov.in/Konkan/Home.aspx' -H 'Content-Length: 62' -H 'Cookie: ASP.NET_SessionId=iiu3ekqoppg0tbdmoq0pwovv' -H 'Connection: keep-alive' -d "{'ptxt':'%s','vid':'273200030399810000','did':'32','tid':'3'}" -o %s ''' % (gat, json_file)
+      
+      logger.info('Executing [%s]' % cmd)
+      os.system(cmd)
+
+    with open(json_file, 'r') as json_hdl:
+      d = json_hdl.read()
+
+    logger.info('Obtained json for gat[%s] is [%s]' % (gat, d))
+
     logger.info("Fetching...[%s]" % url)
     driver.get(url)
 
@@ -113,7 +122,7 @@ def runTestSuite():
 
       html_source = driver.page_source.replace('<head>',
                                                '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>').encode('utf-8')
-#      html_source = driver.page_source
+
       logger.debug("HTML Fetched [%s]" % html_source)
       if(driver.title != '७/१२'):
         logger.error(driver.title)
@@ -130,7 +139,7 @@ def runTestSuite():
       logger.info(body)
       td = body.find('td')
       td = td.findAll('td')
-      #print(td)
+
       logger.info("Checking [%s]" % td[2].text)
       if(sno != td[2].text):
         continue
@@ -143,9 +152,6 @@ def runTestSuite():
       driver.switch_to_window(parent_handle)
       time.sleep(1)
     time.sleep(1)
-
-#      break
-#    break
 
   driverFinalize(driver)
   displayFinalize(display)
