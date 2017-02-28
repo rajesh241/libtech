@@ -194,22 +194,31 @@ def updateWorkDetails(cur,mid,myhtml,updateMode,diffArray):
 
 def getDiff(html1,html2):
   myLog="Starting to do the Difference"
-  bs1 = BeautifulSoup(html1, "html.parser")
-  bs2 = BeautifulSoup(html2, "html.parser")
+  bs1 = BeautifulSoup(html1.replace('\r',''), "html.parser")
+  bs2 = BeautifulSoup(html2.decode("UTF-8").replace('\r',''), "html.parser")
   table1=bs1.find('table',id="ctl00_ContentPlaceHolder1_grdShowRecords")
   table2=bs2.find('table',id="ctl00_ContentPlaceHolder1_grdShowRecords")
   tr_list1 = table1.findAll('tr')
   tr_list2 = table2.findAll('tr')
   diffArray=[]
+  s1=''
+  s2=''
+  print("The length of array is %s " % str(len(tr_list1)))
   for i in range(len(tr_list1)):
-
+    print("value of is is %d" % i)
     tr1 = tr_list1[i]
     tr2 = tr_list2[i]
-    if (tr1 != tr2):
+    if (tr1 != tr2 ):
+      s1+=str(tr1)
+      s2+=str(tr2)
       myLog+="NOT SAME row[%d] " %(i)
       diffArray.append(i)
     else:
       myLog+="same row[%d]" %(i)
+  with open('/tmp/s1.txt', 'wb') as outfile:
+    outfile.write(s1.encode("UTF-8"))
+  with open('/tmp/s2.txt', 'wb') as outfile:
+    outfile.write(s2.encode("UTF-8"))
   return diffArray,myLog
 
 def downloadMuster(cur,mid):
@@ -228,6 +237,7 @@ def downloadMuster(cur,mid):
   workCode=row[6]
   fullFinYear=getFullFinYear(row[7]) 
   query="select crawlIP,stateName,rawDistrictName,rawBlockName,rawPanchayatName,stateShortCode,stateCode,districtCode,blockCode,panchayatName from panchayats where fullPanchayatCode='%s'" % (fullPanchayatCode)
+  print(query)
   cur.execute(query)
   row=cur.fetchone()
   crawlIP=row[0]
