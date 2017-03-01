@@ -85,7 +85,6 @@ def main():
   cur.execute(query)
 
 #Main Muster Query
-
   query="select count(*) from musters m,blocks b, panchayats p where b.isRequired=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1  and m.musterType='10' and (m.isDownloaded=0 or m.wdError=1 or (m.wdComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) )  order by TIMESTAMPDIFF(DAY, m.downloadAttemptDate, now()) desc %s;" % (limitString)
   query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id,p.rawName from musters m,blocks b, panchayats p where b.isRequired=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isRequired=1 and m.finyear='"+infinyear+"'  and m.musterType='10' and (m.isDownloaded=0 or m.wdError=1 or (m.wdComplete=0 and TIMESTAMPDIFF(HOUR, m.downloadAttemptDate, now()) > 48 ) ) %s order by isDownloaded,TIMESTAMPDIFF(DAY, m.downloadAttemptDate, now()) desc %s;" % (additionalFilters,limitString)
 #  query="select b.name,p.name,m.musterNo,m.stateCode,m.districtCode,m.blockCode,m.panchayatCode,m.finyear,m.musterType,m.workCode,m.workName,DATE_FORMAT(m.dateFrom,'%d/%m/%Y'),DATE_FORMAT(m.dateTo,'%d/%m/%Y'),m.id from musters m,blocks b, panchayats p where b.isActive=1 and m.blockCode=b.blockCode and m.blockCode=p.blockCode and m.panchayatCode=p.panchayatCode and p.isActive=1 and m.id=1"
@@ -144,23 +143,19 @@ def main():
       logger.info("MusterDownloadError Could not find table")
       #print "Cannot find the table"
     if errorflag==0:
-      musterrawfilename=musterrawfilepath+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/MUSTERS/"+fullfinyear+"/"+musterNo+".html"
+      curDateString=datetime.date.today().strftime("%d%m%Y")
+      mysqlDate='STR_TO_DATE("'+curDateString+'","%d%m%Y")'
+      musterrawfilename=musterrawfilepath+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/MUSTERS/"+fullfinyear+"/"+musterNo+"_"+curDateString+".html"
       logger.info("muster file path : %s " % musterrawfilename)
-      if (os.path.isfile(musterrawfilename)): 
-        oldmusterhtml=open(musterrawfilename,'r').read().decode("UTF-8")
-        appendString=datetime.date.today().strftime("%d%B%Y")
-        oldMusterFileName=tempDir+"/oldMusters/Raw/"+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/MUSTERS/"+fullfinyear+"/"+musterNo+"_"+appendString+".html"
-        writeFile(oldMusterFileName,oldmusterhtml)
       writeFile(musterrawfilename,myhtml)
-      try:
-        query="update musters set wdProcessed=0,wdError=0,isDownloaded=1,downloadDate=NOW() where id="+str(musterid)
-        logger.info("Update Query : "+ query)
-       # print query
-        cur.execute(query)
-        #cur.execute(query)
-      except MySQLdb.IntegrityError,e:
-        errormessage=(time.strftime("%d/%m/%Y %H:%M:%S "))+str(e)+"\n"
-        #  errorfile.write(errormessage)
+      query="update musters set wdProcessed=0,wdError=0,isDownloaded=1,downloadDate=%s where id=%s" % (mysqlDate,str(musterid))
+      logger.info("Update Query : "+ query)
+      cur.execute(query)
+    # if (os.path.isfile(musterrawfilename)): 
+    #   oldmusterhtml=open(musterrawfilename,'r').read().decode("UTF-8")
+    #   appendString=datetime.date.today().strftime("%d%B%Y")
+    #   oldMusterFileName=tempDir+"/oldMusters/Raw/"+blockName.upper()+"/"+panchayatNameOnlyLetters.upper()+"/MUSTERS/"+fullfinyear+"/"+musterNo+"_"+appendString+".html"
+        #writeFile(oldMusterFileName,oldmusterhtml)
       logger.info("***************")
       logger.info("***************")
  
