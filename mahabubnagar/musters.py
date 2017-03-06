@@ -144,7 +144,7 @@ def downloadJobcardHTML(logger, driver, db, jobcard, dirname=None):
       
       if (bs.find(id='main3') != bs2.find(id='main3')):
         html_file.seek(0)
-        html_file.write(html_source)
+        html_file.write(html_source.decode('utf-8'))
         html_file.truncate()
         logger.info("Updating [%s]" % filename)
       else:
@@ -153,7 +153,7 @@ def downloadJobcardHTML(logger, driver, db, jobcard, dirname=None):
   else:
     with open(filename, 'w') as html_file:
       logger.info("Writing [%s]" % filename)
-      html_file.write(html_source)
+      html_file.write(html_source.decode('utf-8'))
 
   if not query:
     query = 'update jobcardRegister set downloadDate="%s", isDownloaded=1, isProcessed=0 where jobcard="%s"' % (strftime('%Y-%m-%d %H:%M:%S'), jobcard)
