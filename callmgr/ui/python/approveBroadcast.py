@@ -51,7 +51,7 @@ def main():
   #print "Printing Broadcast reports"
   myhtml=gethtmlheader()
   myhtml+="<h1>Approve Broadcasts Page</h1>"
-  myhtml+="<p>Please be careful in approving Broadcasts. If you have selected vendor as 'any' then you need to do seperate test with both exotel and tringo. Or if you have selected broadcast for specific vendor, then you can do the test only with that vendor. Once you successfully receive the callback, go ahead and press the approve button."
+  myhtml+="<p>Please be careful in approving Broadcasts. Please call +912233814264" 
   myhtml+="<table>"
   tableArray=['Broadcast ID', 'Broadcast Name','Test','Remarks','Approve','Mark Error'] 
   myhtml+=arrayToHTMLLine('th',tableArray)

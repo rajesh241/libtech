@@ -1,6 +1,6 @@
 #dbBackupDir="/home/libtech/nregaData/buckets/dbdump/"
 dbBackupDir="/home/libtech/backup/"
-dbNames="surguja,crawlDistricts,palamu,latehar,muzaffarpur"
+dbNames="pds,nicnrega"
 packageDir='/tmp/packageDir/'
 cssPath='/home/libtech/media/'
 nregaArchiveDir="/home/libtech/media/gDrive/reportsArchive/"
@@ -16,6 +16,7 @@ nregaRawDir="/home/libtech/media/gDrive/rawData/"
 nregaDownloadsDir="/home/libtech/gDrive/districtName.libtech/downloads/"
 nregaRawDownloadsDir="/home/libtech/gDrive/rawData/districtName.libtech/downloads/"
 biharAudioDir="/home/libtech/webroot/callmgr.libtech.info/open/audio/biharAudio/"
+genericVoiceMailAudioDir="/home/libtech/webroot/callmgr.libtech.info/open/audio/genericVoiceMail/"
 chaupalDataSummaryReportDir="/home/libtech/webroot/chaupalDataDashboard/reports/summary/"
 chaupalDashboardLink='http://chaupal.libtech.info/' 
 chaupalDataDashboardLink='http://chaupal.libtech.info/data/Summary/'

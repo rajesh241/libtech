@@ -24,7 +24,7 @@ if (!$mydbcon){
   print "<tr><th>File ID</th><th>File Name</th><th>Download Link </th></tr>";
   while($row = mysqli_fetch_array($results)){
           print "<tr>";
-    $audioLink='<a href="'."/broadcasts/audio/".$row["filename"].'">Download</a>';
+    $audioLink='<a href="http://callmgr.libtech.info/open/audio/'.$row["filename"].'">Download</a>';
     print "<td>".$row['id']."</td><td>".$row['name']."</td><td>".$audioLink."</td>";
     print "</tr>";
   }

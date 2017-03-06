@@ -18,7 +18,7 @@ import globalSettings
 import settings
 from nregaSettings import tempDir
 from globalSettings import chaupalDataSummaryReportDir,chaupalDashboardLink,chaupalDataDashboardLink,chaupalDataDashboardLimit
-from settings import dbhost,dbuser,dbpasswd,sid,token
+from settings import dbhost,dbuser,dbpasswd
 from bootstrap_utils import getString,bsQuery2Html, bsQuery2HtmlV2,htmlWrapper, getForm, getButtonV3, getButtonV2,getCenterAligned
 from libtechFunctions import writecsv,getPanchayatName,getBlockName
 
@@ -29,7 +29,7 @@ def main():
   db.autocommit(True)
   query="SET NAMES utf8"
   cur.execute(query)
-  query="use surguja"
+  query="use nicnrega"
   cur.execute(query)
 
   form = cgi.FieldStorage()
@@ -43,7 +43,7 @@ def main():
   if reportType=='misc':
     suffix=reportType+"/"+title1+".csv"
     filename=tempDir+"/"+suffix
-    redirectURL="http://nregaweb.libtech.info/temp/"+suffix
+    redirectURL="http://ch.libtech.info/tempDir/"+suffix
   else:
     blockName=form["blockName"].value
     panchayatName=form["panchayatName"].value
