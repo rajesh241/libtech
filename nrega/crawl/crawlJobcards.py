@@ -65,7 +65,7 @@ def main():
   url="http://nrega.nic.in/netnrega/sthome.aspx"
   driver.get(url)
 
-  query="select p.stateCode,p.districtCode,p.blockCode,p.panchayatCode,p.stateName,p.districtName,p.rawBlockName,p.panchayatName,p.fullPanchayatCode,p.stateShortCode,p.crawlIP from panchayats p,panchayatStatus ps where p.fullPanchayatCode=ps.fullPanchayatCode and p.isRequired=1 and TIMESTAMPDIFF(DAY, ps.jobcardCrawlDate, now()) > 7  %s order by ps.jobcardCrawlDate,fullPanchayatCode %s" % (additionalFilters,limitString)
+  query="select p.stateCode,p.districtCode,p.blockCode,p.panchayatCode,p.stateName,p.districtName,p.rawBlockName,p.panchayatName,p.fullPanchayatCode,p.stateShortCode,p.crawlIP from panchayats p,panchayatStatus ps where p.fullPanchayatCode=ps.fullPanchayatCode and p.isRequired=1 and ( (TIMESTAMPDIFF(DAY, ps.jobcardCrawlDate, now()) > 7) or ps.jobcardCrawlDate is NULL)  %s order by ps.jobcardCrawlDate,fullPanchayatCode %s" % (additionalFilters,limitString)
   cur.execute(query)
   results=cur.fetchall()
   for row in results:

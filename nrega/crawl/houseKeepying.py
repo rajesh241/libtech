@@ -15,7 +15,41 @@ from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from wrappers.db import dbInitialize,dbFinalize
 from crawlSettings import nregaDB 
+def updatePanchayatStats(cur,logger):
+  logger.info("Update Panchayat Status")
+  query="select fullPanchayatCode from panchayats where isRequired=1"
+  cur.execute(query)
+  results=cur.fetchall()
+  for row in results:
+    [fullPanchayatCode]=row
+    query="select count(*) from jobcards where fullPanchayatCode='%s' " % fullPanchayatCode
+    logger.info(query)
+    cur.execute(query)
+    row1=cur.fetchone()
+    totalJobcards=row1[0]
+    query="update panchayatStatus set totalJobcards=%s where fullPanchayatCode='%s' " % (str(totalJobcards),fullPanchayatCode)
+    logger.info(query)
+    cur.execute(query)
 
+def selectRandomDistricts(cur,logger):
+  logger.info("Selecting Random Districts")
+  query="select count(*),stateName from districts group by stateName"
+  cur.execute(query)
+  results=cur.fetchall()
+  for row in results:
+    [count,stateName]=row
+    if count <=5 :
+      query="update districts set jRequired=1 where stateName='%s' " % (stateName)
+      cur.execute(query)
+    else:
+      query="select id from districts where stateName='%s' order by RAND() limit 5" % (stateName)
+      cur.execute(query)
+      results1=cur.fetchall()
+      for row1 in results1:
+        rowid=str(row1[0])
+        query="update districts set jRequired=1 where id=%s " %str(rowid)
+        cur.execute(query)
+ 
 def updateMusterStats(cur,logger):
   logger.info("Updating Muster Statistics")
   query="select id,fullBlockCode,musterNo,finyear from musters where wdProcessed=1 "
@@ -45,6 +79,8 @@ def argsFetch():
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-ums', '--updateMusterStats', help='update Statistics in Muster Table', required=False,action='store_const', const=1)
+  parser.add_argument('-srd', '--selectRandomDistricts', help='Select Random Districts', required=False,action='store_const', const=1)
+  parser.add_argument('-ups', '--updatePanchayatStats', help='update Panchayat Status', required=False,action='store_const', const=1)
   args = vars(parser.parse_args())
   return args
 
@@ -60,6 +96,10 @@ def main():
   
   if args['updateMusterStats']:
     updateMusterStats(cur,logger) 
+  if args['selectRandomDistricts']:
+    selectRandomDistricts(cur,logger)
+  if args['updatePanchayatStats']:
+    updatePanchayatStats(cur,logger)
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
   logger.info("...END PROCESSING")     
   exit(0)

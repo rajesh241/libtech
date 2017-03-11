@@ -17,7 +17,7 @@ from wrappers.logger import loggerFetch
 from wrappers.db import dbInitialize,dbFinalize
 from crawlSettings import nregaDB 
 from crawlSettings import nregaWebDir,nregaRawDataDir
-from crawlFunctions import alterHTMLTables,writeFile,getjcNumber,NICToSQLDate,getFullFinYear
+from crawlFunctions import alterHTMLTables,writeFile,writeFileGCS,getjcNumber,NICToSQLDate,getFullFinYear
 regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
 regex1=re.compile(r'</td></font></td>',re.DOTALL)
 def argsFetch():
@@ -315,12 +315,10 @@ def downloadMuster(cur,mid):
         doFileWrite=1
     myLog+="Value of File Write is  %s \n" % str(doFileWrite)
     if doFileWrite == 1:
-      try:
-        writeFile(archiveFileName,orightml) 
-        writeFile(archiveFileNameModified,myhtml)
-        error=0
-      except:
-        error=1
+      error=writeFileGCS(archiveFileName,orightml) 
+      if error== 0:
+        error=writeFileGCS(archiveFileNameModified,myhtml) 
+      if error == 1:
         myLog+="Unable to Write File"
       if error==0:
         myLog+="Write File SuccessFul"

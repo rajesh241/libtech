@@ -124,6 +124,18 @@ def htmlWrapperLocal(title = None, head = None, body = None):
 
   return html_text
 
+def writeFileGCS(filename,filedata):
+  try:
+    if not os.path.exists(os.path.dirname(filename)):
+      os.makedirs(os.path.dirname(filename))
+    myfile = open(filename, "wb")
+    myfile.write(filedata.encode("UTF-8"))
+    myfile.close()
+    error=0
+  except:
+    error=1
+  return error
+
 
 
 def writeFile(filename,filedata):

@@ -68,6 +68,7 @@ def main():
              #r=re.findall('http://(.*?)\/',districtURL)
              #crawlIP=r[0]
              logger.info(districtURL)
+             districtURLPrefix="http://%s/netnrega/" % crawlIP
              r=re.findall('district_code=(.*?)\&',districtURL)
              fullDistrictCode=r[0]
              districtCode=r[0][2:4]
@@ -87,7 +88,7 @@ def main():
              if cur.rowcount == 0:
                query="insert into districts (fullDistrictCode) values ('%s')" % fullDistrictCode
                cur.execute(query)
-             query="update districts set districtName='%s',rawDistrictName='%s',crawlIP='%s',stateName='%s',stateCode='%s',districtCode='%s' where fullDistrictCode='%s'" %(formatName(rawDistrictName),rawDistrictName,crawlIP,stateName,stateCode,districtCode,fullDistrictCode)
+             query="update districts set districtURL='%s',districtName='%s',rawDistrictName='%s',crawlIP='%s',stateName='%s',stateCode='%s',districtCode='%s' where fullDistrictCode='%s'" %(districtURLPrefix+districtURL,formatName(rawDistrictName),rawDistrictName,crawlIP,stateName,stateCode,districtCode,fullDistrictCode)
              logger.info(query)
              cur.execute(query) 
            #r=requests.get(stateURL)
