@@ -1,0 +1,24 @@
+<!--
+  Generated template for the Transactions page.
+
+  See http://ionicframework.com/docs/v2/components/#navigation for more info on
+  Ionic pages and navigation.
+-->
+<ion-header>
+
+  <ion-navbar>
+    <ion-title>Transactions for Jobcard[{{ jobcard }}]</ion-title>
+  </ion-navbar>
+  <button ion-button navPop>Back</button>
+  <button ion-button (click)="goHome()">Home</button>
+</ion-header>
+
+
+<ion-content padding>
+  <p *ngFor="let item of transactions | async"><button ion-button (click)="gotoTransaction(item.$key, item[1])">{{ item.$key }}</button></p>
+</ion-content>
+
+<ion-footer>
+  <button ion-button navPop>Back</button>
+  <button ion-button (click)="goHome()">Home</button>
+</ion-footer>
