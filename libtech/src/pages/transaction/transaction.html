@@ -28,6 +28,10 @@
 <p><b>Credited date</b>:    {{transaction['creditedDate']}}</p>
 <p><b>FTO Status</b>:    {{transaction['ftoStatus']}}</p>
 <p><b>Reason for rejection (if rejected)</b>:    {{transaction['rejectionReason']}}</p>
+<p><b>{{ url }}</b></p>
+<p><b>Remarks:</b> <input type="text" placeholder="{{ transaction['remarks'] }}" [(ngModel)]="remarks" #remarkInput> {{ remarks }}</p>
+<!--<p><b>Create Complaint:</b> <input type="checkbox" name="createComplaintOption" value="yes" #complaintBox></p> -->
+<p><button ion-button (click)=setRemarkValue(remarkInput)>Update</button></p>
 </ion-content>
 
 <ion-footer>
