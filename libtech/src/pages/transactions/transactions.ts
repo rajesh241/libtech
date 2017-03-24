@@ -3,12 +3,7 @@ import { NavController, NavParams } from 'ionic-angular';
 
 import { AngularFire, FirebaseListObservable } from 'angularfire2';
 import { TransactionPage } from '../transaction/transaction';
-/*
-  Generated class for the Transactions page.
 
-  See http://ionicframework.com/docs/v2/components/#navigation for more info on
-  Ionic pages and navigation.
-*/
 @Component({
     selector: 'page-transactions',
     templateUrl: 'transactions.html'
