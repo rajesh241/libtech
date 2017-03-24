@@ -11,10 +11,11 @@ import { TransactionsPage } from '../transactions/transactions';
   Ionic pages and navigation.
 */
 @Component({
-  selector: 'page-jobcards',
-  templateUrl: 'jobcards.html'
+    selector: 'page-jobcards',
+    templateUrl: 'jobcards.html'
 })
 export class JobcardsPage {
+    transactionsPage = TransactionsPage;
     panchayatName: string;
     jobcards: FirebaseListObservable<any>;
 
@@ -29,12 +30,7 @@ export class JobcardsPage {
         this.navCtrl.popToRoot();
     }
 
-    gotoJobcard(jobcard: string) {
-        this.navCtrl.push(TransactionsPage, { panchayatName: this.panchayatName, jobcardNumber: jobcard });
+    ionViewDidLoad() {
+        console.log('ionViewDidLoad JobcardsPage');
     }
-
-  ionViewDidLoad() {
-    console.log('ionViewDidLoad JobcardsPage');
-  }
-
 }

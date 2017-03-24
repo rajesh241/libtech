@@ -14,7 +14,7 @@
 </ion-header>
 
 <ion-content padding>
-  <p *ngFor="let item of jobcards | async"><button ion-button (click)="gotoJobcard(item.jobcard)">{{ item.jobcard }}</button></p>
+  <p *ngFor="let item of jobcards | async"><button ion-button [navPush]="transactionsPage" [navParams]="{panchayatName: panchayatName, jobcardNumber: item.jobcard}">{{ item.jobcard }}</button></p>
 </ion-content>
 
 <ion-footer>

@@ -9,7 +9,7 @@ import { PanchayatsPage } from '../panchayats/panchayats'
 })
 export class HomePage {
     panchayatsPage = PanchayatsPage;
-    panchayats = ['Max', 'Anna']
+    panchayats = []; // Placeholder for list of panchayats to fetch
 
     constructor(public navCtrl: NavController) {
 

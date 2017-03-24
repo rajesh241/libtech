@@ -10,19 +10,22 @@ import { TransactionPage } from '../transaction/transaction';
   Ionic pages and navigation.
 */
 @Component({
-  selector: 'page-transactions',
-  templateUrl: 'transactions.html'
+    selector: 'page-transactions',
+    templateUrl: 'transactions.html'
 })
 export class TransactionsPage {
+    transactionPage = TransactionPage;
     panchayat: string;
-    jobcard: string;  
+    jobcard: string;
+    url: string;
     transactions: FirebaseListObservable<any>;
-    
+
     constructor(public navCtrl: NavController, public navParams: NavParams, private af: AngularFire) {
         this.panchayat = this.navParams.get('panchayatName');
         this.jobcard = this.navParams.get('jobcardNumber');
-        this.transactions = af.database.list('/data/' + this.panchayat + '/' +  this.jobcard);
-        console.log('/data/' + this.panchayat + '/' + this.jobcard);
+        this.url = '/data/' + this.panchayat + '/' + this.jobcard
+        this.transactions = af.database.list(this.url);
+        console.log(this.url);
         console.log(this.transactions);
     }
 
@@ -33,8 +36,4 @@ export class TransactionsPage {
     goHome() {
         this.navCtrl.popToRoot();
     }
-
-    gotoTransaction(date, transaction) {
-        this.navCtrl.push(TransactionPage, { jobcard: this.jobcard, date: date, transaction: transaction });
-    }    
 }

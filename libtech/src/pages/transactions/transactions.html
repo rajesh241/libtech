@@ -5,7 +5,6 @@
   Ionic pages and navigation.
 -->
 <ion-header>
-
   <ion-navbar>
     <ion-title>Transactions for Jobcard[{{ jobcard }}]</ion-title>
   </ion-navbar>
@@ -15,7 +14,7 @@
 
 
 <ion-content padding>
-  <p *ngFor="let item of transactions | async"><button ion-button (click)="gotoTransaction(item.$key, item[1])">{{ item.$key }}</button></p>
+  <p *ngFor="let item of transactions | async"><button ion-button [navPush]="transactionPage" [navParams]="{ jobcard: jobcard, date: item.$key, transaction: item[1] }">{{ item.$key }}</button></p>
 </ion-content>
 
 <ion-footer>
