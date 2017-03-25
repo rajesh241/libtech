@@ -8,7 +8,7 @@
 
 
 <ion-content padding>
-  <p *ngFor="let item of transactions | async"><button ion-button [navPush]="transactionPage" [navParams]="{ jobcard: jobcard, date: item.$key, transaction: item[1], url: url }">{{ item.$key }} mynk {{ url }}</button></p>
+  <p *ngFor="let item of transactions | async"><button ion-button [navPush]="transactionPage" [navParams]="{ jobcard: jobcard, date: item.$key, transaction: item[1], url: url }">{{ item.$key }}</button></p>
 </ion-content>
 
 <ion-footer>
