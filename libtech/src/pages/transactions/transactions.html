@@ -6,9 +6,14 @@
   <button ion-button (click)="goHome()">Home</button>
 </ion-header>
 
-
 <ion-content padding>
-  <p *ngFor="let item of transactions | async"><button ion-button [navPush]="transactionPage" [navParams]="{ jobcard: jobcard, date: item.$key, transaction: item[1], url: url }">{{ item.$key }}</button></p>
+  <span *ngFor="let items of transactions | async">
+    <p *ngFor="let item of items; let i = index">
+      <span *ngIf="item">
+	<button ion-button [navPush]="transactionPage" [navParams]="{ jobcard: jobcard, date: items.$key, transaction: item, url: url, index: i }">{{ items.$key }}[{{ i }}] > {{ item.name }} </button>
+      </span>
+    </p>
+  </span>
 </ion-content>
 
 <ion-footer>

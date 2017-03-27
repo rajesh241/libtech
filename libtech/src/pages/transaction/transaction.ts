@@ -11,6 +11,7 @@ export class TransactionPage {
     date: string;
     transaction: string;
     url: string;
+    index: string;
     remarks: string;
     createComplaint = false;
     updated = true;
@@ -22,6 +23,7 @@ export class TransactionPage {
         this.date = this.navParams.get('date');
         this.transaction = this.navParams.get('transaction');
         this.url = this.navParams.get('url') + '/' + this.date;
+        this.index = String(this.navParams.get('index'));
         console.log(this.url);
         this.field = this.af.database.list(this.url);
         console.log(this.field);
@@ -29,9 +31,10 @@ export class TransactionPage {
 
     update() {
         if (this.remarks)
-            this.field.update("1", { remarks: this.remarks });
-        this.field.update("1", { createComplaint: this.createComplaint });
+            this.field.update(this.index, { remarks: this.remarks });
+        this.field.update(this.index, { createComplaint: this.createComplaint });
         this.updated = true;
+        alert("Updated Record");
     }
 
     ionViewDidLoad() {
