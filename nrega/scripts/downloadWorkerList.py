@@ -77,6 +77,7 @@ def main():
   time.sleep(1)
   #Query to get all the blocks
   query="select b.blockCode,b.name,p.panchayatCode,p.name from blocks b,panchayats p where b.blockCode=p.blockCode and p.isRequired=1 and (p.accountCrawlDate is NULL or TIMESTAMPDIFF(DAY, p.accountCrawlDate, now()) > 7 ) order by p.accountCrawlDate %s %s" % (additionalFilters,limitString)
+  query="select b.blockCode,b.name,p.panchayatCode,p.name from blocks b,panchayats p where b.blockCode=p.blockCode and p.isRequired=1 and (p.accountCrawlDate is NULL or TIMESTAMPDIFF(DAY, p.accountCrawlDate, now()) >=0 ) order by p.accountCrawlDate %s %s" % (additionalFilters,limitString)
   cur.execute(query)
   results = cur.fetchall()
   for row in results:

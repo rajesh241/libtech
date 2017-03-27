@@ -5,3 +5,5 @@ Checked out on server
 Testing if the repository is getting synced on the server
 
 changin on github and trying to sync on local machine
+
+Testing from another sever

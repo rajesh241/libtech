@@ -16,7 +16,7 @@ import libtechFunctions
 import globalSettings
 import settings
 from globalSettings import chaupalDataSummaryReportDir,chaupalDashboardLink,chaupalDataDashboardLink,chaupalDataDashboardLimit
-from settings import dbhost,dbuser,dbpasswd,sid,token
+from settings import dbhost,dbuser,dbpasswd
 from bootstrap_utils import getString,bsQuery2Html, bsQuery2HtmlV2,htmlWrapper, getForm, getButtonV3, getButtonV2,getCenterAligned
 from libtechFunctions import writecsv,getPanchayatName,getBlockName
 

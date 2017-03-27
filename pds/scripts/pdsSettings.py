@@ -1,0 +1,6 @@
+pdsDB="pds"
+pdsDBHost="nrega"
+pdsRawDataDir="/home/libtech/pdsData/buckets/pds/"
+pdsWebDirRoot="/home/libtech/pdsData/pdsWeb/"
+pdsUIDir="/home/libtech/pdsData/pdsWeb/ui/"
+pdsAudioDir="/home/libtech/webroot/callmgr.libtech.info/open/audio/biharPDS/"

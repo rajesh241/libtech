@@ -21,7 +21,7 @@ from wrappers.logger import loggerFetch
 from wrappers.db import dbInitialize,dbFinalize
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from crawlSettings import nregaDB 
-from crawlSettings import nregaWebDir,nregaRawDataDir
+from crawlSettings import nregaWebDir,nregaRawDataDir,tempDir
 from crawlFunctions import alterHTMLTables,writeFile,getjcNumber,NICToSQLDate,getFullFinYear
 
 def argsFetch():
@@ -30,9 +30,10 @@ def argsFetch():
   '''
   import argparse
 
-  parser = argparse.ArgumentParser(description='Script for crawling, downloading & parsing musters')
+  parser = argparse.ArgumentParser(description='Script for crawling, downloading & parsing Jobcards')
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-b', '--browser', help='Specify the browser to test with', required=False)
+  parser.add_argument('-d', '--district', help='District for which you need to Download', required=False)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-limit', '--limit', help='District for which you need to Download', required=False)
 
@@ -47,6 +48,9 @@ def main():
   limitString=''
   if args['limit']:
     limitString=" limit %s " % args['limit']
+  additionalFilters=''
+  if args['district']:
+    additionalFilters+= " and p.districtName='%s' " % args['district']
   db = dbInitialize(db=nregaDB, charset="utf8")  # The rest is updated automatically in the function
   cur=db.cursor()
   db.autocommit(True)
@@ -61,11 +65,14 @@ def main():
   url="http://nrega.nic.in/netnrega/sthome.aspx"
   driver.get(url)
 
-  query="select p.stateCode,p.districtCode,p.blockCode,p.panchayatCode,p.stateName,p.districtName,p.rawBlockName,p.panchayatName,p.fullPanchayatCode,p.stateShortCode,p.crawlIP from panchayats p,panchayatStatus ps where p.fullPanchayatCode=ps.fullPanchayatCode and p.isRequired=1 order by ps.jobcardCrawlDate,fullPanchayatCode %s" % limitString
+  query="select p.stateCode,p.districtCode,p.blockCode,p.panchayatCode,p.stateName,p.districtName,p.rawBlockName,p.panchayatName,p.fullPanchayatCode,p.stateShortCode,p.crawlIP from panchayats p,panchayatStatus ps where p.fullPanchayatCode=ps.fullPanchayatCode and p.isRequired=1 and ( (TIMESTAMPDIFF(DAY, ps.jobcardCrawlDate, now()) > 7) or ps.jobcardCrawlDate is NULL)  %s order by ps.jobcardCrawlDate,fullPanchayatCode %s" % (additionalFilters,limitString)
   cur.execute(query)
   results=cur.fetchall()
   for row in results:
     [stateCode,districtCode,blockCode,panchayatCode,stateName,districtName,blockName,panchayatName,fullPanchayatCode,stateShortCode,crawlIP]=row
+    filepath=nregaWebDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
+    filename=filepath+blockName.upper()+"/%s/%s_jobcardRegister.html" % (panchayatName.upper(),panchayatName.upper())
+    logger.info(filename)
     jobcardPrefix="%s-%s" % (stateShortCode,districtCode)
     logger.info("Processing %s-%s-%s-%s " % (stateName,districtName,blockName,panchayatName))
     elem = driver.find_element_by_link_text(stateName)
@@ -90,6 +97,15 @@ def main():
     if foundCode==1:
       elem.send_keys(Keys.RETURN)
       time.sleep(1)
+      #Before thsi lets download the applicatn Register:
+      elem = driver.find_element_by_link_text("Registration Application Register")
+      elem.send_keys(Keys.RETURN)
+      time.sleep(5)
+      html_source = driver.page_source
+      #filename="%s/%s.html" % (tempDir,panchayatName)
+      writeFile(filename,html_source) 
+      driver.back()
+      
       elem = driver.find_element_by_link_text("Job card/Employment Register")
       elem.send_keys(Keys.RETURN)
       time.sleep(5)

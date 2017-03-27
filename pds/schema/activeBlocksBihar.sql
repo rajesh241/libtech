@@ -1,0 +1,15 @@
+update fpsShops set isRequired=1 where blockCode='10010129';
+update fpsShops set isRequired=1 where blockCode='10010125';
+update fpsShops set isRequired=1 where blockCode='10010124';
+update fpsShops set isRequired=1 where blockCode='10010131';
+update fpsShops set isRequired=1 where blockCode='10010130';
+update fpsShops set isRequired=1 where blockCode='10010132';
+update fpsShops set isRequired=1 where blockCode='10010126';
+update fpsShops set isRequired=1 where blockCode='10380280';
+update fpsShops set isRequired=1 where blockCode='10300255';
+update fpsShops set isRequired=1 where blockCode='10300254';
+update fpsShops set isRequired=1 where blockCode='10280164';
+update fpsShops set isRequired=1 where blockCode='10280159';
+update fpsShops set isRequired=1 where blockCode='10150223';
+update fpsShops set isRequired=1 where blockCode='10150217';
+update fpsShops set isRequired=1 where blockCode='10150229';
