@@ -28,7 +28,7 @@
 <p><b>Credited date</b>:    {{transaction['creditedDate']}}</p>
 <p><b>FTO Status</b>:    {{transaction['ftoStatus']}}</p>
 <p><b>Reason for rejection (if rejected)</b>:    {{transaction['rejectionReason']}}</p>
-<p><b>Remarks:</b> <input #remarkInput type="textarea" placeholder="{{ transaction['remarks'] }}" (change)="updated=false" [(ngModel)]="remarks"> {{ remarks }}</p>
+<p><b>Remarks:</b> <input #remarkInput type="textarea" placeholder="{{ transaction['remarks'] }}" (input)="remarks=remarkInput.value; updated=false"> {{ remarks }}</p>
 <p><b>Create Complaint:</b><input #complaintBox type="checkbox" (change)="createComplaint = complaintBox.checked; updated=false" [checked]="transaction['createComplaint']"></p>
 <p><button ion-button [disabled]="updated" (click)=update()>Update</button></p>
 </ion-content>
