@@ -13,6 +13,7 @@ export class TransactionPage {
     url: string;
     remarks: string;
     createComplaint = false;
+    updated = true;
     field: FirebaseListObservable<any>;
 
 
@@ -26,12 +27,18 @@ export class TransactionPage {
         console.log(this.field);
     }
 
-    update() {
-        console.log(this.createComplaint + '==' + this.remarks); // Can skip this.remarks Mynk
+    onCreateComplaint(event) {
+        alert(JSON.stringify(event));
+        console.log(JSON.stringify(event)); // + createComplaint);
+    }
+
+    update(event) {
+        console.log(JSON.stringify(event) + this.createComplaint + '==' + this.remarks); // Can skip this.remarks Mynk
         // this.field.update("1", { remarks: remarkInput.value });
         if (this.remarks)
             this.field.update("1", { remarks: this.remarks });
         this.field.update("1", { createComplaint: this.createComplaint });
+        this.updated = true;
     }
 
     ionViewDidLoad() {

@@ -29,8 +29,11 @@
 <p><b>FTO Status</b>:    {{transaction['ftoStatus']}}</p>
 <p><b>Reason for rejection (if rejected)</b>:    {{transaction['rejectionReason']}}</p>
 <p><b>Remarks:</b> <input #remarkInput type="textarea" placeholder="{{ transaction['remarks'] }}" [(ngModel)]="remarks"> {{ remarks }}</p>
-<p><b>Create Complaint:</b><input #complaintBox type="checkbox" (change)="createComplaint = complaintBox.checked" ><b *ngIf="createComplaint">Yes</b></p>
-<p><button ion-button (click)=update()>Update</button></p>
+<p><b>Create Complaint:</b>
+<span *ngIf="transaction['createComplaint']"><input #complaintBox type="checkbox" (change)="createComplaint = complaintBox.checked" checked></span>
+<span *ngIf="!transaction['createComplaint']"><input #complaintBox type="checkbox" (change)="createComplaint = complaintBox.checked"></span>
+</p>
+<p><button ion-button (click)=update($event)>Update</button></p>
 </ion-content>
 
 <ion-footer>
