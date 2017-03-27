@@ -28,12 +28,14 @@
 <p><b>Credited date</b>:    {{transaction['creditedDate']}}</p>
 <p><b>FTO Status</b>:    {{transaction['ftoStatus']}}</p>
 <p><b>Reason for rejection (if rejected)</b>:    {{transaction['rejectionReason']}}</p>
+<div (change)="updated=false">
 <p><b>Remarks:</b> <input #remarkInput type="textarea" placeholder="{{ transaction['remarks'] }}" [(ngModel)]="remarks"> {{ remarks }}</p>
 <p><b>Create Complaint:</b>
 <span *ngIf="transaction['createComplaint']"><input #complaintBox type="checkbox" (change)="createComplaint = complaintBox.checked" checked></span>
 <span *ngIf="!transaction['createComplaint']"><input #complaintBox type="checkbox" (change)="createComplaint = complaintBox.checked"></span>
 </p>
-<p><button ion-button (click)=update($event)>Update</button></p>
+<p><button ion-button [disabled]="updated" (click)=update()>Update</button></p>
+</div>
 </ion-content>
 
 <ion-footer>

@@ -27,14 +27,7 @@ export class TransactionPage {
         console.log(this.field);
     }
 
-    onCreateComplaint(event) {
-        alert(JSON.stringify(event));
-        console.log(JSON.stringify(event)); // + createComplaint);
-    }
-
-    update(event) {
-        console.log(JSON.stringify(event) + this.createComplaint + '==' + this.remarks); // Can skip this.remarks Mynk
-        // this.field.update("1", { remarks: remarkInput.value });
+    update() {
         if (this.remarks)
             this.field.update("1", { remarks: this.remarks });
         this.field.update("1", { createComplaint: this.createComplaint });
