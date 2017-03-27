@@ -96,7 +96,7 @@ def main():
     myhtml=""
     myhtml+=tabletUIQueryToHTMLTable(cur,query) 
     query="select id,title from dashboardQueries where isRequired=1 and type='location'"
-    myhtml+=tabletUIReportTable(cur,query,staticLinkPath="REPORTS") 
+    #myhtml+=tabletUIReportTable(cur,query,staticLinkPath="REPORTS") 
     myhtml=htmlWrapperLocal(title="Select Panchayats", head='<h1 aling="center">Select Panchayats</h1>', body=myhtml)
     writeFile(curhtmlfile,myhtml)
 

@@ -87,6 +87,14 @@ def main():
       r=re.findall('block_name=(.*?)\&',str(column))
       rawBlockName=r[0]
       logger.info("Block Code: %s BlockName : %s" % (blockCode,rawBlockName))
+
+      query="select * from blockStatus where fullBlockCode='%s' " % fullBlockCode
+      cur.execute(query)
+      if cur.rowcount == 0:
+        query="insert into blockStatus (fullBlockCode,rawBlockName) values ('%s','%s') " % (fullBlockCode,rawBlockName)
+        logger.info(query)
+        cur.execute(query)
+
       query="select * from blocks where fullBlockCode='%s' " % fullBlockCode
       cur.execute(query)
       if cur.rowcount == 0:
@@ -102,33 +110,39 @@ def main():
       htmlsource1=r.text
       htmlsoup1=BeautifulSoup(htmlsource1)
       table1=htmlsoup1.find('table',id="ctl00_ContentPlaceHolder1_gvpanch")
-      for eachPanchayat in table1.findAll('a'):
-        rawPanchayatName=eachPanchayat.contents[0]
-        panchayatLink=eachPanchayat.get('href')
-        getPanchayat=re.findall(r'(?:Panchayat_Code=)\d{10}',panchayatLink)
-        logger.info(getPanchayat[0])
-        fullPanchayatCode=getPanchayat[0].replace("Panchayat_Code=","")
-        panchayatCode=fullPanchayatCode[7:11]
-        getPanchayat=re.findall(r'(?:Panchayat_Code=)\d{10}',panchayatLink)
-        #fullPanchayatCode=getPanchayat[0]
-        #panchayatCode=fullPanchayatCode[len(fullPanchayatCode)-3:len(fullPanchayatCode)]
-        print rawPanchayatName+panchayatCode
-        query="select * from panchayatStatus where fullPanchayatCode='%s' " % fullPanchayatCode
-        cur.execute(query)
-        if cur.rowcount == 0:
-          query="insert into panchayatStatus (fullPanchayatCode,rawPanchayatName) values ('%s','%s') " % (fullPanchayatCode,rawPanchayatName)
-          logger.info(query)
+      try:
+        table1.findAll('a')    
+        noPanchayat=0
+      except:
+        noPanchayat=1
+      if noPanchayat == 0:
+        for eachPanchayat in table1.findAll('a'):
+          rawPanchayatName=eachPanchayat.contents[0]
+          panchayatLink=eachPanchayat.get('href')
+          getPanchayat=re.findall(r'(?:Panchayat_Code=)\d{10}',panchayatLink)
+          logger.info(getPanchayat[0])
+          fullPanchayatCode=getPanchayat[0].replace("Panchayat_Code=","")
+          panchayatCode=fullPanchayatCode[7:11]
+          getPanchayat=re.findall(r'(?:Panchayat_Code=)\d{10}',panchayatLink)
+          #fullPanchayatCode=getPanchayat[0]
+          #panchayatCode=fullPanchayatCode[len(fullPanchayatCode)-3:len(fullPanchayatCode)]
+          print rawPanchayatName+panchayatCode
+          query="select * from panchayatStatus where fullPanchayatCode='%s' " % fullPanchayatCode
           cur.execute(query)
+          if cur.rowcount == 0:
+            query="insert into panchayatStatus (fullPanchayatCode,rawPanchayatName) values ('%s','%s') " % (fullPanchayatCode,rawPanchayatName)
+            logger.info(query)
+            cur.execute(query)
 
-        query="select * from panchayats where fullPanchayatCode='%s' " % fullPanchayatCode
-        cur.execute(query)
-        if cur.rowcount == 0:
-          query="insert into panchayats (fullPanchayatCode) values ('%s') " % fullPanchayatCode
+          query="select * from panchayats where fullPanchayatCode='%s' " % fullPanchayatCode
+          cur.execute(query)
+          if cur.rowcount == 0:
+            query="insert into panchayats (fullPanchayatCode) values ('%s') " % fullPanchayatCode
+            logger.info(query)
+            cur.execute(query)
+          query="update panchayats set fullBlockCode='%s',stateShortCode='%s',crawlIP='%s',panchayatName='%s',rawPanchayatName='%s',blockName='%s',rawBlockName='%s',districtName='%s',rawDistrictName='%s',stateName='%s',stateCode='%s',districtCode='%s',blockCode='%s',panchayatCode='%s' where fullPanchayatCode='%s'" % (fullBlockCode,stateShortCode,crawlIP,formatName(rawPanchayatName),rawPanchayatName,formatName(rawBlockName),rawBlockName,formatName(rawDistrictName),rawDistrictName,stateName,stateCode,districtCode,blockCode,panchayatCode,fullPanchayatCode)
           logger.info(query)
           cur.execute(query)
-        query="update panchayats set fullBlockCode='%s',stateShortCode='%s',crawlIP='%s',panchayatName='%s',rawPanchayatName='%s',blockName='%s',rawBlockName='%s',districtName='%s',rawDistrictName='%s',stateName='%s',stateCode='%s',districtCode='%s',blockCode='%s',panchayatCode='%s' where fullPanchayatCode='%s'" % (fullBlockCode,stateShortCode,crawlIP,formatName(rawPanchayatName),rawPanchayatName,formatName(rawBlockName),rawBlockName,formatName(rawDistrictName),rawDistrictName,stateName,stateCode,districtCode,blockCode,panchayatCode,fullPanchayatCode)
-        logger.info(query)
-        cur.execute(query)
    
 
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors

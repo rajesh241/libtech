@@ -11,7 +11,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException
 from urllib.parse import urlencode
 import httplib2
-
+import datetime
 from MySQLdb import OperationalError
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../../includes/')
@@ -61,7 +61,15 @@ def main():
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query)
+  now = datetime.datetime.now()
   fpsYear=args['year']
+  logger.info(fpsYear+str(now.year))
+  if (str(fpsYear) == str(now.year)):
+    maxMonth=now.month
+  else:
+    maxMonth=12
+  logger.info("The Maximum Month is %s " % str(maxMonth))
+
   if args['month']:
     monthArray=[args['month']]
   else:
@@ -76,10 +84,12 @@ def main():
   results=cur.fetchall()
   for row in results:
     [rowid,stateCode,districtCode,blockCode,fpsCode,stateName,districtName,blockName,fpsName] = row
-    logger.info("Processing state: %s district: %s, block: %s ShopName : %s " % (stateName,districtName,blockName,fpsName))
+    logger.info("Processing state: %s fpsCode: %s district: %s, block: %s ShopName : %s " % (stateName,fpsCode,districtName,blockName,fpsName))
     fpsNameFiltered=cleanFPSName(fpsName)
-    for fpsMonth in monthArray: 
-      fpsMonthName=monthLabels[int(fpsMonth)]   
+    i=0
+    while i < maxMonth:
+      i=i+1 
+      fpsMonthName=monthLabels[int(i)]   
       rawfilename="%s/%s/%s/%s/%s/%s/%s.html" % (pdsRawDataDir,stateName,districtName,blockName,fpsYear,fpsMonthName,fpsNameFiltered)
       filename="%s/%s/%s/%s/%s/%s/%s.html" % (pdsWebDirRoot,stateName,districtName,blockName,fpsYear,fpsMonthName,fpsNameFiltered)
       #filename1="%s/%s/%s/%s/%s/%s/a.html" % (pdsWebDirRoot,stateName,districtName,blockName,fpsYear,fpsMonthName)
@@ -93,7 +103,7 @@ def main():
        'dyna(fpsCode)':'',
        'dyna(scheme_code)':'',
        'dyna(year)':fpsYear,
-       'dyna(month)':fpsMonth,
+       'dyna(month)':str(i),
        'dyna(district_id)':districtCode,
        'dyna(block_id)':blockCode,
        'dyna(fpshop_id)':fpsCode,
@@ -108,7 +118,9 @@ def main():
       fpsHtml=fpsHtml.encode("UTF-8")
       tableID=['newFormTheme']
       fpsHtmlWeb=alterHTMLTables(fpsHtml,title,tableID)
-      #writeFile3(filename1,fpsHtml)
+      logger.info(filename)
+      mpa = dict.fromkeys(range(32))
+      filename=filename.translate(mpa)
       writeFile3(filename,fpsHtmlWeb.encode("UTF-8"))
  
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors

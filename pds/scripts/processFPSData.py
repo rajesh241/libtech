@@ -82,6 +82,9 @@ def main():
       rawfilename="%s/%s/%s/%s/%s/%s/%s.html" % (pdsRawDataDir,stateName,districtName,blockName,fpsYear,fpsMonthName,fpsNameFiltered)
       filename="%s/%s/%s/%s/%s/%s/%s.html" % (pdsWebDirRoot,stateName,districtName,blockName,fpsYear,fpsMonthName,fpsNameFiltered)
       logger.info("filename %s " % filename)
+      mpa = dict.fromkeys(range(32))
+      filename=filename.translate(mpa)
+      
       if os.path.isfile(filename):
         f=open(filename,'r')
         fpsHtml=f.read()

@@ -79,6 +79,17 @@ def stripTableAttributes(inhtml,tableID):
 
   tableHTML+='</table>'
   return tableHTML
+def genHTMLHeader(headerLabels,headerValues):
+  tableHTML=''
+  classAtt='id = "basic" class = " table table-striped"'
+  tableHTML+='<table %s">' % classAtt
+  i=0
+  for eachHeaderItem in headerValues:
+    tableHTML+="<tr><th> %s </th><td> %s </td></tr>" %(headerLabels[i],eachHeaderItem.upper())
+    i=i+1
+  tableHTML+='</table>'
+  return tableHTML
+
 
 def htmlWrapperLocal(title = None, head = None, body = None):
   html_text = '''

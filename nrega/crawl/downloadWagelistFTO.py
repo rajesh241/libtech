@@ -20,7 +20,7 @@ from wrappers.logger import loggerFetch
 from wrappers.db import dbInitialize,dbFinalize
 from crawlSettings import nregaDB,searchIP 
 from crawlSettings import nregaWebDir,nregaRawDataDir,tempDir
-from crawlFunctions import alterHTMLTables,writeFile,getjcNumber,NICToSQLDate,getFullFinYear
+from crawlFunctions import alterHTMLTables,writeFile,getjcNumber,NICToSQLDate,getFullFinYear,htmlWrapperLocal,genHTMLHeader,stripTableAttributes,getCenterAligned
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
@@ -35,6 +35,7 @@ def argsFetch():
   parser = argparse.ArgumentParser(description='Script for crawling, downloading & parsing musters')
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
+  parser.add_argument('-f', '--finyear', help='Download musters for that finyear', required=True)
   parser.add_argument('-d', '--district', help='District for which you need to Download', required=False)
   parser.add_argument('-b', '--blockCode', help='BlockCode for  which you need to Download', required=False)
   parser.add_argument('-p', '--panchayatCode', help='panchayatCode for  which you need to Download', required=False)
@@ -45,31 +46,74 @@ def argsFetch():
 
   args = vars(parser.parse_args())
   return args
+
+def alterFTO(cur,logger,inhtml,stateName,districtName,blockName,ftoNo,rowid):
+  htmlsoup = BeautifulSoup(inhtml, "lxml")
+  tables=htmlsoup.findAll('table')
+  outhtml=''
+  title="%s-%s-%s" % (stateName,districtName,ftoNo)
+  #outhtml+=getCenterAligned('<h3 style="color:blue"> %s</h3>' %title )
+  firstTable=''
+  secondTable=''
+  status=0
+  for table in tables:
+    if "Name of primary Account holder" in str(table):
+      logger.info("Found the Beneficiary Table")
+      secondTable+=stripTableAttributes(table,"libtechDetails")
+      status=1
+
+  if status == 1:
+    myspan=htmlsoup.find('span',id="ctl00_ContentPlaceHolder1_lbl_mode")
+    paymentMode=myspan.text.lstrip().rstrip()
+    myspan=htmlsoup.find('span',id="ctl00_ContentPlaceHolder1_lbl_acc")
+    firstSignatoryDateString=myspan.text.lstrip().rstrip()
+    myspan=htmlsoup.find('span',id="ctl00_ContentPlaceHolder1_lbl_acc_p2w")
+    secondSignatoryDateString=myspan.text.lstrip().rstrip()
+    myspan=htmlsoup.find('span',id="ctl00_ContentPlaceHolder1_lbl_cr_proc_p")
+    toFinAgencyDateString=myspan.text.lstrip().rstrip()
+    logger.info("First Signatory Date: %s" % firstSignatoryDateString)
+    logger.info("Second Signatory Date: %s" % secondSignatoryDateString)
+    logger.info("To Financial Agency Date: %s" % toFinAgencyDateString)
+    logger.info("Payment Mode: %s" % paymentMode)
+    query="update ftos set firstSignatoryDate=%s,secondSignatoryDate=%s,bankProcessedDate=%s,paymentMode='%s' where id=%s " % (NICToSQLDate(firstSignatoryDateString),NICToSQLDate(secondSignatoryDateString),NICToSQLDate(toFinAgencyDateString),paymentMode,str(rowid))
+ 
+    cur.execute(query)
+    logger.info(query)
+    table=htmlsoup.find('table',id='ctl00_ContentPlaceHolder1_tt1')
+    firstTable=stripTableAttributes(table,"libtechHeader")
+    
+  modifiedHTML=outhtml+firstTable+secondTable
+  modifiedHTML=htmlWrapperLocal(title=title, head='<h1 aling="center" style="color:blue">'+title+'</h1>', body=modifiedHTML)
+  return status,modifiedHTML
 def getFTO(fullfinyear,stateCode,ftoNo):
   httplib2.debuglevel = 1
   h = httplib2.Http('.cache')
   url = "http://164.100.129.6/netnrega/fto/fto_status_dtl.aspx?fto_no=%s&fin_year=%s&state_code=%s" % (ftoNo, fullfinyear, stateCode)
-  response = urlopen(url)
-  html_source = response.read()
-  bs = BeautifulSoup(html_source, "html.parser")
-  state = bs.find(id='__VIEWSTATE').get('value')
-#  logger.info('state[%s]' % state)
-  validation = bs.find(id='__EVENTVALIDATION').get('value')
-#  logger.info('value[%s]' % validation)
-  data = {
-    '__EVENTTARGET':'ctl00$ContentPlaceHolder1$Ddfto',
-    '__EVENTARGUMENT':'',
-    '__LASTFOCUS':'',
-    '__VIEWSTATE': state,
-    '__VIEWSTATEENCRYPTED':'',
-    '__EVENTVALIDATION': validation,
-    'ctl00$ContentPlaceHolder1$Ddfin': fullfinyear,
-    'ctl00$ContentPlaceHolder1$Ddstate': stateCode,
-    'ctl00$ContentPlaceHolder1$Txtfto': ftoNo,
-    'ctl00$ContentPlaceHolder1$Ddfto': ftoNo,
-  }
-
-  response, content = h.request(url, 'POST', urlencode(data), headers = {'Content-Type': 'application/x-www-form-urlencoded'})
+  print("FTO URL %s " % url)
+  try:
+    response = urlopen(url)
+    html_source = response.read()
+    bs = BeautifulSoup(html_source, "html.parser")
+    state = bs.find(id='__VIEWSTATE').get('value')
+#    logger.info('state[%s]' % state)
+    validation = bs.find(id='__EVENTVALIDATION').get('value')
+#    logger.info('value[%s]' % validation)
+    data = {
+      '__EVENTTARGET':'ctl00$ContentPlaceHolder1$Ddfto',
+      '__EVENTARGUMENT':'',
+      '__LASTFOCUS':'',
+      '__VIEWSTATE': state,
+      '__VIEWSTATEENCRYPTED':'',
+      '__EVENTVALIDATION': validation,
+      'ctl00$ContentPlaceHolder1$Ddfin': fullfinyear,
+      'ctl00$ContentPlaceHolder1$Ddstate': stateCode,
+      'ctl00$ContentPlaceHolder1$Txtfto': ftoNo,
+      'ctl00$ContentPlaceHolder1$Ddfto': ftoNo,
+    }
+    response, content = h.request(url, 'POST', urlencode(data), headers = {'Content-Type': 'application/x-www-form-urlencoded'})
+  except:
+    response={'status': '404'}
+    content=''
 
   return response,content
 
@@ -92,7 +136,8 @@ def main():
   additionalFilters=''
   if args['district']:
     additionalFilters+= " and b.districtName='%s' " % args['district']
- 
+  if args['finyear']:
+    additionalFilters+= " and finyear='%s' " % args['finyear'] 
   if args["downloadWagelists"]: 
     display = displayInitialize(args['visible'])
     driver = driverInitialize(args['browser'])
@@ -190,9 +235,9 @@ def main():
     displayFinalize(display)
 
   if args["downloadFTOs"]:
-    additionalFilters=''
-    limitString= "limit 1 "
-    query="select f.id,f.ftoNo,f.blockCode,f.finyear,f.fullBlockCode,b.rawBlockName,b.districtName,b.stateName,b.stateCode from ftos f,blocks b where f.fullBlockCode=b.fullBlockCode and   ( (f.isDownloaded=0) or ((f.isComplete=0 and TIMESTAMPDIFF(HOUR, f.downloadAttemptDate, now()) > 48 ) ))  %s order by isDownloaded %s " % (additionalFilters,limitString)
+    #additionalFilters=''
+    #limitString= "limit 1 "
+    query="select f.id,f.ftoNo,f.blockCode,f.finyear,f.fullBlockCode,b.rawBlockName,b.districtName,b.stateName,b.stateCode from ftos f,blocks b where f.fullBlockCode=b.fullBlockCode and f.isComplete=0 and   ( (f.isDownloaded=0) or (TIMESTAMPDIFF(HOUR, f.downloadAttemptDate, now()) > 48 ) or f.downloadAttemptDate is NULL )  %s order by f.downloadAttemptDate,finyear  %s " % (additionalFilters,limitString)
     logger.info(query)
     cur.execute(query)
     results=cur.fetchall()
@@ -201,7 +246,8 @@ def main():
       logger.info("districtName: %s, blockName: %s finyear: %s ftoNo: %s " % (districtName,blockName,finyear,ftoNo))
       fullfinyear=getFullFinYear(finyear)
       if ftoNo != '':
-        filepath=nregaRawDataDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
+       # filepath=nregaRawDataDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
+        filepath=nregaWebDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
         filename=filepath+blockName.upper()+"/FTOs/"+fullfinyear+"/"+ftoNo+".html"
         logger.info("Downloading FTO: %s " % ftoNo)
         htmlresponse,htmlsource = getFTO(fullfinyear,stateCode,ftoNo)
@@ -211,12 +257,12 @@ def main():
         if htmlresponse['status'] == '200':
           logger.info("Status is 200")
           isPopulatedString="isPopulated=0,"
-          success=1
+          success,outhtml=alterFTO(cur,logger,htmlsource,stateName,districtName,blockName,ftoNo,rowid)
           #htmlsource=htmlsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
           if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))
           myfile = open(filename, "wb")
-          myfile.write(htmlsource)
+          myfile.write(outhtml.encode("UTF-8"))
           logger.info(filename)
           #writeFile(filename,htmlsource)
           #writeFile3("/home/libtech/webroot/nreganic.libtech.info/temp/"+ftoNo+".html",htmlsource)

@@ -30,7 +30,7 @@ def argsFetch():
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-f', '--finyear', help='Download musters for that finyear', required=True)
   parser.add_argument('-d', '--district', help='District for which you need to Download', required=False)
-  parser.add_argument('-b', '--blockCode', help='BlockCode for  which you need to Download', required=False)
+  parser.add_argument('-b', '--block', help='BlockCode for  which you need to Download', required=False)
   parser.add_argument('-p', '--panchayatCode', help='panchayatCode for  which you need to Download', required=False)
   parser.add_argument('-mid', '--musterID', help='Muster Id that needs to be downloaded', required=False)
   parser.add_argument('-n', '--maxProcess', help='No of Simultaneous Process to Run', required=False)
@@ -351,6 +351,8 @@ def main():
   additionalFilters=''
   if args['district']:
     additionalFilters+= " and b.districtName='%s' " % args['district']
+  if args['block']:
+    additionalFilters+= " and b.blockName='%s' " % args['block']
   fullfinyear=getFullFinYear(finyear)
   logger = loggerFetch(args.get('log_level'))
   logger.info('args: %s', str(args))
