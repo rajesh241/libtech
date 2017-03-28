@@ -73,7 +73,7 @@ def main():
     filepath=nregaWebDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
     filename=filepath+blockName.upper()+"/%s/%s_jobcardRegister.html" % (panchayatName.upper(),panchayatName.upper())
     logger.info(filename)
-    jobcardPrefix="%s-%s" % (stateShortCode,districtCode)
+    jobcardPrefix="%s-" % (stateShortCode)
     logger.info("Processing %s-%s-%s-%s " % (stateName,districtName,blockName,panchayatName))
     elem = driver.find_element_by_link_text(stateName)
     elem.send_keys(Keys.RETURN)
@@ -105,7 +105,37 @@ def main():
       #filename="%s/%s.html" % (tempDir,panchayatName)
       writeFile(filename,html_source) 
       driver.back()
-      
+
+
+      elem = driver.find_element_by_link_text("Download Panchayatwise MGNREGA Bank A/C Detail")
+      elem.send_keys(Keys.RETURN)
+      time.sleep(15)
+      jcsource = driver.page_source
+      rawhtml=jcsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+      filename=filepath+blockName.upper()+"/%s/%s_bankAccounts.html" % (panchayatName.upper(),panchayatName.upper())
+      writeFile(filename,rawhtml) 
+      driver.back()
+
+      elem = driver.find_element_by_link_text("Download Panchayatwise MGNREGA Post Office Account Detail")
+      elem.send_keys(Keys.RETURN)
+      time.sleep(15)
+      jcsource = driver.page_source
+      rawhtml=jcsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+      filename=filepath+blockName.upper()+"/%s/%s_postAccounts.html" % (panchayatName.upper(),panchayatName.upper())
+      writeFile(filename,rawhtml) 
+      driver.back()
+
+      elem = driver.find_element_by_link_text("Download Panchayat Wise MGNREGA Co-operative Bank A/C Detail")
+      elem.send_keys(Keys.RETURN)
+      time.sleep(15)
+      jcsource = driver.page_source
+      rawhtml=jcsource.replace('<head>','<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+      filename=filepath+blockName.upper()+"/%s/%s_cobankAccounts.html" % (panchayatName.upper(),panchayatName.upper())
+      writeFile(filename,rawhtml) 
+      driver.back()
+
+
+ 
       elem = driver.find_element_by_link_text("Job card/Employment Register")
       elem.send_keys(Keys.RETURN)
       time.sleep(5)
