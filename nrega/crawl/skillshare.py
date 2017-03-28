@@ -1,13 +1,11 @@
 from bs4 import BeautifulSoup
 import multiprocessing, time
 import requests
-import MySQLdb
 import os
 import os.path
 import time
 import re
 import sys
-from MySQLdb import OperationalError
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
@@ -37,14 +35,15 @@ def argsFetch():
 
   args = vars(parser.parse_args())
   return args
+
 def main():
   args = argsFetch()
   logger = loggerFetch(args.get('log_level'))
   logger.info('args: %s', str(args))
   logger.info("BEGIN PROCESSING...")
-  filename=tempDir+"/z.html" 
+  filename = "/tmp/z.html" 
   display = displayInitialize(args['visible'])
-  driver = driverInitialize(args['browser'])
+  driver = driverInitialize(browser=args['browser'], profile='/home/mayank/.mozilla/firefox/4s3bttuq.default/')
   base_url="https://www.skillshare.com/"
   driver.get(base_url + "/")
   driver.find_element_by_link_text("Sign In").click()
@@ -53,9 +52,33 @@ def main():
   driver.find_element_by_name("LoginForm[password]").clear()
   driver.find_element_by_name("LoginForm[password]").send_keys("golani123")
   driver.find_element_by_xpath("//input[@value='Sign In']").click()
-  driver.find_element_by_link_text("Set Creative Goals - first steps to success").click()
-  driver.find_element_by_css_selector("p.session-item-title").click()
+  time.sleep(10)
+  driver.get("https://www.skillshare.com/classes/Sketchbook-Practice-Bring-watercolour-to-Life-with-Line-Drawing/1053382271/classroom/discussions")
+#  driver.find_element_by_link_text("Set Creative Goals - first steps to success").click()
+#  driver.find_element_by_css_selector("p.session-item-title").click()
+  time.sleep(10)
   html_source = driver.page_source
+
+  bs = BeautifulSoup(html_source, "html.parser")
+  html = bs.findAll('video', attrs={'class':['vjs-tech']})
+  str_html = str(html)
+  logger.info(str_html)
+  logger.info(str_html[str_html.find("src=")+5:str_html.find("?pubId")])
+
+  els = driver.find_elements_by_class_name("session-item")
+  for el in els:
+    logger.info(str(el))
+    el.click()
+    time.sleep(10)
+    html_source = driver.page_source
+
+    bs = BeautifulSoup(html_source, "html.parser")
+    html = bs.findAll('video', attrs={'class':['vjs-tech']})
+    str_html = str(html)
+    logger.info(str_html)
+    logger.info(str_html[str_html.find("src=")+5:str_html.find("?pubId")])
+#   driver.back()
+  
   writeFile(filename,html_source) 
   driverFinalize(driver)
   displayFinalize(display)
