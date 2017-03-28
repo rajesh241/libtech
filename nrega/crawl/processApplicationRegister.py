@@ -67,7 +67,7 @@ def main():
     filepath=nregaWebDir.replace("stateName",stateName.upper()).replace("districtName",districtName.upper())
     filename=filepath+blockName.upper()+"/%s/%s_jobcardRegister.html" % (panchayatName.upper(),panchayatName.upper())
     logger.info(filename)
-    jobcardPrefix="%s-%s" % (stateShortCode,districtCode)
+    jobcardPrefix="%s-" % (stateShortCode)
     if os.path.isfile(filename):
       logger.info("File Exists: now we should process it")
       f=open(filename,"rb")
@@ -80,35 +80,39 @@ def main():
           logger.info("Found the Table")
           rows=table.findAll("tr")
           for row in rows:
-            if jobcardPrefix  in str(row):
-              cols=row.findAll("td")
+            logger.info("I am inside the row")
+            cols=row.findAll("td")
+            if len(cols) > 10:
               jobcardDate=cols[9].text
-              jobcard=cols[9].find("nobr").text
-              issueDate=jobcardDate.replace(jobcard,"")
-              applicantName=cols[4].text.strip()
-              status=""
-              if "*" in applicantName: 
-                applicantName=cols[4].text.replace("*","").strip()
-                status="deleted"
-              logger.info(applicantName)
-              curCaste=cols[2].text.strip()
-              if curCaste!='':
-                caste=curCaste
-              gender=cols[6].text.strip() 
-              logger.info("Jobcard %s , date %s applicantName %s Caste %s Gender %s " % (jobcard,issueDate,applicantName,caste,gender))
-              applicantName=applicantName.replace("'","\\'") 
-              query="select id from applicantDetails where jobcard='%s' and name='%s' " % (jobcard,applicantName)
-              cur.execute(query)
-              if cur.rowcount == 0: 
-                query="insert into applicantDetails (jobcard,name) values ('%s','%s') " % (jobcard,applicantName)
+              if jobcardPrefix in jobcardDate:
+                logger.info(jobcardDate)
+                jobcard=cols[9].find("nobr").text
+                logger.info("Processing Jobcard: %s " % jobcard)
+                issueDate=jobcardDate.replace(jobcard,"")
+                applicantName=cols[4].text.strip()
+                status=""
+                if "*" in applicantName: 
+                  applicantName=cols[4].text.replace("*","").strip()
+                  status="deleted"
+                logger.info(applicantName)
+                curCaste=cols[2].text.strip()
+                if curCaste!='':
+                  caste=curCaste
+                gender=cols[6].text.strip() 
+                logger.info("Jobcard %s , date %s applicantName %s Caste %s Gender %s " % (jobcard,issueDate,applicantName,caste,gender))
+                applicantName=applicantName.replace("'","\\'") 
+                query="select id from applicantDetails where jobcard='%s' and name='%s' " % (jobcard,applicantName)
                 cur.execute(query)
-                rowid=cur.lastrowid
-              else:
-                row=cur.fetchone()
-                rowid=row[0]
-             
-              query="update applicantDetails set caste='%s',gender='%s' where id=%s " %(caste,gender,str(rowid))
-              cur.execute(query)
+                if cur.rowcount == 0: 
+                  query="insert into applicantDetails (jobcard,name) values ('%s','%s') " % (jobcard,applicantName)
+                  cur.execute(query)
+                  rowid=cur.lastrowid
+                else:
+                  row=cur.fetchone()
+                  rowid=row[0]
+                
+                query="update applicantDetails set caste='%s',gender='%s' where id=%s " %(caste,gender,str(rowid))
+                cur.execute(query)
       query="update panchayatStatus set jobcardProcessDate=NOW() where fullPanchayatCode='%s' " % (fullPanchayatCode)
       cur.execute(query)
                 
