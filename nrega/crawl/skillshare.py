@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import multiprocessing, time
+import csv
 import requests
 import os
 import os.path
@@ -20,7 +21,6 @@ from wrappers.db import dbInitialize,dbFinalize
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 from crawlSettings import nregaDB 
 from crawlSettings import nregaWebDir,nregaRawDataDir,tempDir
-from crawlFunctions import alterHTMLTables,writeFile,getjcNumber,NICToSQLDate,getFullFinYear
 
 def argsFetch():
   '''
@@ -41,11 +41,11 @@ def main():
   logger = loggerFetch(args.get('log_level'))
   logger.info('args: %s', str(args))
   logger.info("BEGIN PROCESSING...")
-  filename = "/tmp/z.html" 
+
   display = displayInitialize(args['visible'])
-  driver = driverInitialize(browser=args['browser'], profile='/home/mayank/.mozilla/firefox/4s3bttuq.default/')
+  driver = driverInitialize(browser=args['browser'], path='/home/mayank/.mozilla/firefox/4s3bttuq.default/')
   base_url="https://www.skillshare.com/"
-  driver.get(base_url + "/")
+  driver.get(base_url)
   driver.find_element_by_link_text("Sign In").click()
   driver.find_element_by_name("LoginForm[email]").clear()
   driver.find_element_by_name("LoginForm[email]").send_keys("anupreet@anupreet.com")
@@ -53,33 +53,58 @@ def main():
   driver.find_element_by_name("LoginForm[password]").send_keys("golani123")
   driver.find_element_by_xpath("//input[@value='Sign In']").click()
   time.sleep(10)
-  driver.get("https://www.skillshare.com/classes/Sketchbook-Practice-Bring-watercolour-to-Life-with-Line-Drawing/1053382271/classroom/discussions")
-#  driver.find_element_by_link_text("Set Creative Goals - first steps to success").click()
-#  driver.find_element_by_css_selector("p.session-item-title").click()
-  time.sleep(10)
-  html_source = driver.page_source
 
-  bs = BeautifulSoup(html_source, "html.parser")
-  html = bs.findAll('video', attrs={'class':['vjs-tech']})
-  str_html = str(html)
-  logger.info(str_html)
-  logger.info(str_html[str_html.find("src=")+5:str_html.find("?pubId")])
-
-  els = driver.find_elements_by_class_name("session-item")
-  for el in els:
-    logger.info(str(el))
-    el.click()
+  filename = "./anuskillShare.csv"
+  content = csv.reader(open(filename, 'r'), delimiter=',', quotechar='"')
+  for (title, url) in content:    
+    #    driver.get("https://www.skillshare.com/classes/Sketchbook-Practice-Bring-watercolour-to-Life-with-Line-Drawing/1053382271/classroom/discuss")
+    driver.get(url)
     time.sleep(10)
+    """
     html_source = driver.page_source
 
     bs = BeautifulSoup(html_source, "html.parser")
     html = bs.findAll('video', attrs={'class':['vjs-tech']})
     str_html = str(html)
     logger.info(str_html)
-    logger.info(str_html[str_html.find("src=")+5:str_html.find("?pubId")])
-#   driver.back()
-  
-  writeFile(filename,html_source) 
+    fetch_url = str_html[str_html.find("src=")+5:str_html.find("?pubId")]
+    logger.info(fetch_url)
+    """
+    escaped_title = re.sub(r"[^A-Za-z 0-9]+", '', title).replace(' ', '_')
+    dirname = 'SkillsShare/' + escaped_title
+    # cmd = 'mkdir -p %s && cd %s && youtube-dl --username anupreet@anupreet.com --password golani123 %s' % (dirname, dirname, fetch_url)
+    cmd = 'mkdir -p ' + dirname
+    logger.info(cmd)
+    os.system(cmd)
+    
+
+    els = driver.find_elements_by_class_name("session-item")
+    
+    for i, el in enumerate(els):
+      logger.info(str(el))
+      bs = BeautifulSoup(el.get_attribute('innerHTML'), "html.parser")
+      p = bs.find('p')
+      name = p.text
+      name = "%02d" % (i+1) + '_' + re.sub(r"[^A-Za-z 0-9]+", '', name).replace(' ', '_') + '.mp4'
+      
+      logger.info(str(p) + name)
+      el.click()
+      time.sleep(10)
+      html_source = driver.page_source
+
+      bs = BeautifulSoup(html_source, "html.parser")
+      html = bs.findAll('video', attrs={'class':['vjs-tech']})
+      str_html = str(html)
+      logger.info(str_html)
+      fetch_url = str_html[str_html.find("src=")+5:str_html.find("?pubId")]
+      logger.info(fetch_url)
+
+      if os.path.exists(dirname + '/' + name):
+        continue
+      cmd = 'cd %s && curl -s %s -o %s' % (dirname, fetch_url, name)
+      logger.info(cmd)
+      os.system(cmd)
+
   driverFinalize(driver)
   displayFinalize(display)
   logger.info("...END PROCESSING")     
