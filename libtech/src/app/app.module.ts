@@ -4,6 +4,8 @@ import { AngularFireModule } from 'angularfire2';
 
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
+import { LoginPage } from '../pages/login/login';
+// Mynk import { SignupPage } from '../pages/signup/signup';
 import { PanchayatsPage } from '../pages/panchayats/panchayats'
 import { JobcardsPage } from '../pages/jobcards/jobcards'
 import { TransactionsPage } from '../pages/transactions/transactions'
@@ -21,19 +23,21 @@ const firebaseConfig = {
     declarations: [
         MyApp,
         HomePage,
+        LoginPage,
         PanchayatsPage,
         JobcardsPage,
         TransactionsPage,
         TransactionPage
     ],
     imports: [
-        AngularFireModule.initializeApp(firebaseConfig),
-        IonicModule.forRoot(MyApp)
+        IonicModule.forRoot(MyApp),
+        AngularFireModule.initializeApp(firebaseConfig)
     ],
     bootstrap: [IonicApp],
     entryComponents: [
         MyApp,
         HomePage,
+        LoginPage,
         PanchayatsPage,
         JobcardsPage,
         TransactionsPage,
