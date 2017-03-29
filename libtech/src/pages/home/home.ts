@@ -22,7 +22,7 @@ export class HomePage {
             console.log(this.welcomeMessage);
             this.navCtrl.push(LoginPage);
         }
-        else {
+        else { // Mynk - This never gets called. The navPop() just returns back
             this.user = JSON.parse(window.localStorage.getItem('user'));
             console.log(JSON.stringify(this.user));
             this.welcomeMessage = 'Hi!';

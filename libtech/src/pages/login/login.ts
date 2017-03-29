@@ -25,12 +25,12 @@ export class LoginPage {
                 method: AuthMethods.Password
             }).then((response) => {
                 console.log('Login Success' + JSON.stringify(response));
-                let currentUser = {
+                let user = {
                     email: response.auth.email,
                     picture: response.auth.photoURL
                 };
-                console.log(JSON.stringify(currentUser));
-                window.localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                console.log(JSON.stringify(user));
+                window.localStorage.setItem('user', JSON.stringify(user));
                 this.navCtrl.pop();
             }).catch((error) => {
                 console.log(error);
