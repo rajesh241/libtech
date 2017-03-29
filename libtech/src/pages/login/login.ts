@@ -33,6 +33,47 @@ export class LoginPage {
                 this.navCtrl.pop();
             }).catch((error) => {
                 console.log(error);
+                alert(error);
             });
+    }
+
+    loginWithGoogle() {
+        return this.af.auth.login({
+            provider: AuthProviders.Google,
+            method: AuthMethods.Popup
+        }).then((response) => {
+            console.log('Login with Google Success' + JSON.stringify(response));
+            let currentUser = {
+                email: response.auth.email,
+                picture: response.auth.photoURL
+            };
+            window.localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            this.navCtrl.pop();
+        }).catch((error) => {
+            console.log(error);
+            alert(error);
+        });
+    }
+
+    loginWithFacebook() {
+        return this.af.auth.login({
+            provider: AuthProviders.Facebook,
+            method: AuthMethods.Popup
+        }).then((response) => {
+            console.log('Login with Facebook Success' + JSON.stringify(response));
+            let currentUser = {
+                email: response.auth.displayName,
+                picture: response.auth.photoURL
+            };
+            window.localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            this.navCtrl.pop();
+        }).catch((error) => {
+            console.log(error);
+            alert(error);
+        });
+    }
+
+    logout() {
+        return this.af.auth.logout();
     }
 }
