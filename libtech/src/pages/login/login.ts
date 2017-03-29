@@ -29,6 +29,7 @@ export class LoginPage {
                     email: response.auth.email,
                     picture: response.auth.photoURL
                 };
+                console.log(JSON.stringify(currentUser));
                 window.localStorage.setItem('currentUser', JSON.stringify(currentUser));
                 this.navCtrl.pop();
             }).catch((error) => {
@@ -43,11 +44,12 @@ export class LoginPage {
             method: AuthMethods.Popup
         }).then((response) => {
             console.log('Login with Google Success' + JSON.stringify(response));
-            let currentUser = {
+            let user = {
                 email: response.auth.email,
                 picture: response.auth.photoURL
             };
-            window.localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            console.log(JSON.stringify(user));
+            window.localStorage.setItem('user', JSON.stringify(user));
             this.navCtrl.pop();
         }).catch((error) => {
             console.log(error);
@@ -61,11 +63,12 @@ export class LoginPage {
             method: AuthMethods.Popup
         }).then((response) => {
             console.log('Login with Facebook Success' + JSON.stringify(response));
-            let currentUser = {
+            let user = {
                 email: response.auth.displayName,
                 picture: response.auth.photoURL
             };
-            window.localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            console.log(JSON.stringify(user));
+            window.localStorage.setItem('user', JSON.stringify(user));
             this.navCtrl.pop();
         }).catch((error) => {
             console.log(error);

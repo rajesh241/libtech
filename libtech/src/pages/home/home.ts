@@ -10,27 +10,44 @@ import { PanchayatsPage } from '../panchayats/panchayats'
 })
 export class HomePage {
     welcomeMessage: string;
+    user: any;
     panchayatsPage = PanchayatsPage;
-    panchayats = []; // Placeholder for list of panchayats to fetch
+    panchayats = ['MAHANTMANIYARI', 'RATNAULI']; // Placeholder for list of panchayats to fetch
+    panchayatSelected = [false, false]; // Placeholder for list of panchayats to fetch
 
     constructor(public navCtrl: NavController) {
-        window.localStorage.removeItem('currentUser'); // Mynk this needs to go!
+        window.localStorage.removeItem('user'); // Mynk this needs to go!
         if (!this.isLoggedIn()) {
-            this.welcomeMessage = 'You are not logged in';
+            this.welcomeMessage = 'You are not logged in!';
             console.log(this.welcomeMessage);
             this.navCtrl.push(LoginPage);
         }
         else {
-            this.welcomeMessage = 'Please select the panchayats you wish to follow';
+            this.user = JSON.parse(window.localStorage.getItem('user'));
+            console.log(JSON.stringify(this.user));
+            this.welcomeMessage = 'Hi!';
         }
     }
-    gotoPanchayats() {
-        this.navCtrl.push(PanchayatsPage)
+
+    gotoPanchayat(selected, index, panchayat) {
+        console.log(selected);
+        console.log(panchayat);
+        this.panchayatSelected[index] = !this.panchayatSelected[index];
+        //        this.navCtrl.push(PanchayatsPage)
     }
 
     isLoggedIn() {
-        if (window.localStorage.getItem('currentUser')) {
+        if (window.localStorage.getItem('user')) {
+            if (!this.user) {
+                this.user = JSON.parse(window.localStorage.getItem('user'));
+                console.log(JSON.stringify(this.user));
+                this.welcomeMessage = 'Hi!';
+            }
             return true;
         }
+    }
+
+    ionViewDidLoad() {
+        console.log('ionViewDidLoad HomePage');
     }
 }
