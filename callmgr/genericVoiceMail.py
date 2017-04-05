@@ -41,6 +41,7 @@ def argsFetch():
 
   parser = argparse.ArgumentParser(description='Script to Post Process Generic Broadcasts')
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
+  parser.add_argument('-bid', '--broadcastID', help='Broadcast ID ', required=False)
   parser.add_argument('-limit', '--limit', help='Limit the number of entries that need to be processed', required=False)
   args = vars(parser.parse_args())
   return args
@@ -49,9 +50,10 @@ def main():
   args = argsFetch()
   logger = loggerFetch(args.get('log_level'))
   logger.info('args: %s', str(args))
-
+  broadcastFilter=''
   logger.info("BEGIN PROCESSING...")
-  
+  if args['broadcastID']:
+    broadcastFilter=' and bid=%s ' % args['broadcastID']
   
   db = dbInitialize(db="libtech", charset="utf8")  # The rest is updated automatically in the function
   cur=db.cursor()
@@ -60,7 +62,7 @@ def main():
   query="SET NAMES utf8"
   cur.execute(query)
 
-  query="select bid,completed from broadcasts where  template='voiceMail' and isPostProcessed=0"
+  query="select bid,completed from broadcasts where  template='voiceMail' and isPostProcessed=0 %s" % broadcastFilter
   cur.execute(query)
   results1=cur.fetchall()
   for row1 in results1:
@@ -89,14 +91,15 @@ def main():
         #print recordingURL
         if recordingURL is None:
           recordingURL="error"
+        logger.info("Recording URL %s " % recordingURL)
         if recordingURL != "error":
           #print recordingURL 
           r=requests.get(recordingURL)
           audiofilename=filepath+phone+".mp3"
           writeFile3(audiofilename,r.content)
-         # f = open(audiofilename, 'w')
-         # f.write(r.content)
-         # audioURL="http://callmgr.libtech.info/open/audio/genericVoiceMail/"+bid+"/"+phone+".mp3"
+          f = open(audiofilename, 'w')
+          f.write(r.content)
+          audioURL="http://callmgr.libtech.info/open/audio/genericVoiceMail/"+bid+"/"+phone+".mp3"
           #print audioURL
       csvtext+="%s,%s,%s,%s,%s,%s,%s,%s\n" %(callid,callsid,phone,attempts,duration,status,callStartTime,audioURL)
       #print csvrow 

@@ -12,7 +12,7 @@ from settings import dbhost,dbuser,dbpasswd,sid,token
 from libtechFunctions import gethtmlheader 
 from libtechFunctions import gethtmlfooter 
 from libtechFunctions import singleRowQuery,arrayToHTMLLine,writecsv 
-from broadcastFunctions import scheduleGeneralBroadcastCall,getLocationQueryMatchString,getGroupQueryMatchString,gettringoaudio,getaudio
+from broadcastFunctions import scheduleGeneralBroadcastCall,scheduleBiharPDSBroadcastCall,getLocationQueryMatchString,getGroupQueryMatchString,gettringoaudio,getaudio
 def main():
   todaydate=datetime.date.today().strftime("%d%B%Y")
   db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, charset='utf8')
@@ -31,8 +31,11 @@ def main():
     template=row[13]
     if((template == 'general') or  (template=='voiceMail') or (template == 'feedback') or  (template == 'biharVoiceMail') or (template == 'ghattuFeedback') or (template == 'rscdFeedback') ):
       scheduleGeneralBroadcastCall(cur,bid)
+#    elif (template =='biharPDS'):
+#      scheduleBiharPDSBroadcastCall(cur,bid)
 
       query="update broadcasts set processed=1 where bid="+bid
+      print query
       cur.execute(query)
 #   else:
 #     query="update broadcasts set error=1 where bid="+bid

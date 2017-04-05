@@ -6,6 +6,8 @@ import time
 import sys
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, fileDir+'/../includes/')
+sys.path.insert(0, fileDir+'/../')
+from wrappers.db import dbInitialize,dbFinalize
 from settings import dbhost,dbuser,dbpasswd,sid,token
 import requests
 import xml.etree.ElementTree as ET
@@ -49,6 +51,7 @@ def updateBroadcastTable(cur,bid):
 
 def main():
   db = MySQLdb.connect(host=dbhost, user=dbuser, passwd=dbpasswd, charset='utf8')
+  db = dbInitialize(db='libtech', charset="utf8")  # The rest is updated automatically in the function
   cur=db.cursor()
   db.autocommit(True)
   query="SET NAMES utf8"

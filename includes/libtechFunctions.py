@@ -240,16 +240,20 @@ def getPanchayatName(cur,blockCode,panchayatCode):
   query="select surguja.panchayats.name from surguja.panchayats where surguja.panchayats.blockCode='%s' and surguja.panchayats.panchayatCode='%s'" % (blockCode,panchayatCode)
   return singleRowQuery(cur,query)
 
-def addPhoneAddressBook(cur,phone,district,block,panchayat):
+def addPhoneAddressBook(cur,phone,district,block,panchayat,region=None):
+  if region is not None:
+    region=region
+  else:
+    region=''
   query="use libtech"
   cur.execute(query)
   if(len(phone) == 10):
     query="select id from addressbook where phone='"+phone+"'"
     cur.execute(query)
     if (cur.rowcount == 0):
-      query="insert into addressbook (district,block,panchayat,phone) values ('%s','%s','%s','%s');" %(district.lower(),block.lower(),panchayat.lower(),phone)
+      query="insert into addressbook (district,block,panchayat,phone,region) values ('%s','%s','%s','%s');" %(district.lower(),block.lower(),panchayat.lower(),phone,region)
     else:
-      query="update addressbook set district='%s',block='%s',panchayat='%s' where phone='%s'" %(district.lower(),block.lower(),panchayat.lower(),phone)
+      query="update addressbook set district='%s',block='%s',panchayat='%s',region='%s' where phone='%s'" %(district.lower(),block.lower(),panchayat.lower(),region,phone)
     cur.execute(query)
     return 'success'
   else:

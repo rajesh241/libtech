@@ -4,8 +4,11 @@ import MySQLdb
 import re
 import string	
 import requests
+import sys
 import xml.etree.ElementTree as ET
-
+#from wrappers.db import dbInitialize,dbFinalize
+#from pdsSettings import pdsDB,pdsDBHost,pdsRawDataDir,pdsWebDirRoot,pdsUIDir,pdsAudioDir
+import sys
 import settings
 from settings import dbhost,dbuser,dbpasswd,sid,token
 import libtechFunctions
@@ -76,6 +79,39 @@ def getaudio(cur,rawlist):
     audio=audio.rstrip(',')
   return audio,error
 
+def scheduleBiharPDSBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=None,sid=None):
+  query="use libtech"
+  cur.execute(query)
+# query="select bid,name,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats,priority,fileid2,template,inQuery,region from broadcasts where bid=%s" %(bid)
+# cur.execute(query)
+# row = cur.fetchone()
+# audio,error=getaudio(cur,row[5])
+# bname=row[1]
+# barray=bname.split("_")
+# PDSRowID=barray[0]
+# db = dbInitialize(host=pdsDBHost,db=pdsDB, charset="utf8")  # The rest is updated automatically in the function
+# curPDS=db.cursor()
+# db.autocommit(True)
+# #Query to set up Database to read Hindi Characters
+# query="SET NAMES utf8"
+# curPDS.execute(query)
+# query="select fpsCode from fpsStatus where id=%s " % str(PDSRowID)
+# curPDS.execute(query)
+# if curPDS.rowcount == 1:
+#   rowPDS=curPDS.fetchone()
+#   fpsCode=rowPDS[0]
+#   print "FPSCode is %s " % fpsCode 
+#   fpsCode='abcde'
+#   query="select phone from phoneBook where fpsCode='%s' " % fpsCode
+#   curPDS.execute(query)
+#   if curPDS.rowcount > 0:
+#     resultsPDS=curPDS.fetchall()
+#     for rowPDS in resultsPDS:
+#       phone=rowPDS[0]
+#       addPhoneAddressBook(cur,phone,'','','','adri')
+         
+  #dbFinalize(db) # Make sure you put this if there are other exit paths or errors
+  
 def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=None,sid=None):
   query="use libtech"
   cur.execute(query)

@@ -159,6 +159,13 @@ def createPDSBroadcast(logger):
   query="select fs.id,f.districtName,f.blockName,f.village,fs.fpsCode,fs.month,fs.year from fpsShops f, fpsStatus fs where f.fpsCode=fs.fpsCode and fs.initiateBroadcast=1"
   cur.execute(query)
   results=cur.fetchall()
+  dbFinalize(db) # Make sure you put this if there are other exit paths or errors
+  db = dbInitialize(db='libtech', charset="utf8")  # The rest is updated automatically in the function
+  cur=db.cursor()
+  db.autocommit(True)
+  #Query to set up Database to read Hindi Characters
+  query="SET NAMES utf8"
+  cur.execute(query)
   for row in results:
     [rowid,districtName,blockName,village,fpsCode,month,year] = row
     monthName=monthLabels[month]
@@ -173,6 +180,8 @@ def createPDSBroadcast(logger):
     template='general'
     query="insert into broadcasts (name,type,vendor,startDate,endDate,fileid,region,template) values ('%s','%s','%s',NOW(),'%s','%s','%s','%s')" % (broadcastName,broadcastType,vendor,endDate,audioFiles,region,template) 
     logger.info(query)
+    cur.execute(query)
+  dbFinalize(db) # Make sure you put this if there are other exit paths or errors
 
 def main():
   args = argsFetch()
