@@ -43,21 +43,26 @@ def main():
   logger.info("BEGIN PROCESSING...")
 
   display = displayInitialize(args['visible'])
-  driver = driverInitialize(browser=args['browser'], path='/home/mayank/.mozilla/firefox/4s3bttuq.default/')
-  base_url="https://www.skillshare.com/"
+  driver = driverInitialize(logger=logger, browser=args['browser'] , path='/home/mayank/.mozilla/firefox/4s3bttuq.default/')
+  base_url="https://www.skillshare.com/login"
   driver.get(base_url)
-  driver.find_element_by_link_text("Sign In").click()
-  driver.find_element_by_name("LoginForm[email]").clear()
-  driver.find_element_by_name("LoginForm[email]").send_keys("anupreet@anupreet.com")
-  driver.find_element_by_name("LoginForm[password]").clear()
-  driver.find_element_by_name("LoginForm[password]").send_keys("golani123")
-  driver.find_element_by_xpath("//input[@value='Sign In']").click()
+  logger.info('Fetching URL[%s]' % base_url)
+  # driver.find_element_by_link_text("Sign In").click()
+  try:
+    driver.find_element_by_name("LoginForm[email]").clear()
+    driver.find_element_by_name("LoginForm[email]").send_keys("anupreet@anupreet.com")
+    driver.find_element_by_name("LoginForm[password]").clear()
+    driver.find_element_by_name("LoginForm[password]").send_keys("golani123")
+    driver.find_element_by_xpath("//input[@value='Sign In']").click()
+  except Exception as e:
+    logger.info('Already signed in [%s]', e)
   time.sleep(10)
 
   filename = "./anuskillShare.csv"
   content = csv.reader(open(filename, 'r'), delimiter=',', quotechar='"')
   for (title, url) in content:    
-    #    driver.get("https://www.skillshare.com/classes/Sketchbook-Practice-Bring-watercolour-to-Life-with-Line-Drawing/1053382271/classroom/discuss")
+    #    driver.get('https://www.skillshare.com/classes/Sketchbook-Practice-Bring-watercolour-to-Life-with-Line-Drawing/1053382271/classroom/discuss')
+    logger.info('Fetching URL[%s]' % url)
     driver.get(url)
     time.sleep(10)
     """
@@ -81,7 +86,7 @@ def main():
     els = driver.find_elements_by_class_name("session-item")
     
     for i, el in enumerate(els):
-      logger.info(str(el))
+      logger.debug(str(el))
       bs = BeautifulSoup(el.get_attribute('innerHTML'), "html.parser")
       p = bs.find('p')
       name = p.text
@@ -96,14 +101,16 @@ def main():
       html = bs.findAll('video', attrs={'class':['vjs-tech']})
       str_html = str(html)
       logger.info(str_html)
-      fetch_url = str_html[str_html.find("src=")+5:str_html.find("?pubId")]
+      url = str_html[str_html.find("src=")+5:]
+      fetch_url = url[:url.find("?pubId")]
       logger.info(fetch_url)
 
       if os.path.exists(dirname + '/' + name):
         continue
       cmd = 'cd %s && curl -s %s -o %s' % (dirname, fetch_url, name)
       logger.info(cmd)
-      os.system(cmd)
+      # os.system(cmd)
+      # driver.back()  Mynk not required as we have installed plugin to avoid download of video
 
   driverFinalize(driver)
   displayFinalize(display)
