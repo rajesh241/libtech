@@ -2,12 +2,14 @@ import os
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+#FIXME from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 
+import time
 import sys
 sys.path.insert(0, '../')
 from wrappers.logger import loggerFetch
@@ -22,6 +24,8 @@ browser = "Firefox"
 visible = 0
 logfile = "/tmp/%s_firefox_console.log"%os.environ.get('USER')
 size = (width, height) = (1024,768)
+chromedriver = '/usr/lib/chromium-browser/chromedriver'
+
 
 #############
 # Functions
@@ -86,32 +90,57 @@ def xDisplayInitialize(isVisible=0):
 def xDisplayFinalize(display):
   display.stop()
 
-def driverInitialize(browser=None):
-  if browser ==  None:
+def driverInitialize(browser=None, path=None):
+  if not browser:
     browser="Firefox"
   if browser == "Firefox":
-    fp = webdriver.FirefoxProfile()
-    fp.set_preference("webdriver.log.file", logfile)
-    fp.native_events_enabled = False
-    fp.set_preference("browser.download.folderList",2)
-    fp.set_preference("browser.download.manager.showWhenStarting",False)
-    fp.set_preference("browser.download.dir", os.getcwd())
-    fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.ms-excel")
-    fp.set_preference("browser.privatebrowsing.autostart", True)
+    #FIXME caps = DesiredCapabilities.FIREFOX
+    # Tell the Python bindings to use Marionette.
+    # This will not be necessary in the future,
+    # when Selenium will auto-detect what remote end
+    # it is talking to.
+    #FIXME caps["marionette"] = True
 
-# Mynk Doesn't work - http://stackoverflow.com/questions/15397483/how-do-i-set-browser-width-and-height-in-selenium-webdriver
-#    fp.set_preference('browser.window.width', width)
-#    fp.set_preference('browser.window.height', height)
-
-    driver = webdriver.Firefox(fp)
-    driver.set_window_size(width, height)
+    if path:
+      fp = webdriver.FirefoxProfile(path)
+      # If you want to log into a site with save passwords DO NOT start in private mode which is default
+      fp.set_preference("browser.privatebrowsing.autostart", False)
+      fp.set_preference("media.autoplay.enabled", False) # If you do not want videos playing
+    else:
+      fp = webdriver.FirefoxProfile()
+      fp.set_preference("webdriver.log.file", logfile)
+      fp.native_events_enabled = False
+      fp.set_preference("browser.download.folderList",2)
+      fp.set_preference("browser.download.manager.showWhenStarting",False)
+      fp.set_preference("browser.download.dir", os.getcwd())
+      fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.ms-excel")
+      fp.set_preference("browser.privatebrowsing.autostart", False) #Mynk
+      fp.set_preference("media.autoplay.enabled", False) #Mynk
+      fp.set_preference("media.block-autoplay-until-in-foreground", True) #Mynk      
+      
+    # Mynk FIXME Doesn't work - http://stackoverflow.com/questions/15397483/how-do-i-set-browser-width-and-height-in-selenium-webdriver
+    # Got this working by fixing the size in xulstore.json (src - https://support.mozilla.org/t5/Firefox/How-to-open-maximized/td-p/1327140)
+    fp.set_preference('browser.window.width', width)
+    fp.set_preference('browser.window.height', height)
+      
+    driver = webdriver.Firefox(firefox_profile=fp)
+    '''    
+    #FIXME driver = webdriver.Firefox(capabilities=caps)
+    logger.info(driver.get_window_size())
+    logger.info(str(size) + ' ' +  str(width) + ' ' + str(height))
+    logger.info(driver.get_window_size())
+    '''
+    driver.maximize_window()
+    # driver.set_window_size(width, height)
+    # print(driver.get_window_size()) Mynk neither of the above is working
   elif browser == "PhantomJS":
     driver = webdriver.PhantomJS()
     driver.set_window_size(1120, 550)
   else:
-    driver = webdriver.Chrome()
+    driver = webdriver.Chrome(chromedriver)
 
   driver.implicitly_wait(timeout)
+    
 
   return driver
 
@@ -162,13 +191,16 @@ def runTestSuite():
   logger.info("BEGIN PROCESSING...")
 
   display = displayInitialize(args['visible'])
-  driver = driverInitialize(args['browser'])
+  #  driver = driverInitialize(args['browser'])
+  driver = driverInitialize(browser=args['browser'] , path='/home/mayank/.mozilla/firefox/4s3bttuq.default/')
 
   if args['cookie_dump']:
     cookieDump(driver)
 
   logger.info("Fetching [%s]" % driver.current_url)
   logger.info(wdTest(driver, args['url']))
+  logger.info("Waiting for %d seconds" % timeout)
+  time.sleep(timeout)
   logger.info("Fetched [%s]" % driver.current_url)
 
   if args['cookie_dump']:
