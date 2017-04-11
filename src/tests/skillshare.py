@@ -12,15 +12,15 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException
 fileDir=os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, fileDir+'/../../includes/')
-sys.path.insert(0, fileDir+'/../../')
+sys.path.insert(0, fileDir+'/../includes/')
+print(fileDir+'/../includes/')
+sys.path.insert(0, fileDir+'/../')
+print(fileDir+'/../')
 #sys.path.insert(0, rootdir)
 import datetime
 from wrappers.logger import loggerFetch
 from wrappers.db import dbInitialize,dbFinalize
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
-from crawlSettings import nregaDB 
-from crawlSettings import nregaWebDir,nregaRawDataDir,tempDir
 
 def argsFetch():
   '''
@@ -43,7 +43,7 @@ def main():
   logger.info("BEGIN PROCESSING...")
 
   display = displayInitialize(args['visible'])
-  driver = driverInitialize(logger=logger, browser=args['browser'] , path='/home/mayank/.mozilla/firefox/4s3bttuq.default/')
+  driver = driverInitialize(browser=args['browser'] , path='/home/mayank/.mozilla/firefox/4s3bttuq.default/')
   base_url="https://www.skillshare.com/login"
   driver.get(base_url)
   logger.info('Fetching URL[%s]' % base_url)
@@ -52,36 +52,26 @@ def main():
     driver.find_element_by_name("LoginForm[email]").clear()
     driver.find_element_by_name("LoginForm[email]").send_keys("anupreet@anupreet.com")
     driver.find_element_by_name("LoginForm[password]").clear()
-    driver.find_element_by_name("LoginForm[password]").send_keys("golani123")
-    driver.find_element_by_xpath("//input[@value='Sign In']").click()
+    # driver.find_element_by_name("LoginForm[password]").send_keys("#######")
+    # driver.find_element_by_xpath("//input[@value='Sign In']").click()
+    time.sleep(100) # If you want to manually log in
   except Exception as e:
     logger.info('Already signed in [%s]', e)
   time.sleep(10)
 
-  filename = "./anuskillShare.csv"
+  filename = "./z.csv"
   content = csv.reader(open(filename, 'r'), delimiter=',', quotechar='"')
   for (title, url) in content:    
-    #    driver.get('https://www.skillshare.com/classes/Sketchbook-Practice-Bring-watercolour-to-Life-with-Line-Drawing/1053382271/classroom/discuss')
+    # driver.get('https://www.skillshare.com/classes/Sketchbook-Practice-Bring-watercolour-to-Life-with-Line-Drawing/1053382271/classroom/discuss')
     logger.info('Fetching URL[%s]' % url)
     driver.get(url)
     time.sleep(10)
-    """
-    html_source = driver.page_source
 
-    bs = BeautifulSoup(html_source, "html.parser")
-    html = bs.findAll('video', attrs={'class':['vjs-tech']})
-    str_html = str(html)
-    logger.info(str_html)
-    fetch_url = str_html[str_html.find("src=")+5:str_html.find("?pubId")]
-    logger.info(fetch_url)
-    """
     escaped_title = re.sub(r"[^A-Za-z 0-9]+", '', title).replace(' ', '_')
     dirname = 'SkillsShare/' + escaped_title
-    # cmd = 'mkdir -p %s && cd %s && youtube-dl --username anupreet@anupreet.com --password golani123 %s' % (dirname, dirname, fetch_url)
     cmd = 'mkdir -p ' + dirname
     logger.info(cmd)
-    os.system(cmd)
-    
+    os.system(cmd)    
 
     els = driver.find_elements_by_class_name("session-item")
     
@@ -110,11 +100,11 @@ def main():
       cmd = 'cd %s && curl -s %s -o %s' % (dirname, fetch_url, name)
       logger.info(cmd)
       # os.system(cmd)
-      # driver.back()  Mynk not required as we have installed plugin to avoid download of video
 
   driverFinalize(driver)
   displayFinalize(display)
   logger.info("...END PROCESSING")     
   exit(0)
+
 if __name__ == '__main__':
   main()
