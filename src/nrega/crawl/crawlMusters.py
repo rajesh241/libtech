@@ -53,7 +53,7 @@ def main():
   cur.execute(query)
 
 
-  query="select id,districtCode,crawlIP,stateCode from districts where isRequired=1"
+  query="select id,districtCode,crawlIP,stateCode from districts where isRequired=1 and stateName='JHARKHAND'"
   cur.execute(query)
   results=cur.fetchall()
   for row in results:
