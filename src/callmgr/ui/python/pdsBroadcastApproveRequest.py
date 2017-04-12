@@ -27,7 +27,8 @@ def main():
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
   cur.execute(query)
-  myhtml='' 
+  myhtml=''
+  myhtml+='<h2><a href="http://callmgr.libtech.info/auth/broadcastUI/python/pdsBroadcastApprove.py" > Go back to PDS List </a></h2>' 
   query="update fpsStatus set initiateBroadcast=1,initiateBroadcastDate=NOW() where id=%s" % rowid
   cur.execute(query)
   query="select f.districtName,f.blockName,f.fpsName,f.totalNumbers,fs.month,fs.year from fpsShops f,fpsStatus fs where fs.fpsCode=f.fpsCode and fs.id=%s" % rowid
