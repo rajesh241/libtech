@@ -25,6 +25,7 @@ export class Auth {
                 window.localStorage.setItem('user', JSON.stringify(user));
             }).catch((error) => {
                 console.log(error);
+                alert(error);
             });
     }
 
@@ -42,6 +43,7 @@ export class Auth {
             window.localStorage.setItem('user', JSON.stringify(user));
         }).catch((error) => {
             console.log(error);
+            alert(error);
         });
     }
 
@@ -59,6 +61,7 @@ export class Auth {
             window.localStorage.setItem('user', JSON.stringify(user));
         }).catch((error) => {
             console.log(error);
+            alert(error);
         });
     }
 

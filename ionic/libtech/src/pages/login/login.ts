@@ -17,31 +17,18 @@ export class LoginPage {
     }
 
     login() {
-        this.auth.login(this.email,
-            this.password).then((response) => {
-                this.navCtrl.pop();
-            }).catch((error) => {
-                console.log(error);
-                alert(error);
-            });
+        this.auth.login(this.email, this.password);
+        this.navCtrl.pop();
     }
 
     loginWithGoogle() {
-        return this.auth.loginWithGoogle().then((response) => {
-            this.navCtrl.pop();
-        }).catch((error) => {
-            console.log(error);
-            alert(error);
-        });
+        this.auth.loginWithGoogle();
+        this.navCtrl.pop();
     }
 
     loginWithFacebook() {
-        return this.auth.loginWithFacebook().then((response) => {
-            this.navCtrl.pop();
-        }).catch((error) => {
-            console.log(error);
-            alert(error);
-        });
+        this.auth.loginWithFacebook();
+        this.navCtrl.pop();
     }
 
     logout() {
