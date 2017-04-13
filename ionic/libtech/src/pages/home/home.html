@@ -8,7 +8,7 @@
 
 <ion-content padding>
   <h1>Field Reports App</h1>
-  {{ welcomeMessage }} 
+  <div *ngIf ="!isLoggedIn()"><p>You are not logged in!</p></div>
   <div *ngIf="isLoggedIn()">
     <ion-item>
       <ion-avatar item-left *ngIf="user.picture">

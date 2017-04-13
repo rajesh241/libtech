@@ -3,9 +3,24 @@ import { AngularFire, AuthProviders, AuthMethods } from 'angularfire2';
 
 @Injectable()
 export class Auth {
+    user: any;
 
     constructor(public af: AngularFire) {
         console.log('Hello Auth Provider');
+    }
+
+    isLoggedIn() {
+        if (window.localStorage.getItem('user')) {
+            if (!this.user) {
+                this.user = JSON.parse(window.localStorage.getItem('user'));
+                console.log(JSON.stringify(this.user));
+            }
+            return true;
+        }
+    }
+
+    getUser() {
+        return this.user;
     }
 
     login(email, password) {
