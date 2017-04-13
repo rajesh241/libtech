@@ -12,6 +12,8 @@ import { TransactionsPage } from '../pages/transactions/transactions'
 import { TransactionPage } from '../pages/transaction/transaction'
 import { Panchayats } from '../providers/panchayats'
 
+import { Auth } from '../providers/auth';
+
 const firebaseConfig = {
     apiKey: "AIzaSyCv6jE0O5QjsAMK_WzUG2pDvEsIlTZCduY",
     authDomain: "libtech-app.firebaseapp.com",
@@ -44,6 +46,7 @@ const firebaseConfig = {
         TransactionPage
     ],
     providers: [Panchayats,
+        Auth,
         { provide: ErrorHandler, useClass: IonicErrorHandler }]
 })
 export class AppModule { }

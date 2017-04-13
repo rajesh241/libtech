@@ -1,18 +1,68 @@
 import { Injectable } from '@angular/core';
-import { Http } from '@angular/http';
-import 'rxjs/add/operator/map';
+import { AngularFire, AuthProviders, AuthMethods } from 'angularfire2';
 
-/*
-  Generated class for the Auth provider.
-
-  See https://angular.io/docs/ts/latest/guide/dependency-injection.html
-  for more info on providers and Angular 2 DI.
-*/
 @Injectable()
 export class Auth {
 
-  constructor(public http: Http) {
-    console.log('Hello Auth Provider');
-  }
+    constructor(public af: AngularFire) {
+        console.log('Hello Auth Provider');
+    }
 
+    login(email, password) {
+        return this.af.auth.login({
+            email: email,
+            password: password
+        }, {
+                provider: AuthProviders.Password,
+                method: AuthMethods.Password
+            }).then((response) => {
+                console.log('auth ' + 'Login Success' + JSON.stringify(response));
+                let user = {
+                    email: response.auth.email,
+                    picture: response.auth.photoURL
+                };
+                console.log('auth ' + JSON.stringify(user));
+                window.localStorage.setItem('user', JSON.stringify(user));
+            }).catch((error) => {
+                console.log(error);
+            });
+    }
+
+    loginWithGoogle() {
+        return this.af.auth.login({
+            provider: AuthProviders.Google,
+            method: AuthMethods.Popup
+        }).then((response) => {
+            console.log('Login with Google Success' + JSON.stringify(response));
+            let user = {
+                email: response.auth.email,
+                picture: response.auth.photoURL
+            };
+            console.log(JSON.stringify(user));
+            window.localStorage.setItem('user', JSON.stringify(user));
+        }).catch((error) => {
+            console.log(error);
+        });
+    }
+
+    loginWithFacebook() {
+        return this.af.auth.login({
+            provider: AuthProviders.Facebook,
+            method: AuthMethods.Popup
+        }).then((response) => {
+            console.log('Login with Facebook Success' + JSON.stringify(response));
+            let user = {
+                email: response.auth.displayName,
+                picture: response.auth.photoURL
+            };
+            console.log(JSON.stringify(user));
+            window.localStorage.setItem('user', JSON.stringify(user));
+        }).catch((error) => {
+            console.log(error);
+        });
+    }
+
+    logout() {
+        return this.af.auth.logout();
+    }
 }

@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
-import { AuthProviders, AuthMethods, AngularFire } from 'angularfire2';
+import { Auth } from '../../providers/auth';
 
 @Component({
     selector: 'page-login',
@@ -10,27 +10,15 @@ export class LoginPage {
     email: string;
     password: string;
 
-    constructor(public navCtrl: NavController, public navParams: NavParams, private af: AngularFire) { }
+    constructor(public navCtrl: NavController, public navParams: NavParams, private auth: Auth) { }
 
     ionViewDidLoad() {
         console.log('ionViewDidLoad LoginPage');
     }
 
     login() {
-        this.af.auth.login({
-            email: this.email,
-            password: this.password
-        }, {
-                provider: AuthProviders.Password,
-                method: AuthMethods.Password
-            }).then((response) => {
-                console.log('Login Success' + JSON.stringify(response));
-                let user = {
-                    email: response.auth.email,
-                    picture: response.auth.photoURL
-                };
-                console.log(JSON.stringify(user));
-                window.localStorage.setItem('user', JSON.stringify(user));
+        this.auth.login(this.email,
+            this.password).then((response) => {
                 this.navCtrl.pop();
             }).catch((error) => {
                 console.log(error);
@@ -39,17 +27,7 @@ export class LoginPage {
     }
 
     loginWithGoogle() {
-        return this.af.auth.login({
-            provider: AuthProviders.Google,
-            method: AuthMethods.Popup
-        }).then((response) => {
-            console.log('Login with Google Success' + JSON.stringify(response));
-            let user = {
-                email: response.auth.email,
-                picture: response.auth.photoURL
-            };
-            console.log(JSON.stringify(user));
-            window.localStorage.setItem('user', JSON.stringify(user));
+        return this.auth.loginWithGoogle().then((response) => {
             this.navCtrl.pop();
         }).catch((error) => {
             console.log(error);
@@ -58,17 +36,7 @@ export class LoginPage {
     }
 
     loginWithFacebook() {
-        return this.af.auth.login({
-            provider: AuthProviders.Facebook,
-            method: AuthMethods.Popup
-        }).then((response) => {
-            console.log('Login with Facebook Success' + JSON.stringify(response));
-            let user = {
-                email: response.auth.displayName,
-                picture: response.auth.photoURL
-            };
-            console.log(JSON.stringify(user));
-            window.localStorage.setItem('user', JSON.stringify(user));
+        return this.auth.loginWithFacebook().then((response) => {
             this.navCtrl.pop();
         }).catch((error) => {
             console.log(error);
@@ -77,6 +45,6 @@ export class LoginPage {
     }
 
     logout() {
-        return this.af.auth.logout();
+        return this.auth.logout();
     }
 }
