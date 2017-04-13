@@ -12,13 +12,14 @@ import { Auth } from '../../providers/auth';
 })
 export class HomePage {
     user: any;
+    loginPage = LoginPage;
     panchayatsPage = PanchayatsPage;
     panchayats = ['MAHANTMANIYARI', 'RATNAULI']; // Placeholder for list of panchayats to fetch
     panchayatSelected = [false, false]; // Placeholder for list of panchayats to fetch
 
     constructor(public navCtrl: NavController, private auth: Auth) {
         window.localStorage.removeItem('user'); // FIXME Mynk this needs to go!
-        if (!this.isLoggedIn()) {
+        if (!this.getUser()) {
             this.navCtrl.push(LoginPage);
         }
     }
@@ -30,13 +31,13 @@ export class HomePage {
         //        this.navCtrl.push(PanchayatsPage)
     }
 
-    isLoggedIn() {
-        if (this.auth.isLoggedIn()) {
-            this.user = this.auth.getUser();
-            console.log('#### ' + JSON.stringify(this.user)); // FIXME
-            return true;
-        }
-        return false;
+    getUser() {
+        this.user = this.auth.getUser();
+        return this.user;
+    }
+
+    logout() {
+        this.auth.logout();
     }
 
     ionViewDidLoad() {

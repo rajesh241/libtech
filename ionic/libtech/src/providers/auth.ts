@@ -20,6 +20,12 @@ export class Auth {
     }
 
     getUser() {
+        if (window.localStorage.getItem('user')) {
+            if (!this.user) {
+                this.user = JSON.parse(window.localStorage.getItem('user'));
+                console.log("Fetched User [" + JSON.stringify(this.user) + "]");
+            }
+        }
         return this.user;
     }
 
@@ -81,6 +87,8 @@ export class Auth {
     }
 
     logout() {
+        this.user = null;
+        window.localStorage.removeItem('user');
         return this.af.auth.logout();
     }
 }

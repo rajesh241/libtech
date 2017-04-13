@@ -8,8 +8,10 @@
 
 <ion-content padding>
   <h1>Field Reports App</h1>
-  <div *ngIf ="!isLoggedIn()"><p>You are not logged in!</p></div>
-  <div *ngIf="isLoggedIn()">
+  <div *ngIf ="!getUser()"><p>You are not logged in!</p>
+      <button ion-button round [navPush]="loginPage">Login</button>
+  </div>
+  <div *ngIf="getUser()">
     <ion-item>
       <ion-avatar item-left *ngIf="user.picture">
 	<img [src]="user.picture">
@@ -30,5 +32,6 @@
   </div>
 </ion-content>
 <ion-footer>
-<!--  <button ion-button round (click)="logout()">Logout</button> -->
+  <button *ngIf="!getUser()" ion-button round [navPush]="loginPage">Login</button>
+  <button *ngIf="getUser()" ion-button round (click)="logout()">Logout</button>
 </ion-footer>
