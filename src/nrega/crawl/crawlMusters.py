@@ -54,6 +54,7 @@ def main():
 
 
   query="select id,districtCode,crawlIP,stateCode from districts where isRequired=1 and stateName='JHARKHAND'"
+#  query="select id,districtCode,crawlIP,stateCode from districts where isRequired=1 "
   cur.execute(query)
   results=cur.fetchall()
   for row in results:
@@ -62,7 +63,7 @@ def main():
     stateCode=row[3]
     musterType='10'
     logger.info("DistrictCode: %s Crawl IP %s " % (districtCode,crawlIP))
-    query="select stateName,blockCode,rawDistrictName,rawBlockName,rawPanchayatName,fullPanchayatCode,panchayatCode from panchayats where isRequired=1 and stateCode='%s' and districtCode='%s' %s" % (stateCode,districtCode,additionalFilters)
+    query="select stateName,blockCode,rawDistrictName,rawBlockName,rawPanchayatName,fullPanchayatCode,panchayatCode from panchayats where isRequired=1 and stateCode='%s' and districtCode='%s' %s order by id desc" % (stateCode,districtCode,additionalFilters)
     cur.execute(query)
     results1=cur.fetchall()
     for row1 in results1:
