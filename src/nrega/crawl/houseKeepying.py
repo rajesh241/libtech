@@ -174,7 +174,50 @@ def selectRandomDistricts(cur,logger):
         rowid=str(row1[0])
         query="update districts set jRequired=1 where id=%s " %str(rowid)
         cur.execute(query)
- 
+def genMusterURLs(cur,logger,mid):
+  logger.info("Generating Muster URLs")
+  whereClause=''
+  if mid is not None:
+    whereClause=" where id=%s " % str(mid)
+  query="select fullBlockCode,panchayatCode,musterNo,workName,DATE_FORMAT(dateFrom,'%d/%m/%Y'),DATE_FORMAT(dateTo,'%d/%m/%Y'),workCode,finyear,id from musters " + whereClause
+  cur.execute(query)
+  results=cur.fetchall()
+  for row in results:
+    rowid=row[8]
+    #[fullBlockCode,panchayatCode,musterNo,workName,
+    fullBlockCode=row[0]
+    logger.info("Processing ID: %s, fullBlockCode:%s " % (str(rowid),fullBlockCode))
+    panchayatCode=row[1]
+    musterNo=str(row[2])
+    workName=row[3].replace(" ","+")
+    #workName=row[3]
+    #workName=quote_plus(workName)
+    dateFrom=str(row[4])
+    dateTo=str(row[5])
+    workCode=row[6]
+    fullFinYear=getFullFinYear(row[7]) 
+    query="select fullPanchayatCode from panchayats where fullBlockCode='%s' and panchayatCode='%s'" % (fullBlockCode,panchayatCode)
+    cur.execute(query)
+    panchRow=cur.fetchone()
+    fullPanchayatCode=panchRow[0]
+    query="select crawlIP,stateName,rawDistrictName,rawBlockName,rawPanchayatName,stateShortCode,stateCode,districtCode,blockCode,panchayatName from panchayats where fullPanchayatCode='%s'" % (fullPanchayatCode)
+    cur.execute(query)
+    row=cur.fetchone()
+    crawlIP=row[0]
+    stateName=row[1]
+    districtName=row[2]
+    blockName=row[3]
+    panchayatName=row[4] 
+    stateShortCode=row[5]
+    stateCode=row[6]
+    districtCode=row[7]
+    blockCode=row[8]
+    panchayatNameAltered=row[9]
+    jobcardPrefix="%s-%s" % (stateShortCode,districtCode)
+    musterURL="http://%s/netnrega/citizen_html/musternew.aspx?state_name=%s&district_name=%s&block_name=%s&panchayat_name=%s&workcode=%s&panchayat_code=%s&msrno=%s&finyear=%s&dtfrm=%s&dtto=%s&wn=%s&id=1" % (crawlIP,stateName.upper(),districtName.upper(),blockName.upper(),panchayatName,workCode,fullPanchayatCode,musterNo,fullFinYear,dateFrom,dateTo,workName)
+    #logger.info(musterURL)
+    query="update musters set url='%s' where id=%s " % (musterURL,str(rowid))
+    cur.execute(query)
 def updateMusterStats(cur,logger):
   logger.info("Updating Muster Statistics")
   query="select id,fullBlockCode,musterNo,finyear from musters where wdProcessed=1 "
@@ -203,9 +246,11 @@ def argsFetch():
   parser = argparse.ArgumentParser(description='Script for crawling, downloading & parsing musters')
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
+  parser.add_argument('-mid', '--musterID', help='Muster ID', required=False)
   parser.add_argument('-ums', '--updateMusterStats', help='update Statistics in Muster Table', required=False,action='store_const', const=1)
   parser.add_argument('-srd', '--selectRandomDistricts', help='Select Random Districts', required=False,action='store_const', const=1)
   parser.add_argument('-ups', '--updatePanchayatStats', help='update Panchayat Status', required=False,action='store_const', const=1)
+  parser.add_argument('-gmu', '--genMusterURL', help='Generate Muster URl', required=False,action='store_const', const=1)
   parser.add_argument('-f', '--finyear', help='Download musters for that finyear', required=False)
   parser.add_argument('-drp', '--downloadRejectedPaymentReport', help='Download Rejected Payment Info', required=False,action='store_const', const=1)
   args = vars(parser.parse_args())
@@ -227,6 +272,8 @@ def main():
     selectRandomDistricts(cur,logger)
   if args['updatePanchayatStats']:
     updatePanchayatStats(cur,logger)
+  if args['genMusterURL']:
+    genMusterURLs(cur,logger,args['musterID'])
   if args['downloadRejectedPaymentReport']:
     if args['finyear']:
       finyear=args['finyear']

@@ -43,19 +43,19 @@ def main():
 
 #Generate Index Level page
   curhtmlfile=nregaWebDirRoot+"/index.html"
-  query="select stateName from districts group by stateName"
+  query="select stateName from districts where isRequired=1 group by stateName "
   myhtml=""
   myhtml+=tabletUIQueryToHTMLTable(cur,query) 
   myhtml=htmlWrapperLocal(title="Select State", head='<h1 aling="center">Select State</h1>', body=myhtml)
   writeFile(curhtmlfile,myhtml)
 
 #Generate State Level page
-  query="select stateName from districts group by stateName"
+  query="select stateName from districts where isRequired=1 group by stateName"
   cur.execute(query)
   results=cur.fetchall()
   for row in results: 
     stateName=row[0]
-    query="select rawDistrictName from districts where stateName='%s' " % stateName
+    query="select rawDistrictName from districts where stateName='%s' and isRequired=1" % stateName
     curhtmlfile=nregaWebDirRoot+"%s/%s.html" % (stateName.upper(),stateName.upper())
     logger.info(query)
     logger.info(curhtmlfile)
@@ -65,7 +65,7 @@ def main():
     writeFile(curhtmlfile,myhtml)
 
 #Generate District Level Level page
-  query="select stateCode,districtCode,stateName,districtName from districts"
+  query="select stateCode,districtCode,stateName,districtName from districts where isRequired=1"
   cur.execute(query)
   results=cur.fetchall()
   for row in results: 
@@ -81,7 +81,7 @@ def main():
     writeFile(curhtmlfile,myhtml)
 
 #Generate Block Level Level page
-  query="select stateCode,districtCode,blockCode,stateName,districtName,blockName from blocks"
+  query="select stateCode,districtCode,blockCode,stateName,districtName,blockName from blocks where isRequired=1"
   cur.execute(query)
   results=cur.fetchall()
   for row in results: 
