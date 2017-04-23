@@ -18,7 +18,6 @@ export class HomePage {
     panchayatSelected = [false, false]; // Placeholder for list of panchayats to fetch
 
     constructor(public navCtrl: NavController, private auth: Auth) {
-        window.localStorage.removeItem('user'); // FIXME Mynk this needs to go!
         if (!this.getUser()) {
             this.navCtrl.push(LoginPage);
         }
