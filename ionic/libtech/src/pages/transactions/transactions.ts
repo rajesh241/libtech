@@ -17,7 +17,7 @@ export class TransactionsPage {
     panchayat: string;
     jobcard: string;
     url: string;
-    transactions: AfoListObservable<any>;
+    transactions: AfoListObservable<any[]>;
 
     constructor(public navCtrl: NavController, public navParams: NavParams, private afo: AngularFireOffline) {
         this.panchayat = this.navParams.get('panchayatName');
