@@ -1,6 +1,10 @@
 import { Component } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
 import { AngularFire, FirebaseListObservable } from 'angularfire2';
+/*import {
+  AngularFireOffline,
+    AfoListObservable,
+    AfoObjectObservable } from 'angularfire2-offline';*/
 
 @Component({
     selector: 'page-transaction',

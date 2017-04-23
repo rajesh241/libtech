@@ -1,9 +1,12 @@
 import { Component } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
 
-import { AngularFire, FirebaseListObservable } from 'angularfire2';
+// import { AngularFire, FirebaseListObservable } from 'angularfire2';
 import { TransactionsPage } from '../transactions/transactions';
-
+import {
+  AngularFireOffline,
+    AfoListObservable,
+      AfoObjectObservable } from 'angularfire2-offline';
 /*
   Generated class for the Jobcards page.
 
@@ -17,11 +20,12 @@ import { TransactionsPage } from '../transactions/transactions';
 export class JobcardsPage {
     transactionsPage = TransactionsPage;
     panchayatName: string;
-    jobcards: FirebaseListObservable<any>;
+    // jobcards: FirebaseListObservable<any>;
+    jobcards: AfoListObservable<any[]>;
 
-    constructor(private navCtrl: NavController, private navParams: NavParams, private af: AngularFire) {
+    constructor(private navCtrl: NavController, private navParams: NavParams, private afo: AngularFireOffline) {
         this.panchayatName = this.navParams.get('panchayatName');
-        this.jobcards = af.database.list('/jobcard/KURHANI/' + this.panchayatName);
+        this.jobcards = afo.database.list('/jobcard/KURHANI/' + this.panchayatName);
         console.log('/jobcard/KURHANI/' + this.panchayatName);
         console.log(this.jobcards);
     }
