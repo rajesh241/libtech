@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
-
+from libtech_settings import LIBTECH_AWS_ACCESS_KEY_ID,LIBTECH_AWS_SECRET_ACCESS_KEY
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -130,8 +130,8 @@ STATICFILES_DIRS = [
 #STATIC_ROOT=    os.path.join(os.path.dirname(BASE_DIR), "static_cdn","static")
 #MEDIA_ROOT=    os.path.join(os.path.dirname(BASE_DIR), "static_cdn","media")
 
-AWS_ACCESS_KEY_ID = "AKIAJJFP4TOG5HRU2G5Q"
-AWS_SECRET_ACCESS_KEY = "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"
+AWS_ACCESS_KEY_ID = LIBTECH_AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY = LIBTECH_AWS_SECRET_ACCESS_KEY
 
 
 AWS_FILE_EXPIRE = 200
@@ -143,7 +143,6 @@ STATICFILES_STORAGE = 'libtech.s3utils.StaticRootS3BotoStorage'
 AWS_STORAGE_BUCKET_NAME = 'libtech-nrega'
 AWS_QUERYSTRING_AUTH = False
 #S3DIRECT_REGION = 'ap-south-1'
-AWS_S3_REGION_NAME = 'us-west-2'
 AWS_S3_REGION_NAME = 'ap-south-1'
 #AWS_S3_HOST = 's3-us-west-2.amazonaws.com'
 #AWS_S3_HOST = 'ap-south-1'
