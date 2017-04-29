@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
 import { Auth } from '../../providers/auth';
+import { PanchayatsPage } from '../panchayats/panchayats';
 
 @Component({
     selector: 'page-login',
@@ -18,7 +19,7 @@ export class LoginPage {
 
     login() {
         this.auth.login(this.email, this.password);
-        this.navCtrl.pop();
+        this.navCtrl.push(PanchayatsPage);
     }
 
     loginWithGoogle() {
