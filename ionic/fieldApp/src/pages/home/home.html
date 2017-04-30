@@ -20,13 +20,15 @@
       <ion-icon name="arrow-forward" item-right></ion-icon>
     </ion-item>
 
+    <!-- FIXME
     <ion-searchbar (input)="search($event)"></ion-searchbar>
 
       <p>Please select the panchayats you wish to follow:</p>
       <ion-list>
 	<ion-item *ngFor="let panchayat of panchayats; let i = index"> <input type="checkbox" [checked]="panchayatSelected[i]"><button ion-button (click)="gotoPanchayat(selectPanchayat, i, panchayat)" #selectPanchayat>{{ panchayat }}</button></ion-item>
       </ion-list>  
-
+      -->
+    
     <button ion-button [navPush]="panchayatsPage" [navParams]="panchayats">Panchayats</button>
   </div>
 </ion-content>
