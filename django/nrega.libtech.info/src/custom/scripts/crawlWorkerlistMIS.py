@@ -6,19 +6,20 @@ from urllib.parse import urlencode
 import os
 import sys
 import re
-from customSettings import repoDir,djangoDir,djangoSettings
+from customSettings import repoDir,djangoDir,djangoSettings,jobCardRegisterTimeThreshold
 
 sys.path.insert(0, repoDir)
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.append(djangoDir)
 
-from nregaFunctions import stripTableAttributes,htmlWrapperLocal
+from nregaFunctions import stripTableAttributes,htmlWrapperLocal,getCurrentFinYear,savePanchayatReport,table2csv
 from wrappers.logger import loggerFetch
 
 import django
 from django.core.wsgi import get_wsgi_application
 from django.core.files.base import ContentFile
 from django.utils import timezone
+from django.db.models import F,Q
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
 django.setup()
@@ -28,6 +29,7 @@ from nrega.models import State,District,Block,Panchayat
 def alterWorkerList(cur,logger,inhtml,stateName,districtName,blockName,panchayatName):
   status=None
   outhtml=''
+  outcsv=''
   splitHTML=inhtml.split(b"MGNREGA Worker Details") 
   if len(splitHTML) == 2:
     status=1
@@ -41,8 +43,9 @@ def alterWorkerList(cur,logger,inhtml,stateName,districtName,blockName,panchayat
     #outhtml+=getCenterAligned('<h3 style="color:blue"> %s</h3>' %title )
     for table in tables:
       outhtml+=stripTableAttributes(table,"libtechDetails")
+      outcsv+=table2csv(table)
     outhtml=htmlWrapperLocal(title=title, head='<h1 aling="center" style="color:blue">'+title+'</h1>', body=outhtml)
-  return status,outhtml
+  return status,outhtml,outcsv
 
 
 def argsFetch():
@@ -191,16 +194,16 @@ def main():
     limit =1
   stateCode=args['stateCode']
   if stateCode is not None:
-    myPanchayats=Panchayat.objects.filter(crawlRequirement="FULL",block__district__state__stateCode=stateCode).order_by('jobcardCrawlDate')[:limit]
+    myPanchayats=Panchayat.objects.filter(Q (crawlRequirement="FULL")  &  (Q (jobcardCrawlDate__lt = jobCardRegisterTimeThreshold) | Q(jobcardCrawlDate__isnull = True ) ) & Q (block__district__state__code=stateCode)).order_by('jobcardCrawlDate')[:limit]
   else:
-    myPanchayats=Panchayat.objects.filter(crawlRequirement="FULL").order_by('jobcardCrawlDate')[:limit]
+    myPanchayats=Panchayat.objects.filter(Q (crawlRequirement="FULL")  &  (Q (jobcardCrawlDate__lt = jobCardRegisterTimeThreshold) | Q(jobcardCrawlDate__isnull = True ) ) ).order_by('jobcardCrawlDate')[:limit]
 #  myPanchayats=Panchayat.objects.filter(fullPanchayatCode='3405003010').order_by('jobcardCrawlDate')[:limit]
   for eachPanchayat in myPanchayats:
     logger.info("Processing : panchayat: %s " % (eachPanchayat.name))
-    stateCode=eachPanchayat.block.district.state.stateCode
-    fullDistrictCode=eachPanchayat.block.district.fullDistrictCode
-    fullBlockCode=eachPanchayat.block.fullBlockCode
-    fullPanchayatCode=eachPanchayat.fullPanchayatCode
+    stateCode=eachPanchayat.block.district.state.code
+    fullDistrictCode=eachPanchayat.block.district.code
+    fullBlockCode=eachPanchayat.block.code
+    fullPanchayatCode=eachPanchayat.code
     districtName=eachPanchayat.block.district.name
     blockName=eachPanchayat.block.name
     stateName=eachPanchayat.block.district.state.name
@@ -210,15 +213,25 @@ def main():
     htmlresponse,myhtml=getWorkerList(logger,url,stateCode,fullDistrictCode,fullBlockCode,fullPanchayatCode)
     if htmlresponse['status'] == '200':
       logger.info("File Downloaded SuccessFully")
-      status,outhtml=alterWorkerList(cur,logger,myhtml,stateName,districtName,blockName,eachPanchayat.name)
+      status,outhtml,outcsv=alterWorkerList(cur,logger,myhtml,stateName,districtName,blockName,eachPanchayat.name)
       if status is not None:
         filename=eachPanchayat.slug+"_jr.html"
+        filenamecsv=eachPanchayat.slug+"_jr.csv"
         try:
           outhtml=outhtml.encode("UTF-8")
         except:
           outhtml=outhtml
+        try:
+          outcsv=outcsv.encode("UTF-8")
+        except:
+          outcsv=outcsv
         logger.info("Processing StateCode %s, fullDistrictCode : %s, fullBlockCode : %s, fullPanchayatCode: %s " % (stateCode,fullDistrictCode,fullBlockCode,fullPanchayatCode))
-        eachPanchayat.jobcardRegisterFile.save(filename, ContentFile(outhtml))
+        finyear=getCurrentFinYear()
+        reportType="jobcardRegisterHTML"
+        savePanchayatReport(logger,eachPanchayat,finyear,reportType,filename,outhtml)
+        reportType="jobcardRegisterCSV"
+        savePanchayatReport(logger,eachPanchayat,finyear,reportType,filenamecsv,outcsv)
+      #  eachPanchayat.jobcardRegisterFile.save(filename, ContentFile(outhtml))
         eachPanchayat.jobcardCrawlDate=timezone.now()
         eachPanchayat.save()
 

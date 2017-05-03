@@ -12,18 +12,18 @@ sys.path.insert(0, repoDir)
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.append(djangoDir)
 
-from nregaFunctions import stripTableAttributes,htmlWrapperLocal,getjcNumber
+from nregaFunctions import stripTableAttributes,htmlWrapperLocal,getjcNumber,getCurrentFinYear
 from wrappers.logger import loggerFetch
 
 import django
 from django.core.wsgi import get_wsgi_application
 from django.core.files.base import ContentFile
-from django.db.models import F
+from django.db.models import F,Q
 from django.utils import timezone
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
 django.setup()
 
-from nrega.models import State,District,Block,Panchayat,Applicant
+from nrega.models import State,District,Block,Panchayat,Applicant,PanchayatReport
 
 def argsFetch():
   '''
@@ -48,39 +48,43 @@ def main():
     limit = int(args['limit'])
   else:
     limit =1
-  
-  myPanchayats=Panchayat.objects.filter(jobcardCrawlDate__gt = F('jobcardProcessDate'))[:limit]
-  
+  reportType="jobcardRegisterHTML"
+  curfinyear=getCurrentFinYear() 
+  myPanchayats=Panchayat.objects.filter( Q(jobcardCrawlDate__gt = F('jobcardProcessDate')) | Q(jobcardCrawlDate__isnull=False,jobcardProcessDate__isnull=True)   )[:limit]
   for eachPanchayat in myPanchayats:
-    logger.info(eachPanchayat.name+","+eachPanchayat.fullPanchayatCode)
-    myhtml=eachPanchayat.jobcardRegisterFile.read()
-    htmlsoup=BeautifulSoup(myhtml,"html.parser")
-    myTable=htmlsoup.find('table',id="libtechDetails")
-    jobcardPrefix=eachPanchayat.block.district.state.stateShortCode+"-"
-    logger.info(jobcardPrefix)
-    if myTable is not None:
-      logger.info("Found the table")
-      rows=myTable.findAll('tr')
-      for row in rows:
-        cols=row.findAll('td')
-        if jobcardPrefix in cols[3].text:
-          for i,col in enumerate(cols):
-            cols[i]=col.text.lstrip().rstrip()
-          [srno,pname,village,jobcard,applicantNo,name,headOfHousehold,fatherHusbandName,caste,gender,age] = cols[0:11]
-          [bankCode,bankName,bankBranchCode,bankBranchName,ifscCode,micrCode,poCode,poName,poAddress,accountNo,poAccountName]=cols[12:23]
-          [accountFrozen,uid] = cols[26:28]
-          jcNo=getjcNumber(jobcard)
-          logger.info("Processing Jobcard: %s applicantNo: %s " % (jobcard,applicantNo))
-          myApplicant=Applicant.objects.filter(jobcard=jobcard,applicantNo=applicantNo).first()
-          if myApplicant is None:
-            logger.info("Creating Applicant: %s " % (jobcard))
-            Applicant.objects.create(jobcard=jobcard,applicantNo=applicantNo,panchayat=eachPanchayat)
-          a=Applicant.objects.filter(jobcard=jobcard,applicantNo=applicantNo).first()
-          [a.village,a.name,a.headOfHousehold,a.fatherHusbandName,a.caste,a.gender,a.age]=[village,name,headOfHousehold,fatherHusbandName,caste,gender,age]
-          [a.bankCode,a.bankName,a.bankBranchCode,a.bankBranchName,a.ifscCode,a.micrCode]=[bankCode,bankName,bankBranchCode,bankBranchName,ifscCode,micrCode]
-          [a.poCode,a.poName,a.poAddress,a.accountNo,a.poAccountName,a.accountFrozen,a.uid]=[poCode,poName,poAddress,accountNo,poAccountName,accountFrozen,uid]
-          a.jcNo=jcNo
-          a.save() 
+    logger.info(eachPanchayat.name+","+eachPanchayat.code)
+    panchayatReport=PanchayatReport.objects.filter(reportType=reportType,finyear=curfinyear,panchayat=eachPanchayat).first()
+    if panchayatReport is not None:
+      logger.info("Panchayat Report Exists")
+      myhtml=panchayatReport.reportFile.read()  
+      #myhtml=eachPanchayat.jobcardRegisterFile.read()
+      htmlsoup=BeautifulSoup(myhtml,"html.parser")
+      myTable=htmlsoup.find('table',id="libtechDetails")
+      jobcardPrefix=eachPanchayat.block.district.state.stateShortCode+"-"
+      logger.info(jobcardPrefix)
+      if myTable is not None:
+        logger.info("Found the table")
+        rows=myTable.findAll('tr')
+        for row in rows:
+          cols=row.findAll('td')
+          if jobcardPrefix in cols[3].text:
+            for i,col in enumerate(cols):
+              cols[i]=col.text.lstrip().rstrip()
+            [srno,pname,village,jobcard,applicantNo,name,headOfHousehold,fatherHusbandName,caste,gender,age] = cols[0:11]
+            [bankCode,bankName,bankBranchCode,bankBranchName,ifscCode,micrCode,poCode,poName,poAddress,accountNo,poAccountName]=cols[12:23]
+            [accountFrozen,uid] = cols[26:28]
+            jcNo=getjcNumber(jobcard)
+            logger.info("Processing Jobcard: %s applicantNo: %s " % (jobcard,applicantNo))
+            myApplicant=Applicant.objects.filter(jobcard=jobcard,applicantNo=applicantNo).first()
+            if myApplicant is None:
+              logger.info("Creating Applicant: %s " % (jobcard))
+              Applicant.objects.create(jobcard=jobcard,applicantNo=applicantNo,panchayat=eachPanchayat)
+            a=Applicant.objects.filter(jobcard=jobcard,applicantNo=applicantNo).first()
+            [a.village,a.name,a.headOfHousehold,a.fatherHusbandName,a.caste,a.gender,a.age]=[village,name,headOfHousehold,fatherHusbandName,caste,gender,age]
+            [a.bankCode,a.bankName,a.bankBranchCode,a.bankBranchName,a.ifscCode,a.micrCode]=[bankCode,bankName,bankBranchCode,bankBranchName,ifscCode,micrCode]
+            [a.poCode,a.poName,a.poAddress,a.accountNo,a.poAccountName,a.accountFrozen,a.uid]=[poCode,poName,poAddress,accountNo,poAccountName,accountFrozen,uid]
+            a.jcNo=jcNo
+            a.save() 
     eachPanchayat.jobcardProcessDate=timezone.now()
     eachPanchayat.save()
           

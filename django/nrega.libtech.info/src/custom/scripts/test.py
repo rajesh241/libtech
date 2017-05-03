@@ -24,9 +24,10 @@ from django.contrib.auth.models import User
 #for obj in myobjs:
 #  print(obj.id)
 myUser=User.objects.filter(username='demo').first()
-myobjs=Block.objects.filter(fullBlockCode='3204003')
+myobjs=Muster.objects.filter(isProcessed=1)
 for obj in myobjs:
-  obj.partners.add(myUser)
+  obj.isProcessed=0
+  obj.save()
 #myobjs=Panchayat.objects.filter(block__isRequired=1).order_by('-jobcardCrawlDate')[:1]
 #myobjs=Panchayat.objects.filter(id=100).order_by('-jobcardCrawlDate')[:1]
 #for obj in myobjs:

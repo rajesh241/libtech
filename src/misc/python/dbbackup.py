@@ -9,7 +9,6 @@
 #So to run to dbbackup.py daily|monthly|weekly
 
 import sys
-import MySQLdb
 import datetime
 import os
 import time

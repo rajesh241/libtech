@@ -64,13 +64,13 @@ def main():
       logger.info("**********************************************************************************")
       logger.info("Createing work Payment report for panchayat: %s panchayatCode: %s ID: %s" % (eachPanchayat.name,eachPanchayat.fullPanchayatCode,str(eachPanchayat.id)))
       outcsv=''
-      outcsv+="jobcard,name,musterNo,workName,dateFrom,dateTo,daysWorked,totalWage,accountNo,musterStatus,creditedDate"
+      outcsv+="jobcard,name,musterNo,workName,dateFrom,dateTo,daysWorked,totalWage,accountNo,musterStatus,creditedDate,secondSignatoryDate"
       outcsv+="\n"
       workRecords=WorkDetail.objects.filter(muster__block__panchayat__id=eachPanchayat.id,muster__finyear=finyear)
       logger.info("Total Work Records: %s " %str(len(workRecords)))
       for wd in workRecords:
         workName=wd.muster.workName.replace(","," ")
-        outcsv+="%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s" % (wd.zjobcard,wd.zname,wd.muster.musterNo,workName,str(wd.muster.dateFrom),str(wd.muster.dateTo),str(wd.daysWorked),str(wd.totalWage),wd.zaccountNo,wd.musterStatus,str(wd.creditedDate))
+        outcsv+="%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s" % (wd.zjobcard,wd.zname,wd.muster.musterNo,workName,str(wd.muster.dateFrom),str(wd.muster.dateTo),str(wd.daysWorked),str(wd.totalWage),wd.zaccountNo,wd.musterStatus,str(wd.creditedDate),str(wd.muster.PaymentDate))
         outcsv+="\n"
    
       try:

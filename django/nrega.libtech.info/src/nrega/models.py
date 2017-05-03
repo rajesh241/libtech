@@ -30,7 +30,7 @@ def get_panchayat_upload_path(instance, filename):
 class State(models.Model):
   name=models.CharField(max_length=256)
   crawlIP=models.CharField(max_length=256)
-  stateCode=models.CharField(max_length=2,unique=True)
+  code=models.CharField(max_length=2,unique=True)
   stateShortCode=models.CharField(max_length=2)
   isNIC=models.BooleanField(default=True)
   slug=models.SlugField(blank=True) 
@@ -41,7 +41,7 @@ class State(models.Model):
 class District(models.Model):
   state=models.ForeignKey('state',on_delete=models.CASCADE)
   name=models.CharField(max_length=256)
-  fullDistrictCode=models.CharField(max_length=4,unique=True)
+  code=models.CharField(max_length=4,unique=True)
   slug=models.SlugField(blank=True) 
   def stateName(self):
     return self.state.name
@@ -57,7 +57,7 @@ class Block(models.Model):
   partners=models.ManyToManyField(settings.AUTH_USER_MODEL,related_name="ngoPartners",blank=True)
   district=models.ForeignKey('district',on_delete=models.CASCADE)
   name=models.CharField(max_length=256)
-  fullBlockCode=models.CharField(max_length=7,unique=True)
+  code=models.CharField(max_length=7,unique=True)
   crawlRequirement=models.CharField(max_length=4,choices=CRAWL_CHOICES,default='NONE')
   isRequired=models.BooleanField(default=False)
   slug=models.SlugField(blank=True) 
@@ -85,10 +85,11 @@ class PanchayatReport(models.Model):
   reportFile=models.FileField(null=True, blank=True,upload_to=get_panchayatreport_upload_path,max_length=512)
   reportType=models.CharField(max_length=256)
   finyear=models.CharField(max_length=2)
+  updateDate=models.DateTimeField(auto_now=True)
   class Meta:
         unique_together = ('panchayat', 'reportType','finyear')  
   def __str__(self):
-    return self.reportType+self.finyear
+    return self.panchayat.name+"-"+self.reportType
     
 class Panchayat(models.Model):
   CRAWL_CHOICES = (
@@ -98,7 +99,7 @@ class Panchayat(models.Model):
     )
   block=models.ForeignKey('block',on_delete=models.CASCADE)
   name=models.CharField(max_length=256)
-  fullPanchayatCode=models.CharField(max_length=10,unique=True)
+  code=models.CharField(max_length=10,unique=True)
   slug=models.SlugField(blank=True) 
   crawlRequirement=models.CharField(max_length=4,choices=CRAWL_CHOICES,default='NONE')
   jobcardCrawlDate=models.DateTimeField(null=True,blank=True,default=datetime.datetime.now)
@@ -169,6 +170,7 @@ class Muster(models.Model):
   workName=models.CharField(max_length=2046)
   dateFrom=models.DateField(default=datetime.date.today)
   dateTo=models.DateField(default=datetime.date.today)
+  paymentDate=models.DateField(blank=True,null=True)
   musterURL=models.CharField(max_length=1024)
   musterFile=models.FileField(null=True, blank=True,upload_to=get_muster_upload_path,max_length=512)
   isDownloaded=models.BooleanField(default=False)
@@ -205,8 +207,9 @@ class WorkDetail(models.Model):
 def createslug(instance):
   myslug=slugify(instance.name)
   if myslug == '':
-    myslug="%s-%s" % (instance.__class__.__name__ , str(instance.id))
+    myslug="%s-%s" % (instance.__class__.__name__ , str(instance.code))
   return myslug
+
 
 def location_post_save_receiver(sender,instance,*args,**kwargs):
   myslug=createslug(instance)
@@ -218,7 +221,6 @@ post_save.connect(location_post_save_receiver,sender=State)
 post_save.connect(location_post_save_receiver,sender=District)
 post_save.connect(location_post_save_receiver,sender=Block)
 post_save.connect(location_post_save_receiver,sender=Panchayat)
-
 #def state_post_save_receiver(sender,instance,*args,**kwargs):
 #  if not instance.slug:
 #    instance.slug = "some-slug"

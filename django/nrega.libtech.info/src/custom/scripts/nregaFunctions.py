@@ -8,7 +8,7 @@ fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.append(djangoDir)
 
 from wrappers.logger import loggerFetch
-
+import datetime
 import django
 from django.core.wsgi import get_wsgi_application
 from django.core.files.base import ContentFile
@@ -17,6 +17,14 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
 django.setup()
 
 from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,PanchayatReport
+def getCurrentFinYear():
+  now = datetime.datetime.now()
+  month=now.month
+  if now.month > 3:
+    year=now.year+1
+  else:
+    year=year
+  return year% 100
 
 def getFullFinYear(shortFinYear):
   shortFinYear_1 = int(shortFinYear) -1

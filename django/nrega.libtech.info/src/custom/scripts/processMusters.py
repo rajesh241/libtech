@@ -52,13 +52,28 @@ def main():
   stateCode=args['stateCode']
   if stateCode is not None:
     logger.info("StateCode is %s" % stateCode)
-    myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0,panchayat__crawlRequirement="FULL",panchayat__block__district__state__stateCode=stateCode)[:limit] 
+    myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0,panchayat__crawlRequirement="FULL",panchayat__block__district__state__code=stateCode)[:limit] 
   else:
     myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0)[:limit] 
   for eachMuster in myMusters:
-    logger.info("MusterNo: %s, blockCode: %s, finyear: %s workName:%s" % (eachMuster.musterNo,eachMuster.block.fullBlockCode,eachMuster.finyear,eachMuster.workName))
-    logger.info(eachMuster.panchayat.fullPanchayatCode+eachMuster.panchayat.crawlRequirement+eachMuster.panchayat.name)
+    logger.info("MusterNo: %s, blockCode: %s, finyear: %s workName:%s" % (eachMuster.musterNo,eachMuster.block.code,eachMuster.finyear,eachMuster.workName))
+    logger.info(eachMuster.panchayat.code+eachMuster.panchayat.crawlRequirement+eachMuster.panchayat.name)
     myhtml=eachMuster.musterFile.read()
+
+#Getting the Payment Date from Muster HTML
+    s1=myhtml.decode("UTF-8").replace(u'\xa0', u' ')
+    s=s1.replace("\n","").replace("\r","").replace(" ","")
+    r=re.search('PaymentDate:([^\<]*)',s)
+    if r is not None:
+      paymentDateString=r.group(1).lstrip().rstrip()
+      if paymentDateString != '':
+        paymentDate = time.strptime(paymentDateString, '%d/%m/%Y')
+        paymentDate = time.strftime('%Y-%m-%d', paymentDate)
+      else:
+        paymentDate=None
+    else:
+      paymentDate=None
+
     stateShortCode=eachMuster.block.district.state.stateShortCode
     htmlsoup=BeautifulSoup(myhtml,"html.parser")
     mytable=htmlsoup.find('table',id="musterDetails")
@@ -136,6 +151,7 @@ def main():
         myWDRecord.musterStatus=status 
         myWDRecord.save()
     eachMuster.isComplete=isComplete
+    eachMuster.paymentDate=paymentDate
     eachMuster.isProcessed=1
     eachMuster.save()
   logger.info("...END PROCESSING") 

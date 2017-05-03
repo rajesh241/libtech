@@ -75,7 +75,7 @@ def musterQueueManager(logger,q,queueSize,stateCode):
   while True:
     if(q.qsize() < 50):
       if stateCode is not None:
-        myMusters=Muster.objects.filter( Q(isDownloaded=False,isRequired=1,block__district__state__stateCode=stateCode) | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isRequired=1,isProcessed=1,block__district__state__stateCode=stateCode) ).order_by("musterDownloadAttemptDate")[:addLimit]
+        myMusters=Muster.objects.filter( Q(isDownloaded=False,isRequired=1,block__district__state__code=stateCode) | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isRequired=1,isProcessed=1,block__district__state__code=stateCode) ).order_by("musterDownloadAttemptDate")[:addLimit]
       else:
         myMusters=Muster.objects.filter( Q(isDownloaded=False,isRequired=1) | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isRequired=1,isProcessed=1) ).order_by("musterDownloadAttemptDate")[:addLimit]
       musterIDs=''
@@ -102,7 +102,7 @@ def musterDownloadWorker(logger,q,inputargs,driver,display):
 
     eachMuster=Muster.objects.filter(id=musterID).first()
 #    logger.info(eachMuster.musterURL)  
-    logger.info("Processing name: %s musterID: %s musterNo: %s FullblockCode: %s " % (name,str(eachMuster.id),eachMuster.musterNo,eachMuster.block.fullBlockCode))
+    logger.info("Processing name: %s musterID: %s musterNo: %s FullblockCode: %s " % (name,str(eachMuster.id),eachMuster.musterNo,eachMuster.block.code))
 #     musterURL="http://%s/netnrega/citizen_html/musternew.aspx?state_name=%s&district_name=%s&block_name=%s&panchayat_name=%s&workcode=%s&panchayat_code=%s&msrno=%s&finyear=%s&dtfrm=%s&dtto=%s&wn=%s&id=1" % (eachMuster.block.district.state.crawlIP,eachMuster.block.district.state.name,eachMuster.block.district.name,eachMuster.block.name,eachMuster.panchayat.name,eachMuster.workCode,eachMuster.panchayat.fullPanchayatCode,eachMuster.musterNo,fullfinyear,datefromstring,datetostring,eachMuster.workName.replace(" ","+"))
     driver.get(eachMuster.musterURL)
     driver.get(eachMuster.musterURL)

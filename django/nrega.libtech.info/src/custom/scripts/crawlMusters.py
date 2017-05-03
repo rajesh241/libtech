@@ -55,15 +55,15 @@ def main():
   if stateCode is None:
     myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL').order_by('musterCrawlDate')[:limit]
   else:
-    myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__stateCode=stateCode).order_by('musterCrawlDate')[:limit]
+    myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__code=stateCode).order_by('musterCrawlDate')[:limit]
 #  myPanchayats=Panchayat.objects.filter(fullPanchayatCode='3405003010').order_by('jobcardCrawlDate')[:limit]
 #  myPanchayats=Panchayat.objects.filter(fullPanchayatCode='3405003010').order_by('jobcardCrawlDate')[:limit]
   for eachPanchayat in myPanchayats:
     logger.info("Processing : panchayat: %s " % (eachPanchayat.name))
-    stateCode=eachPanchayat.block.district.state.stateCode
-    fullDistrictCode=eachPanchayat.block.district.fullDistrictCode
-    fullBlockCode=eachPanchayat.block.fullBlockCode
-    fullPanchayatCode=eachPanchayat.fullPanchayatCode
+    stateCode=eachPanchayat.block.district.state.code
+    fullDistrictCode=eachPanchayat.block.district.code
+    fullBlockCode=eachPanchayat.block.code
+    fullPanchayatCode=eachPanchayat.code
     districtName=eachPanchayat.block.district.name
     blockName=eachPanchayat.block.name
     stateName=eachPanchayat.block.district.state.name
@@ -122,11 +122,11 @@ def main():
               logger.info(emusterno+" "+datefromstring+"  "+datetostring+"  "+workCode)
               musterURL="http://%s/netnrega/citizen_html/musternew.aspx?state_name=%s&district_name=%s&block_name=%s&panchayat_name=%s&workcode=%s&panchayat_code=%s&msrno=%s&finyear=%s&dtfrm=%s&dtto=%s&wn=%s&id=1" % (eachPanchayat.block.district.state.crawlIP,stateName,districtName,blockName,panchayatName,workCode,fullPanchayatCode,emusterno,fullfinyear,datefromstring,datetostring,workName.replace(" ","+"))
               #logger.info(musterURL)
-              myMuster=Muster.objects.filter(finyear=finyear,musterNo=emusterno,block__fullBlockCode=fullBlockCode).first()
+              myMuster=Muster.objects.filter(finyear=finyear,musterNo=emusterno,block__code=fullBlockCode).first()
               if myMuster is  None:
                 #logger.info("Muster does not exists") 
                 Muster.objects.create(block=eachPanchayat.block,finyear=finyear,musterNo=emusterno)
-              myMuster=Muster.objects.filter(finyear=finyear,musterNo=emusterno,block__fullBlockCode=fullBlockCode).first()
+              myMuster=Muster.objects.filter(finyear=finyear,musterNo=emusterno,block__code=fullBlockCode).first()
               myMuster.dateFrom=datefrom
               myMuster.dateTo=dateto
               myMuster.workCode=workCode
