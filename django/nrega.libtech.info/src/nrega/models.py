@@ -105,6 +105,7 @@ class Panchayat(models.Model):
   jobcardCrawlDate=models.DateTimeField(null=True,blank=True,default=datetime.datetime.now)
   jobcardProcessDate=models.DateTimeField(null=True,blank=True,default=datetime.datetime.now)
   musterCrawlDate=models.DateTimeField(null=True,blank=True,default=datetime.datetime.now)
+  statsCrawlDate=models.DateTimeField(null=True,blank=True)
   jobcardRegisterFile=models.FileField(null=True, blank=True,upload_to=get_panchayat_upload_path,max_length=512)
 
 

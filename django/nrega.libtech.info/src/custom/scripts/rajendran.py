@@ -50,12 +50,13 @@ def main():
     limit =1
   finyear=args['finyear']
   stateCodes=['33','34','27','24','15','18','16','31','05','17']
+  stateCodes=['34']
   for stateCode in stateCodes:
-    myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__stateCode=stateCode)
+    myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__code=stateCode)
  
     for eachPanchayat in myPanchayats:
       logger.info("**********************************************************************************")
-      logger.info("Createing work Payment report for panchayat: %s panchayatCode: %s ID: %s" % (eachPanchayat.name,eachPanchayat.fullPanchayatCode,str(eachPanchayat.id)))
+      logger.info("Createing work Payment report for panchayat: %s panchayatCode: %s ID: %s" % (eachPanchayat.name,eachPanchayat.code,str(eachPanchayat.id)))
       PanchayatReports=PanchayatReport.objects.filter(panchayat=eachPanchayat)
       for report in PanchayatReports:
         reportType=report.reportType

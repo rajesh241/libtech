@@ -11,7 +11,7 @@ django.setup()
 os.chdir(proj_path)
 #from django.contrib.auth.models import User
 #from django.conf.settings import AUTH_USER_MODEL 
-from nrega.models import State,District,Block,Panchayat,Muster
+from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail
 # This is so models get loaded.
 from django.core.wsgi import get_wsgi_application
 from django.core.files import File
@@ -19,15 +19,16 @@ from django.core.files.base import ContentFile
 application = get_wsgi_application()
 #my_obj.categories.add(fragmentCategory.objects.get(id=1))
 from django.contrib.auth.models import User
+from django.db.models import Count
 
 #myobjs=User.objects.filter(username='demo')
 #for obj in myobjs:
 #  print(obj.id)
 myUser=User.objects.filter(username='demo').first()
 myobjs=Muster.objects.filter(isProcessed=1)
+myobjs=WorkDetail.objects.values("applicant").annotate(dcount=Count('applicant'))
 for obj in myobjs:
-  obj.isProcessed=0
-  obj.save()
+  print(str(obj))
 #myobjs=Panchayat.objects.filter(block__isRequired=1).order_by('-jobcardCrawlDate')[:1]
 #myobjs=Panchayat.objects.filter(id=100).order_by('-jobcardCrawlDate')[:1]
 #for obj in myobjs:

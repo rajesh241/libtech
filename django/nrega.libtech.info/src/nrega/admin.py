@@ -93,6 +93,10 @@ class applicantModelAdmin(admin.ModelAdmin):
 class workDetailModelAdmin(admin.ModelAdmin):
   list_display=["muster","musterIndex","wagelist","applicant","zjobcard","zname","zaccountNo","creditedDate","musterStatus"]
   readonly_fields=["muster","applicant"]
+  search_fields=["zjobcard"]
+#  def get_musterLink(self,obj):
+#    return "<a href='%s'>Muster</a>" % obj.muster.
+
 class wagelistModelAdmin(admin.ModelAdmin):
   list_display=["wagelistNo","block","finyear"] 
 admin.site.register(State,stateModelAdmin)
