@@ -51,13 +51,16 @@ def main():
   logger.info('args: %s', str(args))
   logger.info("BEGIN PROCESSING...")
   myUser=User.objects.filter(username='demo').first()
-  myStates=State.objects.filter(isNIC=True)
-  limit=2
-  for eachState in myStates:
-    logger.info(eachState.name)
-    myPanchayats=list(Panchayat.objects.filter(block__district__state__stateCode=eachState.stateCode))
+  myobjs=District.objects.filter(state__isNIC=True)
+  if args['limit']:
+    limit=args['limit']
+  else:
+    limit=1
+  for eachDistrict in myobjs:
+    logger.info(eachDistrict.name)
+    myPanchayats=list(Panchayat.objects.filter(block__district__code=eachDistrict.code,crawlRequirement='NONE'))
     shuffle(myPanchayats)
-    myPanchayats=myPanchayats[:5]
+    myPanchayats=myPanchayats[:limit]
     for eachPanchayat in myPanchayats:
       logger.info(eachPanchayat.name)
       eachPanchayat.crawlRequirement="FULL"

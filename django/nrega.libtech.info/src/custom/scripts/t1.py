@@ -20,8 +20,8 @@ def crawler(url_queue):
  
 def url_producer(url_queue):
     while True:
-      if(url_queue.qsize() < 10):
-        for i in range(10):
+      if(url_queue.qsize() < 30):
+        for i in range(100):
           name = threading.currentThread().getName()
           url="URL = %s " %str(i)
           print("Thread: {0} start put url {1} into url_queue[current size={2}] at time = {3} \n".format(name, url, url_queue.qsize(), time.strftime('%H:%M:%S')))
@@ -50,15 +50,9 @@ def main2():
     print('Main: start producer threads at {0}'.format(time.strftime('%H:%M:%S')))
  
     urls1 = ['Domain-A-URL-' + str(i) for i in range(3)]
-    # we also use 2 threads to fill the queue
     t1 = Thread(name = 'url_producer-23', target=url_producer, args=(q, ))
-    t1.daemon = True
     t1.start()
  
- #   time.sleep(120) 
- #   urls2 = ['Domain-B-URL-' + str(i) for i in range(4)]
- #   t2 = Thread(name = 'url_producer-1', target=url_producer, args=(urls2, q))
- #   t2.start()
  
     q.join()       # block until all tasks are done
  

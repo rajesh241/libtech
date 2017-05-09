@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,WorkDetail,Wagelist
+from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,WorkDetail,Wagelist,PanchayatStat
 from .actions import export_as_csv_action
 class stateModelAdmin(admin.ModelAdmin):
   list_display = ["name","stateShortCode","code","crawlIP"]
@@ -57,6 +57,12 @@ class panchayatModelAdmin(admin.ModelAdmin):
   class Meta:
     model=Panchayat
 
+class panchayatStatModelAdmin(admin.ModelAdmin):
+  list_display=["get_panchayat","finyear","nicWorkDays","libtechWorkDays"]
+  def get_panchayat(self,obj):
+    return obj.panchayat.name
+  get_panchayat.description="panchayat"
+
 class panchayatReportModelAdmin(admin.ModelAdmin):
   list_display=["__str__","get_reportFile","finyear","updateDate","get_block","get_district","get_state"]
   readonly_fields=["panchayat","finyear","reportType","reportFile"]
@@ -108,6 +114,7 @@ admin.site.register(Muster,musterModelAdmin)
 admin.site.register(Applicant,applicantModelAdmin)
 admin.site.register(WorkDetail,workDetailModelAdmin)
 admin.site.register(Wagelist,wagelistModelAdmin)
+admin.site.register(PanchayatStat,panchayatStatModelAdmin)
 # Reference Code for Downloading CSV
 # def download_csv(self, request, queryset):
 #   import csv

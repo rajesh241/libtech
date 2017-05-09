@@ -118,6 +118,15 @@ class Panchayat(models.Model):
   def __str__(self):
     return self.name
 
+class PanchayatStat(models.Model):
+  panchayat=models.ForeignKey('panchayat',on_delete=models.CASCADE)
+  finyear=models.CharField(max_length=2)
+  nicWorkDays=models.IntegerField(blank=True,null=True)
+  libtechWorkDays=models.IntegerField(blank=True,null=True)
+
+  def __str__(self):
+    return self.panchayat.name+"-"+self.finyear
+  
 class Applicant(models.Model):
   panchayat=models.ForeignKey('Panchayat',on_delete=models.CASCADE)
   name=models.CharField(max_length=512)
