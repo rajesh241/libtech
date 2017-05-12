@@ -29,6 +29,18 @@ myobjs=Muster.objects.filter(isProcessed=1)
 myobjs=WorkDetail.objects.values("muster__panchayat","muster__dateTo","zjobcard").annotate(dcount=Count('pk'))[:5]
 for obj in myobjs:
   print(str(obj))
+  panchayatID=obj['muster__panchayat']
+  dateTo=obj["muster__dateTo"]
+  jobcard=obj["zjobcard"]
+  myPanchayat=Panchayat.objects.filter(id=panchayatID).first()
+  blockName=myPanchayat.block.name
+  panchayatName=myPanchayat.name
+  print(blockName+"-"+panchayatName)
+  wdRecords=WorkDetail.objects.filter(muster__panchayat=panchayatID,muster__dateTo=dateTo,zjobcard=jobcard)
+  for wd in wdRecords:
+    name=wd.zname
+    musterStatus=wd.musterStatus
+    print(blockName+"-"+panchayatName+"-"+name+"-"+musterStatus)
 #myobjs=Panchayat.objects.filter(block__isRequired=1).order_by('-jobcardCrawlDate')[:1]
 #myobjs=Panchayat.objects.filter(id=100).order_by('-jobcardCrawlDate')[:1]
 #for obj in myobjs:
