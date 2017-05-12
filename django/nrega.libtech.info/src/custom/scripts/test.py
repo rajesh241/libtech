@@ -26,7 +26,7 @@ from django.db.models import Count
 #  print(obj.id)
 myUser=User.objects.filter(username='demo').first()
 myobjs=Muster.objects.filter(isProcessed=1)
-myobjs=WorkDetail.objects.values("applicant").annotate(dcount=Count('applicant'))
+myobjs=WorkDetail.objects.values("muster__panchayat","muster__dateTo","zjobcard").annotate(dcount=Count('pk'))[:5]
 for obj in myobjs:
   print(str(obj))
 #myobjs=Panchayat.objects.filter(block__isRequired=1).order_by('-jobcardCrawlDate')[:1]

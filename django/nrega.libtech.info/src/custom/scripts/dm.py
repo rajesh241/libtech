@@ -69,49 +69,57 @@ def validateMusterHTML(muster,myhtml):
   else:
     error="Jobcard Prefix not found"
   return error,musterTable,musterSummaryTable
-
+def populateMusterQueue(logger,q,queueSize,stateCode,addLimit):
+  if stateCode is not None:
+    myMusters=Muster.objects.filter( Q(isDownloaded=False,isRequired=1,block__district__state__code=stateCode) | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isRequired=1,isProcessed=1,block__district__state__code=stateCode) ).order_by("musterDownloadAttemptDate")[:addLimit]
+  else:
+    myMusters=Muster.objects.filter( Q(isDownloaded=False,isRequired=1) | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isRequired=1,isProcessed=1) ).order_by("musterDownloadAttemptDate")[:addLimit]
+  musterIDs=''
+  logger.info("Lenght of myMusters is "+str(len(myMusters)))
+  if len(myMusters) > 0:
+    for eachMuster in myMusters:
+  #    print("Added muster ID : %s " % str(eachMuster.id))
+      musterIDs+=str(eachMuster.id)+"-"
+      q.put(eachMuster.id)
+      eachMuster.musterDownloadAttemptDate=timezone.now()
+      eachMuster.save()
+    logger.info("Added Musters: %s " % musterIDs)
 def musterQueueManager(logger,q,queueSize,stateCode):
-  addLimit=queueSize-50
+  addLimit=queueSize-1100
   while True:
-    if(q.qsize() < 50):
-      if stateCode is not None:
-        myMusters=Muster.objects.filter( Q(isDownloaded=False,isRequired=1,block__district__state__code=stateCode) | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isRequired=1,isProcessed=1,block__district__state__code=stateCode) ).order_by("musterDownloadAttemptDate")[:addLimit]
-      else:
-        myMusters=Muster.objects.filter( Q(isDownloaded=False,isRequired=1) | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isRequired=1,isProcessed=1) ).order_by("musterDownloadAttemptDate")[:addLimit]
-      musterIDs=''
-      logger.info("This is where I am")
-      logger.info("Lenght of myMusters is "+str(len(myMusters)))
-      if len(myMusters) > 0:
-        for eachMuster in myMusters:
-      #    print("Added muster ID : %s " % str(eachMuster.id))
-          musterIDs+=str(eachMuster.id)+"-"
-          q.put(eachMuster.id)
-          eachMuster.musterDownloadAttemptDate=timezone.now()
-          eachMuster.save()
-        logger.info("Added Musters: %s " % musterIDs)
+    if(q.qsize() < 1000):
+      populateMusterQueue(logger,q,queueSize,stateCode,addLimit)
     else:
       logger.info("Queu is not empty")
-    time.sleep(60)
+    time.sleep(600)
         
 def musterDownloadWorker(logger,q,inputargs,driver,display):
-  time.sleep(20)
   while True:
     musterID = q.get()  # if there is no url, this will wait
+    if musterID is None:
+      break
     name = threading.currentThread().getName()
- #   print("Thread: {0} start download {1} at time = {2} \n".format(name, str(musterID), time.strftime('%H:%M:%S')))
 
     eachMuster=Muster.objects.filter(id=musterID).first()
 #    logger.info(eachMuster.musterURL)  
-    logger.info("Processing name: %s musterID: %s musterNo: %s FullblockCode: %s " % (name,str(eachMuster.id),eachMuster.musterNo,eachMuster.block.code))
-#     musterURL="http://%s/netnrega/citizen_html/musternew.aspx?state_name=%s&district_name=%s&block_name=%s&panchayat_name=%s&workcode=%s&panchayat_code=%s&msrno=%s&finyear=%s&dtfrm=%s&dtto=%s&wn=%s&id=1" % (eachMuster.block.district.state.crawlIP,eachMuster.block.district.state.name,eachMuster.block.district.name,eachMuster.block.name,eachMuster.panchayat.name,eachMuster.workCode,eachMuster.panchayat.fullPanchayatCode,eachMuster.musterNo,fullfinyear,datefromstring,datetostring,eachMuster.workName.replace(" ","+"))
-    driver.get(eachMuster.musterURL)
-    driver.get(eachMuster.musterURL)
-    logger.info(eachMuster.musterURL)
-    myhtml = driver.page_source
+    try:
+      driver.get(eachMuster.musterURL)
+      driver.get(eachMuster.musterURL)
+      myhtml = driver.page_source
+      error,musterTable,musterSummaryTable=validateMusterHTML(eachMuster,myhtml)
+    except:
+      error="downloadError"
+  
   #  f=open("/tmp/"+str(eachMuster.id)+".html","w")
   #  f.write(myhtml)
-    error,musterTable,musterSummaryTable=validateMusterHTML(eachMuster,myhtml)
-    logger.info(error)
+    if error is None:
+      errorString="No ERROR"
+    else:
+      errorString=error
+
+    logger.info("Processing name: %s musterID: %s musterNo: %s FullblockCode: %s status: %s" % (name,str(eachMuster.id),eachMuster.musterNo,eachMuster.block.code,errorString))
+    logger.info(eachMuster.musterURL)
+
     if error is None:  
       outhtml=''
       outhtml+=stripTableAttributes(musterSummaryTable,"musterSummary")
@@ -153,17 +161,19 @@ def main():
   if ((args['queueSize']) and ( int(args['queueSize']) > 200)):
     queueSize=int(args['queueSize'])
   else:
-    queueSize=200
+    queueSize=20000
   if args['numberOfThreads']:
     numberOfThreads=int(args['numberOfThreads'])
   else:
     numberOfThreads=5
   logger.info("Starting Muster Download Script with Queue Size: %s and Number of Threads: %s " % (queueSize,numberOfThreads))
   q = Queue(maxsize=queueSize)
-
-  t1 = Thread(name = 'musterQueueManager', target=musterQueueManager, args=(logger,q,queueSize,stateCode ))
-  t1.daemon = True
-  t1.start()
+  addLimit=queueSize-numberOfThreads -1
+  populateMusterQueue(logger,q,queueSize,stateCode,addLimit)
+  #t1 = Thread(name = 'musterQueueManager', target=musterQueueManager, args=(logger,q,queueSize,stateCode ))
+#  t1 = Thread(name = 'musterQueueManager', target=populateMusterQueue, args=(logger,q,queueSize,stateCode,addLimit ))
+  #t1.daemon = True
+#  t1.start()
 
 
   #Starting Crawler Threads
@@ -180,8 +190,10 @@ def main():
     t.daemon = True
     t.start()
 
-  time.sleep(120) 
+#  time.sleep(120) 
   q.join()       # block until all tasks are done
+  for i in range(numberOfThreads):
+    q.put(None)
   for driver in driverArray:
     driverFinalize(driver)
   for display in displayArray:

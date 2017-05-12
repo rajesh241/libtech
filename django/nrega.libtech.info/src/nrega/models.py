@@ -125,7 +125,7 @@ class PanchayatStat(models.Model):
   libtechWorkDays=models.IntegerField(blank=True,null=True)
 
   def __str__(self):
-    return self.panchayat.name+"-"+self.finyear
+    return self.panchayat.name+"-"+self.panchayat.block.name
   
 class Applicant(models.Model):
   panchayat=models.ForeignKey('Panchayat',on_delete=models.CASCADE)

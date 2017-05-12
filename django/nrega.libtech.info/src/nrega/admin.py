@@ -58,10 +58,21 @@ class panchayatModelAdmin(admin.ModelAdmin):
     model=Panchayat
 
 class panchayatStatModelAdmin(admin.ModelAdmin):
+  actions = [export_as_csv_action("CSV Export", fields=['__str__','finyear','nicWorkDays','libtechWorkDays'])]
   list_display=["get_panchayat","finyear","nicWorkDays","libtechWorkDays"]
+  search_fields=["panchayat__code","panchayat__name","panchayat__block__name"]
   def get_panchayat(self,obj):
     return obj.panchayat.name
   get_panchayat.description="panchayat"
+  def get_block(self,obj):
+    return obj.panchayat.block.name
+  get_block.description="block"
+  def get_district(self,obj):
+    return obj.panchayat.block.district.name
+  get_district.description="district"
+  def get_state(self,obj):
+    return obj.panchayat.block.district.state.name
+  get_state.description="state"
 
 class panchayatReportModelAdmin(admin.ModelAdmin):
   list_display=["__str__","get_reportFile","finyear","updateDate","get_block","get_district","get_state"]
