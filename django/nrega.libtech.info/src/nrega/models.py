@@ -11,6 +11,14 @@ def getFullFinYear(shortFinYear):
   fullFinYear="20%s-20%s" % (str(shortFinYear_1), str(shortFinYear))
   return fullFinYear
 
+def get_fto_upload_path(instance, filename):
+  fullfinyear=getFullFinYear(instance.finyear)
+  return os.path.join(
+    "nrega",instance.block.district.state.slug,instance.block.district.slug,instance.block.slug,"DATA","FTOs",fullfinyear,filename)
+def get_wagelist_upload_path(instance, filename):
+  fullfinyear=getFullFinYear(instance.finyear)
+  return os.path.join(
+    "nrega",instance.block.district.state.slug,instance.block.district.slug,instance.block.slug,"DATA","WAGELISTS",fullfinyear,filename)
 def get_muster_upload_path(instance, filename):
   fullfinyear=getFullFinYear(instance.finyear)
   return os.path.join(
@@ -42,6 +50,7 @@ class District(models.Model):
   state=models.ForeignKey('state',on_delete=models.CASCADE)
   name=models.CharField(max_length=256)
   code=models.CharField(max_length=4,unique=True)
+  fpsCode=models.CharField(max_length=4,unique=True,blank=True,null=True)
   slug=models.SlugField(blank=True) 
   def stateName(self):
     return self.state.name
@@ -58,6 +67,7 @@ class Block(models.Model):
   district=models.ForeignKey('district',on_delete=models.CASCADE)
   name=models.CharField(max_length=256)
   code=models.CharField(max_length=7,unique=True)
+  fpsCode=models.CharField(max_length=8,unique=True,blank=True,null=True)
   crawlRequirement=models.CharField(max_length=4,choices=CRAWL_CHOICES,default='NONE')
   isRequired=models.BooleanField(default=False)
   slug=models.SlugField(blank=True) 
@@ -99,6 +109,7 @@ class Panchayat(models.Model):
     )
   block=models.ForeignKey('block',on_delete=models.CASCADE)
   name=models.CharField(max_length=256)
+  remarks=models.CharField(max_length=256,blank=True,null=True)
   code=models.CharField(max_length=10,unique=True)
   slug=models.SlugField(blank=True) 
   crawlRequirement=models.CharField(max_length=4,choices=CRAWL_CHOICES,default='NONE')
@@ -161,10 +172,32 @@ class Applicant(models.Model):
   #     [bankCode,bankName,bankBranchCode,bankBranchName,ifscCode,micrCode,poCode,poName,poAddress,accountNo,poAccountName]=cols[12:23]
   #     [accountFrozen,uid] = cols[26:28]
 
+class FTO(models.Model):
+  block=models.ForeignKey('block',on_delete=models.CASCADE)
+  ftoNo=models.CharField(max_length=256)
+  finyear=models.CharField(max_length=2)
+  ftofinyear=models.CharField(max_length=2,blank=True,null=True)
+  ftoFile=models.FileField(null=True, blank=True,upload_to=get_fto_upload_path,max_length=512)
+  isDownloaded=models.BooleanField(default=False)
+  isProcessed=models.BooleanField(default=False)
+  isComplete=models.BooleanField(default=False)
+  downloadAttemptDate=models.DateTimeField(null=True,blank=True)
+  downloadError=models.CharField(max_length=64,blank=True,null=True)
+  class Meta:
+        unique_together = ('ftoNo', 'block', 'finyear')  
+  def __str__(self):
+    return self.ftoNo
+
 class Wagelist(models.Model):
   block=models.ForeignKey('block',on_delete=models.CASCADE)
   wagelistNo=models.CharField(max_length=256)
   finyear=models.CharField(max_length=2)
+  wagelistFile=models.FileField(null=True, blank=True,upload_to=get_wagelist_upload_path,max_length=512)
+  isDownloaded=models.BooleanField(default=False)
+  isProcessed=models.BooleanField(default=False)
+  isComplete=models.BooleanField(default=False)
+  downloadAttemptDate=models.DateTimeField(null=True,blank=True)
+  downloadError=models.CharField(max_length=64,blank=True,null=True)
   class Meta:
         unique_together = ('wagelistNo', 'block', 'finyear')  
   def __str__(self):

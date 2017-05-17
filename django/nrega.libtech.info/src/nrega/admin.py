@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,WorkDetail,Wagelist,PanchayatStat
+from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,WorkDetail,Wagelist,PanchayatStat,FTO
 from .actions import export_as_csv_action
 class stateModelAdmin(admin.ModelAdmin):
   list_display = ["name","stateShortCode","code","crawlIP"]
@@ -11,10 +11,10 @@ class stateModelAdmin(admin.ModelAdmin):
 class districtModelAdmin(admin.ModelAdmin):
  # actions = ['download_csv']
   actions = [export_as_csv_action("CSV Export", fields=['name','stateName'])]
-  list_display = ["name","stateName","code"]
+  list_display = ["name","stateName","code","fpsCode"]
   list_display_links=["name"]
   list_filter=["state"]
-  search_fields=["name"]
+  search_fields=["name","code"]
   
 #  list_editable=["description"]
 
@@ -40,7 +40,7 @@ class blockModelAdmin(admin.ModelAdmin):
     model=Block
 
 class panchayatModelAdmin(admin.ModelAdmin):
-  actions = [export_as_csv_action("CSV Export", fields=['name','code','blockName','districtName','stateName','id'])]
+  actions = [export_as_csv_action("CSV Export", fields=['name','code','blockName','districtName','stateName','id','remarks'])]
   list_display = ["name","blockName","districtName","stateName","code"]
   list_display_links=["name"]
   list_filter=["crawlRequirement","block__district__state"]
@@ -59,8 +59,9 @@ class panchayatModelAdmin(admin.ModelAdmin):
 
 class panchayatStatModelAdmin(admin.ModelAdmin):
   actions = [export_as_csv_action("CSV Export", fields=['__str__','finyear','nicWorkDays','libtechWorkDays'])]
-  list_display=["get_panchayat","finyear","nicWorkDays","libtechWorkDays"]
+  list_display=["get_panchayat","get_block","get_district","finyear","nicWorkDays","libtechWorkDays"]
   search_fields=["panchayat__code","panchayat__name","panchayat__block__name"]
+  readonly_fields=["panchayat"]
   def get_panchayat(self,obj):
     return obj.panchayat.name
   get_panchayat.description="panchayat"
@@ -78,7 +79,7 @@ class panchayatReportModelAdmin(admin.ModelAdmin):
   list_display=["__str__","get_reportFile","finyear","updateDate","get_block","get_district","get_state"]
   readonly_fields=["panchayat","finyear","reportType","reportFile"]
   list_filter=["finyear","reportType"]
-  search_fields=["panchayat__name","panchayat__block__name"]
+  search_fields=["panchayat__name","panchayat__block__name","panchayat__code"]
   def get_block(self, obj):
     return obj.panchayat.block.name
   def get_district(self, obj):
@@ -97,9 +98,9 @@ class panchayatReportModelAdmin(admin.ModelAdmin):
   get_state.short_description = 'State '  #Renames column head
 class musterModelAdmin(admin.ModelAdmin):
 #  actions = [export_as_csv_action("CSV Export", fields=['name','blockName','districtName','stateName'])]
-  list_display = ["musterNo","finyear","block","panchayat","workCode","workName"]
-  search_fields=["musterNo","block__code"]
-  list_filter=["isRequired","finyear","isDownloaded","block__district__state"]
+  list_display = ["id","musterNo","finyear","block","panchayat","workCode","workName"]
+  search_fields=["id","musterNo","block__code"]
+  list_filter=["isRequired","finyear","isDownloaded","isProcessed","block__district__state"]
   readonly_fields=["block","panchayat"]
 
 class applicantModelAdmin(admin.ModelAdmin):
@@ -113,9 +114,15 @@ class workDetailModelAdmin(admin.ModelAdmin):
   search_fields=["zjobcard"]
 #  def get_musterLink(self,obj):
 #    return "<a href='%s'>Muster</a>" % obj.muster.
+class ftoModelAdmin(admin.ModelAdmin):
+  list_display=["id","ftoNo","block","finyear"] 
+  list_filter=["finyear","isDownloaded","isProcessed","block__district__state"]
+  search_fields=["id","ftoNo"]
 
 class wagelistModelAdmin(admin.ModelAdmin):
-  list_display=["wagelistNo","block","finyear"] 
+  list_display=["id","wagelistNo","block","finyear"] 
+  list_filter=["finyear","isDownloaded","isProcessed","isComplete","block__district__state"]
+  search_fields=["id","wagelistNo"]
 admin.site.register(State,stateModelAdmin)
 admin.site.register(District,districtModelAdmin)
 admin.site.register(Block,blockModelAdmin)
@@ -125,6 +132,7 @@ admin.site.register(Muster,musterModelAdmin)
 admin.site.register(Applicant,applicantModelAdmin)
 admin.site.register(WorkDetail,workDetailModelAdmin)
 admin.site.register(Wagelist,wagelistModelAdmin)
+admin.site.register(FTO,ftoModelAdmin)
 admin.site.register(PanchayatStat,panchayatStatModelAdmin)
 # Reference Code for Downloading CSV
 # def download_csv(self, request, queryset):

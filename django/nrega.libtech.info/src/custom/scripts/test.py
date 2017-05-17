@@ -24,6 +24,26 @@ from django.db.models import Count
 #myobjs=User.objects.filter(username='demo')
 #for obj in myobjs:
 #  print(obj.id)
+
+myDistrict=District.objects.all()
+for eachDistrict in myDistrict:
+  eachDistrict.fpsCode=None
+  eachDistrict.save()
+
+#if myDistrict is not None:
+#  print(myDistrict.code)
+
+fileopen='''
+with open('/tmp/p.txt') as fp:
+    for line in fp:
+      line=line.lstrip().rstrip()
+      if line != '':
+        print(line)
+        eachPanchayat=Panchayat.objects.filter(code=line).first()
+        eachPanchayat.remarks='jsk'
+        eachPanchayat.save()
+'''
+groupby= '''
 myUser=User.objects.filter(username='demo').first()
 myobjs=Muster.objects.filter(isProcessed=1)
 myobjs=WorkDetail.objects.values("muster__panchayat","muster__dateTo","zjobcard").annotate(dcount=Count('pk'))[:5]
@@ -41,6 +61,10 @@ for obj in myobjs:
     name=wd.zname
     musterStatus=wd.musterStatus
     print(blockName+"-"+panchayatName+"-"+name+"-"+musterStatus)
+'''
+
+
+
 #myobjs=Panchayat.objects.filter(block__isRequired=1).order_by('-jobcardCrawlDate')[:1]
 #myobjs=Panchayat.objects.filter(id=100).order_by('-jobcardCrawlDate')[:1]
 #for obj in myobjs:

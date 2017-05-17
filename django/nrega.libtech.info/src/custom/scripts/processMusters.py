@@ -53,10 +53,12 @@ def main():
   if stateCode is not None:
     logger.info("StateCode is %s" % stateCode)
     myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0,panchayat__crawlRequirement="FULL",panchayat__block__district__state__code=stateCode)[:limit] 
+#    myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0,panchayat__crawlRequirement="FULL",panchayat__block__district__code="3406")[:limit] 
   else:
-    myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0)[:limit] 
+    myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0)[:limit]
+#  myMusters=Muster.objects.filter(id=10924) 
   for eachMuster in myMusters:
-    logger.info("MusterNo: %s, blockCode: %s, finyear: %s workName:%s" % (eachMuster.musterNo,eachMuster.block.code,eachMuster.finyear,eachMuster.workName))
+    logger.info("MusterID: %s MusterNo: %s, blockCode: %s, finyear: %s workName:%s" % (eachMuster.id,eachMuster.musterNo,eachMuster.block.code,eachMuster.finyear,eachMuster.workName))
     logger.info(eachMuster.panchayat.code+eachMuster.panchayat.crawlRequirement+eachMuster.panchayat.name)
     myhtml=eachMuster.musterFile.read()
 
@@ -78,19 +80,24 @@ def main():
     htmlsoup=BeautifulSoup(myhtml,"html.parser")
     mytable=htmlsoup.find('table',id="musterDetails")
     tr_list = mytable.findAll('tr')
+    acnoPresent=0
     for tr in tr_list: #This loop is to find staus Index
       cols = tr.findAll('th')
       if len(cols) > 7:
         i=0
+        
         while i < len(cols):
           value="".join(cols[i].text.split())
           if "Status" in value:
             statusindex=i
+          if "A/C No." in cols[i].text:
+            acnoPresent=1
           i=i+1
     isComplete=1
     totalCount=0
     totalPending=0
     reMatchString="%s-" % (stateShortCode)
+    logger.info("Account No Presnet: %s " % str(acnoPresent))
     for i in range(len(tr_list)):
       cols=tr_list[i].findAll("td")
       if len(cols) > 7:
@@ -108,11 +115,17 @@ def main():
           nameandjobcardarray=re.match(r'(.*)'+reMatchString+'(.*)',nameandjobcard)
           name_relationship=nameandjobcardarray.groups()[0]
           name=name_relationship.split("(")[0]
-          accountno=cols[statusindex-5].text.lstrip().rstrip()
+#          accountno=cols[statusindex-5].text.lstrip().rstrip()
           jobcard=reMatchString+nameandjobcardarray.groups()[1]
-          totalWage=cols[statusindex-6].text.lstrip().rstrip()
-          dayWage=cols[statusindex-10].text.lstrip().rstrip()
-          daysWorked=cols[statusindex-11].text.lstrip().rstrip()
+          if acnoPresent == 1:
+            totalWage=cols[statusindex-6].text.lstrip().rstrip()
+            dayWage=cols[statusindex-10].text.lstrip().rstrip()
+            daysWorked=cols[statusindex-11].text.lstrip().rstrip()
+          else:
+            totalWage=cols[statusindex-5].text.lstrip().rstrip()
+            dayWage=cols[statusindex-9].text.lstrip().rstrip()
+            daysWorked=cols[statusindex-10].text.lstrip().rstrip()
+
           wagelistNo=cols[statusindex-1].text.lstrip().rstrip()
           creditedDateString=cols[statusindex+1].text.lstrip().rstrip()
           if creditedDateString != '':
@@ -143,7 +156,7 @@ def main():
         
         myWDRecord.zname=name
         myWDRecord.zjobcard=jobcard
-        myWDRecord.zaccountNo=accountno
+#        myWDRecord.zaccountNo=accountno
         myWDRecord.totalWage=totalWage
         myWDRecord.dayWage=dayWage
         myWDRecord.daysWorked=daysWorked
