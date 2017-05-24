@@ -2,6 +2,7 @@ import re
 from bs4 import BeautifulSoup
 from customSettings import repoDir,djangoDir,djangoSettings
 import sys
+import time
 import os
 sys.path.insert(0, repoDir)
 fileDir=os.path.dirname(os.path.abspath(__file__))
@@ -25,6 +26,14 @@ def getCurrentFinYear():
   else:
     year=year
   return year% 100
+
+def correctDateFormat(myDateString):
+  if myDateString != '':
+    myDate = time.strptime(myDateString, '%d/%m/%Y')
+    myDate = time.strftime('%Y-%m-%d', myDate)
+  else:
+    myDate=None
+  return myDate
 
 def getFullFinYear(shortFinYear):
   shortFinYear_1 = int(shortFinYear) -1

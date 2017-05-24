@@ -67,22 +67,70 @@ def main():
         rows=myTable.findAll('tr')
         for row in rows:
           cols=row.findAll('td')
+          if jobcardPrefix not in cols[3].text:
+            logger.info("Header Row")
+            header=[]
+            for i,col in enumerate(cols):
+              header.append(col.text.lstrip().rstrip())
+            logger.info(str(header))
+            villageIndex=header.index("Village Name")
+            nameIndex=header.index("Applicant Name")
+            headOfHouseholdIndex=header.index("Head of Household")
+            fatherHusbandNameIndex=header.index("Father/Husband Name")
+            casteIndex=header.index("Caste")
+            genderIndex=header.index("Gender")
+            ageIndex=header.index("Age")
+            jobcardIndex=header.index("Registration No.")
+            applicantNoIndex=header.index("Applicant No.")
+            bankCodeIndex=header.index("Bank Code")
+            bankNameIndex=header.index("Bank Name")
+            bankBranchCodeIndex=header.index("Branch Code")
+            bankBranchNameIndex=header.index("Branch Name")
+            ifscCodeIndex=header.index("IFSC Code")
+            micrCodeIndex=header.index("MICR Code")
+            poCodeIndex=header.index("Post Office Code")
+            poNameIndex=header.index("Post Office Name")
+            poAddressIndex=header.index("Post Office Address")
+            poAccountNameIndex=header.index("Name As Per Post Office")
+            accountFrozenIndex=header.index("Ac Frozen")
+            logger.info(villageIndex)
           if jobcardPrefix in cols[3].text:
             for i,col in enumerate(cols):
               cols[i]=col.text.lstrip().rstrip()
-            [srno,pname,village,jobcard,applicantNo,name,headOfHousehold,fatherHusbandName,caste,gender,age] = cols[0:11]
-            [bankCode,bankName,bankBranchCode,bankBranchName,ifscCode,micrCode,poCode,poName,poAddress,accountNo,poAccountName]=cols[12:23]
-            [accountFrozen,uid] = cols[26:28]
+            jobcard=cols[jobcardIndex]
+            applicantNo=cols[applicantNoIndex]
             jcNo=getjcNumber(jobcard)
+            if jcNo.isdigit():
+              jcNo=jcNo
+            else:
+              jcNo=0
             logger.info("Processing Jobcard: %s applicantNo: %s " % (jobcard,applicantNo))
             myApplicant=Applicant.objects.filter(jobcard=jobcard,applicantNo=applicantNo).first()
             if myApplicant is None:
               logger.info("Creating Applicant: %s " % (jobcard))
               Applicant.objects.create(jobcard=jobcard,applicantNo=applicantNo,panchayat=eachPanchayat)
             a=Applicant.objects.filter(jobcard=jobcard,applicantNo=applicantNo).first()
-            [a.village,a.name,a.headOfHousehold,a.fatherHusbandName,a.caste,a.gender,a.age]=[village,name,headOfHousehold,fatherHusbandName,caste,gender,age]
-            [a.bankCode,a.bankName,a.bankBranchCode,a.bankBranchName,a.ifscCode,a.micrCode]=[bankCode,bankName,bankBranchCode,bankBranchName,ifscCode,micrCode]
-            [a.poCode,a.poName,a.poAddress,a.accountNo,a.poAccountName,a.accountFrozen,a.uid]=[poCode,poName,poAddress,accountNo,poAccountName,accountFrozen,uid]
+            a.village=cols[villageIndex]
+            a.name=cols[nameIndex]
+            a.headOfHousehold=cols[headOfHouseholdIndex]
+            a.fatherHusbandName=cols[fatherHusbandNameIndex]
+            a.caste=cols[casteIndex]
+            a.gender=cols[genderIndex]
+            a.age=cols[ageIndex]
+            a.bankCode=cols[bankCodeIndex]
+            a.bankName=cols[bankNameIndex]
+            a.bankBranchCode=cols[bankBranchCodeIndex]
+            a.bankBranchName=cols[bankBranchNameIndex]
+            a.ifscCode=cols[ifscCodeIndex]
+            a.micrCode=cols[micrCodeIndex]
+            a.poCode=cols[poCodeIndex]
+            a.poName=cols[poNameIndex]
+            a.poAddress=cols[poAddressIndex]
+            a.poAccountName=cols[poAccountNameIndex]
+            a.accountFrozen=cols[accountFrozenIndex]
+           # [a.village,a.name,a.headOfHousehold,a.fatherHusbandName,a.caste,a.gender,a.age]=[village,name,headOfHousehold,fatherHusbandName,caste,gender,age]
+           # [a.bankCode,a.bankName,a.bankBranchCode,a.bankBranchName,a.ifscCode,a.micrCode]=[bankCode,bankName,bankBranchCode,bankBranchName,ifscCode,micrCode]
+           # [a.poCode,a.poName,a.poAddress,a.accountNo,a.poAccountName,a.accountFrozen,a.uid]=[poCode,poName,poAddress,accountNo,poAccountName,accountFrozen,uid]
             a.jcNo=jcNo
             a.save() 
     eachPanchayat.jobcardProcessDate=timezone.now()

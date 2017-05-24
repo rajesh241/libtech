@@ -56,6 +56,7 @@ def main():
 #    myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0,panchayat__crawlRequirement="FULL",panchayat__block__district__code="3406")[:limit] 
   else:
     myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0)[:limit]
+  myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,allApplicantFound=0,finyear=18,panchayat__block__district__state__code=stateCode)[:limit]
 #  myMusters=Muster.objects.filter(id=10924) 
   for eachMuster in myMusters:
     logger.info("MusterID: %s MusterNo: %s, blockCode: %s, finyear: %s workName:%s" % (eachMuster.id,eachMuster.musterNo,eachMuster.block.code,eachMuster.finyear,eachMuster.workName))
@@ -94,6 +95,7 @@ def main():
             acnoPresent=1
           i=i+1
     isComplete=1
+    allApplicantFound=1
     totalCount=0
     totalPending=0
     reMatchString="%s-" % (stateShortCode)
@@ -114,9 +116,9 @@ def main():
           nameandjobcard=nameandjobcard.replace("\\","")
           nameandjobcardarray=re.match(r'(.*)'+reMatchString+'(.*)',nameandjobcard)
           name_relationship=nameandjobcardarray.groups()[0]
-          name=name_relationship.split("(")[0]
+          name=name_relationship.split("(")[0].lstrip().rstrip()
 #          accountno=cols[statusindex-5].text.lstrip().rstrip()
-          jobcard=reMatchString+nameandjobcardarray.groups()[1]
+          jobcard=reMatchString+nameandjobcardarray.groups()[1].lstrip().rstrip()
           if acnoPresent == 1:
             totalWage=cols[statusindex-6].text.lstrip().rstrip()
             dayWage=cols[statusindex-10].text.lstrip().rstrip()
@@ -146,13 +148,16 @@ def main():
           Wagelist.objects.create(wagelistNo=wagelistNo,block=eachMuster.panchayat.block,finyear=eachMuster.finyear)
         matchedWagelist=Wagelist.objects.filter(wagelistNo=wagelistNo,block=eachMuster.panchayat.block,finyear=eachMuster.finyear).first()
 
-        myWDRecord.wagelist=matchedWagelist 
-        
+       # myWDRecord.wagelist=matchedWagelist 
+        myWDRecord.wagelist.add(matchedWagelist) 
         matchedApplicants=Applicant.objects.filter(jobcard=jobcard,name=name)
-        logger.info("jobcard %s name: %s " % (jobcard,name)) 
+        logger.info("jobcard %s name: %snameENds " % (jobcard,name)) 
         if len(matchedApplicants) == 1:
           logger.info("MatchedApplicant Found")
           myWDRecord.applicant=matchedApplicants.first()
+        else:
+          logger.info(str(len(matchedApplicants)))
+          allApplicantFound=0
         
         myWDRecord.zname=name
         myWDRecord.zjobcard=jobcard
@@ -166,7 +171,9 @@ def main():
     eachMuster.isComplete=isComplete
     eachMuster.paymentDate=paymentDate
     eachMuster.isProcessed=1
+    eachMuster.allApplicantFound=allApplicantFound
     eachMuster.save()
+    logger.info("Processed Muster: MusterID: %s MusterNo: %s, blockCode: %s, finyear: %s workName:%s all ApplicantFound: %s " % (eachMuster.id,eachMuster.musterNo,eachMuster.block.code,eachMuster.finyear,eachMuster.workName,str(allApplicantFound)))
   logger.info("...END PROCESSING") 
   exit(0)
 

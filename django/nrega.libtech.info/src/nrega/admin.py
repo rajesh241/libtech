@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,WorkDetail,Wagelist,PanchayatStat,FTO
+from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail
 from .actions import export_as_csv_action
 class stateModelAdmin(admin.ModelAdmin):
   list_display = ["name","stateShortCode","code","crawlIP"]
@@ -38,6 +38,16 @@ class blockModelAdmin(admin.ModelAdmin):
   
   class Meta:
     model=Block
+
+class fpsShopModelAdmin(admin.ModelAdmin):
+  list_display=["name","fpsCode","get_block","get_district"]
+  search_fields=["name","block__name"]
+  def get_block(self,obj):
+    return obj.block.name
+  get_block.description="block"
+  def get_district(self,obj):
+    return obj.block.district.name
+  get_district.description="district"
 
 class panchayatModelAdmin(admin.ModelAdmin):
   actions = [export_as_csv_action("CSV Export", fields=['name','code','blockName','districtName','stateName','id','remarks'])]
@@ -100,7 +110,7 @@ class musterModelAdmin(admin.ModelAdmin):
 #  actions = [export_as_csv_action("CSV Export", fields=['name','blockName','districtName','stateName'])]
   list_display = ["id","musterNo","finyear","block","panchayat","workCode","workName"]
   search_fields=["id","musterNo","block__code"]
-  list_filter=["isRequired","finyear","isDownloaded","isProcessed","block__district__state"]
+  list_filter=["isRequired","finyear","isDownloaded","isProcessed","allApplicantFound","block__district__state"]
   readonly_fields=["block","panchayat"]
 
 class applicantModelAdmin(admin.ModelAdmin):
@@ -109,9 +119,9 @@ class applicantModelAdmin(admin.ModelAdmin):
   search_fields=["jobcard"]
 
 class workDetailModelAdmin(admin.ModelAdmin):
-  list_display=["muster","musterIndex","wagelist","applicant","zjobcard","zname","zaccountNo","creditedDate","musterStatus"]
+  list_display=["id","muster","musterIndex","applicant","zjobcard","zname","zaccountNo","creditedDate","musterStatus"]
   readonly_fields=["muster","applicant"]
-  search_fields=["zjobcard"]
+  search_fields=["id","zjobcard","muster__id"]
 #  def get_musterLink(self,obj):
 #    return "<a href='%s'>Muster</a>" % obj.muster.
 class ftoModelAdmin(admin.ModelAdmin):
@@ -134,6 +144,7 @@ admin.site.register(WorkDetail,workDetailModelAdmin)
 admin.site.register(Wagelist,wagelistModelAdmin)
 admin.site.register(FTO,ftoModelAdmin)
 admin.site.register(PanchayatStat,panchayatStatModelAdmin)
+admin.site.register(FPSShop,fpsShopModelAdmin)
 # Reference Code for Downloading CSV
 # def download_csv(self, request, queryset):
 #   import csv

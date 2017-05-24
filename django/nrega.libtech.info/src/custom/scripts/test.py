@@ -11,7 +11,7 @@ django.setup()
 os.chdir(proj_path)
 #from django.contrib.auth.models import User
 #from django.conf.settings import AUTH_USER_MODEL 
-from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail
+from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,Wagelist,Applicant
 # This is so models get loaded.
 from django.core.wsgi import get_wsgi_application
 from django.core.files import File
@@ -24,24 +24,35 @@ from django.db.models import Count
 #myobjs=User.objects.filter(username='demo')
 #for obj in myobjs:
 #  print(obj.id)
-
-myDistrict=District.objects.all()
-for eachDistrict in myDistrict:
-  eachDistrict.fpsCode=None
-  eachDistrict.save()
-
+jobcard="JH-01-020-003-004/25"
+name="KRISHNA SINGH"
+myApplicants=Applicant.objects.filter(jobcard=jobcard,name=name)
+for eachApplicant in myApplicants:
+  print(eachApplicant.id)
+many_to_many='''
+wagelistNo="3408009WL000166"
+myWagelist=Wagelist.objects.filter(wagelistNo=wagelistNo)
+wagelistArray=[]
+for eachWagelist in myWagelist:
+  print(eachWagelist.id)
+  wagelistArray.append(eachWagelist.id)
+myWDRecords=WorkDetail.objects.filter(wagelist__in=wagelistArray)
+for eachWDRecord in myWDRecords:
+  print(eachWDRecord.id)
 #if myDistrict is not None:
 #  print(myDistrict.code)
-
+'''
 fileopen='''
-with open('/tmp/p.txt') as fp:
+with open('/tmp/fpsBlocks.txt') as fp:
     for line in fp:
       line=line.lstrip().rstrip()
       if line != '':
         print(line)
-        eachPanchayat=Panchayat.objects.filter(code=line).first()
-        eachPanchayat.remarks='jsk'
-        eachPanchayat.save()
+        myBlock=Block.objects.filter(code=line).first()
+        myBlock.fpsRequired=True
+        myBlock.save()
+        print(myBlock.id)
+        
 '''
 groupby= '''
 myUser=User.objects.filter(username='demo').first()

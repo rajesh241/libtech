@@ -30,6 +30,8 @@ def alterWorkerList(cur,logger,inhtml,stateName,districtName,blockName,panchayat
   status=None
   outhtml=''
   outcsv=''
+  with open("/tmp/b.html","wb") as f:
+    f.write(inhtml)
   splitHTML=inhtml.split(b"MGNREGA Worker Details") 
   if len(splitHTML) == 2:
     status=1
@@ -234,6 +236,7 @@ def main():
       #  eachPanchayat.jobcardRegisterFile.save(filename, ContentFile(outhtml))
         eachPanchayat.jobcardCrawlDate=timezone.now()
         eachPanchayat.save()
+    logger.info("Processing StateCode %s, fullDistrictCode : %s, fullBlockCode : %s, fullPanchayatCode: %s " % (stateCode,fullDistrictCode,fullBlockCode,fullPanchayatCode))
 
   logger.info("...END PROCESSING") 
   exit(0)

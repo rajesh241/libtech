@@ -11,6 +11,12 @@ def getFullFinYear(shortFinYear):
   fullFinYear="20%s-20%s" % (str(shortFinYear_1), str(shortFinYear))
   return fullFinYear
 
+def get_fpsStatus_upload_path(instance, filename):
+  fpsYear=str(instance.fpsYear)
+  fpsMonth=str(instance.fpsMonth)
+  return os.path.join(
+    "nrega",instance.block.district.state.slug,instance.block.district.slug,instance.block.slug,"FPS",fpsYear,fpsMonth,filename)
+
 def get_fto_upload_path(instance, filename):
   fullfinyear=getFullFinYear(instance.finyear)
   return os.path.join(
@@ -70,6 +76,7 @@ class Block(models.Model):
   fpsCode=models.CharField(max_length=8,unique=True,blank=True,null=True)
   crawlRequirement=models.CharField(max_length=4,choices=CRAWL_CHOICES,default='NONE')
   isRequired=models.BooleanField(default=False)
+  fpsRequired=models.BooleanField(default=False)
   slug=models.SlugField(blank=True) 
 
   def districtName(self):
@@ -100,7 +107,28 @@ class PanchayatReport(models.Model):
         unique_together = ('panchayat', 'reportType','finyear')  
   def __str__(self):
     return self.panchayat.name+"-"+self.reportType
-    
+   
+class FPSShop(models.Model):
+  block=models.ForeignKey('block',on_delete=models.CASCADE)
+  name=models.CharField(max_length=256)
+  remarks=models.CharField(max_length=256,blank=True,null=True)
+  fpsCode=models.CharField(max_length=12,unique=True)
+  slug=models.SlugField(blank=True) 
+ 
+  def __str__(self):
+    return self.name
+class FPSStatus(models.Model):
+  fpsShop=models.ForeignKey('FPSShop',on_delete=models.CASCADE)
+  fpsMonth=models.PositiveSmallIntegerField(null=True,blank=True)
+  fpsYear=models.PositiveSmallIntegerField(null=True,blank=True)
+  statusFile=models.FileField(null=True, blank=True,upload_to=get_fpsStatus_upload_path,max_length=512)
+  isDownloaded=models.BooleanField(default=False)
+  isProcessed=models.BooleanField(default=False)
+  isComplete=models.BooleanField(default=False)
+  def __str__(self):
+    return self.fpsShop.name+"-"+str(fpsMonth)+"-"+str(fpsYear)
+  
+
 class Panchayat(models.Model):
   CRAWL_CHOICES = (
         ('FULL', 'Full Data'),
@@ -143,7 +171,7 @@ class Applicant(models.Model):
   name=models.CharField(max_length=512)
   jobcard=models.CharField(max_length=256,db_index=True)
   applicantNo=models.PositiveSmallIntegerField()
-  jcNo=models.IntegerField(blank=True,null=True)
+  jcNo=models.BigIntegerField(blank=True,null=True)
   village=models.CharField(max_length=256,blank=True,null=True)
   headOfHousehold=models.CharField(max_length=512,blank=True,null=True)
   fatherHusbandName=models.CharField(max_length=512,blank=True,null=True)
@@ -181,8 +209,11 @@ class FTO(models.Model):
   isDownloaded=models.BooleanField(default=False)
   isProcessed=models.BooleanField(default=False)
   isComplete=models.BooleanField(default=False)
+  allApplicantFound=models.BooleanField(default=False)
+  allWDFound=models.BooleanField(default=False)
   downloadAttemptDate=models.DateTimeField(null=True,blank=True)
   downloadError=models.CharField(max_length=64,blank=True,null=True)
+  remarks=models.CharField(max_length=4096,blank=True,null=True)
   class Meta:
         unique_together = ('ftoNo', 'block', 'finyear')  
   def __str__(self):
@@ -219,6 +250,7 @@ class Muster(models.Model):
   isDownloaded=models.BooleanField(default=False)
   isProcessed=models.BooleanField(default=False)
   isComplete=models.BooleanField(default=False)
+  allApplicantFound=models.BooleanField(default=False)
   musterDownloadAttemptDate=models.DateTimeField(null=True,blank=True)
   downloadError=models.CharField(max_length=64,blank=True,null=True)
   musterDownloadDate=models.DateTimeField(null=True,blank=True)
@@ -231,7 +263,8 @@ class Muster(models.Model):
 class WorkDetail(models.Model):  
   applicant=models.ForeignKey('Applicant',on_delete=models.CASCADE,null=True,blank=True)
   muster=models.ForeignKey('Muster',on_delete=models.CASCADE)
-  wagelist=models.ForeignKey('Wagelist',on_delete=models.CASCADE,null=True,blank=True)
+#  wagelist=models.ForeignKey('Wagelist',on_delete=models.CASCADE,null=True,blank=True)
+  wagelist=models.ManyToManyField('Wagelist',related_name="wdWagelist",blank=True)
   musterIndex=models.PositiveSmallIntegerField()
   zname=models.CharField(max_length=512,null=True,blank=True)
   zjobcard=models.CharField(max_length=256,null=True,blank=True)
@@ -246,9 +279,23 @@ class WorkDetail(models.Model):
   def __str__(self):
     return self.muster.musterNo+" "+str(self.musterIndex)
   
-
+class PaymentDetail(models.Model):
+  applicant=models.ForeignKey('Applicant',on_delete=models.CASCADE,null=True,blank=True)
+  workDetail=models.ForeignKey('WorkDetail',on_delete=models.CASCADE,null=True,blank=True)
+  fto=models.ForeignKey('FTO',on_delete=models.CASCADE,null=True,blank=True)
+  referenceNo=models.CharField(max_length=256,null=True,blank=True)
+  transactionDate=models.DateField(null=True,blank=True)
+  processDate=models.DateField(null=True,blank=True)
+  status=models.CharField(max_length=256,null=True,blank=True)
+  rejectionReason=models.CharField(max_length=256,null=True,blank=True)
+  creditedAmount=models.DecimalField(max_digits=10,decimal_places=4,null=True,blank=True)
+  class Meta:
+        unique_together = ('fto', 'referenceNo')  
+  def __str__(self):
+    return self.referenceNo
+  
 def createslug(instance):
-  myslug=slugify(instance.name)
+  myslug=slugify(instance.name)[:50]
   if myslug == '':
     myslug="%s-%s" % (instance.__class__.__name__ , str(instance.code))
   return myslug
@@ -264,6 +311,7 @@ post_save.connect(location_post_save_receiver,sender=State)
 post_save.connect(location_post_save_receiver,sender=District)
 post_save.connect(location_post_save_receiver,sender=Block)
 post_save.connect(location_post_save_receiver,sender=Panchayat)
+post_save.connect(location_post_save_receiver,sender=FPSShop)
 #def state_post_save_receiver(sender,instance,*args,**kwargs):
 #  if not instance.slug:
 #    instance.slug = "some-slug"
