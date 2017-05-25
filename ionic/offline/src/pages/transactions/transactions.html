@@ -1,0 +1,23 @@
+<ion-header>
+  <ion-navbar>
+    <ion-title>Transactions</ion-title>
+  </ion-navbar>
+</ion-header>
+
+
+<ion-content padding>
+  <div class="row">
+      <div class="col">ID</div>
+      <div class="col">Name</div>
+      <div class="col">Date</div>
+      <div class="col">Work Name</div>
+      <div class="col">Last Known Status</div>
+    </div>
+    <div class="row" *ngFor="let item of items | async">
+      <div class="col"><button ion-button block color="secondary" [navPush]="transactionPage" [navParams]="{transactionName: item.$key}">{{item.$key}}</button></div>
+      <div class="col">{{item.name}}</div>
+      <div class="col">{{item.dateTo}}</div>
+      <div class="col">{{item.workName}}</div>
+      <div class="col">{{item.lastKnownStatus}}</div>
+  </div>
+</ion-content>

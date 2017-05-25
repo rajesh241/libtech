@@ -1,0 +1,26 @@
+<ion-header>
+  <ion-navbar>
+    <ion-title>Transaction</ion-title>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding>
+	<p><b>Jobcard Number</b>:    {{ (item | async)?.jobcard}}</p>
+	<p><b>Worker Name</b>:    {{ (item | async)?.name}}</p>
+	<p><b>Muster No.</b>:    {{ (item | async)?.musterNo}}</p>
+	<p><b>Work Name</b>:    {{ (item | async)?.workName}}</p>
+	<p><b>Total Wage</b>:    {{ (item | async)?.totalWage}}</p>
+	<p><b>Wagelist No.</b>:    {{ (item | async)?.wagelistNo}}</p>
+	<p><b>FTO No.</b>:    {{ (item | async)?.ftoNo}}</p>
+	<p><b>Muster status</b>:    {{ (item | async)?.musterStatus}}</p>
+	<p><b>Bank or Post Office Name</b>:    {{ (item | async)?.bankNameOrPOName}}</p>
+	<p><b>Muster close date</b>:    {{ (item | async)?.dateTo}}</p>
+	<p><b>First signatory date</b>:    {{ (item | async)?.firstSignatoryDate}}</p>
+	<p><b>Second signatory date</b>:    {{ (item | async)?.secondSignatoryDate}}</p>
+	<p><b>Transaction date</b>:    {{ (item | async)?.itemDate}}</p>
+	<p><b>Bank processed date</b>:    {{ (item | async)?.bankProcessedDate}}</p>
+	<p><b>Payment date</b>:    {{ (item | async)?.paymentDate}}</p>
+	<p><b>Credited date</b>:    {{ (item | async)?.creditedDate}}</p>
+	<p><b>FTO Status</b>:    {{ (item | async)?.ftoStatus}}</p>
+	<p><b>Reason for rejection (if rejected)</b>:    {{ (item | async)?.rejectionReason}}</p>
+</ion-content>
