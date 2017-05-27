@@ -1,0 +1,23 @@
+<ion-header>
+  <ion-navbar>
+    <ion-title>Home</ion-title>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding>
+  <h2>Welcome to Libtech App!</h2>
+    <div class="row">
+      <div class="col">Panchayat Name</div>
+      <div class="col">Number of transactions</div>
+      <div class="col">Number of jobcards</div>
+      <div class="col">Earliest date</div>
+      <div class="col">Latest date</div>
+    </div>
+    <div class="row" *ngFor="let item of items | async">
+      <div class="col"><button ion-button block color="secondary" [navPush]="jobcardsPage" [navParams]="{panchayatName: item.$key}">{{item.$key}}</button></div>
+      <div class="col">{{item.transactions}}</div>
+      <div class="col">{{item.num_jobcards}}</div>
+      <div class="col">{{item.earliest_date}}</div>
+      <div class="col">{{item.latest_date}}</div>
+    </div>
+</ion-content>
