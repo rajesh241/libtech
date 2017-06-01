@@ -15,7 +15,7 @@ def get_fpsStatus_upload_path(instance, filename):
   fpsYear=str(instance.fpsYear)
   fpsMonth=str(instance.fpsMonth)
   return os.path.join(
-    "nrega",instance.block.district.state.slug,instance.block.district.slug,instance.block.slug,"FPS",fpsYear,fpsMonth,filename)
+    "nrega",instance.fpsShop.block.district.state.slug,instance.fpsShop.block.district.slug,instance.fpsShop.block.slug,"FPS",fpsYear,fpsMonth,filename)
 
 def get_fto_upload_path(instance, filename):
   fullfinyear=getFullFinYear(instance.finyear)
@@ -122,11 +122,14 @@ class FPSStatus(models.Model):
   fpsMonth=models.PositiveSmallIntegerField(null=True,blank=True)
   fpsYear=models.PositiveSmallIntegerField(null=True,blank=True)
   statusFile=models.FileField(null=True, blank=True,upload_to=get_fpsStatus_upload_path,max_length=512)
+  downloadAttemptDate=models.DateTimeField(null=True,blank=True)
+  AAYDeliveryDate=models.DateField(null=True,blank=True)
+  PHHDeliveryDate=models.DateField(null=True,blank=True)
   isDownloaded=models.BooleanField(default=False)
   isProcessed=models.BooleanField(default=False)
   isComplete=models.BooleanField(default=False)
   def __str__(self):
-    return self.fpsShop.name+"-"+str(fpsMonth)+"-"+str(fpsYear)
+    return self.fpsShop.name+"-"+str(self.fpsMonth)+"-"+str(self.fpsYear)
   
 
 class Panchayat(models.Model):
@@ -143,6 +146,8 @@ class Panchayat(models.Model):
   crawlRequirement=models.CharField(max_length=4,choices=CRAWL_CHOICES,default='NONE')
   jobcardCrawlDate=models.DateTimeField(null=True,blank=True,default=datetime.datetime.now)
   jobcardProcessDate=models.DateTimeField(null=True,blank=True,default=datetime.datetime.now)
+  applicationRegisterCrawlDate=models.DateTimeField(null=True,blank=True)
+  applicationRegisterProcessDate=models.DateTimeField(null=True,blank=True)
   musterCrawlDate=models.DateTimeField(null=True,blank=True,default=datetime.datetime.now)
   statsCrawlDate=models.DateTimeField(null=True,blank=True)
   jobcardRegisterFile=models.FileField(null=True, blank=True,upload_to=get_panchayat_upload_path,max_length=512)
@@ -252,6 +257,7 @@ class Muster(models.Model):
   isComplete=models.BooleanField(default=False)
   allApplicantFound=models.BooleanField(default=False)
   musterDownloadAttemptDate=models.DateTimeField(null=True,blank=True)
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
   downloadError=models.CharField(max_length=64,blank=True,null=True)
   musterDownloadDate=models.DateTimeField(null=True,blank=True)
   isRequired=models.BooleanField(default=False)
@@ -274,6 +280,8 @@ class WorkDetail(models.Model):
   totalWage=models.DecimalField(max_digits=10,decimal_places=4,null=True,blank=True)
   musterStatus=models.CharField(max_length=64,null=True,blank=True)
   creditedDate=models.DateField(null=True,blank=True)
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
+  modified=models.DateTimeField(null=True,blank=True,auto_now=True)
   class Meta:
         unique_together = ('muster', 'musterIndex')  
   def __str__(self):

@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail
+from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus
 from .actions import export_as_csv_action
 class stateModelAdmin(admin.ModelAdmin):
   list_display = ["name","stateShortCode","code","crawlIP"]
@@ -48,6 +48,15 @@ class fpsShopModelAdmin(admin.ModelAdmin):
   def get_district(self,obj):
     return obj.block.district.name
   get_district.description="district"
+
+class fpsStatusModelAdmin(admin.ModelAdmin):
+  list_display=["id","get_fpsCode","fpsMonth","fpsYear"]
+  search_fields=["id","fpsShop__fpsCode"]
+  list_filter=["isDownloaded","isProcessed","isComplete"]
+  def get_fpsCode(self,obj):
+    return obj.fpsShop.fpsCode
+  get_fpsCode.description="fpsCode"
+
 
 class panchayatModelAdmin(admin.ModelAdmin):
   actions = [export_as_csv_action("CSV Export", fields=['name','code','blockName','districtName','stateName','id','remarks'])]
@@ -145,6 +154,7 @@ admin.site.register(Wagelist,wagelistModelAdmin)
 admin.site.register(FTO,ftoModelAdmin)
 admin.site.register(PanchayatStat,panchayatStatModelAdmin)
 admin.site.register(FPSShop,fpsShopModelAdmin)
+admin.site.register(FPSStatus,fpsStatusModelAdmin)
 # Reference Code for Downloading CSV
 # def download_csv(self, request, queryset):
 #   import csv
