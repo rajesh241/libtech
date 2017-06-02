@@ -121,6 +121,22 @@ def table2csv(table):
 
   return outcsv
 
+def stripTableAttributesOrdered(inhtml,tableID):
+  tableHTML=''
+  classAtt='id = "%s" border=1 class = " table table-striped"' % tableID
+  tableHTML+='<table %s>' % classAtt
+  rows=inhtml.findAll('tr')
+  for eachRow in rows:
+    tableHTML+='<tr>'
+    thCols=eachRow.findAll(['th','td'])
+    if len(thCols) > 1:
+      for eachTD in thCols:
+        tableHTML+='<td>%s</td>' % eachTD.text
+    tableHTML+='</tr>'
+
+  tableHTML+='</table>'
+  return tableHTML
+
 
     
 def stripTableAttributes(inhtml,tableID):

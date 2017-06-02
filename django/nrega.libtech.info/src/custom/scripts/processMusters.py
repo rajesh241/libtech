@@ -56,7 +56,7 @@ def main():
 #    myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0,panchayat__crawlRequirement="FULL",panchayat__block__district__code="3406")[:limit] 
   else:
     myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0)[:limit]
-  myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,allApplicantFound=0,finyear=18,panchayat__block__district__state__code=stateCode)[:limit]
+#  myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,allApplicantFound=0,finyear=18,panchayat__block__district__state__code=stateCode)[:limit]
 #  myMusters=Muster.objects.filter(id=10924) 
   for eachMuster in myMusters:
     logger.info("MusterID: %s MusterNo: %s, blockCode: %s, finyear: %s workName:%s" % (eachMuster.id,eachMuster.musterNo,eachMuster.block.code,eachMuster.finyear,eachMuster.workName))

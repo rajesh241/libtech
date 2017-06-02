@@ -21,7 +21,7 @@ sys.path.insert(0, repoDir)
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.append(djangoDir)
 
-from nregaFunctions import stripTableAttributes,htmlWrapperLocal,getFullFinYear
+from nregaFunctions import stripTableAttributes,stripTableAttributesOrdered,htmlWrapperLocal,getFullFinYear
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize,driverFinalize,displayInitialize,displayFinalize,waitUntilID
 
@@ -50,6 +50,26 @@ def argsFetch():
 
   args = vars(parser.parse_args())
   return args
+def validateFPSStatus(logger,myhtml):
+  status=None
+  summaryTable=None
+  deliveryTable=None
+  searchText='class="newFormTheme"'
+  replaceText='class="newFormTheme" id="newFormTheme"'
+  htmlsoup=BeautifulSoup(myhtml,"html.parser")
+  tables=htmlsoup.findAll('table',{ "class" : "newFormTheme" })
+  for table in tables:
+    if "Locality" in str(table):
+      logger.info("Found Summary Table")
+      summaryTable=table
+    elif "SIO Status" in str(table):
+      logger.info("Delivery Table Found")
+      deliveryTable=table
+  if (summaryTable is not None) and (deliveryTable is not None):
+    status=1
+
+  return status,summaryTable,deliveryTable
+#  fpsHtml=fpsHtml.decode("UTF-8").replace(searchText,replaceText)
 
 def main():
   httplib2.debuglevel = 1
@@ -65,7 +85,7 @@ def main():
     incode=args['fpsCode']
     myShops=FPSStatus.objects.filter(fpsShop__fpsCode=incode,isComplete=False)
   else:
-    myShops=FPSStatus.objects.filter(isComplete=False)[:1]
+    myShops=FPSStatus.objects.filter(isComplete=False).order_by('isDownloaded')
   for eachShop in myShops:
     districtCode=eachShop.fpsShop.block.district.fpsCode
     blockCode=eachShop.fpsShop.block.fpsCode
@@ -73,10 +93,12 @@ def main():
     districtName=eachShop.fpsShop.block.district.name
     blockName=eachShop.fpsShop.block.name
     fpsName=eachShop.fpsShop.name
+    fpsSlug=eachShop.fpsShop.slug
     stateName=eachShop.fpsShop.block.district.state.name
     fpsMonth=eachShop.fpsMonth
     fpsYear=eachShop.fpsYear
-    logger.info("Processing state: %s fpsCode: %s district: %s, block: %s ShopName : %s " % (stateName,fpsCode,districtName,blockName,fpsName))
+    fpsMonthName=monthLabels[int(fpsMonth)]   
+    logger.info("Processing state: %s fpsCode: %s district: %s, block: %s ShopName : %s fpsMonth:%s fpsYear: %s" % (stateName,fpsCode,districtName,blockName,fpsName,str(fpsMonth),str(fpsYear)))
     i=0
 
     hlib = httplib2.Http('.cache')
@@ -95,8 +117,33 @@ def main():
      }
  
     #print(urlencode(data))
-    response, fpsHtml = hlib.request(url, 'POST', urlencode(data), headers = {'Content-Type': 'application/x-www-form-urlencoded'})
+    response, htmlsource = hlib.request(url, 'POST', urlencode(data), headers = {'Content-Type': 'application/x-www-form-urlencoded'})
     logger.info("Download Response : %s" % response)
+    if response['status'] == '200':
+      logger.info("Status is 200")
+      with open("/tmp/c.html","wb") as f:
+        f.write(htmlsource)
+        error,summaryTable,deliveryTable=validateFPSStatus(logger,htmlsource)
+        if error is not None:
+          logger.info("Found Both the Tables")
+          title="%s_%s-%s" % (str(fpsYear),fpsMonthName,fpsName)
+          outhtml=''
+          outhtml+=stripTableAttributesOrdered(summaryTable,"summaryTable")
+          outhtml+=stripTableAttributesOrdered(deliveryTable,"deliveryTable")
+          outhtml=htmlWrapperLocal(title=title, head='<h1 aling="center">'+title+'</h1>', body=outhtml)
+          try:
+            outhtml=outhtml.encode("UTF-8")
+          except:
+            outhtml=outhtml
+          filename="%s-%s-%s.html" % (fpsSlug,fpsMonthName,str(fpsYear))
+          eachShop.statusFile.save(filename, ContentFile(outhtml))
+          eachShop.downloadAttemptDate=timezone.now()
+          eachShop.isDownloaded=True
+          eachShop.isProcessed=False
+          eachShop.save()
+        else:
+          eachShop.downloadAttemptDate=timezone.now()
+          eachShop.save()
   #   logger.info("File Name : %s " % filename)
   #   title="%s_%s-%s" % (str(fpsYear),fpsMonthName,fpsNameFiltered)
   #   fpsHtml=fpsHtml.decode("UTF-8").replace(searchText,replaceText)
