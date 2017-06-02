@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
 import { Auth } from '../../providers/auth';
-import { PanchayatsPage } from '../panchayats/panchayats';
 
 @Component({
     selector: 'page-login',
@@ -16,17 +15,17 @@ export class LoginPage {
     ionViewDidLoad() {
         console.log('ionViewDidLoad LoginPage');
     }
-
+    /*
     login() {
         this.auth.login(this.email, this.password);
-        this.navCtrl.push(PanchayatsPage);
+        this.navCtrl.pop();
     }
 
     loginWithGoogle() {
         this.auth.loginWithGoogle();
         this.navCtrl.pop();
     }
-
+    */
     loginWithFacebook() {
         this.auth.loginWithFacebook();
         this.navCtrl.pop();

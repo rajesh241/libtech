@@ -1,7 +1,13 @@
 import { NgModule, ErrorHandler } from '@angular/core';
-import { IonicApp, IonicModule, IonicErrorHandler } from 'ionic-angular';
+import { BrowserModule } from '@angular/platform-browser';
+import { StatusBar } from '@ionic-native/status-bar';
+import { SplashScreen } from '@ionic-native/splash-screen';
+
 import { AngularFireModule } from 'angularfire2';
+import { AngularFireDatabaseModule } from 'angularfire2/database';
+import { AngularFireAuthModule } from 'angularfire2/auth';
 import { AngularFireOfflineModule } from 'angularfire2-offline';
+import { IonicApp, IonicModule, IonicErrorHandler } from 'ionic-angular';
 
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
@@ -33,9 +39,12 @@ const firebaseConfig = {
         TransactionPage
     ],
     imports: [
-        IonicModule.forRoot(MyApp),
-	AngularFireModule.initializeApp(firebaseConfig),
-	AngularFireOfflineModule
+        AngularFireDatabaseModule,
+        AngularFireAuthModule,
+        AngularFireModule.initializeApp(firebaseConfig),
+        AngularFireOfflineModule,
+        BrowserModule,
+        IonicModule.forRoot(MyApp)
     ],
     bootstrap: [IonicApp],
     entryComponents: [
@@ -49,6 +58,9 @@ const firebaseConfig = {
     ],
     providers: [Panchayats,
         Auth,
-        { provide: ErrorHandler, useClass: IonicErrorHandler }]
+        StatusBar,
+        SplashScreen,
+        { provide: ErrorHandler, useClass: IonicErrorHandler }
+    ]
 })
 export class AppModule { }

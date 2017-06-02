@@ -1,10 +1,7 @@
 import { Component } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
-import { AngularFire, FirebaseListObservable } from 'angularfire2';
-/*import {
-  AngularFireOffline,
-    AfoListObservable,
-    AfoObjectObservable } from 'angularfire2-offline';*/
+
+import { AngularFireOfflineDatabase, AfoListObservable } from 'angularfire2-offline/database';
 
 @Component({
     selector: 'page-transaction',
@@ -19,17 +16,17 @@ export class TransactionPage {
     remarks: string;
     createComplaint = false;
     updated = true;
-    field: FirebaseListObservable<any>;
+    field: AfoListObservable<any>;
 
 
-    constructor(public navCtrl: NavController, public navParams: NavParams, private af: AngularFire) {
+    constructor(public navCtrl: NavController, public navParams: NavParams, private afoDatabase: AngularFireOfflineDatabase) {
         this.jobcard = this.navParams.get('jobcard');
         this.date = this.navParams.get('date');
         this.transaction = this.navParams.get('transaction');
         this.url = this.navParams.get('url') + '/' + this.date;
         this.index = String(this.navParams.get('index'));
         console.log(this.url);
-        this.field = this.af.database.list(this.url);
+        this.field = this.afoDatabase.list(this.url);
         console.log(this.field);
     }
 

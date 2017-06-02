@@ -1,25 +1,19 @@
 import { Injectable } from '@angular/core';
 import 'rxjs/add/operator/map';
 
-import { AngularFire, FirebaseListObservable } from 'angularfire2'
+import { AngularFireOfflineDatabase, AfoListObservable } from 'angularfire2-offline/database';
 
-/*
-  Generated class for the Panchayats provider.
-
-  See https://angular.io/docs/ts/latest/guide/dependency-injection.html
-  for more info on providers and Angular 2 DI.
-*/
 @Injectable()
 export class Jobcards {
-    items: FirebaseListObservable<any>;
+    items: AfoListObservable<any>;
 
-    constructor(private af: AngularFire) {
+    constructor(private afoDatabase: AngularFireOfflineDatabase) {
         //        console.log('Hello Jobcards Provider');
-        this.items = af.database.list('/jobcard/KURHANI');
+        this.items = afoDatabase.list('/jobcard/KURHANI');
     }
 
     // Load all github users
-    load(): FirebaseListObservable<any> {
+    load(): AfoListObservable<any> {
         return this.items
         //            .map(res => <User[]>res.json());
     }

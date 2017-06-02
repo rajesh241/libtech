@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
-import { AngularFire, AuthProviders, AuthMethods } from 'angularfire2';
+import * as firebase from 'firebase/app';
+import { AngularFireAuth } from 'angularfire2/auth';
 
 @Injectable()
 export class Auth {
     user: any;
 
-    constructor(public af: AngularFire) {
+    constructor(private afAuth: AngularFireAuth) {
         console.log('Hello Auth Provider');
     }
 
@@ -28,55 +29,53 @@ export class Auth {
         }
         return this.user;
     }
-
-    login(email, password) {
-        return this.af.auth.login({
-            email: email,
-            password: password
-        }, {
-                provider: AuthProviders.Password,
-                method: AuthMethods.Password
-            }).then((response) => {
-                console.log('auth ' + 'Login Success' + JSON.stringify(response));
+    /*
+        login(email, password) {
+            return this.afAuth.auth.signInWithEmailAndPassword({
+                email: email,
+                password: password
+            }, {
+                    provider: AuthProviders.Password,
+                    method: AuthMethods.Password
+                }).then((response) => {
+                    console.log('auth ' + 'Login Success' + JSON.stringify(response));
+                    let user = {
+                        email: response.auth.email,
+                        picture: response.auth.photoURL
+                    };
+                    console.log('auth ' + JSON.stringify(user));
+                    window.localStorage.setItem('user', JSON.stringify(user));
+                }).catch((error) => {
+                    console.log(error);
+                    alert(error);
+                });
+        }
+    
+        loginWithGoogle() {
+            return this.afAuth.auth.signInWithPopup(
+                new firebase.auth.GoogleAuthProvider()
+            ).then((response) => {
+                console.log('Login with Google Success' + JSON.stringify(response));
                 let user = {
-                    email: response.auth.email,
-                    picture: response.auth.photoURL
+                    email: response.user.email,
+                    picture: response.user.photoURL
                 };
-                console.log('auth ' + JSON.stringify(user));
+                console.log(JSON.stringify(user));
                 window.localStorage.setItem('user', JSON.stringify(user));
             }).catch((error) => {
                 console.log(error);
                 alert(error);
             });
-    }
-
-    loginWithGoogle() {
-        return this.af.auth.login({
-            provider: AuthProviders.Google,
-            method: AuthMethods.Popup
-        }).then((response) => {
-            console.log('Login with Google Success' + JSON.stringify(response));
-            let user = {
-                email: response.auth.email,
-                picture: response.auth.photoURL
-            };
-            console.log(JSON.stringify(user));
-            window.localStorage.setItem('user', JSON.stringify(user));
-        }).catch((error) => {
-            console.log(error);
-            alert(error);
-        });
-    }
-
+        }
+    */
     loginWithFacebook() {
-        return this.af.auth.login({
-            provider: AuthProviders.Facebook,
-            method: AuthMethods.Popup
-        }).then((response) => {
+        return this.afAuth.auth.signInWithPopup(
+            new firebase.auth.FacebookAuthProvider()
+        ).then((response) => {
             console.log('Login with Facebook Success' + JSON.stringify(response));
             let user = {
-                email: response.auth.displayName,
-                picture: response.auth.photoURL
+                email: response.user.displayName,
+                picture: response.user.photoURL
             };
             console.log(JSON.stringify(user));
             window.localStorage.setItem('user', JSON.stringify(user));
@@ -89,6 +88,6 @@ export class Auth {
     logout() {
         this.user = null;
         window.localStorage.removeItem('user');
-        return this.af.auth.logout();
+        return this.afAuth.auth.signOut();
     }
 }

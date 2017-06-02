@@ -1,25 +1,20 @@
 import { Injectable } from '@angular/core';
 import 'rxjs/add/operator/map';
 
-import { AngularFire, FirebaseListObservable } from 'angularfire2'
+import { AngularFireOfflineDatabase, AfoListObservable } from 'angularfire2-offline/database';
 import { Panchayat } from '../models/panchayats'
-/*
-  Generated class for the Panchayats provider.
 
-  See https://angular.io/docs/ts/latest/guide/dependency-injection.html
-  for more info on providers and Angular 2 DI.
-*/
 @Injectable()
 export class Panchayats {
-    items: FirebaseListObservable<Panchayat[]>;
+    items: AfoListObservable<Panchayat[]>;
 
-    constructor(private af: AngularFire) {
+    constructor(private afoDatabase: AngularFireOfflineDatabase) {
         //        console.log('Hello Panchayats Provider');
-        this.items = af.database.list('/geo/KURHANI');
+        this.items = afoDatabase.list('/geo/KURHANI');
     }
 
     // Load all github users
-    load(): FirebaseListObservable<Panchayat[]> {
+    load(): AfoListObservable<Panchayat[]> {
         return this.items
         //            .map(res => <User[]>res.json());
     }
