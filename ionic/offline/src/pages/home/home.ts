@@ -10,9 +10,23 @@ import { JobcardsPage } from '../jobcards/jobcards';
 export class HomePage {
   jobcardsPage = JobcardsPage;
   items: AfoListObservable<any[]>;
-  constructor(public navCtrl: NavController, afoDatabase: AngularFireOfflineDatabase) {
-    this.items = afoDatabase.list('/panchayats');
+  jobcards: AfoListObservable<any[]>;
+  panchayat = {}
+  constructor(public navCtrl: NavController, private afoDatabase: AngularFireOfflineDatabase) {
+    this.items = this.afoDatabase.list('/panchayats');
+    }
 
+  syncForm() {
+    console.log(this.panchayat);
+    var url = '/jobcards/' + this.panchayat;
+    console.log(url);
+    this.jobcards = this.afoDatabase.list('/jobcards/' + this.panchayat);
+    this.jobcards.subscribe(jobcards => {
+      jobcards.forEach(element => {
+        console.log(element['$key']);
+        this.afoDatabase.list('/transactions/' + element['$key']);
+    });
+   });
   }
 
 }
