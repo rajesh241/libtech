@@ -20,12 +20,13 @@ export class LoginPage {
         this.auth.login(this.email, this.password);
         this.navCtrl.pop();
     }
+    */
 
     loginWithGoogle() {
         this.auth.loginWithGoogle();
         this.navCtrl.pop();
     }
-    */
+
     loginWithFacebook() {
         this.auth.loginWithFacebook();
         this.navCtrl.pop();

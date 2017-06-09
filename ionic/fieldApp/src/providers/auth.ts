@@ -50,7 +50,7 @@ export class Auth {
                     alert(error);
                 });
         }
-    
+    */    
         loginWithGoogle() {
             return this.afAuth.auth.signInWithPopup(
                 new firebase.auth.GoogleAuthProvider()
@@ -67,7 +67,7 @@ export class Auth {
                 alert(error);
             });
         }
-    */
+
     loginWithFacebook() {
         return this.afAuth.auth.signInWithPopup(
             new firebase.auth.FacebookAuthProvider()
