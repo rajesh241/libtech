@@ -12,12 +12,17 @@
       <div class="col">Number of jobcards</div>
       <div class="col">Earliest date</div>
       <div class="col">Latest date</div>
+      <div class="col">Sync</div>
     </div>
-    <div class="row" *ngFor="let item of items | async">
-      <div class="col"><button ion-button block color="secondary" [navPush]="jobcardsPage" [navParams]="{panchayatName: item.$key}">{{item.$key}}</button></div>
-      <div class="col">{{item.transactions}}</div>
-      <div class="col">{{item.num_jobcards}}</div>
-      <div class="col">{{item.earliest_date}}</div>
-      <div class="col">{{item.latest_date}}</div>
-    </div>
+    <form (ngSubmit)="syncForm()">
+      <div class="row" *ngFor="let item of items | async">
+        <div class="col"><button ion-button block color="secondary" [navPush]="jobcardsPage" [navParams]="{panchayatName: item.$key}">{{item.$key}}</button></div>
+        <div class="col">{{item.transactions}}</div>
+        <div class="col">{{item.num_jobcards}}</div>
+        <div class="col">{{item.earliest_date}}</div>
+        <div class="col">{{item.latest_date}}</div>
+	<div class="col"><input type="radio" [(ngModel)]="panchayat" name="{{item.$key}}" value="{{item.$key}}"></div>
+      </div>
+      <button ion-button type="submit" block>Sync</button>
+    </form>
 </ion-content>
