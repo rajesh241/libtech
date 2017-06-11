@@ -9,7 +9,7 @@
 
 
 <ion-content padding>
-  <p *ngFor="let panchayat of panchayats"><button ion-button [navPush]="jobcardsPage" [navParams]="{panchayatName: panchayat.panchayatName}"> {{ panchayat.panchayatName }}</button></p>
+  <p *ngFor="let panchayat of panchayats"><button ion-button [navPush]="jobcardsPage" [navParams]="{panchayatName: panchayat}"> {{ panchayat }}</button></p>
 </ion-content>
 
 <ion-footer>

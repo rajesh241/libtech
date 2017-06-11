@@ -22,16 +22,9 @@
 
     <!-- FIXME
     <ion-searchbar (input)="search($event)"></ion-searchbar>
-
-      <p>Please select the panchayats you wish to follow:</p>
-
-      <ion-list>
-	<ion-item *ngFor="let panchayat of panchayats; let i = index"> <input type="checkbox" [checked]="panchayatSelected[i]"><button ion-button (click)="gotoPanchayat(selectPanchayat, i, panchayat.panchayatName)" #selectPanchayat>{{ panchayat.panchayatName }}</button></ion-item>
-      <p *ngFor="let panchayat of panchayats"> <input type="checkbox" [checked]="panchayatSelected[panchayat.panchayatName]"><button ion-button (click)="choosePanchayat(selectPanchayat, panchayat.panchayatName, panchayat)" #selectPanchayat>{{ panchayat.panchayatName }}</button></p>
-      </ion-list>
-      -->
+    -->
       <p>Please select the panchayats you wish to sync</p>
-      <p *ngFor="let panchayat of panchayats"  (click)="choosePanchayat(selectPanchayat, panchayat.panchayatName, panchayat)"> <input type="checkbox" [checked]="panchayatSelected[panchayat.panchayatName]"><button ion-button #selectPanchayat>{{ panchayat.panchayatName }}</button></p>
+      <p *ngFor="let panchayat of panchayats | async"  (click)="choosePanchayat(selectPanchayat, panchayat.$key, panchayat.$key)"> <input type="checkbox" [checked]="panchayatSelected[panchayat.$key]"><button ion-button #selectPanchayat>{{ panchayat.$key }}</button></p>
 
     <button ion-button (click)="syncPanchayats()">Sync</button>
     <button ion-button [navPush]="panchayatsPage" [navParams]="panchayatsChosen">View</button>

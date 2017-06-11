@@ -15,9 +15,8 @@ export class JobcardsPage {
 
     constructor(private navCtrl: NavController, private navParams: NavParams, private afoDatabase: AngularFireOfflineDatabase) {
         this.panchayatName = this.navParams.get('panchayatName');
-        this.jobcards = afoDatabase.list('/jobcard/KURHANI/' + this.panchayatName);
-        console.log('/jobcard/KURHANI/' + this.panchayatName);
-        console.log(this.jobcards);
+        this.jobcards = afoDatabase.list('/jobcards/' + this.panchayatName);
+        console.log('/jobcard/' + this.panchayatName);
     }
 
     goHome() {

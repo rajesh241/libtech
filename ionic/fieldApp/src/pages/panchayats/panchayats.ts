@@ -1,9 +1,7 @@
 import { Component } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
 
-
 import { JobcardsPage } from '../jobcards/jobcards'
-import { Panchayats } from '../../providers/panchayats'
 
 
 @Component({
@@ -12,16 +10,10 @@ import { Panchayats } from '../../providers/panchayats'
 })
 export class PanchayatsPage {
     jobcardsPage = JobcardsPage;
-    panchayats: any; //  Panchayat[];
+    panchayats: any;
 
-    constructor(public navCtrl: NavController, public navParams: NavParams, private panchayatList: Panchayats) {
+    constructor(public navCtrl: NavController, private navParams: NavParams) {
         this.panchayats = navParams.data;
-        /*
-        panchayatList.load().subscribe(panchayats => {
-//            this.panchayats = panchayats;
-            console.log(panchayats);
-        })
-        */
     }
 
     ionViewDidLoad() {
@@ -29,7 +21,7 @@ export class PanchayatsPage {
         this.panchayats = this.navParams.data;
         console.log(this.panchayats);
         console.log(JSON.stringify(this.panchayats))
-  }
+    }
 
     goHome() {
         this.navCtrl.popToRoot();

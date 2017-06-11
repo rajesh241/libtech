@@ -1,16 +1,16 @@
 <ion-header>
   <ion-navbar>
-    <ion-title>Transactions for Jobcard[{{ jobcard }}]</ion-title>
+    <ion-title>Transactions for [{{ jobcard }}]</ion-title>
   </ion-navbar>
   <button ion-button navPop>Back</button>
   <button ion-button (click)="goHome()">Home</button>
 </ion-header>
 
 <ion-content padding>
-  <span *ngFor="let items of transactions | async">
-    <p *ngFor="let item of items; let i = index">
+  <span *ngFor="let item of items | async">
+    <p>
       <span *ngIf="item">
-	<button ion-button [navPush]="transactionPage" [navParams]="{ jobcard: jobcard, date: items.$key, transaction: item, url: url, index: i }">{{ items.$key }}[{{ i }}] > {{ item.name }} </button>
+	<button ion-button [navPush]="transactionPage" [navParams]="{ jobcard: jobcard, key: item.$key, transaction: item, url: url}">{{ item.$key }}</button>
       </span>
     </p>
   </span>

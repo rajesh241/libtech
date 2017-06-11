@@ -9,22 +9,23 @@ import { AngularFireOfflineDatabase, AfoListObservable } from 'angularfire2-offl
 })
 export class TransactionPage {
     jobcard: string;
-    date: string;
+    key: string;
     transaction: string;
     url: string;
-    index: string;
     remarks: string;
     createComplaint = false;
     updated = true;
     field: AfoListObservable<any>;
+    parent: AfoListObservable<any>;
 
 
     constructor(public navCtrl: NavController, public navParams: NavParams, private afoDatabase: AngularFireOfflineDatabase) {
         this.jobcard = this.navParams.get('jobcard');
-        this.date = this.navParams.get('date');
+        this.key = this.navParams.get('key');
         this.transaction = this.navParams.get('transaction');
-        this.url = this.navParams.get('url') + '/' + this.date;
-        this.index = String(this.navParams.get('index'));
+        this.url = this.navParams.get('url');
+        this.parent = this.afoDatabase.list(this.url);
+        this.url += '/' + this.key;
         console.log(this.url);
         this.field = this.afoDatabase.list(this.url);
         console.log(this.field);
@@ -32,14 +33,17 @@ export class TransactionPage {
 
     update() {
         if (this.remarks)
-            this.field.update(this.index, { remarks: this.remarks });
-        this.field.update(this.index, { createComplaint: this.createComplaint });
+            this.parent.update(this.key, { remarks: this.remarks });
+        this.parent.update(this.key, { createComplaint: this.createComplaint });
         this.updated = true;
         alert("Updated Record");
     }
 
     ionViewDidLoad() {
         console.log('ionViewDidLoad TransactionPage');
+        console.log(this.url);
+        console.log(this.jobcard);
+        console.log(this.key);
     }
 
 

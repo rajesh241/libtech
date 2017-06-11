@@ -23,34 +23,31 @@ export class HomePage {
         if (!this.getUser()) {
             this.navCtrl.push(LoginPage);
         }
-        
-        panchayatList.load().subscribe(panchayats => {
-            this.panchayats = panchayats;
-            this.panchayatsChosen = [];
-        })
+
+        this.panchayatsChosen = [];
+        this.panchayats = panchayatList.load();
+        console.log(this.panchayats);
     }
 
     choosePanchayat(selected, index, panchayat) {
-        console.log(selected);
-        console.log(panchayat);
         this.panchayatSelected[index] = !this.panchayatSelected[index];
-        if(this.panchayatSelected[index]) {
-           this.panchayatsChosen.push(panchayat)
-           console.log(JSON.stringify(this.panchayatsChosen))
+        if (this.panchayatSelected[index]) {
+            this.panchayatsChosen.push(panchayat)
+            // console.log(JSON.stringify(this.panchayatsChosen))
         }
         else {
-           var index = this.panchayatsChosen.indexOf(panchayat)
-           if (index > -1)
-              this.panchayatsChosen.splice(index, 1);
-           else
-              console.log("Shouldn't reach here " + panchayat)
-           console.log(JSON.stringify(this.panchayatsChosen))
-       }
+            var index = this.panchayatsChosen.indexOf(panchayat)
+            if (index > -1)
+                this.panchayatsChosen.splice(index, 1);
+            else
+                console.log("Shouldn't reach here " + panchayat)
+            // console.log(JSON.stringify(this.panchayatsChosen))
+        }
     }
 
     syncPanchayats() {
-        
-    }     
+        this.panchayatList.sync(this.panchayatsChosen);
+    }
 
     getUser() {
         this.user = this.auth.getUser();

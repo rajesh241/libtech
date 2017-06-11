@@ -7,28 +7,30 @@ import { Panchayat } from '../models/panchayats'
 @Injectable()
 export class Panchayats {
     items: AfoListObservable<Panchayat[]>;
+    jobcards: AfoListObservable<any[]>;
 
     constructor(private afoDatabase: AngularFireOfflineDatabase) {
-        //        console.log('Hello Panchayats Provider');
-        this.items = afoDatabase.list('/geo/KURHANI');
+        console.log('Hello Panchayats Provider');
+        this.items = afoDatabase.list('/panchayats');
+        console.log(this.items)
     }
 
-    // Load all github users
     load(): AfoListObservable<Panchayat[]> {
         return this.items
-        //            .map(res => <User[]>res.json());
     }
 
-    /*
-    // Get github user by providing login(username)
-    loadDetails(login: string): Observable<User> {
-        return this.http.get(`${this.githubApiUrl}/users/${login}`)
-            .map(res => <User>(res.json()))
+    sync(panchayats) {
+        panchayats.forEach(panchayat => {
+            console.log(JSON.stringify(panchayat));
+            var url = '/jobcards/' + panchayat;
+            console.log(url);
+            this.jobcards = this.afoDatabase.list('/jobcards/' + panchayat);
+            this.jobcards.subscribe(jobcards => {
+                jobcards.forEach(element => {
+                    console.log(element['$key']);
+                    this.afoDatabase.list('/transactions/' + element['$key']);
+                });
+            });
+        });
     }
-    searchUsers(searchParam: string): Observable<User[]> {
-        return af.database.list('/' + ${searchParam }`)
-	//            .map(res => <User[]>(res.json().items))
-    }
-    */
-
 }
