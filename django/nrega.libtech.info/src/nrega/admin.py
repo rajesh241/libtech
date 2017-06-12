@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus
+from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,TelanganaJobcard
 from .actions import export_as_csv_action
 class stateModelAdmin(admin.ModelAdmin):
   list_display = ["name","stateShortCode","code","crawlIP"]
@@ -57,6 +57,9 @@ class fpsStatusModelAdmin(admin.ModelAdmin):
     return obj.fpsShop.fpsCode
   get_fpsCode.description="fpsCode"
 
+class villageModelAdmin(admin.ModelAdmin):
+  list_display = ["name","tcode"]
+  readonly_fields=["panchayat"]
 
 class panchayatModelAdmin(admin.ModelAdmin):
   actions = [export_as_csv_action("CSV Export", fields=['name','code','blockName','districtName','stateName','id','remarks'])]
@@ -115,6 +118,22 @@ class panchayatReportModelAdmin(admin.ModelAdmin):
   get_district.short_description = 'District '  #Renames column head
 #  get_state.admin_order_field  = 'state'  #Allows column order sorting
   get_state.short_description = 'State '  #Renames column head
+
+class villageReportModelAdmin(admin.ModelAdmin):
+  list_display=["__str__","finyear","updateDate","get_panchayat","get_block"]
+  readonly_fields=["village","finyear","reportType","reportFile"]
+  list_filter=["finyear","reportType"]
+  search_fields=["village__name","village__panchayat__name","village_code"]
+  def get_block(self, obj):
+    return obj.village.panchayat.block.name
+  def get_panchayat(self, obj):
+    return obj.village.panchayat.name
+  get_block.admin_order_field  = 'block'  #Allows column order sorting
+  get_block.short_description = 'Block '  #Renames column head
+#  get_district.admin_order_field  = 'district'  #Allows column order sorting
+  get_panchayat.short_description = 'Panchayat '  #Renames column head
+
+
 class musterModelAdmin(admin.ModelAdmin):
 #  actions = [export_as_csv_action("CSV Export", fields=['name','blockName','districtName','stateName'])]
   list_display = ["id","musterNo","finyear","block","panchayat","workCode","workName"]
@@ -122,10 +141,14 @@ class musterModelAdmin(admin.ModelAdmin):
   list_filter=["isRequired","finyear","isDownloaded","isProcessed","allApplicantFound","block__district__state"]
   readonly_fields=["block","panchayat"]
 
+class tjobcardModelAdmin(admin.ModelAdmin):
+  list_display=["tjobcard","groupName","groupCode"]
+  search_fields=["tjobcard","groupName","groupCode"]
+
 class applicantModelAdmin(admin.ModelAdmin):
   list_display=["jobcard","applicantNo","panchayat","name","age","caste","fatherHusbandName","accountNo"]
-  readonly_fields=["jobcard","applicantNo","panchayat","name","age","caste","fatherHusbandName","accountNo"]
-  search_fields=["jobcard"]
+  readonly_fields=["jobcard","applicantNo","panchayat","name","age","caste","fatherHusbandName","accountNo","tjobcard"]
+  search_fields=["jobcard","tjobcard__tjobcard"]
 
 class workDetailModelAdmin(admin.ModelAdmin):
   list_display=["id","muster","musterIndex","applicant","zjobcard","zname","zaccountNo","creditedDate","musterStatus"]
@@ -146,8 +169,11 @@ admin.site.register(State,stateModelAdmin)
 admin.site.register(District,districtModelAdmin)
 admin.site.register(Block,blockModelAdmin)
 admin.site.register(Panchayat,panchayatModelAdmin)
+admin.site.register(Village,villageModelAdmin)
 admin.site.register(PanchayatReport,panchayatReportModelAdmin)
+admin.site.register(VillageReport,villageReportModelAdmin)
 admin.site.register(Muster,musterModelAdmin)
+admin.site.register(TelanganaJobcard,tjobcardModelAdmin)
 admin.site.register(Applicant,applicantModelAdmin)
 admin.site.register(WorkDetail,workDetailModelAdmin)
 admin.site.register(Wagelist,wagelistModelAdmin)
