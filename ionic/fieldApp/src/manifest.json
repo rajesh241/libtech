@@ -1,7 +1,6 @@
 {
     "name": "Field Reports App",
     "short_name": "Field App",
-    "scope: "https://libtech-app.firebaseapp.com/",
     "start_url": "index.html",
     "display": "fullscreen",
     "orientation": "portrait",
@@ -48,5 +47,5 @@
 	}
     ],
     "theme_color": "#EF2D32",
-    "background_color": "#FFFFFF"
+    "background_color": "#EF2D32"
 }

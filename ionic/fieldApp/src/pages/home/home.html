@@ -1,25 +1,16 @@
 <ion-header>
   <ion-navbar>
     <ion-title>
-      Libtech Reports Drill Down
+      Field Reports App
     </ion-title>
   </ion-navbar>
 </ion-header>
 
 <ion-content padding>
-  <h1>Field Reports App</h1>
   <div *ngIf ="!getUser()"><p>You are not logged in!</p>
-      <button ion-button round [navPush]="loginPage">Login</button>
+      <button ion-button [navPush]="loginPage">Login</button>
   </div>
   <div *ngIf="getUser()">
-    <ion-item>
-      <ion-avatar item-left *ngIf="user.picture">
-	<img [src]="user.picture">
-      </ion-avatar>
-      <h2>{{ user.email }}</h2>
-      <ion-icon name="arrow-forward" item-right></ion-icon>
-    </ion-item>
-
     <!-- FIXME
     <ion-searchbar (input)="search($event)"></ion-searchbar>
     -->
@@ -31,6 +22,13 @@
   </div>
 </ion-content>
 <ion-footer>
-  <button *ngIf="!getUser()" ion-button round [navPush]="loginPage">Login</button>
-  <button *ngIf="getUser()" ion-button round (click)="logout()">Logout</button>
+  <div *ngIf="getUser()">
+    <ion-item>
+      <ion-avatar item-left *ngIf="user.picture">
+	<img [src]="user.picture">
+      </ion-avatar>
+      <h2 item-left>{{ user.email }}</h2>
+    <button float ion-button item-right (click)="logout()">Logout</button>
+    </ion-item>
+  </div>
 </ion-footer>

@@ -16,7 +16,7 @@ export class HomePage {
     loginPage = LoginPage;
     panchayatsPage = PanchayatsPage;
     panchayats: any;
-    panchayatSelected = {}; // Placeholder for list of panchayats to fetch
+    panchayatSelected = {};
     panchayatsChosen: any;
 
     constructor(public navCtrl: NavController, private auth: Auth, private panchayatList: Panchayats) {
@@ -25,7 +25,7 @@ export class HomePage {
         }
 
         this.panchayatsChosen = [];
-        this.panchayats = panchayatList.load();
+        this.panchayats = panchayatList.fetch(this.user);
         console.log(this.panchayats);
     }
 

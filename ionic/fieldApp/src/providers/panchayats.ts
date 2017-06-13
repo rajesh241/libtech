@@ -19,6 +19,11 @@ export class Panchayats {
         return this.items
     }
 
+    fetch(user): AfoListObservable<Panchayat[]> {
+        return this.items
+        //        return this.afoDatabase.list('/users/' + user + '/panchayats/');
+    }
+
     sync(panchayats) {
         panchayats.forEach(panchayat => {
             console.log(JSON.stringify(panchayat));
