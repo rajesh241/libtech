@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <widget id="com.ionicframework.ionic2basics869551" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-  <name>Libtech DrillDown</name>
-  <description>An an to drill down reports</description>
-  <author email="hi@ionicframework" href="http://ionicframework.com/">Ionic Framework Team</author>
+  <name>Field Reports App</name>
+  <description>An app to drill down and take reports to the field</description>
+  <author email="mr.mynk@gmail.com" href="http://libtech.info">Liberation Technlogy Team</author>
   <content src="index.html"/>
   <access origin="*"/>
   <allow-navigation href="http://ionic.local/*"/>
