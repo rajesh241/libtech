@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { LoginPage } from '../login/login';
 import { PanchayatsPage } from '../panchayats/panchayats'
+import { JobcardsPage } from '../jobcards/jobcards'
 
 import { Auth } from '../../providers/auth';
 import { Panchayats } from '../../providers/panchayats'
@@ -15,9 +16,12 @@ export class HomePage {
     user: any;
     loginPage = LoginPage;
     panchayatsPage = PanchayatsPage;
+    jobcardsPage = JobcardsPage;
     panchayats: any;
     panchayatSelected = {};
     panchayatsChosen: any;
+    checked = false;
+    synced = false;
 
     constructor(public navCtrl: NavController, private auth: Auth, private panchayatList: Panchayats) {
         if (!this.getUser()) {
@@ -30,6 +34,8 @@ export class HomePage {
     }
 
     choosePanchayat(selected, index, panchayat) {
+        this.checked = true;
+        this.synced = false;
         this.panchayatSelected[index] = !this.panchayatSelected[index];
         if (this.panchayatSelected[index]) {
             this.panchayatsChosen.push(panchayat)
@@ -47,6 +53,7 @@ export class HomePage {
 
     syncPanchayats() {
         this.panchayatList.sync(this.panchayatsChosen);
+        this.synced = true;
     }
 
     getUser() {

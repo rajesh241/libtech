@@ -14,11 +14,49 @@
     <!-- FIXME
     <ion-searchbar (input)="search($event)"></ion-searchbar>
     -->
-      <p>Please select the panchayats you wish to sync</p>
-      <p *ngFor="let panchayat of panchayats | async"  (click)="choosePanchayat(selectPanchayat, panchayat.$key, panchayat.$key)"> <input type="checkbox" [checked]="panchayatSelected[panchayat.$key]"><button ion-button #selectPanchayat>{{ panchayat.$key }}</button></p>
+    <p>Please select the panchayats you wish to sync</p>
 
-    <button ion-button (click)="syncPanchayats()">Sync</button>
-    <button ion-button [navPush]="panchayatsPage" [navParams]="panchayatsChosen">View</button>
+    <div class="row">
+      <div class="col">Panchayat Name</div>
+      <div class="col">Sync</div>
+    </div>
+    <div class="row" *ngFor="let panchayat of panchayats | async">
+      <div class="col">
+	<button ion-button #selectPanchayat [navPush]="jobcardsPage" [navParams]="{panchayatName: panchayat.$key}">{{ panchayat.$key }}</button>
+      </div>
+      <div class="col">
+	<input type="checkbox" [checked]="panchayatSelected[panchayat.$key]" (click)="choosePanchayat(selectPanchayat, panchayat.$key, panchayat.$key)">
+      </div>
+    </div>
+    <!--
+    <p *ngFor="let panchayat of panchayats | async">
+      <button ion-button #selectPanchayat [navPush]="jobcardsPage" [navParams]="{panchayatName: panchayat.$key}">{{ panchayat.$key }}</button>
+      <input type="checkbox" [checked]="panchayatSelected[panchayat.$key]" (click)="choosePanchayat(selectPanchayat, panchayat.$key, panchayat.$key)">
+    </p>
+    -->
+
+    <button ion-button [disabled]="!checked || synced" (click)="syncPanchayats()">Sync</button>
+    <button ion-button [disabled]="!checked" [navPush]="panchayatsPage" [navParams]="panchayatsChosen">View</button>
+
+    <!-- To give padding at the bottom (FIXME) -->
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
   </div>
 </ion-content>
 <ion-footer>
@@ -28,7 +66,7 @@
 	<img [src]="user.picture">
       </ion-avatar>
       <h2 item-left>{{ user.email }}</h2>
-    <button float ion-button item-right (click)="logout()">Logout</button>
+    <button float ion-button item-right default (click)="logout()">Logout</button>
     </ion-item>
   </div>
 </ion-footer>
