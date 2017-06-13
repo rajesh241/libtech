@@ -32,6 +32,9 @@ def get_muster_upload_path(instance, filename):
 def get_panchayatreport_upload_path(instance, filename):
   return os.path.join(
     "nrega",instance.panchayat.block.district.state.slug,instance.panchayat.block.district.slug,instance.panchayat.block.slug,instance.panchayat.slug,"DATA","NICREPORTS",filename)
+def get_villagereport_upload_path(instance, filename):
+  return os.path.join(
+    "nrega",instance.village.panchayat.block.district.state.slug,instance.village.panchayat.block.district.slug,instance.village.panchayat.block.slug,instance.village.panchayat.slug,instance.village.slug,"DATA","NICREPORTS",filename)
 def get_blockreport_upload_path(instance, filename):
   return os.path.join(
     "nrega",instance.block.district.state.slug,instance.block.district.slug,instance.block.slug,"DATA","NICREPORTS",filename)
@@ -73,6 +76,7 @@ class Block(models.Model):
   district=models.ForeignKey('district',on_delete=models.CASCADE)
   name=models.CharField(max_length=256)
   code=models.CharField(max_length=7,unique=True)
+  tcode=models.CharField(max_length=7,unique=True,null=True,blank=True)
   fpsCode=models.CharField(max_length=8,unique=True,blank=True,null=True)
   crawlRequirement=models.CharField(max_length=4,choices=CRAWL_CHOICES,default='NONE')
   isRequired=models.BooleanField(default=False)
@@ -107,7 +111,7 @@ class PanchayatReport(models.Model):
         unique_together = ('panchayat', 'reportType','finyear')  
   def __str__(self):
     return self.panchayat.name+"-"+self.reportType
-   
+ 
 class FPSShop(models.Model):
   block=models.ForeignKey('block',on_delete=models.CASCADE)
   name=models.CharField(max_length=256)
@@ -162,6 +166,26 @@ class Panchayat(models.Model):
   def __str__(self):
     return self.name
 
+class Village(models.Model):
+  panchayat=models.ForeignKey('Panchayat',on_delete=models.CASCADE,null=True,blank=True)
+  slug=models.SlugField(blank=True) 
+  name=models.CharField(max_length=256,null=True,blank=True)
+  tcode=models.CharField(max_length=12,unique=True)
+  code=models.CharField(max_length=12,null=True,blank=True)  #Field only for compatibility with otherlocations not used for TElangana
+
+  def __str__(self):
+    return self.name
+class VillageReport(models.Model):
+  village=models.ForeignKey('Village',on_delete=models.CASCADE)
+  reportFile=models.FileField(null=True, blank=True,upload_to=get_villagereport_upload_path,max_length=512)
+  reportType=models.CharField(max_length=256)
+  finyear=models.CharField(max_length=2)
+  updateDate=models.DateTimeField(auto_now=True)
+  class Meta:
+        unique_together = ('village', 'reportType','finyear')  
+  def __str__(self):
+    return self.village.name+"-"+self.reportType
+ 
 class PanchayatStat(models.Model):
   panchayat=models.ForeignKey('panchayat',on_delete=models.CASCADE)
   finyear=models.CharField(max_length=2)
@@ -170,11 +194,20 @@ class PanchayatStat(models.Model):
 
   def __str__(self):
     return self.panchayat.name+"-"+self.panchayat.block.name
+
+class TelanganaJobcard(models.Model):
+  tjobcard=models.CharField(max_length=18,unique=True)
+  groupName=models.CharField(max_length=512,null=True,blank=True)
+  groupCode=models.CharField(max_length=16,null=True,blank=True)
+  def __str__(self):
+    return self.tjobcard
   
+ 
 class Applicant(models.Model):
   panchayat=models.ForeignKey('Panchayat',on_delete=models.CASCADE)
   name=models.CharField(max_length=512)
   jobcard=models.CharField(max_length=256,db_index=True)
+  tjobcard=models.ForeignKey('TelanganaJobcard',null=True,blank=True)
   applicantNo=models.PositiveSmallIntegerField()
   jcNo=models.BigIntegerField(blank=True,null=True)
   village=models.CharField(max_length=256,blank=True,null=True)
@@ -320,6 +353,7 @@ post_save.connect(location_post_save_receiver,sender=District)
 post_save.connect(location_post_save_receiver,sender=Block)
 post_save.connect(location_post_save_receiver,sender=Panchayat)
 post_save.connect(location_post_save_receiver,sender=FPSShop)
+post_save.connect(location_post_save_receiver,sender=Village)
 #def state_post_save_receiver(sender,instance,*args,**kwargs):
 #  if not instance.slug:
 #    instance.slug = "some-slug"

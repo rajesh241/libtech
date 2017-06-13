@@ -17,7 +17,7 @@ from django.utils import timezone
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
 django.setup()
 
-from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,PanchayatReport
+from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,PanchayatReport,VillageReport
 def getCurrentFinYear():
   now = datetime.datetime.now()
   month=now.month
@@ -52,6 +52,16 @@ def savePanchayatReport(logger,eachPanchayat,finyear,reportType,filename,filecon
   myReport.save()
 
 
+def saveVillageReport(logger,eachVillage,finyear,reportType,filename,filecontent):
+  myReport=VillageReport.objects.filter(village=eachVillage,finyear=finyear,reportType=reportType).first()
+  if myReport is None:
+    VillageReport.objects.create(village=eachVillage,finyear=finyear,reportType=reportType)   
+    logger.info("Report Created")
+  else:
+    logger.info("Report Already Exists")
+  myReport=VillageReport.objects.filter(village=eachVillage,finyear=finyear,reportType=reportType).first()
+  myReport.reportFile.save(filename, ContentFile(filecontent))
+  myReport.save()
 
 def getjcNumber(jobcard):
   jobcardArray=jobcard.split('/')

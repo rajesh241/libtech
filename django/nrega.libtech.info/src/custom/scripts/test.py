@@ -24,11 +24,13 @@ from django.db.models import Count
 #myobjs=User.objects.filter(username='demo')
 #for obj in myobjs:
 #  print(obj.id)
-jobcard="JH-01-020-003-004/25"
-name="KRISHNA SINGH"
-myApplicants=Applicant.objects.filter(jobcard=jobcard,name=name)
-for eachApplicant in myApplicants:
-  print(eachApplicant.id)
+myBlock=Block.objects.filter(code="3614005").first()
+myPanchayats=Panchayat.objects.filter(block=myBlock)
+for eachPanchayat in myPanchayats:
+  print(eachPanchayat.name)
+  eachPanchayat.crawlRequirement="FULL"
+  eachPanchayat.save()
+
 many_to_many='''
 wagelistNo="3408009WL000166"
 myWagelist=Wagelist.objects.filter(wagelistNo=wagelistNo)
