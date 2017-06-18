@@ -1,13 +1,18 @@
 import { Injectable } from '@angular/core';
 import * as firebase from 'firebase/app';
 import { AngularFireAuth } from 'angularfire2/auth';
+import { AngularFireOfflineDatabase, AfoListObservable } from 'angularfire2-offline/database';
 
 @Injectable()
 export class Auth {
+    users: AfoListObservable<any[]>;
     user: any;
+    url = '/users/'
 
-    constructor(private afAuth: AngularFireAuth) {
+    constructor(private afAuth: AngularFireAuth, private afoDatabase: AngularFireOfflineDatabase) {
         console.log('Hello Auth Provider');
+        this.users = afoDatabase.list(this.url);
+        console.log(this.users);
     }
 
     isLoggedIn() {
@@ -57,11 +62,13 @@ export class Auth {
             ).then((response) => {
                 console.log('Login with Google Success' + JSON.stringify(response));
                 let user = {
+                    username: (response.user.email.slice(0, response.user.email.indexOf("@"))).replace(".", "_"),
                     email: response.user.email,
                     picture: response.user.photoURL
                 };
                 console.log(JSON.stringify(user));
                 window.localStorage.setItem('user', JSON.stringify(user));
+                this.users.update(user.username, user);
             }).catch((error) => {
                 console.log(error);
                 alert(error);
@@ -73,12 +80,14 @@ export class Auth {
             new firebase.auth.FacebookAuthProvider()
         ).then((response) => {
             console.log('Login with Facebook Success' + JSON.stringify(response));
-            let user = {
+            let user = { 
+                username: (response.user.email.slice(0, response.user.email.indexOf("@"))).replace(".", "_"),
                 email: response.user.displayName,
                 picture: response.user.photoURL
             };
             console.log(JSON.stringify(user));
             window.localStorage.setItem('user', JSON.stringify(user));
+            this.users.update(user.username, user);
         }).catch((error) => {
             console.log(error);
             alert(error);

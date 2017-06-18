@@ -12,11 +12,13 @@ export class JobcardsPage {
     transactionsPage = TransactionsPage;
     panchayatName: string;
     jobcards: AfoListObservable<any[]>;
+    url = '/jobcards/';
 
     constructor(private navCtrl: NavController, private navParams: NavParams, private afoDatabase: AngularFireOfflineDatabase) {
         this.panchayatName = this.navParams.get('panchayatName');
-        this.jobcards = afoDatabase.list('/jobcards/' + this.panchayatName);
-        console.log('/jobcard/' + this.panchayatName);
+        this.url += this.panchayatName;
+        this.jobcards = afoDatabase.list(this.url);
+        console.log(this.url);
     }
 
     goHome() {

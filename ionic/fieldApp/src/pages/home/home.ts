@@ -4,6 +4,7 @@ import { NavController } from 'ionic-angular';
 import { LoginPage } from '../login/login';
 import { PanchayatsPage } from '../panchayats/panchayats'
 import { JobcardsPage } from '../jobcards/jobcards'
+import { ProfilePage } from '../profile/profile'
 
 import { Auth } from '../../providers/auth';
 import { Panchayats } from '../../providers/panchayats'
@@ -17,6 +18,7 @@ export class HomePage {
     loginPage = LoginPage;
     panchayatsPage = PanchayatsPage;
     jobcardsPage = JobcardsPage;
+    profilePage = ProfilePage;
     panchayats: any;
     panchayatSelected = {};
     panchayatsChosen: any;

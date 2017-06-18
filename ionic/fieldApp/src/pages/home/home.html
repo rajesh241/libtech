@@ -16,16 +16,23 @@
     -->
     <p>Please select the panchayats you wish to sync</p>
 
+<!--
     <div class="row">
-      <div class="col">Panchayat Name</div>
       <div class="col">Sync</div>
+      <div class="col">Panchayat Name</div>
     </div>
+-->
     <div class="row" *ngFor="let panchayat of panchayats | async">
       <div class="col">
-	<button ion-button #selectPanchayat [navPush]="jobcardsPage" [navParams]="{panchayatName: panchayat.$key}">{{ panchayat.$key }}</button>
+	<input type="checkbox" [checked]="panchayatSelected[panchayat.$key]"
+         (click)="choosePanchayat(selectPanchayat, panchayat.$key, panchayat.$key)">
+<!--
       </div>
       <div class="col">
-	<input type="checkbox" [checked]="panchayatSelected[panchayat.$key]" (click)="choosePanchayat(selectPanchayat, panchayat.$key, panchayat.$key)">
+-->
+<button ion-button #selectPanchayat [navPush]="jobcardsPage"
+        [navParams]="{panchayatName: panchayat.$key}">{{ panchayat.$key }}
+</button>
       </div>
     </div>
     <!--
@@ -37,6 +44,10 @@
 
     <button ion-button [disabled]="!checked || synced" (click)="syncPanchayats()">Sync</button>
     <button ion-button [disabled]="!checked" [navPush]="panchayatsPage" [navParams]="panchayatsChosen">View</button>
+
+
+    <p>If you wish to update the panchayat list click below</p>
+    <button ion-button [navPush]="profilePage">Edit Panchayat List</button>
 
     <!-- To give padding at the bottom (FIXME) -->
     <br />

@@ -17,8 +17,9 @@ import { PanchayatsPage } from '../pages/panchayats/panchayats'
 import { JobcardsPage } from '../pages/jobcards/jobcards'
 import { TransactionsPage } from '../pages/transactions/transactions'
 import { TransactionPage } from '../pages/transaction/transaction'
-import { Panchayats } from '../providers/panchayats'
+import { ProfilePage } from '../pages/profile/profile'
 
+import { Panchayats } from '../providers/panchayats'
 import { Auth } from '../providers/auth';
 
 const firebaseConfig = {
@@ -36,7 +37,8 @@ const firebaseConfig = {
         PanchayatsPage,
         JobcardsPage,
         TransactionsPage,
-        TransactionPage
+        TransactionPage,
+        ProfilePage
     ],
     imports: [
         AngularFireDatabaseModule,
@@ -54,9 +56,11 @@ const firebaseConfig = {
         PanchayatsPage,
         JobcardsPage,
         TransactionsPage,
-        TransactionPage
+        TransactionPage,
+        ProfilePage
     ],
-    providers: [Panchayats,
+    providers: [
+        Panchayats,
         Auth,
         StatusBar,
         SplashScreen,
