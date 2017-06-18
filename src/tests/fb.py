@@ -31,6 +31,39 @@ config = {
 # Functions
 #############
 
+def write2fb(logger):
+
+  firebase_config = {
+    'apiKey': "AIzaSyCv6jE0O5QjsAMK_WzUG2pDvEsIlTZCduY",
+    'authDomain': "libtech-app.firebaseapp.com",
+    'databaseURL': "https://libtech-app.firebaseio.com",
+    'storageBucket': "libtech-app.appspot.com"
+    }
+  
+  firebase = pyrebase.initialize_app(firebase_config)
+  db = firebase.database()
+
+  all_panchayats = db.child("panchayats").get()
+  for panchayat in all_panchayats.each():
+    print(panchayat.key()) # Morty
+    print(panchayat.val()) # {name": "Mortimer 'Morty' Smith"}
+
+  print(' ********* DONE ********** ')
+
+  data = { 'users' : '' }
+  db.update(data);
+
+  '''
+  all_users = db.child("users").get()
+  for user in all_users.each():
+    print(user.key()) # Morty
+    print(user.val()) # {name": "Mortimer 'Morty' Smith"}
+
+  print(' ********* DONE ********** ')
+  '''
+  
+  return 'SUCCESS'
+
 def json2fb(logger):
   with open(filename, 'r') as infile:
     logger.info('Reading from file[%s]' % filename)
@@ -61,10 +94,16 @@ class TestSuite(unittest.TestCase):
   def tearDown(self):
     self.logger.info("...END PROCESSING")
 
+  def test_write2fb(self):
+    result = write2fb(self.logger)
+    self.assertEqual('SUCCESS', result)
+
+'''
   def test_json2fb(self):
     result = json2fb(self.logger)
     self.assertEqual('SUCCESS', result)
-
+'''
+    
 if __name__ == '__main__':
   unittest.main()
 
