@@ -16,16 +16,11 @@ export class Panchayats {
     }
 
     load(): AfoListObservable<Panchayat[]> {
-        return this.items
+        return this.items;
     }
 
-    fetch(user): AfoListObservable<Panchayat[]> {
-        return this.items
-        //        return this.afoDatabase.list('/users/' + user + '/panchayats/');
-    }
-
-    sync(panchayats) {
-        panchayats.forEach(panchayat => {
+    sync(panchayatsChosen) {
+        panchayatsChosen.forEach(panchayat => {
             console.log(JSON.stringify(panchayat));
             var url = '/jobcards/' + panchayat;
             console.log(url);

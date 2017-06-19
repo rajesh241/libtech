@@ -1,8 +1,9 @@
 <ion-header>
   <ion-navbar>
-    <ion-title>
-      Field Reports App
-    </ion-title>
+    <ion-item>
+      <ion-title item-left>Field Reports App</ion-title>
+      <button ion-button item-right default [navPush]="profilePage">Profile</button>
+    </ion-item>
   </ion-navbar>
 </ion-header>
 
@@ -16,38 +17,27 @@
     -->
     <p>Please select the panchayats you wish to sync</p>
 
-<!--
-    <div class="row">
-      <div class="col">Sync</div>
-      <div class="col">Panchayat Name</div>
-    </div>
--->
     <div class="row" *ngFor="let panchayat of panchayats | async">
       <div class="col">
 	<input type="checkbox" [checked]="panchayatSelected[panchayat.$key]"
          (click)="choosePanchayat(selectPanchayat, panchayat.$key, panchayat.$key)">
-<!--
-      </div>
-      <div class="col">
--->
-<button ion-button #selectPanchayat [navPush]="jobcardsPage"
-        [navParams]="{panchayatName: panchayat.$key}">{{ panchayat.$key }}
-</button>
+	<button ion-button #selectPanchayat [navPush]="jobcardsPage"
+		[navParams]="{panchayatName: panchayat.$key}">{{ panchayat.$key }}
+	</button>
       </div>
     </div>
-    <!--
-    <p *ngFor="let panchayat of panchayats | async">
-      <button ion-button #selectPanchayat [navPush]="jobcardsPage" [navParams]="{panchayatName: panchayat.$key}">{{ panchayat.$key }}</button>
-      <input type="checkbox" [checked]="panchayatSelected[panchayat.$key]" (click)="choosePanchayat(selectPanchayat, panchayat.$key, panchayat.$key)">
-    </p>
-    -->
 
     <button ion-button [disabled]="!checked || synced" (click)="syncPanchayats()">Sync</button>
-    <button ion-button [disabled]="!checked" [navPush]="panchayatsPage" [navParams]="panchayatsChosen">View</button>
-
+    <!-- 
+	 <button ion-button [disabled]="!checked" [navPush]="panchayatsPage" [navParams]="panchayatsChosen">View</button> 
+	 <button ion-button [navPush]="panchayatsPage" [navParams]="panchayatsChosen">View</button>
+	 -->
 
     <p>If you wish to update the panchayat list click below</p>
+    <!--
     <button ion-button [navPush]="profilePage">Edit Panchayat List</button>
+    -->
+    <button ion-button (click)="editPanchayaList()">Edit Panchayat List</button>
 
     <!-- To give padding at the bottom (FIXME) -->
     <br />

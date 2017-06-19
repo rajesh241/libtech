@@ -9,6 +9,8 @@ import { ProfilePage } from '../profile/profile'
 import { Auth } from '../../providers/auth';
 import { Panchayats } from '../../providers/panchayats'
 
+import { AlertController } from 'ionic-angular';
+
 @Component({
     selector: 'page-home',
     templateUrl: 'home.html'
@@ -20,19 +22,25 @@ export class HomePage {
     jobcardsPage = JobcardsPage;
     profilePage = ProfilePage;
     panchayats: any;
+    displayPanchayats: any;
     panchayatSelected = {};
     panchayatsChosen: any;
     checked = false;
     synced = false;
 
-    constructor(public navCtrl: NavController, private auth: Auth, private panchayatList: Panchayats) {
-        if (!this.getUser()) {
+    constructor(public navCtrl: NavController, private auth: Auth,
+        private panchayatList: Panchayats,
+        public alertCtrl: AlertController) {
+        this.user = this.auth.getUser();
+        if (!this.user) {
             this.navCtrl.push(LoginPage);
         }
+        console.log('After Login');
+        // Hard Refresh - window.location.reload(false)
+
 
         this.panchayatsChosen = [];
-        this.panchayats = panchayatList.fetch(this.user);
-        console.log(this.panchayats);
+        this.panchayats = panchayatList.load();
     }
 
     choosePanchayat(selected, index, panchayat) {
@@ -67,7 +75,43 @@ export class HomePage {
         this.auth.logout();
     }
 
+    editPanchayaList() {
+        let alert = this.alertCtrl.create();
+        alert.setTitle('Select the Panchayats:');
+
+        this.panchayats.subscribe(snapshots => {
+            snapshots.forEach(snapshot => {
+                var panchayat = snapshot['$key']; // FIXME .toUpperCase();
+                // console.log(panchayat);
+                alert.addInput({
+                    type: 'checkbox',
+                    label: panchayat,
+                    value: panchayat,
+                    checked: false
+                });
+            });
+        });
+
+        alert.addButton('Cancel');
+        alert.addButton({
+            text: 'Okay',
+            handler: data => {
+                this.panchayatsChosen = data; // .join(", ") //  .map(function (currentValue, index, arr) { return currentValue; });
+                console.log('Checkbox data:', data);
+                console.log('Boxed data:', this.panchayatsChosen);
+                this.auth.update(this.panchayatsChosen);
+            }
+        });
+        alert.present();
+    }
+
     ionViewDidLoad() {
         console.log('ionViewDidLoad HomePage');
+    }
+
+    ionViewDidEnter() {
+        console.log('ionViewDidEnter HomePage');
+        this.displayPanchayats = this.auth.fetch();
+        console.log('Yippie!' + this.displayPanchayats);
     }
 }
