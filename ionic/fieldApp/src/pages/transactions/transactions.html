@@ -8,11 +8,45 @@
 </ion-header>
 
 <ion-content padding>
-  <h4>For Jobcard[{{ jobcard }}]</h4>
+  <h1>{{ jobcard }}</h1>
+  <h4>Members of the family</h4>
+
+  <span *ngFor="let detail of applicantDetails | async">
+
+    <span *ngIf="!detail.phone">
+      
+      <p>      <b>Please collect a phone number for this jobcard holder</b> 
+
+
+    </span>
+    
+    <b>{{detail.$key}}. {{detail.name}}</b> <br />
+
+    <button ion-button (click)="show = !show">{{show ? 'hide' : 'View details'}}</button>
+    <br>
+    <div *ngIf="show">
+      <b>Age</b>: {{detail.age}} <br />
+      <b>Caste</b>: {{detail.caste}} <br />
+      <b>Gender</b>: {{detail.gender}} <br />
+      <b>Account Number</b>: {{detail.accountNo}} <br />
+      <b>Branch Code</b>: {{detail.bankBranchCode}} <br />
+      <b>Branch Name</b>: {{detail.bankBranchName}} <br />
+      <b>Bank Code</b>: {{detail.bankCode}} <br />
+      <b>Bank Name</b>: {{detail.bankName}} <br />
+      <b>Post Office Account Name</b>: {{detail.poAccountName}} <br />
+      <b>Post office Address</b>: {{detail.poAddress}} <br />
+      <b>UID</b>: {{detail.uid}} <br />
+
+    </div>
+    <hr />
+  </span>
+
+  <h4>List of Transactions</h4>
   <span *ngFor="let item of items | async">
     <p>
       <span *ngIf="item">
-	<button ion-button [navPush]="transactionPage" [navParams]="{ jobcard: jobcard, key: item.$key, transaction: item, url: url}">{{ item.$key }}</button>
+	<button ion-button [navPush]="transactionPage" [navParams]="{ jobcard: jobcard, key: item.$key, transaction: item, url: url}">{{ item.dateTo }}</button> 	{{item.workName}}
+
       </span>
     </p>
   </span>
