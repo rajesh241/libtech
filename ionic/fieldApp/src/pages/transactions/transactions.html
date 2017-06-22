@@ -12,19 +12,13 @@
   <h4>Members of the family</h4>
 
   <span *ngFor="let detail of applicantDetails | async">
-
-    <span *ngIf="!detail.phone">
-      
-      <p>      <b>Please collect a phone number for this jobcard holder</b> 
-
-
-    </span>
     
     <b>{{detail.$key}}. {{detail.name}}</b> <br />
 
     <button ion-button (click)="show = !show">{{show ? 'hide' : 'View details'}}</button>
     <br>
     <div *ngIf="show">
+      <b>Phone</b>: {{ detail.phone }} <br />
       <b>Age</b>: {{detail.age}} <br />
       <b>Caste</b>: {{detail.caste}} <br />
       <b>Gender</b>: {{detail.gender}} <br />
@@ -38,7 +32,18 @@
       <b>UID</b>: {{detail.uid}} <br />
 
     </div>
-    <hr />
+
+    <span *ngIf="!detail.phone">
+      
+      <p><b>Please collect a phone number for this jobcard holder</b>
+	<ion-item>
+	  <input item-left #phoneInput type="textarea" placeholder="{{ detail.phone }}" (input)="phone=phoneInput.value; updated=false"> [{{ detail.$key }}]{{ phone }}
+	  <button ion-button item-right default [disabled]="updated" (click)=update(detail.$key)>Update</button>
+	</ion-item>
+      </p>
+    </span>
+    
+    <hr />    
   </span>
 
   <h4>List of Transactions</h4>

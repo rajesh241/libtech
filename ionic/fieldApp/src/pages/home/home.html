@@ -12,11 +12,13 @@
   <div *ngIf ="!getUser()"><p>You are not logged in!</p>
       <button ion-button [navPush]="loginPage">Login</button>
   </div>
-  <div *ngIf="getUser()">
+  <div text-center padding *ngIf="getUser()">
     <button ion-button [navPush]="panchayatsPage" [navParams]="user">
       Panchayats
     </button>
-
+  </div>
+  <div text-center padding>
+    <button ion-button (click)="hardReset()">Hard Reset</button>
   </div>
 </ion-content>
 <ion-footer>

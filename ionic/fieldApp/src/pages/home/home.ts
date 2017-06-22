@@ -23,7 +23,6 @@ export class HomePage {
             this.navCtrl.push(LoginPage);
         }
         console.log('After Login');
-        // Hard Refresh - window.location.reload(false)
     }
 
     ionViewDidLoad() {
@@ -37,6 +36,20 @@ export class HomePage {
     getUser() {
         this.user = this.auth.getUser();
         return this.user;
+    }
+
+    hardReset() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations()
+                .then(registrations => {
+                    for (let registration of registrations) { registration.unregister() };
+                    console.log('service worker installed');
+                })
+                .catch(err => console.log('Error', err));
+        }
+        else
+            alert('Should NOT reach here!');
+        window.location.reload(false)
     }
 
     logout() {

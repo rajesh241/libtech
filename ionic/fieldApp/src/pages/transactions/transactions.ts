@@ -13,6 +13,8 @@ export class TransactionsPage {
     panchayat: string;
     jobcard: string;
     url: string;
+    phone: string;
+    updated = true;
     items: AfoListObservable<any[]>;
     rejInv: AfoListObservable<any[]>;
     applicantDetails: AfoListObservable<any[]>;
@@ -34,6 +36,13 @@ export class TransactionsPage {
 
         this.url = '/transactions/' + this.jobcard
         this.items = afoDatabase.list(this.url);
+    }
+
+    update(index) {
+        if (this.phone)
+            this.applicantDetails.update(String(index), { phone: this.phone });
+        this.updated = true;
+        alert("Updated Phone");
     }
 
     ionViewDidLoad() {
