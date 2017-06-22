@@ -1,18 +1,53 @@
 <ion-header>
   <ion-navbar>
-    <ion-title>Panchayats</ion-title>
-    <!--
     <ion-item>
       <ion-title item-left>Panchayats</ion-title>
       <button ion-button item-right default (click)="goHome()">Home</button>
     </ion-item>
-    -->
   </ion-navbar>
 </ion-header>
 
-
 <ion-content padding>
-  <p *ngFor="let panchayat of panchayats"><button ion-button [navPush]="jobcardsPage" [navParams]="{panchayatName: panchayat}"> {{ panchayat }}</button></p>
+  <!-- FIXME
+       <ion-searchbar (input)="search($event)"></ion-searchbar>
+  -->
+  <p> Please select the panchayats you wish to sync</p>
+  <div class="row" *ngFor="let panchayat of displayPanchayats">
+    <div class="col">
+      <input type="checkbox" [checked]="panchayatSelected[panchayat]"
+             (click)="choosePanchayat(selectPanchayat, panchayat, panchayat)">
+      <button ion-button #selectPanchayat [navPush]="jobcardsPage"
+	      [navParams]="{panchayatName: panchayat}">{{ panchayat }}
+      </button>
+    </div>
+  </div>
+  <button ion-button [disabled]="!checked || synced" (click)="syncPanchayats()">
+    Sync
+  </button>
+
+  <p>If you wish to update the panchayat list click below</p>
+  <button ion-button (click)="editPanchayaList()">Edit Panchayat List</button>
+
+  <!-- To give padding at the bottom (FIXME) -->
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+
 </ion-content>
 
 <ion-footer>

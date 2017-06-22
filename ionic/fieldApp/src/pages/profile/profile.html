@@ -1,7 +1,10 @@
 <ion-header>
   <ion-navbar>
     <ion-item>
-      <ion-title item-left>Profile for {{ user }} </ion-title>
+      <ion-avatar item-left *ngIf="user.picture">
+        <img [src]="user.picture">
+      </ion-avatar>
+      <ion-title item-left>{{ user.username }}</ion-title>
       <button ion-button item-right default (click)="goHome()">Home</button>
     </ion-item>
   </ion-navbar>
@@ -9,7 +12,21 @@
 
 
 <ion-content padding>
-
+    <h4 item-left>Profile Page</h4>
+  <!--
+  <ion-item>
+    <h4 item-left>For [{{ user.username }}]</h4>
+    <ion-avatar item-right *ngIf="user.picture">
+      <img [src]="user.picture">
+    </ion-avatar>
+  </ion-item>
+  -->
+  <p><b>Username</b>:    {{ user.username }}</p>
+  <p><b>Email ID</b>:    {{ user.email}}</p>
+  <p><b>Profile Picture</b>:    {{ user.picture }}</p>
+  <p><b>Preferred Panchayats</b>:    {{ user.panchayats }}
+    <button ion-button (click)="editPanchayaList()">Edit</button>
+  </p>
 </ion-content>
 
 <ion-footer>

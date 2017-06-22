@@ -2,7 +2,8 @@
   <ion-navbar>
     <ion-item>
       <ion-title item-left>Field Reports App</ion-title>
-      <button ion-button item-right default [navPush]="profilePage">Profile</button>
+      <button ion-button item-right default [navPush]="profilePage"
+              [navParams]="user">Profile</button>
     </ion-item>
   </ion-navbar>
 </ion-header>
@@ -12,52 +13,10 @@
       <button ion-button [navPush]="loginPage">Login</button>
   </div>
   <div *ngIf="getUser()">
-    <!-- FIXME
-    <ion-searchbar (input)="search($event)"></ion-searchbar>
-    -->
-    <p>Please select the panchayats you wish to sync</p>
+    <button ion-button [navPush]="panchayatsPage" [navParams]="user">
+      Panchayats
+    </button>
 
-    <div class="row" *ngFor="let panchayat of panchayats | async">
-      <div class="col">
-	<input type="checkbox" [checked]="panchayatSelected[panchayat.$key]"
-         (click)="choosePanchayat(selectPanchayat, panchayat.$key, panchayat.$key)">
-	<button ion-button #selectPanchayat [navPush]="jobcardsPage"
-		[navParams]="{panchayatName: panchayat.$key}">{{ panchayat.$key }}
-	</button>
-      </div>
-    </div>
-
-    <button ion-button [disabled]="!checked || synced" (click)="syncPanchayats()">Sync</button>
-    <!-- 
-	 <button ion-button [disabled]="!checked" [navPush]="panchayatsPage" [navParams]="panchayatsChosen">View</button> 
-	 <button ion-button [navPush]="panchayatsPage" [navParams]="panchayatsChosen">View</button>
-	 -->
-
-    <p>If you wish to update the panchayat list click below</p>
-    <!--
-    <button ion-button [navPush]="profilePage">Edit Panchayat List</button>
-    -->
-    <button ion-button (click)="editPanchayaList()">Edit Panchayat List</button>
-
-    <!-- To give padding at the bottom (FIXME) -->
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
   </div>
 </ion-content>
 <ion-footer>
@@ -67,7 +26,9 @@
 	<img [src]="user.picture">
       </ion-avatar>
       <h2 item-left>{{ user.email }}</h2>
-    <button float ion-button item-right default (click)="logout()">Logout</button>
+      <button float ion-button item-right default (click)="logout()">
+        Logout
+      </button>
     </ion-item>
   </div>
 </ion-footer>
