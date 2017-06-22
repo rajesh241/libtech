@@ -96,23 +96,27 @@ def main():
     elem.click()
     myhtml = driver.page_source
     myhtml=str(myhtml).replace("</nobr><br>",",")
-    logger.info(myhtml)
-#   error,myTable=validateApplicationRegister(logger,myhtml,eachPanchayat.block)
-#   if error is None:
-#     logger.info("No error")
-#     outhtml=''
-#     outhtml+=stripTableAttributes(myTable,"myTable")
-#     title="Jobcard Register: state:%s District:%s block:%s panchayat: %s finyear:%s " % (stateName,districtName,blockName,panchayatName,fullfinyear)
-#     outhtml=htmlWrapperLocal(title=title, head='<h1 aling="center">'+title+'</h1>', body=outhtml)
-#     try:
-#       outhtml=outhtml.encode("UTF-8")
-#     except:
-#       outhtml=outhtml
-#     filename="applicationRegister_%s_%s.html" % (eachPanchayat.slug,finyear)
-#     reportType="applicationRegister"
-#     savePanchayatReport(logger,eachPanchayat,finyear,reportType,filename,outhtml)
-#      eachPanchayat.applicationRegisterCrawlDate=timezone.now()
-#     eachPanchayat.save() 
+#    logger.info(myhtml)
+    with open("/tmp/abcd.html","w") as f:
+      f.write(myhtml)
+    error,myTable=validateApplicationRegister(logger,myhtml,eachPanchayat.block)
+    if error is None:
+      logger.info("No error")
+      outhtml=''
+      outhtml+=stripTableAttributes(myTable,"myTable")
+      title="Jobcard Register: state:%s District:%s block:%s panchayat: %s finyear:%s " % (stateName,districtName,blockName,panchayatName,fullfinyear)
+      outhtml=htmlWrapperLocal(title=title, head='<h1 aling="center">'+title+'</h1>', body=outhtml)
+      try:
+        outhtml=outhtml.encode("UTF-8")
+      except:
+        outhtml=outhtml
+      filename="applicationRegister_%s_%s.html" % (eachPanchayat.slug,finyear)
+      reportType="applicationRegister"
+      savePanchayatReport(logger,eachPanchayat,finyear,reportType,filename,outhtml)
+      eachPanchayat.applicationRegisterCrawlDate=timezone.now()
+      #eachPanchayat.save() 
+    else:
+      logger.info("Error")
     logger.info("Processing StateCode %s, fullDistrictCode : %s, fullBlockCode : %s, fullPanchayatCode: %s " % (stateCode,fullDistrictCode,fullBlockCode,fullPanchayatCode))
   driverFinalize(driver)
   displayFinalize(display)

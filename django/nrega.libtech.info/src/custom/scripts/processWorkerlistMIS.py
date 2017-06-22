@@ -134,6 +134,7 @@ def main():
             a.jcNo=jcNo
             a.save() 
     eachPanchayat.jobcardProcessDate=timezone.now()
+    eachPanchayat.status='2'
     eachPanchayat.save()
           
   logger.info("...END PROCESSING") 

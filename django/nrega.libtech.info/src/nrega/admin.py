@@ -1,8 +1,15 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,TelanganaJobcard
+from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,TelanganaJobcard,LibtechTag,TelanganaSSSGroup
+
 from .actions import export_as_csv_action
+
+class libtechTagModelAdmin(admin.ModelAdmin):
+  list_display=["name"]
+  class Meta:
+    model=LibtechTag
+
 class stateModelAdmin(admin.ModelAdmin):
   list_display = ["name","stateShortCode","code","crawlIP"]
   class Meta:
@@ -58,14 +65,14 @@ class fpsStatusModelAdmin(admin.ModelAdmin):
   get_fpsCode.description="fpsCode"
 
 class villageModelAdmin(admin.ModelAdmin):
-  list_display = ["name","tcode"]
+  list_display = ["name","tcode","panchayat"]
   readonly_fields=["panchayat"]
+  search_fields=["name","tcode"]
 
 class panchayatModelAdmin(admin.ModelAdmin):
-  actions = [export_as_csv_action("CSV Export", fields=['name','code','blockName','districtName','stateName','id','remarks'])]
-  list_display = ["name","blockName","districtName","stateName","code"]
-  list_display_links=["name"]
-  list_filter=["crawlRequirement","block__district__state"]
+  actions = [export_as_csv_action("CSV Export", fields=['name','id','remarks'])]
+  list_display = ["__str__","name","code"]
+  list_filter=["crawlRequirement","status","block__district__state"]
   search_fields=["name","code"]
 
   def get_queryset(self, request):
@@ -136,14 +143,17 @@ class villageReportModelAdmin(admin.ModelAdmin):
 
 class musterModelAdmin(admin.ModelAdmin):
 #  actions = [export_as_csv_action("CSV Export", fields=['name','blockName','districtName','stateName'])]
-  list_display = ["id","musterNo","finyear","block","panchayat","workCode","workName"]
-  search_fields=["id","musterNo","block__code"]
+  list_display = ["id","musterNo","musterDownloadAttemptDate","finyear","block","panchayat","workCode","workName"]
+  search_fields=["id","musterNo","block__code","panchayat__code","workCode"]
   list_filter=["isRequired","finyear","isDownloaded","isProcessed","allApplicantFound","block__district__state"]
   readonly_fields=["block","panchayat"]
 
 class tjobcardModelAdmin(admin.ModelAdmin):
-  list_display=["tjobcard","groupName","groupCode"]
-  search_fields=["tjobcard","groupName","groupCode"]
+  list_display=["tjobcard"]
+  search_fields=["tjobcard"]
+
+class telanganaSSSgroupModelAdmin(admin.ModelAdmin):
+  list_display=["groupName","groupCode"]
 
 class applicantModelAdmin(admin.ModelAdmin):
   list_display=["jobcard","applicantNo","panchayat","name","age","caste","fatherHusbandName","accountNo"]
@@ -181,6 +191,8 @@ admin.site.register(FTO,ftoModelAdmin)
 admin.site.register(PanchayatStat,panchayatStatModelAdmin)
 admin.site.register(FPSShop,fpsShopModelAdmin)
 admin.site.register(FPSStatus,fpsStatusModelAdmin)
+admin.site.register(LibtechTag,libtechTagModelAdmin)
+admin.site.register(TelanganaSSSGroup,telanganaSSSgroupModelAdmin)
 # Reference Code for Downloading CSV
 # def download_csv(self, request, queryset):
 #   import csv

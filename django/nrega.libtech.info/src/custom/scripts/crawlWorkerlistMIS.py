@@ -235,6 +235,7 @@ def main():
         savePanchayatReport(logger,eachPanchayat,finyear,reportType,filenamecsv,outcsv)
       #  eachPanchayat.jobcardRegisterFile.save(filename, ContentFile(outhtml))
         eachPanchayat.jobcardCrawlDate=timezone.now()
+        eachPanchayat.status='1'
         eachPanchayat.save()
     logger.info("Processing StateCode %s, fullDistrictCode : %s, fullBlockCode : %s, fullPanchayatCode: %s " % (stateCode,fullDistrictCode,fullBlockCode,fullPanchayatCode))
 

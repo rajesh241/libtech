@@ -53,7 +53,7 @@ def main():
   stateCodes=['33','34','16','27','24','15','18','35']
   stateCodes=['33','34','27','24','15','18',]
   stateCodes=['16','31','05','17']
-  stateCodes=['34']
+  stateCodes=['05']
   for stateCode in stateCodes:
 #  if stateCode is not None:
 #    logger.info("StateCode is %s" % stateCode)
@@ -65,14 +65,20 @@ def main():
       logger.info("**********************************************************************************")
       logger.info("Createing work Payment report for panchayat: %s panchayatCode: %s ID: %s" % (eachPanchayat.name,eachPanchayat.code,str(eachPanchayat.id)))
       outcsv=''
-      outcsv+="jobcard,name,musterNo,workName,dateFrom,dateTo,daysWorked,totalWage,accountNo,musterStatus,creditedDate,secondSignatoryDate,wagelistNo"
+      outcsv+="jobcard,name,fatherHusbandName,musterNo,workCode,workName,dateFrom,dateTo,daysWorked,totalWage,accountNo,musterStatus,creditedDate,secondSignatoryDate,wagelistNo"
       outcsv+="\n"
       workRecords=WorkDetail.objects.filter(muster__block__panchayat__id=eachPanchayat.id,muster__finyear=finyear)
       workRecords=WorkDetail.objects.filter(muster__panchayat=eachPanchayat,muster__finyear=finyear)
       logger.info("Total Work Records: %s " %str(len(workRecords)))
       for wd in workRecords:
         workName=wd.muster.workName.replace(","," ")
-        outcsv+="%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s" % (wd.zjobcard,wd.zname,wd.muster.musterNo,workName,str(wd.muster.dateFrom),str(wd.muster.dateTo),str(wd.daysWorked),str(wd.totalWage),wd.zaccountNo,wd.musterStatus,str(wd.creditedDate),str(wd.muster.paymentDate),wd.wagelist.wagelistNo)
+        wagelistArray=wd.wagelist.all()
+        wagelist=wagelistArray[len(wagelistArray) -1 ]
+        if wd.applicant:
+          fatherHusbandName=wd.applicant.fatherHusbandName.replace(",","")
+        else:
+          fatherHusbandName=None
+        outcsv+="%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s" % (wd.zjobcard,wd.zname,fatherHusbandName,wd.muster.musterNo,wd.muster.workCode,workName,str(wd.muster.dateFrom),str(wd.muster.dateTo),str(wd.daysWorked),str(wd.totalWage),wd.zaccountNo,wd.musterStatus,str(wd.creditedDate),str(wd.muster.paymentDate),wagelist)
         outcsv+="\n"
    
       try:

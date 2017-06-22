@@ -24,13 +24,23 @@ from django.db.models import Count
 #myobjs=User.objects.filter(username='demo')
 #for obj in myobjs:
 #  print(obj.id)
-myBlock=Block.objects.filter(code="3614005").first()
-myPanchayats=Panchayat.objects.filter(block=myBlock)
-for eachPanchayat in myPanchayats:
-  print(eachPanchayat.name)
-  eachPanchayat.crawlRequirement="FULL"
-  eachPanchayat.save()
 
+myobjs=Applicant.objects.filter(panchayat__block__district__state__code="36").values("panchayat__block__code","panchayat__block__name","panchayat__name","panchayat__code").annotate(dcount=Count('pk'))
+for obj in myobjs:
+  blockName=obj['panchayat__block__name']
+  panchayatName=obj['panchayat__name']
+  panchayatCode=obj['panchayat__code']
+  count=obj['dcount']
+  scApplicants=Applicant.objects.filter(panchayat__code=panchayatCode,caste__contains='SC')
+  scCount=len(scApplicants)
+  print("%s,%s,%s,%s" % (blockName,panchayatName,count,str(scCount)))
+
+testArray='''
+myWorkDetails=WorkDetail.objects.filter(id=823211)[:2]
+for eachWorkDetail in myWorkDetails:
+  wagelistArray=eachWorkDetail.wagelist.all()
+  print(wagelistArray[len(wagelistArray) -1 ])
+'''
 many_to_many='''
 wagelistNo="3408009WL000166"
 myWagelist=Wagelist.objects.filter(wagelistNo=wagelistNo)

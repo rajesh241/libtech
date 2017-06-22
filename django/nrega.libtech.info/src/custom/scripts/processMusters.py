@@ -53,6 +53,7 @@ def main():
   if stateCode is not None:
     logger.info("StateCode is %s" % stateCode)
     myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0,panchayat__crawlRequirement="FULL",panchayat__block__district__state__code=stateCode)[:limit] 
+    myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0,panchayat__code="3406007011",panchayat__block__district__state__code=stateCode)[:limit] 
 #    myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0,panchayat__crawlRequirement="FULL",panchayat__block__district__code="3406")[:limit] 
   else:
     myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0)[:limit]

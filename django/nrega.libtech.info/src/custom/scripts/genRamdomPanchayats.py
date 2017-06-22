@@ -25,7 +25,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
 django.setup()
 
 from django.contrib.auth.models import User
-from nrega.models import State,District,Block,Panchayat,Muster
+from nrega.models import State,District,Block,Panchayat,Muster,LibtechTag
 
 
 def argsFetch():
@@ -50,24 +50,25 @@ def main():
   logger = loggerFetch(args.get('log_level'))
   logger.info('args: %s', str(args))
   logger.info("BEGIN PROCESSING...")
-  myUser=User.objects.filter(username='demo').first()
-  myobjs=District.objects.filter(state__isNIC=True)
-  if args['limit']:
-    limit=args['limit']
-  else:
-    limit=1
-  for eachDistrict in myobjs:
-    logger.info(eachDistrict.name)
-    myPanchayats=list(Panchayat.objects.filter(block__district__code=eachDistrict.code,crawlRequirement='NONE'))
-    shuffle(myPanchayats)
-    myPanchayats=myPanchayats[:limit]
-    for eachPanchayat in myPanchayats:
-      logger.info(eachPanchayat.name)
-      eachPanchayat.crawlRequirement="FULL"
-      eachPanchayat.save()
-      myBlock=eachPanchayat.block
-      myBlock.partners.add(myUser)
-      myBlock.save()
+
+  myLibtechTag=LibtechTag.objects.filter(name="August 2017 Hearing").first()
+  myStates=["18","17","27","24","33","15","16","31","34","05","32"]
+  for eachState in myStates:
+    myobjs=District.objects.filter(state__isNIC=True,state__code=eachState)
+    if args['limit']:
+      limit=int(args['limit'])
+    else:
+      limit=1
+    for eachDistrict in myobjs:
+      logger.info(eachDistrict.name)
+      myPanchayats=list(Panchayat.objects.filter(block__district__code=eachDistrict.code,crawlRequirement='NONE'))
+      shuffle(myPanchayats)
+      myPanchayats=myPanchayats[:limit]
+      for eachPanchayat in myPanchayats:
+        logger.info(eachPanchayat.name)
+        eachPanchayat.crawlRequirement="FULL"
+        eachPanchayat.libtechTag.add(myLibtechTag)
+        eachPanchayat.save()
   logger.info("...END PROCESSING")     
   exit(0)
 if __name__ == '__main__':

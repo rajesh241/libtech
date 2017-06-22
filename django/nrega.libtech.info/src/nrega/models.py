@@ -32,6 +32,9 @@ def get_muster_upload_path(instance, filename):
 def get_panchayatreport_upload_path(instance, filename):
   return os.path.join(
     "nrega",instance.panchayat.block.district.state.slug,instance.panchayat.block.district.slug,instance.panchayat.block.slug,instance.panchayat.slug,"DATA","NICREPORTS",filename)
+def get_sssreport_upload_path(instance, filename):
+  return os.path.join(
+    "nrega",instance.village.panchayat.block.district.state.slug,instance.village.panchayat.block.district.slug,instance.village.panchayat.block.slug,instance.village.panchayat.slug,instance.village.slug,"DATA","NICREPORTS",filename)
 def get_villagereport_upload_path(instance, filename):
   return os.path.join(
     "nrega",instance.village.panchayat.block.district.state.slug,instance.village.panchayat.block.district.slug,instance.village.panchayat.block.slug,instance.village.panchayat.slug,instance.village.slug,"DATA","NICREPORTS",filename)
@@ -142,12 +145,21 @@ class Panchayat(models.Model):
         ('NONE', 'No Crawl'),
         ('STAT', 'Only Statistics'),
     )
+  STAT_CHOICES = (
+        ('0', 'No Data'),
+        ('1', 'JRCrawled'),
+        ('2', 'JRProcessed'),
+        ('3', 'JRMusterCrawled'),
+        ('4', 'JRMusterStatCrawled'),
+    )
   block=models.ForeignKey('block',on_delete=models.CASCADE)
   name=models.CharField(max_length=256)
   remarks=models.CharField(max_length=256,blank=True,null=True)
   code=models.CharField(max_length=10,unique=True)
   slug=models.SlugField(blank=True) 
+  libtechTag=models.ManyToManyField('LibtechTag',related_name="panchayatTag",blank=True)
   crawlRequirement=models.CharField(max_length=4,choices=CRAWL_CHOICES,default='NONE')
+  status=models.CharField(max_length=4,choices=STAT_CHOICES,default='0')
   jobcardCrawlDate=models.DateTimeField(null=True,blank=True,default=datetime.datetime.now)
   jobcardProcessDate=models.DateTimeField(null=True,blank=True,default=datetime.datetime.now)
   applicationRegisterCrawlDate=models.DateTimeField(null=True,blank=True)
@@ -157,12 +169,13 @@ class Panchayat(models.Model):
   jobcardRegisterFile=models.FileField(null=True, blank=True,upload_to=get_panchayat_upload_path,max_length=512)
 
 
-  def blockName(self):
-    return self.block.name
-  def districtName(self):
-    return self.block.district.name
-  def stateName(self):
-    return self.block.district.state.name
+  def __str__(self):
+    return "%s-%s-%s-%s" % (self.block.district.state.name,self.block.district.name,self.block.name,self.name)
+
+class LibtechTag(models.Model):
+  name=models.CharField(max_length=256,default='NONE')
+  slug=models.SlugField(blank=True) 
+ 
   def __str__(self):
     return self.name
 
@@ -195,10 +208,17 @@ class PanchayatStat(models.Model):
   def __str__(self):
     return self.panchayat.name+"-"+self.panchayat.block.name
 
-class TelanganaJobcard(models.Model):
-  tjobcard=models.CharField(max_length=18,unique=True)
+class TelanganaSSSGroup(models.Model):
+  village=models.ForeignKey('Village',on_delete=models.CASCADE)
   groupName=models.CharField(max_length=512,null=True,blank=True)
   groupCode=models.CharField(max_length=16,null=True,blank=True)
+  groupReport=models.FileField(null=True, blank=True,upload_to=get_sssreport_upload_path,max_length=512)
+  def __str__(self):
+    return self.groupName
+
+class TelanganaJobcard(models.Model):
+  group=models.ForeignKey('TelanganaSSSGroup',on_delete=models.CASCADE,blank=True,null=True)
+  tjobcard=models.CharField(max_length=18,unique=True)
   def __str__(self):
     return self.tjobcard
   
@@ -338,7 +358,10 @@ class PaymentDetail(models.Model):
 def createslug(instance):
   myslug=slugify(instance.name)[:50]
   if myslug == '':
-    myslug="%s-%s" % (instance.__class__.__name__ , str(instance.code))
+    if instance.code:
+      myslug="%s-%s" % (instance.__class__.__name__ , str(instance.code))
+    else:
+      myslug="%s-%s" % (instance.__class__.__name__ , str(instance.id))
   return myslug
 
 
@@ -354,6 +377,7 @@ post_save.connect(location_post_save_receiver,sender=Block)
 post_save.connect(location_post_save_receiver,sender=Panchayat)
 post_save.connect(location_post_save_receiver,sender=FPSShop)
 post_save.connect(location_post_save_receiver,sender=Village)
+post_save.connect(location_post_save_receiver,sender=LibtechTag)
 #def state_post_save_receiver(sender,instance,*args,**kwargs):
 #  if not instance.slug:
 #    instance.slug = "some-slug"

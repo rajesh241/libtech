@@ -23,7 +23,7 @@ from django.utils import timezone
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
 django.setup()
 
-from nrega.models import State,District,Block,Panchayat,Applicant,PanchayatReport,Village,VillageReport,TelanganaJobcard
+from nrega.models import State,District,Block,Panchayat,Applicant,PanchayatReport,Village,VillageReport,TelanganaJobcard,TelanganaSSSGroup
 
 def argsFetch():
   '''
@@ -82,12 +82,20 @@ def main():
               jcNumber=int(tjobcard[-6:])
               groupName=groupArray[0]
               groupCode=groupArray[1]
-
+              myGroup=TelanganaSSSGroup.objects.filter(groupCode=groupCode,village=eachVillage).first()
+              if myGroup is None:
+                TelanganaSSSGroup.objects.create(groupCode=groupCode,village=eachVillage)
+              myGroup=TelanganaSSSGroup.objects.filter(groupCode=groupCode,village=eachVillage).first()
+              myGroup.groupName=groupName
+              myGroup.save()
+ 
               myTJobcard=TelanganaJobcard.objects.filter(tjobcard=tjobcard).first()
               if myTJobcard is None:
-                TelanganaJobcard.objects.create(tjobcard=tjobcard,groupName=groupName,groupCode=groupCode)
+                TelanganaJobcard.objects.create(tjobcard=tjobcard)
               myTJobcard=TelanganaJobcard.objects.filter(tjobcard=tjobcard).first()
-
+              #myTJobcard.village=eachVillage
+              myTJobcard.group=myGroup
+              myTJobcard.save()
               myApplicant=Applicant.objects.filter(panchayat=eachPanchayat,jcNo=jcNumber,applicantNo=applicantNo,name=applicantName)
               if len(myApplicant) != 1:
                 logger.info(str(applicantNo)+applicantName+tjobcard+"-"+str(jcNumber)) 

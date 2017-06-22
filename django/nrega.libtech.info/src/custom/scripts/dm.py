@@ -45,6 +45,7 @@ def argsFetch():
   parser.add_argument('-n', '--numberOfThreads', help='Number of Threads default 5', required=False)
   parser.add_argument('-q', '--queueSize', help='Number of Musters in Queue default 200', required=False)
   parser.add_argument('-s', '--stateCode', help='StateCode for which the numbster needs to be downloaded', required=False)
+  parser.add_argument('-p', '--panchayatCode', help='StateCode for which the numbster needs to be downloaded', required=False)
   parser.add_argument('-limit', '--limit', help='District for which you need to Download', required=False)
 
   args = vars(parser.parse_args())
@@ -69,8 +70,10 @@ def validateMusterHTML(muster,myhtml):
   else:
     error="Jobcard Prefix not found"
   return error,musterTable,musterSummaryTable
-def populateMusterQueue(logger,q,queueSize,stateCode,addLimit):
-  if stateCode is not None:
+def populateMusterQueue(logger,q,queueSize,stateCode,panchayatCode,addLimit):
+  if panchayatCode is not None:
+    myMusters=Muster.objects.filter(isDownloaded=False,panchayat__code=panchayatCode)[:addLimit]
+  elif stateCode is not None:
     myMusters=Muster.objects.filter( Q(isDownloaded=False,isRequired=1,block__district__state__code=stateCode) | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isRequired=1,isProcessed=1,block__district__state__code=stateCode) ).order_by("musterDownloadAttemptDate")[:addLimit]
   else:
     myMusters=Muster.objects.filter( Q(isDownloaded=False,isRequired=1) | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isRequired=1,isProcessed=1) ).order_by("musterDownloadAttemptDate")[:addLimit]
@@ -154,6 +157,7 @@ def main():
   logger.info('args: %s', str(args))
   logger.info("BEGIN PROCESSING...")
   stateCode=args['stateCode']
+  panchayatCode=args['panchayatCode']
   if args['limit']:
     limit = int(args['limit'])
   else:
@@ -169,7 +173,7 @@ def main():
   logger.info("Starting Muster Download Script with Queue Size: %s and Number of Threads: %s " % (queueSize,numberOfThreads))
   q = Queue(maxsize=queueSize)
   addLimit=queueSize-numberOfThreads -1
-  populateMusterQueue(logger,q,queueSize,stateCode,addLimit)
+  populateMusterQueue(logger,q,queueSize,stateCode,panchayatCode,addLimit)
   #t1 = Thread(name = 'musterQueueManager', target=musterQueueManager, args=(logger,q,queueSize,stateCode ))
 #  t1 = Thread(name = 'musterQueueManager', target=populateMusterQueue, args=(logger,q,queueSize,stateCode,addLimit ))
   #t1.daemon = True
