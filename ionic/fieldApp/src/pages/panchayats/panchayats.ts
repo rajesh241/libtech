@@ -29,6 +29,13 @@ export class PanchayatsPage {
         this.panchayatsChosen = [];
         this.panchayatsToSync = [];
         this.panchayats = this.panchayatList.load();
+        //this.panchayats = this.panchayatList.getData();
+        console.log('InsideConstructor');
+        /*
+        this.panchayats.then(data => {
+                                                     console.log('data',data);
+        })
+        */
         console.log(this.panchayats);
     }
 
@@ -62,28 +69,41 @@ export class PanchayatsPage {
         let alert = this.alertCtrl.create();
         alert.setTitle('Select the Panchayats:');
 
-        this.panchayats.subscribe(snapshots => {
-            snapshots.forEach(snapshot => {
-                var panchayat = snapshot['$key']; // FIXME .toUpperCase();
-                // console.log(panchayat);
+        this.panchayats.forEach(panchayat => {
+                console.log('PANCHAYAT ' + panchayat);
                 alert.addInput({
                     type: 'checkbox',
                     label: panchayat,
                     value: panchayat,
-                    checked: false
+                    checked: (this.displayPanchayats.indexOf(panchayat) != -1)
+                });
+            });
+
+        /*
+        this.panchayats.subscribe(snapshots => {
+            snapshots.forEach(snapshot => {
+                var panchayat = snapshot['$key']; // FIXME .toUpperCase();
+//                console.log('PANCHAYAT ' + panchayat);
+                alert.addInput({
+                    type: 'checkbox',
+                    label: panchayat,
+                    value: panchayat,
+                    checked: (this.displayPanchayats.indexOf(panchayat) != -1)
                 });
             });
         });
-
+        */
         alert.addButton('Cancel');
         alert.addButton({
             text: 'Okay',
             handler: data => {
                 this.panchayatsChosen = data; // .join(', ') //  .map(function (currentValue, index, arr) { return currentValue; });
                 console.log('Checkbox data:', data);
-                console.log('Boxed data:', this.panchayatsChosen);
+//                console.log('Boxed data:', this.panchayatsChosen);
                 this.auth.update(this.panchayatsChosen);
                 this.displayPanchayats = this.panchayatsChosen;
+                console.log('Final data:', this.displayPanchayats);
+//                console.log(this.panchayats);
             }
         });
         alert.present();
