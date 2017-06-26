@@ -58,7 +58,10 @@ export class Panchayats {
                 console.log('PROVIDER_PANCHAYAT ' + panchayat);
                 this.panchayats.push(panchayat);
                 });
-            });
+            },
+            err => { console.log('Error: ' + err) },
+            () => { console.log('Load Completed!') }
+        );
         return this.panchayats;
     }
 

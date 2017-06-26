@@ -33,7 +33,7 @@ export class PanchayatsPage {
         console.log('InsideConstructor');
         /*
         this.panchayats.then(data => {
-                                                     console.log('data',data);
+            console.log('data',data);
         })
         */
         console.log(this.panchayats);
@@ -79,31 +79,13 @@ export class PanchayatsPage {
                 });
             });
 
-        /*
-        this.panchayats.subscribe(snapshots => {
-            snapshots.forEach(snapshot => {
-                var panchayat = snapshot['$key']; // FIXME .toUpperCase();
-//                console.log('PANCHAYAT ' + panchayat);
-                alert.addInput({
-                    type: 'checkbox',
-                    label: panchayat,
-                    value: panchayat,
-                    checked: (this.displayPanchayats.indexOf(panchayat) != -1)
-                });
-            });
-        });
-        */
         alert.addButton('Cancel');
         alert.addButton({
             text: 'Okay',
             handler: data => {
-                this.panchayatsChosen = data; // .join(', ') //  .map(function (currentValue, index, arr) { return currentValue; });
-                console.log('Checkbox data:', data);
-//                console.log('Boxed data:', this.panchayatsChosen);
+                this.panchayatsChosen = data;
                 this.auth.update(this.panchayatsChosen);
                 this.displayPanchayats = this.panchayatsChosen;
-                console.log('Final data:', this.displayPanchayats);
-//                console.log(this.panchayats);
             }
         });
         alert.present();
