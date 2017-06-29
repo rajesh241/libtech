@@ -18,25 +18,15 @@ export class PanchayatsPage {
     user: any;
     displayPanchayats: any;
     panchayatSelected = {};
-    panchayatsChosen: any;
     panchayatsToSync: any;
     checked = false;
     synced = false;
 
-    constructor(public navCtrl: NavController, private navParams: NavParams, private auth: Auth, 
-            private panchayatList: Panchayats, public alertCtrl: AlertController) {
+    constructor(public navCtrl: NavController, private navParams: NavParams, private auth: Auth,
+        private panchayatList: Panchayats, public alertCtrl: AlertController) {
         this.user = this.navParams.data;
-        this.panchayatsChosen = [];
         this.panchayatsToSync = [];
-        this.panchayats = this.panchayatList.load();
-        //this.panchayats = this.panchayatList.getData();
         console.log('InsideConstructor');
-        /*
-        this.panchayats.then(data => {
-            console.log('data',data);
-        })
-        */
-        console.log(this.panchayats);
     }
 
     ionViewDidLoad() {
@@ -44,8 +34,10 @@ export class PanchayatsPage {
         console.log('USER ' + JSON.stringify(this.user));
         this.displayPanchayats = this.user.panchayats.split(', ');
         console.log(this.displayPanchayats);
+        this.panchayats = this.panchayatList.load();
+        console.log('PANCHAYATS ' + JSON.stringify(this.panchayats));
     }
-    
+
     choosePanchayat(selected, index, panchayat) {
         this.checked = true;
         this.synced = false;
@@ -69,23 +61,23 @@ export class PanchayatsPage {
         let alert = this.alertCtrl.create();
         alert.setTitle('Select the Panchayats:');
 
+        this.panchayats = this.panchayatList.load();
         this.panchayats.forEach(panchayat => {
-                console.log('PANCHAYAT ' + panchayat);
-                alert.addInput({
-                    type: 'checkbox',
-                    label: panchayat,
-                    value: panchayat,
-                    checked: (this.displayPanchayats.indexOf(panchayat) != -1)
-                });
+            //  console.log('PANCHAYAT ' + panchayat);
+            alert.addInput({
+                type: 'checkbox',
+                label: panchayat,
+                value: panchayat,
+                checked: (this.displayPanchayats.indexOf(panchayat) != -1)
             });
+        });
 
         alert.addButton('Cancel');
         alert.addButton({
             text: 'Okay',
             handler: data => {
-                this.panchayatsChosen = data;
-                this.auth.update(this.panchayatsChosen);
-                this.displayPanchayats = this.panchayatsChosen;
+                this.displayPanchayats = data;
+                this.auth.update(this.displayPanchayats);
             }
         });
         alert.present();
