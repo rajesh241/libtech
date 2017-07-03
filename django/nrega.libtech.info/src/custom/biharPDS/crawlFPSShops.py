@@ -31,7 +31,7 @@ from django.utils import timezone
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
 django.setup()
 
-from nrega.models import State,District,Block,Panchayat,Muster,FPSShop,FPSStatus
+from nrega.models import State,District,Block,Panchayat,Muster,FPSShop,FPSStatus,FPSVillage,VillageFPSStatus
 def argsFetch():
   '''
   Paser for the argument list that returns the args list
@@ -77,7 +77,13 @@ def main():
           if myShop is None:
             FPSStatus.objects.create(fpsShop=eachFPSShop,fpsMonth=eachMonth,fpsYear=eachYear)
             logger.info("Created object")
-         
+          myShop=FPSStatus.objects.filter(fpsShop=eachFPSShop,fpsMonth=eachMonth,fpsYear=eachYear).first()
+
+          myVillages=FPSVillage.objects.filter(fpsShop=eachFPSShop)
+          for eachVillage in myVillages:
+            myVillageFPSStatus=VillageFPSStatus.objects.filter(fpsVillage=eachVillage,fpsStatus=myShop).first()
+            if myVillageFPSStatus is None:
+              VillageFPSStatus.objects.create(fpsVillage=eachVillage,fpsStatus=myShop)
                 
 
   if args['crawl']:

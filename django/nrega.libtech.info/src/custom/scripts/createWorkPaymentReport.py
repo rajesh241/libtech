@@ -53,7 +53,7 @@ def main():
   stateCodes=['33','34','16','27','24','15','18','35']
   stateCodes=['33','34','27','24','15','18',]
   stateCodes=['16','31','05','17']
-  stateCodes=['05']
+  stateCodes=['15']
   for stateCode in stateCodes:
 #  if stateCode is not None:
 #    logger.info("StateCode is %s" % stateCode)

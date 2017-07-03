@@ -74,9 +74,10 @@ def populateMusterQueue(logger,q,queueSize,stateCode,panchayatCode,addLimit):
   if panchayatCode is not None:
     myMusters=Muster.objects.filter(isDownloaded=False,panchayat__code=panchayatCode)[:addLimit]
   elif stateCode is not None:
-    myMusters=Muster.objects.filter( Q(isDownloaded=False,isRequired=1,block__district__state__code=stateCode) | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isRequired=1,isProcessed=1,block__district__state__code=stateCode) ).order_by("musterDownloadAttemptDate")[:addLimit]
+    myMusters=Muster.objects.filter( Q(isDownloaded=False,panchayat__isnull=False,panchayat__block__district__state__code=stateCode,panchayat__crawlRequirement="FULL") | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isProcessed=1,panchayat__isnull=False,panchayat__block__district__state__code=stateCode,panchayat__crawlRequirement="FULL") ).order_by("panchayat__block__district__state__code","downloadAttemptCount")[:addLimit]
+    #myMusters=Muster.objects.filter( Q(isDownloaded=False,isRequired=1,block__district__state__code=stateCode) | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isRequired=1,isProcessed=1,block__district__state__code=stateCode) ).order_by("musterDownloadAttemptDate")[:addLimit]
   else:
-    myMusters=Muster.objects.filter( Q(isDownloaded=False,isRequired=1) | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isRequired=1,isProcessed=1) ).order_by("musterDownloadAttemptDate")[:addLimit]
+    myMusters=Muster.objects.filter( Q(isDownloaded=False,panchayat__isnull=False,panchayat__crawlRequirement="FULL") | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isProcessed=1,panchayat__isnull=False,panchayat__crawlRequirement="FULL") ).order_by("panchayat__block__district__state__code","downloadAttemptCount")[:addLimit]
   musterIDs=''
   logger.info("Lenght of myMusters is "+str(len(myMusters)))
   if len(myMusters) > 0:
@@ -137,12 +138,15 @@ def musterDownloadWorker(logger,q,inputargs,driver,display):
       filename="%s.html" % (eachMuster.musterNo)
       eachMuster.musterFile.save(filename, ContentFile(outhtml))
       eachMuster.musterDownloadAttemptDate=timezone.now()
+      eachMuster.downloadAttemptCount=eachMuster.downloadAttemptCount+1
+      eachMuster.downloadCount=eachMuster.downloadCount+1
       eachMuster.isDownloaded=True
       eachMuster.isProcessed=False
       eachMuster.save()
     else:
   #    logger.info("Muster Download Erorr: %s " % (error))
       eachMuster.musterDownloadAttemptDate=timezone.now()
+      eachMuster.downloadAttemptCount=eachMuster.downloadAttemptCount+1
       eachMuster.downloadError=error
       eachMuster.save()
 

@@ -84,8 +84,8 @@ def main():
       try:
         r  = requests.get(url)
         error=0
-      except requests.exceptions.RequestException as e:  # This is the correct syntax
-        logger.info(e) 
+      #except requests.exceptions.RequestException as e:  # This is the correct syntax
+      except:  # This is the correct syntax
         error=1
       if error==0:
         curtime = time.strftime('%Y-%m-%d %H:%M:%S')

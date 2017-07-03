@@ -71,14 +71,15 @@ def main():
   stateCodes=['33','34','16','27','24','15','18','35']
   stateCodes=['16','31','05','17']
   stateCodes=['34']
+  stateCodes=[args['stateCode']]
   for stateCode in stateCodes:
-    myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__stateCode=stateCode)
+    myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__code=stateCode)
     for eachPanchayat in myPanchayats:
       logger.info("Processing : panchayat: %s " % (eachPanchayat.name))
-      stateCode=eachPanchayat.block.district.state.stateCode
-      fullDistrictCode=eachPanchayat.block.district.fullDistrictCode
-      fullBlockCode=eachPanchayat.block.fullBlockCode
-      fullPanchayatCode=eachPanchayat.fullPanchayatCode
+      stateCode=eachPanchayat.block.district.state.code
+      fullDistrictCode=eachPanchayat.block.district.code
+      fullBlockCode=eachPanchayat.block.code
+      fullPanchayatCode=eachPanchayat.code
       districtName=eachPanchayat.block.district.name
       blockName=eachPanchayat.block.name
       stateName=eachPanchayat.block.district.state.name
