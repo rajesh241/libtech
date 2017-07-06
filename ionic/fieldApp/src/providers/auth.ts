@@ -8,7 +8,8 @@ export class Auth {
     users: AfoListObservable<any[]>;
     user: any;
     url = '/users/'
-    panchayats: AfoListObservable<any[]>;
+    // panchayats: AfoListObservable<any[]>;
+    panchayats: any;
     panchayatObject: AfoObjectObservable<any>;
     userObject: AfoObjectObservable<any>;
 
@@ -90,56 +91,56 @@ export class Auth {
     }
 
     postLogin(user) {
-         this.user = {
-             username: (user.email.slice(0, user.email.indexOf("@"))).replace(".", "_"),
-             email: user.email,
-             picture: user.photoURL,
-             panchayats: ""
-         };
-         this.userObject = this.afoDatabase.object(this.url + this.user.username);
-         console.log(this.userObject);
-         this.userObject.subscribe(user => {
-             console.log('User Object ' + JSON.stringify(user['$key']) + JSON.stringify(user.panchayats));
-             if(!user.panchayats) {
+        this.user = {
+            username: (user.email.slice(0, user.email.indexOf("@"))).replace(".", "_"),
+            email: user.email,
+            picture: user.photoURL,
+            panchayats: ""
+        };
+        this.userObject = this.afoDatabase.object(this.url + this.user.username);
+        console.log(this.userObject);
+        this.userObject.subscribe(user => {
+            console.log('User Object ' + JSON.stringify(user['$key']) + JSON.stringify(user.panchayats));
+            if (!user.panchayats) {
                 console.log('Update Maadi!');
-             }
-             else {
+            }
+            else {
                 console.log('Prefill Panchayats' + user.panchayats);
                 this.user.panchayats = user.panchayats;
-             }
-         });
-         this.users.update(this.user.username, this.user); // FIXME why needed when up to date?
-         console.log('POST Login ' + JSON.stringify(this.user));
-         window.localStorage.setItem('user', JSON.stringify(this.user));
+            }
+        });
+        this.users.update(this.user.username, this.user); // FIXME why needed when up to date?
+        console.log('POST Login ' + JSON.stringify(this.user));
+        window.localStorage.setItem('user', JSON.stringify(this.user));
     }
 
     userExists() {
-         this.userObject = this.afoDatabase.object(this.url + this.user.username);
-//         this.userObject = this.afoDatabase.object('/users/mynk');
-         // console.log(JSON.stringify(this.userObject));
-         console.log(this.userObject);
-         this.userObject.subscribe(user => {
-             console.log('User Object ' + JSON.stringify(user['$key']) + JSON.stringify(user.panchayats));
-             if(!user)
+        this.userObject = this.afoDatabase.object(this.url + this.user.username);
+        //         this.userObject = this.afoDatabase.object('/users/mynk');
+        // console.log(JSON.stringify(this.userObject));
+        console.log(this.userObject);
+        this.userObject.subscribe(user => {
+            console.log('User Object ' + JSON.stringify(user['$key']) + JSON.stringify(user.panchayats));
+            if (!user)
                 console.log('Yippie!');
-             if(!user.panchayats)
+            if (!user.panchayats)
                 console.log('Dippie!');
-         });
-         /*
-         this.panchayatList = this.afoDatabase.list(this.url + this.user.username + '/panchayats/');
-         // console.log(JSON.stringify(this.panchayatList));
-         console.log(this.panchayatList);
-         this.panchayatList.subscribe(element => {
-             console.log('List ' + JSON.stringify(element));
-         });
-         */
-         this.panchayatObject = this.afoDatabase.object(this.url + this.user.username + '/panchayats/');
-         // console.log(JSON.stringify(this.panchayatObject));
-         console.log(this.panchayatObject);
-         this.panchayatObject.subscribe(element => {
-             console.log('Panchayat Object ' + JSON.stringify(element['$key']) + element['$value']);
-         });
-         return this.panchayatObject;
+        });
+        /*
+        this.panchayatList = this.afoDatabase.list(this.url + this.user.username + '/panchayats/');
+        // console.log(JSON.stringify(this.panchayatList));
+        console.log(this.panchayatList);
+        this.panchayatList.subscribe(element => {
+            console.log('List ' + JSON.stringify(element));
+        });
+        */
+        this.panchayatObject = this.afoDatabase.object(this.url + this.user.username + '/panchayats/');
+        // console.log(JSON.stringify(this.panchayatObject));
+        console.log(this.panchayatObject);
+        this.panchayatObject.subscribe(element => {
+            console.log('Panchayat Object ' + JSON.stringify(element['$key']) + element['$value']);
+        });
+        return this.panchayatObject;
         /*      
         var res;
         const promise = this.afoDatabase.object(this.url + this.user.username + '/panchayats/');
@@ -147,24 +148,8 @@ export class Auth {
             .then(_ => console.log('success'))
             .catch(err => console.log(err, 'You do not have access!'));
         */
-    }   
-
-/*
-    loadUserPanchayats(username) {
-        this.panchayats = this.afoDatabase.object(this.url + username + '/panchayats/');
     }
 
-    updateUserPanchayats(username, panchayatsChosen) {
-        this.panchayats = this.afoDatabase.object(this.url + username + '/panchayats/');
-        this.panchayats.subscribe( panchayat => {
-                panchayatsChosen.forEach(panchayat => {
-                console.log('Updating for panchayat = ' + panchayat);
-                panchayats.update(panchayat, {});
-            });
-        });
-
-    }
-  */  
     fetch() {
         console.log('Inside Fetch');
 	/*
@@ -183,18 +168,18 @@ export class Auth {
         console.log(JSON.stringify(this.user));
 
         if (this.user && this.user.panchayats) {
-            this.panchayats = this.user.panchayats.split(', ');
-            console.log(this.panchayats);
+            this.panchayats = this.user.panchayats; // .split(', ');
+            console.log(JSON.stringify(this.panchayats));
             return this.panchayats;
         }
     }
 
     update(panchayatsChosen) {
-        console.log('UPDATING PanchayatList ' + panchayatsChosen);
-        this.user['panchayats'] = panchayatsChosen.join(', '); // JSON.stringify(panchayatsChosen);
+        console.log('UPDATING PanchayatList ' + JSON.stringify(panchayatsChosen));
+        console.log(panchayatsChosen);
+        this.user['panchayats'] = panchayatsChosen; // .join(', '); // JSON.stringify(panchayatsChosen);
         console.log(this.user);
         console.log(this.users);
-        console.log(JSON.stringify(panchayatsChosen));
         window.localStorage.setItem('user', JSON.stringify(this.user));
         this.users.update(this.user.username, this.user);
     }

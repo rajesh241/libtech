@@ -15,7 +15,7 @@ export class Panchayats {
         console.log('Hello Panchayats Provider');
         this.items = afoDatabase.list(this.url, {
             query: {
-                orderByChild: 'panchayat',
+                orderByChild: 'slug',
             }
         });
         console.log('PROVIDERS ');
@@ -23,64 +23,33 @@ export class Panchayats {
         this.panchayats = [];
     }
 
-    /*
-        getData(): Promise<any> {
-            var promise = new Promise(resolve => {
-                this.items.subscribe(
-                    snapshot => {
-                        resolve(snapshot);
-                    })
-            })
-    
-            promise.then(data => {
-                console.log('DATA', data);
-                this.panchayats = data;
-                /*
-                data.forEach(element => {
-                    console.log('Elements', element);
-                });
-    
-                snapshots => {
-                            snapshots.forEach(snapshot => {
-                        })
-    
-            })
-            return this.panchayats;
-        }
-    
-            console.log(this.panchayats);
-            //        this.items.map(snapshots => { this.panchayats = snapshots; }); //.map(snapshot => snapshot.panchayat) }); //.map(res => <User[]>(res.json().items) { console.log(snapshots); return snapshots; });
-            this.panchayats = this.items.forEach(snapshots => {
-                snapshots.map(snapshot => { console.log('In Load '); console.log(snapshot); return snapshot.panchayat });
-            });
-            console.log('After Projection:');
-            console.log(this.panchayats);
-            this.items.subscribe(snapshots => {
-                snapshots.map(snapshot => { console.log('In Load '); console.log(snapshot); this.panchayats.push(snapshot.panchayat); return snapshot.panchayat });
-            },
-                err => { console.log('Error: ' + err) },
-                () => { console.log('Load Completed!') }
-            );
-    	
-            this.panchayats = [];
-            this.items.subscribe(snapshots => {
-                snapshots.forEach(snapshot => this.panchayats.push(snapshot.panchayat));
-            },
-                err => { console.log('Error: ' + err) },
-                () => { console.log('Load Completed!') }
-            );
-    
-    */
-
     load() {
         console.log('Inside Load');
-        if (this.panchayats.length != 0) // To avoid multiple subscribes
+        if (Object.keys(this.panchayats).length != 0) // To avoid multiple subscribes
             return this.panchayats;
 
         this.items.subscribe(snapshots => {
-            this.panchayats = snapshots.map(snapshot => snapshot.panchayat);
+            this.panchayats = {};
+            snapshots.forEach(snapshot => this.panchayats[snapshot.$key] = snapshot);
+	    /* Useful to populate the Firebase Database
+            snapshots.forEach(panchayat => {
+                let slug = panchayat.panchayatKey.replace(/_/g, ' ').replace(/-/g, '_').replace(/ /g, '-')
+
+                this.panchayats[slug] = { 'state': panchayat.state, 'district': 'DistrictFromDjango', 'block': panchayat.block, 'name': panchayat.panchayat, 'slug': slug, 'code': 'CodeFromDjango', 'jobcardCode': panchayat.jobcardCode }
+            });
+	    */
+
+            /*
+            this.panchayats = snapshots;
+.map(snapshot => {
+            return { snapshot.$key: {
+                // panchayatKey: (snapshot.state + '-' + snapshot.block + '-' + snapshot.panchayat).toLowerCase().replace(' ', '_'), 
+                panchayatCode: 'fromDjango', jobcardCode: snapshot.jobcardCode, panchayatKey: snapshot.$key, panchayat: snapshot.panchayat, block: snapshot.block, state: snapshot.state
+            }
+        };
+    }); */
             console.log('Fecthing all the panchaytas asynchronously!');
-            console.log(this.panchayats);
+            console.log(JSON.stringify(this.panchayats));
         },
             err => { console.log('Error: ' + err) },
             () => { console.log('Load Completed!') } // Will never execute

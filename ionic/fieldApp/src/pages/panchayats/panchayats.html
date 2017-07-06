@@ -12,15 +12,21 @@
        <ion-searchbar (input)="search($event)"></ion-searchbar>
   -->
   <p> Please select the panchayats you wish to sync</p>
-  <div class="row" *ngFor="let panchayat of displayPanchayats">
-    <div class="col">
-      <input type="checkbox" [checked]="panchayatSelected[panchayat]"
-             (click)="choosePanchayat(selectPanchayat, panchayat, panchayat)">
-      <button ion-button #selectPanchayat [navPush]="jobcardsPage"
-	      [navParams]="{panchayatName: panchayat}">{{ panchayat }}
-      </button>
+  <div *ngIf="preferredPanchayats">
+    <div class="row" *ngFor="let panchayat of preferredPanchayats">
+      <div class="col">
+	<input type="checkbox" [checked]="panchayatSelected[panchayat.name]"
+               (click)="choosePanchayat(selectPanchayat, panchayat.name, panchayat.name)">
+	<button ion-button #selectPanchayat [navPush]="jobcardsPage"
+		[navParams]="{panchayatName: panchayat.name}">{{ panchayat.slug }}
+	</button>
+      </div>
     </div>
   </div>
+  <!--
+  <div>{{ displayPanchayats|json }}</div>
+  <div>{{ preferredPanchayats|json }}</div>
+    -->  
   <button ion-button [disabled]="!checked || synced" (click)="syncPanchayats()">
     Sync
   </button>

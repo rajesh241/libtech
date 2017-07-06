@@ -18,7 +18,7 @@ from wrappers.logger import loggerFetch
 # Global Declarations
 #######################
 
-firebase = firebase.FirebaseApplication('https://libtech-backend.firebaseio.com/', None)
+firebase = firebase.FirebaseApplication('https://libtech-app.firebaseio.com/', None)
 
 
 #############
@@ -36,29 +36,32 @@ def pts_patch(logger, db):
 
     panchayat_list = [{"panchayatCode":"fromDjango","jobcardCode":"JH-01-020-001","panchayatKey":"jharkhand-torpa-amma","panchayat":"AMMA","block":"TORPA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"KL-14-004-002","panchayatKey":"kerala-nedumangad-aruvikkara","panchayat":"Aruvikkara","block":"Nedumangad","state":"KERALA"},{"panchayatCode":"fromDjango","jobcardCode":"JH-05-003-010","panchayatKey":"jharkhand-satbarwa-bakoriya","panchayat":"BAKORIYA","block":"Satbarwa","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-01-020-002","panchayatKey":"jharkhand-torpa-barkuli","panchayat":"BARKULI","block":"TORPA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-13-002-003","panchayatKey":"jharkhand-mandro-bartalla","panchayat":"BARTALLA","block":"Mandro","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-07-005-002","panchayatKey":"jharkhand-ranka-bishrampur","panchayat":"BISHRAMPUR","block":"RANKA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-07-012-006","panchayatKey":"jharkhand-ramna-bulka","panchayat":"BULKA","block":"RAMNA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"BH-16-015-009","panchayatKey":"bihar-rajapakar-bhalui","panchayat":"Bhalui","block":"RAJAPAKAR","state":"BIHAR"},{"panchayatCode":"fromDjango","jobcardCode":"KN-27-005-013","panchayatKey":"karnataka-karwar-chendia","panchayat":"CHENDIA","block":"KARWAR","state":"KARNATAKA"},{"panchayatCode":"fromDjango","jobcardCode":"JH-05-008-016","panchayatKey":"jharkhand-chhatarpur-cherain","panchayat":"CHERAIN","block":"CHHATARPUR","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-01-020-003","panchayatKey":"jharkhand-torpa-diyakela","panchayat":"DIYAKELA","block":"TORPA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-01-020-004","panchayatKey":"jharkhand-torpa-dorma","panchayat":"DORMA","block":"TORPA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-08-009-008","panchayatKey":"jharkhand-hat_gamharia-dumria","panchayat":"Dumria","block":"Hat Gamharia","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-01-020-005","panchayatKey":"jharkhand-torpa-fatka","panchayat":"FATKA","block":"TORPA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-07-012-007","panchayatKey":"jharkhand-ramna-gamharia","panchayat":"GAMHARIA","block":"RAMNA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-07-004-009","panchayatKey":"jharkhand-meral-hasandag","panchayat":"HASANDAG","block":"MERAL","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"BH-50-005-006","panchayatKey":"bihar-jhajha-hathiya","panchayat":"HATHIYA","block":"JHAJHA","state":"BIHAR"},{"panchayatCode":"fromDjango","jobcardCode":"JH-01-020-006","panchayatKey":"jharkhand-torpa-husir","panchayat":"HUSIR","block":"TORPA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-05-008-018","panchayatKey":"jharkhand-chhatarpur-hutukdag","panchayat":"HUTUKDAG","block":"CHHATARPUR","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-01-020-007","panchayatKey":"jharkhand-torpa-jaria","panchayat":"JARIA","block":"TORPA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"KN-06-001-003","panchayatKey":"karnataka-aurad-kamalanagar","panchayat":"KAMALANAGAR","block":"AURAD","state":"KARNATAKA"},{"panchayatCode":"fromDjango","jobcardCode":"JH-01-020-008","panchayatKey":"jharkhand-torpa-kamra","panchayat":"KAMRA","block":"TORPA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-07-009-006","panchayatKey":"jharkhand-bhandaria-karchali","panchayat":"KARCHALI","block":"BHANDARIA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-07-004-010","panchayatKey":"jharkhand-meral-karkoma","panchayat":"KARKOMA","block":"MERAL","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"KL-14-009-001","panchayatKey":"kerala-vamanapuram-kallara","panchayat":"Kallara","block":"Vamanapuram","state":"KERALA"},{"panchayatCode":"fromDjango","jobcardCode":"JH-08-003-008","panchayatKey":"jharkhand-jhinkpani-kudahatu","panchayat":"Kudahatu","block":"Jhinkpani","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"UP-43-006-037","panchayatKey":"uttar_pradesh-bhitaura-lakani","panchayat":"LAKANI","block":"BHITAURA","state":"UTTAR PRADESH"},{"panchayatCode":"fromDjango","jobcardCode":"JH-07-009-008","panchayatKey":"jharkhand-bhandaria-madgari_(k)","panchayat":"MADGARI (K)","block":"BHANDARIA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-01-020-009","panchayatKey":"jharkhand-torpa-marcha","panchayat":"MARCHA","block":"TORPA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-13-005-008","panchayatKey":"jharkhand-taljhari-maskalaiya","panchayat":"MASKALAIYA","block":"Taljhari","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-06-007-006","panchayatKey":"jharkhand-mahuadanr-mahuadanr","panchayat":"Mahuadanr","block":"Mahuadanr","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-01-020-010","panchayatKey":"jharkhand-torpa-okra","panchayat":"OKRA","block":"TORPA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-07-004-018","panchayatKey":"jharkhand-meral-sangwaria","panchayat":"SANGWARIA","block":"MERAL","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"OR-05-005-026","panchayatKey":"odisha-bhograi-sultanpur","panchayat":"SULTANPUR","block":"BHOGRAI","state":"ODISHA"},{"panchayatCode":"fromDjango","jobcardCode":"JH-01-020-011","panchayatKey":"jharkhand-torpa-sundari","panchayat":"SUNDARI","block":"TORPA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-01-020-012","panchayatKey":"jharkhand-torpa-tapkara","panchayat":"TAPKARA","block":"TORPA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-07-004-020","panchayatKey":"jharkhand-meral-tisar_tetuka","panchayat":"TISAR TETUKA","block":"MERAL","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-01-020-013","panchayatKey":"jharkhand-torpa-torpa_east","panchayat":"TORPA EAST","block":"TORPA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-01-020-014","panchayatKey":"jharkhand-torpa-torpa_west","panchayat":"TORPA WEST","block":"TORPA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"KL-04-003-009","panchayatKey":"kerala-koduvally-thamarassery","panchayat":"Thamarassery","block":"Koduvally","state":"KERALA"},{"panchayatCode":"fromDjango","jobcardCode":"JH-01-020-015","panchayatKey":"jharkhand-torpa-ukrimari","panchayat":"UKRIMARI","block":"TORPA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-01-020-016","panchayatKey":"jharkhand-torpa-urikela","panchayat":"URIKELA","block":"TORPA","state":"JHARKHAND"},{"panchayatCode":"fromDjango","jobcardCode":"JH-07-001-025","panchayatKey":"jharkhand-garhwa-ursugi","panchayat":"URSUGI","block":"GARHWA","state":"JHARKHAND"}]
         
-    panchayats = {}
-    for panchayat in panchayat_list:
-        logger.info(panchayat)
-        # (state, panchayatCode, panchayatName, block, panchayatKey) = panchayat.values()
-        state = panchayat['state']
-        block = panchayat['block']
-        panchayatName = panchayat['panchayat']
-        panchayatKey = panchayat['panchayatKey']
-        panchayatCode = panchayat['panchayatCode']
-        jobcardCode = panchayat['jobcardCode']
-        logger.info('jobcardCode[%s] panchayatCode[%s] Key[%s] Name[%s] Block[%s] State[%s]' % (jobcardCode, panchayatCode, panchayatKey, panchayatName, block, state))
+    panchayats = {"bihar_jhajha_hathiya":{"state":"BIHAR","district":"DistrictFromDjango","block":"JHAJHA","name":"HATHIYA","slug":"bihar_jhajha_hathiya","code":"CodeFromDjango","jobcardCode":"BH-50-005-006"},"bihar_rajapakar_bhalui":{"state":"BIHAR","district":"DistrictFromDjango","block":"RAJAPAKAR","name":"Bhalui","slug":"bihar_rajapakar_bhalui","code":"CodeFromDjango","jobcardCode":"BH-16-015-009"},"jharkhand_bhandaria_karchali":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"BHANDARIA","name":"KARCHALI","slug":"jharkhand_bhandaria_karchali","code":"CodeFromDjango","jobcardCode":"JH-07-009-006"},"jharkhand_bhandaria_madgari-(k)":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"BHANDARIA","name":"MADGARI (K)","slug":"jharkhand_bhandaria_madgari-(k)","code":"CodeFromDjango","jobcardCode":"JH-07-009-008"},"jharkhand_chhatarpur_cherain":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"CHHATARPUR","name":"CHERAIN","slug":"jharkhand_chhatarpur_cherain","code":"CodeFromDjango","jobcardCode":"JH-05-008-016"},"jharkhand_chhatarpur_hutukdag":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"CHHATARPUR","name":"HUTUKDAG","slug":"jharkhand_chhatarpur_hutukdag","code":"CodeFromDjango","jobcardCode":"JH-05-008-018"},"jharkhand_garhwa_ursugi":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"GARHWA","name":"URSUGI","slug":"jharkhand_garhwa_ursugi","code":"CodeFromDjango","jobcardCode":"JH-07-001-025"},"jharkhand_hat-gamharia_dumria":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"Hat Gamharia","name":"Dumria","slug":"jharkhand_hat-gamharia_dumria","code":"CodeFromDjango","jobcardCode":"JH-08-009-008"},"jharkhand_jhinkpani_kudahatu":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"Jhinkpani","name":"Kudahatu","slug":"jharkhand_jhinkpani_kudahatu","code":"CodeFromDjango","jobcardCode":"JH-08-003-008"},"jharkhand_mahuadanr_mahuadanr":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"Mahuadanr","name":"Mahuadanr","slug":"jharkhand_mahuadanr_mahuadanr","code":"CodeFromDjango","jobcardCode":"JH-06-007-006"},"jharkhand_mandro_bartalla":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"Mandro","name":"BARTALLA","slug":"jharkhand_mandro_bartalla","code":"CodeFromDjango","jobcardCode":"JH-13-002-003"},"jharkhand_meral_hasandag":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"MERAL","name":"HASANDAG","slug":"jharkhand_meral_hasandag","code":"CodeFromDjango","jobcardCode":"JH-07-004-009"},"jharkhand_meral_karkoma":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"MERAL","name":"KARKOMA","slug":"jharkhand_meral_karkoma","code":"CodeFromDjango","jobcardCode":"JH-07-004-010"},"jharkhand_meral_sangwaria":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"MERAL","name":"SANGWARIA","slug":"jharkhand_meral_sangwaria","code":"CodeFromDjango","jobcardCode":"JH-07-004-018"},"jharkhand_meral_tisar-tetuka":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"MERAL","name":"TISAR TETUKA","slug":"jharkhand_meral_tisar-tetuka","code":"CodeFromDjango","jobcardCode":"JH-07-004-020"},"jharkhand_ramna_bulka":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"RAMNA","name":"BULKA","slug":"jharkhand_ramna_bulka","code":"CodeFromDjango","jobcardCode":"JH-07-012-006"},"jharkhand_ramna_gamharia":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"RAMNA","name":"GAMHARIA","slug":"jharkhand_ramna_gamharia","code":"CodeFromDjango","jobcardCode":"JH-07-012-007"},"jharkhand_ranka_bishrampur":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"RANKA","name":"BISHRAMPUR","slug":"jharkhand_ranka_bishrampur","code":"CodeFromDjango","jobcardCode":"JH-07-005-002"},"jharkhand_satbarwa_bakoriya":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"Satbarwa","name":"BAKORIYA","slug":"jharkhand_satbarwa_bakoriya","code":"CodeFromDjango","jobcardCode":"JH-05-003-010"},"jharkhand_taljhari_maskalaiya":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"Taljhari","name":"MASKALAIYA","slug":"jharkhand_taljhari_maskalaiya","code":"CodeFromDjango","jobcardCode":"JH-13-005-008"},"jharkhand_torpa_amma":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"TORPA","name":"AMMA","slug":"jharkhand_torpa_amma","code":"CodeFromDjango","jobcardCode":"JH-01-020-001"},"jharkhand_torpa_barkuli":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"TORPA","name":"BARKULI","slug":"jharkhand_torpa_barkuli","code":"CodeFromDjango","jobcardCode":"JH-01-020-002"},"jharkhand_torpa_diyakela":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"TORPA","name":"DIYAKELA","slug":"jharkhand_torpa_diyakela","code":"CodeFromDjango","jobcardCode":"JH-01-020-003"},"jharkhand_torpa_dorma":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"TORPA","name":"DORMA","slug":"jharkhand_torpa_dorma","code":"CodeFromDjango","jobcardCode":"JH-01-020-004"},"jharkhand_torpa_fatka":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"TORPA","name":"FATKA","slug":"jharkhand_torpa_fatka","code":"CodeFromDjango","jobcardCode":"JH-01-020-005"},"jharkhand_torpa_husir":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"TORPA","name":"HUSIR","slug":"jharkhand_torpa_husir","code":"CodeFromDjango","jobcardCode":"JH-01-020-006"},"jharkhand_torpa_jaria":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"TORPA","name":"JARIA","slug":"jharkhand_torpa_jaria","code":"CodeFromDjango","jobcardCode":"JH-01-020-007"},"jharkhand_torpa_kamra":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"TORPA","name":"KAMRA","slug":"jharkhand_torpa_kamra","code":"CodeFromDjango","jobcardCode":"JH-01-020-008"},"jharkhand_torpa_marcha":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"TORPA","name":"MARCHA","slug":"jharkhand_torpa_marcha","code":"CodeFromDjango","jobcardCode":"JH-01-020-009"},"jharkhand_torpa_okra":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"TORPA","name":"OKRA","slug":"jharkhand_torpa_okra","code":"CodeFromDjango","jobcardCode":"JH-01-020-010"},"jharkhand_torpa_sundari":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"TORPA","name":"SUNDARI","slug":"jharkhand_torpa_sundari","code":"CodeFromDjango","jobcardCode":"JH-01-020-011"},"jharkhand_torpa_tapkara":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"TORPA","name":"TAPKARA","slug":"jharkhand_torpa_tapkara","code":"CodeFromDjango","jobcardCode":"JH-01-020-012"},"jharkhand_torpa_torpa-east":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"TORPA","name":"TORPA EAST","slug":"jharkhand_torpa_torpa-east","code":"CodeFromDjango","jobcardCode":"JH-01-020-013"},"jharkhand_torpa_torpa-west":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"TORPA","name":"TORPA WEST","slug":"jharkhand_torpa_torpa-west","code":"CodeFromDjango","jobcardCode":"JH-01-020-014"},"jharkhand_torpa_ukrimari":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"TORPA","name":"UKRIMARI","slug":"jharkhand_torpa_ukrimari","code":"CodeFromDjango","jobcardCode":"JH-01-020-015"},"jharkhand_torpa_urikela":{"state":"JHARKHAND","district":"DistrictFromDjango","block":"TORPA","name":"URIKELA","slug":"jharkhand_torpa_urikela","code":"CodeFromDjango","jobcardCode":"JH-01-020-016"},"karnataka_aurad_kamalanagar":{"state":"KARNATAKA","district":"DistrictFromDjango","block":"AURAD","name":"KAMALANAGAR","slug":"karnataka_aurad_kamalanagar","code":"CodeFromDjango","jobcardCode":"KN-06-001-003"},"karnataka_karwar_chendia":{"state":"KARNATAKA","district":"DistrictFromDjango","block":"KARWAR","name":"CHENDIA","slug":"karnataka_karwar_chendia","code":"CodeFromDjango","jobcardCode":"KN-27-005-013"},"kerala_koduvally_thamarassery":{"state":"KERALA","district":"DistrictFromDjango","block":"Koduvally","name":"Thamarassery","slug":"kerala_koduvally_thamarassery","code":"CodeFromDjango","jobcardCode":"KL-04-003-009"},"kerala_nedumangad_aruvikkara":{"state":"KERALA","district":"DistrictFromDjango","block":"Nedumangad","name":"Aruvikkara","slug":"kerala_nedumangad_aruvikkara","code":"CodeFromDjango","jobcardCode":"KL-14-004-002"},"kerala_vamanapuram_kallara":{"state":"KERALA","district":"DistrictFromDjango","block":"Vamanapuram","name":"Kallara","slug":"kerala_vamanapuram_kallara","code":"CodeFromDjango","jobcardCode":"KL-14-009-001"},"odisha_bhograi_sultanpur":{"state":"ODISHA","district":"DistrictFromDjango","block":"BHOGRAI","name":"SULTANPUR","slug":"odisha_bhograi_sultanpur","code":"CodeFromDjango","jobcardCode":"OR-05-005-026"},"uttar-pradesh_bhitaura_lakani":{"state":"UTTAR PRADESH","district":"DistrictFromDjango","block":"BHITAURA","name":"LAKANI","slug":"uttar-pradesh_bhitaura_lakani","code":"CodeFromDjango","jobcardCode":"UP-43-006-037"}}
 
-        query = 'Replace with Django API'
-        logger.info('Executing query[%s]' % query)
-        # cur.execute(query)
-        # res = cur.fetchall()
+    if 0:
+        for panchayat in panchayat_list:
+            logger.info(panchayat)
+            # (state, panchayatCode, panchayatName, block, panchayatKey) = panchayat.values()
+            state = panchayat['state']
+            # district = panchayat['district']  - Goli to Add from django
+            block = panchayat['block']
+            name = panchayat['panchayatName']
+            slug = panchayat['panchayatKey']
+            code = panchayat['panchayatCode']
+            jobcardCode = panchayat['jobcardCode']
+            logger.info('jobcardCode[%s] panchayatCode[%s] Key[%s] Name[%s] Block[%s] State[%s]' % (jobcardCode, panchayatCode, panchayatKey, panchayatName, block, state))
 
-        if panchayatKey in panchayats:
-            pass
-        else:
-            panchayats[panchayatKey] = panchayat
-            
-    result = firebase.patch('https://libtech-backend.firebaseio.com/ptsWithData/', panchayats)
+            query = 'Replace with Django API'
+            logger.info('Executing query[%s]' % query)
+            # cur.execute(query)
+            # res = cur.fetchall()
+
+            if slug in panchayats:
+                pass
+            else:
+                panchayats[slug] = {'state': state, 'district': district, 'block': block, 'name': name, 'slug': slug, 'code': code, 'jobcardCode': jobcardCode}
+                
+    result = firebase.patch('https://libtech-app.firebaseio.com/ptsWithData/', panchayats)
     logger.info(result)
 
     return 'SUCCESS'
@@ -112,7 +115,7 @@ def firebase_patch(logger, db):
                 geo[pt][vil][hhd] = {'totCredited': str(r[4]), 'totPending': str(r[5]), 'totRejected': str(r[6]), 'totInvalid': str(r[7])}
 
 
-        result = firebase.patch('https://libtech-backend.firebaseio.com/geo/', geo)
+        result = firebase.patch('https://libtech-app.firebaseio.com/geo/', geo)
     
         logger.info(len(result))
 
@@ -133,7 +136,7 @@ def firebase_patch(logger, db):
         # In[10]:
         for n in nregaApplicants:
             nDetails = {}
-            i = 0    
+            i = 0
             appNo = n[0]
             pt = n[3][0:13]
             vil = n[3][14:17]
@@ -169,99 +172,104 @@ def firebase_patch(logger, db):
 
         #geo['JH-01-020-001']['001']['1']['totRejected']
 
-        #get_ipython().run_cell_magic('timeit', '', "result = firebase.patch('https://libtech-backend.firebaseio.com/geo/', geo)\nprint(len(result))")
-        result = firebase.patch('https://libtech-backend.firebaseio.com/geo/', geo)
-        #result = firebase.get('geo/', None)
-        print(result)
+        #get_ipython().run_cell_magic('timeit', '', "result = firebase.patch('https://libtech-app.firebaseio.com/geo/', geo)\nprint(len(result))")
+        result = firebase.patch('https://libtech-app.firebaseio.com/geo/', geo)
+        # result = firebase.get('geo/', None)
+        logger.info(result)
 
-        result = firebase.post('https://libtech-backend.firebaseio.com/tempNode/', {'panchayatName': 'tempPanchayat'})
-        print(result)
-
-
-        # # Deleting data
-        # 
-        # If I have to delete data from a node on, I can use the following.  In the example below, I delete the entire database.
-        # 
-        # result = firebase.delete('https://libtech-backend.firebaseio.com', None)
-        # print(result)
-
-        # # Fire base data structure philosophy
-        # 
-        # Every time we access a node on firebase, we get all the data of all the children of that node.  This means that if our data is not flat (i.e. if there are a lot of children), we will get a lot of data.  For example, I originally structured the data as a geographic drilldown enging with jobcard numbers and transaction data.  Each time I tried to get a list of Panchayats, I also ended up getting the entire database downloaded.  This is costly. 
-        # 
-        # What I am going to do below is to generate a list of relatively small and flat nodes containing just the data I need for given views.  There will be duplication in presentation of data but retrieval would be a lot more efficient.
-        # 
-        # When I have data for a block or so, I will then go through the data through a set of queries to create various nodes and datapoints.
-
-        if 0: # Mynk
-            logger.info('Executing query[%s]' % queryNregaApplicant)
-            cur.execute(queryInvalidRejected)
-            InvalidRejectedJcs = cur.fetchall()
-
-            for i in InvalidRejectedJcs:
-                print(i)
-                panchayatName = i[0]
-                jobcard = i[1]
-                jobcard = jobcard.replace('/', '~')
-                result = firebase.patch('https://libtech-backend.firebaseio.com/%s/%s'%(panchayatName, jobcard), {'musterStatus': 'rejInv'})
-                print(result)
-            
-        # Currently, this has a filter for rejected or invalid transactions.  Also has 2000 row limit.
-        queryTransactionDetails = "select  panchayatName, jobcard, name, musterNo, workName, totalWage, wagelistNo, ftoNo, musterStatus, bankNameOrPOName, date_format(dateTo, '%d-%M-%Y') as dateTo, DATE_FORMAT(firstSignatoryDate, '%d-%M-%Y') as firstSignatoryDate, DATE_FORMAT(secondSignatoryDate, '%d-%M-%Y') as secondSignatoryDate, DATE_FORMAT(transactionDate, '%d-%M-%Y') as transactionDate, DATE_FORMAT(bankProcessedDate, '%d-%M-%Y') as bankProcessedDate, DATE_FORMAT(paymentDate, '%d-%M-%Y') as paymentDate, DATE_FORMAT(creditedDate, '%d-%M-%Y') as creditedDate, ftoStatus, rejectionReason, @varMaxDate:=greatest(COALESCE(dateTo, '1900-01-01 00:00:00'),   COALESCE(firstSignatoryDate,    '1900-01-01 00:00:00'),   COALESCE(secondSignatoryDate,    '1900-01-01 00:00:00'),   COALESCE(transactionDate, '1900-01-01 00:00:00'),   COALESCE(bankProcessedDate, '1900-01-01 00:00:00'),   COALESCE(paymentDate, '1900-01-01 00:00:00'),   COALESCE(creditedDate, '1900-01-01 00:00:00')) as maxDate, CASE @varMaxDate WHEN dateTo THEN 'dateTo' WHEN firstSignatoryDate THEN 'firstSignatoryDate' WHEN secondSignatoryDate THEN 'secondSignatoryDate' WHEN transactionDate THEN 'transactionDate' WHEN bankProcessedDate THEN 'bankProcessedDate' WHEN paymentDate THEN 'paymentDate' WHEN creditedDate THEN 'creditedDate' END AS maxDateColName from surguja.workDetails where musterStatus != 'Credited' and musterStatus != '' order by dateTo limit 2000 ;"
-        logger.info('Executing query[%s]' % queryTransactionDetails)
-        cur.execute(queryTransactionDetails)
-        transactionDetails = cur.fetchall()
-
-
-        # # Updating data on firebase
-        # 
-        # If I use the 'post' method, firebase creates a random number for each transaction, which is a pain visually.  Instead, I want to create node names that are based on panchayat name, jobcards, etc that are meaningful.  In order to do that, I can use the 'patch' function.  
-        # 
-        # Patch function is used for updating data in an existing url.  Thus, if I try to post new data to an existing URL it would modify the old data.  For example, if I post two transactions one by one to 'panchayat/jobcard/dateTo' (in a case where two people have worked in a house on the same project on the same day), it would post the first one correctly but then update it with the new values for the second transaction.  So, we have to be careful to post unique data.
-        # 
-        # ## Need for transaction number
-        # 
-        # One way of getting the unique data is to include panchayat, jobcard, dateTo and the name of the worker (assuming hte same person has not worked in twice in the same muster).  The problem with this is that firebase has difficulty in handling hindi names in the url.  As a hack, I now do this:
-        # 
-        # - Try retrieving the data in that url using the get method. 
-        # - If there is no data there already, it would throw an exception.
-        # - If there is data already, I can find out the length of the dict item.  That shows how many transactions there have been for that week already.
-        # - Using the information above, I create a transaction number.  This is then used in creating the URL instead of the name
-        # 
-
-        for row in transactionDetails:
-            panchayatName = row[0]
-            jobcard = row[1]
-            jobcard = jobcard.replace('/', '~')
-            name = row[2]
-            musterNo = row[3]
-            workName = row[4]
-            totalWage = row[5]
-            wagelistNo = row[6]
-            ftoNo = row[7]
-            musterStatus = row[8]
-            bankNameOrPOName = row[9]
-            dateTo = row[10]
-            firstSignatoryDate = row[11]
-            secondSignatoryDate = row[12]
-            transactionDate = row[13]
-            bankProcessedDate = row[14]
-            paymentDate = row[15]
-            creditedDate = row[16]
-            ftoStatus = row[17]
-            rejectionReason = row[18]
-            maxDate = row[19]
-            maxDateColName = row[20]
-            try:
-                currentStatusOfNode = firebase.get('/%s/%s/%s'%(panchayatName, jobcard, dateTo), None)
-                currentNoTransactionsForDate = len(currentStatusOfNode) - 1
-                newTransactionNo = currentNoTransactionsForDate + 1
-            except: 
-                newTransactionNo = 1
-                result = firebase.patch('https://libtech-backend.firebaseio.com/%s/%s/%s/%s'%(panchayatName, jobcard, dateTo, newTransactionNo), {'jobcard': jobcard, 'name': name, 'musterNo': musterNo, 'workName': workName, 'totalWage': totalWage, 'wagelistNo': wagelistNo, 'ftoNo': ftoNo, 'musterStatus': musterStatus, 'bankNameOrPOName': bankNameOrPOName, 'dateTo': dateTo, 'firstSignatoryDate': firstSignatoryDate, 'secondSignatoryDate': secondSignatoryDate, 'transactionDate': transactionDate, 'bankProcessedDate': bankProcessedDate, 'paymentDate': paymentDate, 'creditedDate': creditedDate, 'ftoStatus': ftoStatus, 'rejectionReason': rejectionReason, 'maxDate': maxDate, 'maxDateColName': maxDateColName})
-                print(result)
+        if 0: #Review
+            result = firebase.post('https://libtech-app.firebaseio.com/tempNode/', {'panchayatName': 'tempPanchayat'})
+            print(result)
 
     return 'SUCCESS'
+
+#Review Awating Vivek's review
+def delete_data():
+    # # Deleting data
+    # 
+    # If I have to delete data from a node on, I can use the following.  In the example below, I delete the entire database.
+    # 
+    # result = firebase.delete('https://libtech-app.firebaseio.com', None)
+    # print(result)
+
+    # # Fire base data structure philosophy
+    # 
+    # Every time we access a node on firebase, we get all the data of all the children of that node.  This means that if our data is not flat (i.e. if there are a lot of children), we will get a lot of data.  For example, I originally structured the data as a geographic drilldown enging with jobcard numbers and transaction data.  Each time I tried to get a list of Panchayats, I also ended up getting the entire database downloaded.  This is costly. 
+    # 
+    # What I am going to do below is to generate a list of relatively small and flat nodes containing just the data I need for given views.  There will be duplication in presentation of data but retrieval would be a lot more efficient.
+    # 
+    # When I have data for a block or so, I will then go through the data through a set of queries to create various nodes and datapoints.
+
+    if 0: #Review - where is queryNregaApplicant defined???
+        logger.info('Executing query[%s]' % queryNregaApplicant)
+        cur.execute(queryInvalidRejected)
+        InvalidRejectedJcs = cur.fetchall()
+
+        for i in InvalidRejectedJcs:
+            print(i)
+            panchayatName = i[0]
+            jobcard = i[1]
+            jobcard = jobcard.replace('/', '~')
+            result = firebase.patch('https://libtech-app.firebaseio.com/%s/%s'%(panchayatName, jobcard), {'musterStatus': 'rejInv'})
+            print(result)
+
+#Review Goli says this query will not work in the new database. Do we still need it???        
+def update_data():
+    # Currently, this has a filter for rejected or invalid transactions.  Also has 2000 row limit.
+    queryTransactionDetails = "select  panchayatName, jobcard, name, musterNo, workName, totalWage, wagelistNo, ftoNo, musterStatus, bankNameOrPOName, date_format(dateTo, '%d-%M-%Y') as dateTo, DATE_FORMAT(firstSignatoryDate, '%d-%M-%Y') as firstSignatoryDate, DATE_FORMAT(secondSignatoryDate, '%d-%M-%Y') as secondSignatoryDate, DATE_FORMAT(transactionDate, '%d-%M-%Y') as transactionDate, DATE_FORMAT(bankProcessedDate, '%d-%M-%Y') as bankProcessedDate, DATE_FORMAT(paymentDate, '%d-%M-%Y') as paymentDate, DATE_FORMAT(creditedDate, '%d-%M-%Y') as creditedDate, ftoStatus, rejectionReason, @varMaxDate:=greatest(COALESCE(dateTo, '1900-01-01 00:00:00'),   COALESCE(firstSignatoryDate,    '1900-01-01 00:00:00'),   COALESCE(secondSignatoryDate,    '1900-01-01 00:00:00'),   COALESCE(transactionDate, '1900-01-01 00:00:00'),   COALESCE(bankProcessedDate, '1900-01-01 00:00:00'),   COALESCE(paymentDate, '1900-01-01 00:00:00'),   COALESCE(creditedDate, '1900-01-01 00:00:00')) as maxDate, CASE @varMaxDate WHEN dateTo THEN 'dateTo' WHEN firstSignatoryDate THEN 'firstSignatoryDate' WHEN secondSignatoryDate THEN 'secondSignatoryDate' WHEN transactionDate THEN 'transactionDate' WHEN bankProcessedDate THEN 'bankProcessedDate' WHEN paymentDate THEN 'paymentDate' WHEN creditedDate THEN 'creditedDate' END AS maxDateColName from surguja.workDetails where musterStatus != 'Credited' and musterStatus != '' order by dateTo limit 2000 ;"
+    logger.info('Executing query[%s]' % queryTransactionDetails)
+    cur.execute(queryTransactionDetails)
+    transactionDetails = cur.fetchall()
+
+
+    # # Updating data on firebase
+    # 
+    # If I use the 'post' method, firebase creates a random number for each transaction, which is a pain visually.  Instead, I want to create node names that are based on panchayat name, jobcards, etc that are meaningful.  In order to do that, I can use the 'patch' function.  
+    # 
+    # Patch function is used for updating data in an existing url.  Thus, if I try to post new data to an existing URL it would modify the old data.  For example, if I post two transactions one by one to 'panchayat/jobcard/dateTo' (in a case where two people have worked in a house on the same project on the same day), it would post the first one correctly but then update it with the new values for the second transaction.  So, we have to be careful to post unique data.
+    # 
+    # ## Need for transaction number
+    # 
+    # One way of getting the unique data is to include panchayat, jobcard, dateTo and the name of the worker (assuming hte same person has not worked in twice in the same muster).  The problem with this is that firebase has difficulty in handling hindi names in the url.  As a hack, I now do this:
+    # 
+    # - Try retrieving the data in that url using the get method. 
+    # - If there is no data there already, it would throw an exception.
+    # - If there is data already, I can find out the length of the dict item.  That shows how many transactions there have been for that week already.
+    # - Using the information above, I create a transaction number.  This is then used in creating the URL instead of the name
+    # 
+
+    for row in transactionDetails:
+        panchayatName = row[0]
+        jobcard = row[1]
+        jobcard = jobcard.replace('/', '~')
+        name = row[2]
+        musterNo = row[3]
+        workName = row[4]
+        totalWage = row[5]
+        wagelistNo = row[6]
+        ftoNo = row[7]
+        musterStatus = row[8]
+        bankNameOrPOName = row[9]
+        dateTo = row[10]
+        firstSignatoryDate = row[11]
+        secondSignatoryDate = row[12]
+        transactionDate = row[13]
+        bankProcessedDate = row[14]
+        paymentDate = row[15]
+        creditedDate = row[16]
+        ftoStatus = row[17]
+        rejectionReason = row[18]
+        maxDate = row[19]
+        maxDateColName = row[20]
+        try:
+            currentStatusOfNode = firebase.get('/%s/%s/%s'%(panchayatName, jobcard, dateTo), None)
+            currentNoTransactionsForDate = len(currentStatusOfNode) - 1
+            newTransactionNo = currentNoTransactionsForDate + 1
+        except: 
+            newTransactionNo = 1
+            result = firebase.patch('https://libtech-app.firebaseio.com/%s/%s/%s/%s'%(panchayatName, jobcard, dateTo, newTransactionNo), {'jobcard': jobcard, 'name': name, 'musterNo': musterNo, 'workName': workName, 'totalWage': totalWage, 'wagelistNo': wagelistNo, 'ftoNo': ftoNo, 'musterStatus': musterStatus, 'bankNameOrPOName': bankNameOrPOName, 'dateTo': dateTo, 'firstSignatoryDate': firstSignatoryDate, 'secondSignatoryDate': secondSignatoryDate, 'transactionDate': transactionDate, 'bankProcessedDate': bankProcessedDate, 'paymentDate': paymentDate, 'creditedDate': creditedDate, 'ftoStatus': ftoStatus, 'rejectionReason': rejectionReason, 'maxDate': maxDate, 'maxDateColName': maxDateColName})
+            print(result)
+
 
     
 # # Updating data on firebase (By Chirag & Karthika)
@@ -283,7 +291,7 @@ def load_panchayats(filename="workDetails.csv"):
                 records[row['panchayatName']]['transactions'] += 1
                 records[row['panchayatName']]['dates'].add(row['dateTo'])
                 firebase_conn = firebase.FirebaseApplication(
-                    'https://libtech-backend.firebaseio.com/', None)
+                    'https://libtech-app.firebaseio.com/', None)
     for panchayat_name in records:
         records[panchayat_name]['num_jobcards'] =             len(records[panchayat_name]['job_cards'])
         records[panchayat_name]['earliest_date'] =             min(records[panchayat_name]['dates'])
@@ -315,7 +323,7 @@ def load_jobcards(filename="workDetails.csv"):
                 row['dateTo'])
 
     firebase_conn = firebase.FirebaseApplication(
-        'https://libtech-backend.firebaseio.com/', None)
+        'https://libtech-app.firebaseio.com/', None)
     for panchayat_name in records:
         for jobcard in records[panchayat_name]:
             records[panchayat_name][jobcard]['earliest_date'] =                 min(records[panchayat_name][jobcard]['dates'])
@@ -353,7 +361,7 @@ def load_transactions(filename="workDetails.csv"):
             records[row['panchayatName']][row['jobcard']].append(row)
 
     firebase_conn = firebase.FirebaseApplication(
-        'https://libtech-backend.firebaseio.com/', None)
+        'https://libtech-app.firebaseio.com/', None)
     for panchayat_name in records:
         for jobcard in records[panchayat_name]:
             for i, record in enumerate(records[panchayat_name][jobcard]):
@@ -387,6 +395,7 @@ class TestSuite(unittest.TestCase):
     
   def test_firebase_patch(self):
     result = pts_patch(self.logger, self.db)
+    # result = firebase_patch(self.logger, self.db)
     self.assertEqual('SUCCESS', result)
 
   def test_load_panchayats(self):

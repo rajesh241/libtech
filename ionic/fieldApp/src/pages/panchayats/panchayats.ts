@@ -17,6 +17,7 @@ export class PanchayatsPage {
     panchayats: any;
     user: any;
     displayPanchayats: any;
+    preferredPanchayats: any[];
     panchayatSelected = {};
     panchayatsToSync: any;
     checked = false;
@@ -25,17 +26,21 @@ export class PanchayatsPage {
     constructor(public navCtrl: NavController, private navParams: NavParams, private auth: Auth,
         private panchayatList: Panchayats, public alertCtrl: AlertController) {
         this.user = this.navParams.data;
-        this.panchayatsToSync = [];
+        console.log('USER ' + JSON.stringify(this.user));
+        this.displayPanchayats = this.user.panchayats;
+        this.preferredPanchayats = this.dictToArray(this.displayPanchayats)
+        console.log(this.preferredPanchayats);
         console.log('InsideConstructor');
+        this.panchayatsToSync = [];
+    }
+
+    dictToArray(dict) {
+        return Object.keys(dict).map(key => dict[key])
     }
 
     ionViewDidLoad() {
         console.log('ionViewDidLoad PanchayatsPage');
-        console.log('USER ' + JSON.stringify(this.user));
-        this.displayPanchayats = this.user.panchayats.split(', ');
-        console.log(this.displayPanchayats);
         this.panchayats = this.panchayatList.load();
-        console.log('PANCHAYATS ' + JSON.stringify(this.panchayats));
     }
 
     choosePanchayat(selected, index, panchayat) {
@@ -62,13 +67,13 @@ export class PanchayatsPage {
         alert.setTitle('Select the Panchayats:');
 
         this.panchayats = this.panchayatList.load();
-        this.panchayats.forEach(panchayat => {
-            //  console.log('PANCHAYAT ' + panchayat);
+        Object.keys(this.panchayats).forEach(panchayatKey => {
+            console.log('PANCHAYAT ' + JSON.stringify(panchayatKey));
             alert.addInput({
                 type: 'checkbox',
-                label: panchayat,
-                value: panchayat,
-                checked: (this.displayPanchayats.indexOf(panchayat) != -1)
+                label: panchayatKey,
+                value: panchayatKey,
+                checked: panchayatKey in this.displayPanchayats // (this.displayPanchayats.indexOf(panchayatKey) != -1) // 
             });
         });
 
@@ -76,11 +81,30 @@ export class PanchayatsPage {
         alert.addButton({
             text: 'Okay',
             handler: data => {
-                this.displayPanchayats = data;
+                console.log('Data Handler: ');
+                console.log(JSON.stringify(data));
+                console.log(this.panchayats);
+                this.displayPanchayats = {};
+		/*
+                this.panchayats.forEach(panchayat => {
+                    if (panchayat.panchayatKey in data) this.displayPanchayats[panchayat.panchayatKey] = panchayat
+                    else console.log('AKBC')
+                }); */
+                data.forEach(panchayatKey => { console.log('For this key - ' + panchayatKey); this.displayPanchayats[panchayatKey] = this.panchayats[panchayatKey]; console.log('This panchayat ' + this.displayPanchayats[panchayatKey]) });
+                console.log(this.displayPanchayats);
+                this.preferredPanchayats = this.dictToArray(this.displayPanchayats)
+                console.log(this.preferredPanchayats);
                 this.auth.update(this.displayPanchayats);
             }
         });
         alert.present();
+    }
+
+    panchayat2jobcard(panchayatKey) {
+        this.panchayats = this.panchayatList.load();
+        var jcCode = this.panchayats.filter(panchayat => panchayat.panchayatKey === panchayatKey).map(panchayat => panchayat.jobcardCode)
+        // console.log('p2j => ' + JSON.stringify(this.panchayats[panchayatKey]));
+        return jcCode; // this.panchayats[panchayatKey].panchayat
     }
 
     syncPanchayats() {
