@@ -95,7 +95,7 @@ export class Auth {
             username: (user.email.slice(0, user.email.indexOf("@"))).replace(".", "_"),
             email: user.email,
             picture: user.photoURL,
-            panchayats: ""
+            panchayats: {}
         };
         this.userObject = this.afoDatabase.object(this.url + this.user.username);
         console.log(this.userObject);
