@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models.signals import pre_save,post_save
 from django.utils.text import slugify
 import datetime
+import time
 import os
 from django.utils import timezone
 
@@ -16,6 +17,10 @@ def get_fpsStatus_upload_path(instance, filename):
   fpsMonth=str(instance.fpsMonth)
   return os.path.join(
     "nrega",instance.fpsShop.block.district.state.slug,instance.fpsShop.block.district.slug,instance.fpsShop.block.slug,"FPS",fpsYear,fpsMonth,filename)
+def get_broadcast_audio_upload_path(instance,filename):
+  curTime=str(int(time.time()))
+  return os.path.join(
+    "callmgr","audio",instance.partner.slug,curTime+"_"+filename)
 
 def get_fto_upload_path(instance, filename):
   fullfinyear=getFullFinYear(instance.finyear)
@@ -124,6 +129,40 @@ class FPSShop(models.Model):
  
   def __str__(self):
     return self.name
+
+class FPSVillage(models.Model):
+  fpsShop=models.ForeignKey('FPSShop',on_delete=models.CASCADE)
+  name=models.CharField(max_length=256)
+  libtechTag=models.ManyToManyField('LibtechTag',related_name="FPSVillageTag",blank=True)
+  slug=models.SlugField(blank=True) 
+  villageCode=models.CharField(max_length=10)
+  
+  def __str__(self):
+    return self.villageCode+"-"+self.name
+
+class VillageFPSStatus(models.Model):
+  fpsVillage=models.ForeignKey('FPSVillage')
+  fpsStatus=models.ForeignKey('FPSStatus')
+
+  def __str__(self):
+    return "%s" % (self.fpsVillage)
+  def getAAYDeliveryDate(self):
+    return self.fpsStatus.AAYDeliveryDate
+  def getPHHDeliveryDate(self):
+    return self.fpsStatus.PHHDeliveryDate
+  def getFPSMonth(self):
+    return self.fpsStatus.fpsMonth
+  def getFPSYear(self):
+    return self.fpsStatus.fpsYear
+  def getFPSBlock(self):
+    return self.fpsStatus.fpsShop.block.name
+  def getVillageType(self):
+    typeArray=self.fpsVillage.libtechTag.all()
+    if len(typeArray) != 0:
+      return typeArray[len(typeArray) -1 ]
+    else:
+      return ""
+
 class FPSStatus(models.Model):
   fpsShop=models.ForeignKey('FPSShop',on_delete=models.CASCADE)
   fpsMonth=models.PositiveSmallIntegerField(null=True,blank=True)
@@ -309,7 +348,10 @@ class Muster(models.Model):
   isProcessed=models.BooleanField(default=False)
   isComplete=models.BooleanField(default=False)
   allApplicantFound=models.BooleanField(default=False)
+  isPanchayatNull=models.BooleanField(default=False)
   musterDownloadAttemptDate=models.DateTimeField(null=True,blank=True)
+  downloadAttemptCount=models.PositiveSmallIntegerField(default=0)
+  downloadCount=models.PositiveSmallIntegerField(default=0)
   created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
   downloadError=models.CharField(max_length=64,blank=True,null=True)
   musterDownloadDate=models.DateTimeField(null=True,blank=True)
@@ -354,11 +396,56 @@ class PaymentDetail(models.Model):
         unique_together = ('fto', 'referenceNo')  
   def __str__(self):
     return self.referenceNo
+
+
+##Modesl for Broadcast
+class Partner(models.Model):
+  name=models.CharField(max_length=512)
+  slug=models.SlugField(blank=True)
+ 
+  def __str__(self):
+    return self.name 
   
+class Phonebook(models.Model):
+  phone=models.CharField(max_length=10,unique=True)
+  partner=models.ForeignKey('Partner',on_delete=models.CASCADE)
+  panchayat=models.ForeignKey('Panchayat',null=True,blank=True)
+  fpsVillage=models.ForeignKey('FPSVillage',null=True,blank=True)
+  def _str__(self):
+    return self.phone
+   
+class Broadcast(models.Model):
+  BROADCAST_TYPE_CHOICES = (
+        ('GRUP', 'Group'),
+        ('LBLK', 'Block'),
+        ('LPAN', 'Panchayat'),
+        ('BFPS', 'BiharFPS'),
+    )
+  name=models.CharField(max_length=256)
+  slug=models.SlugField(blank=True) 
+  partner=models.ForeignKey('Partner')
+  broadcastType=models.CharField(max_length=4,choices=BROADCAST_TYPE_CHOICES,default='NONE')
+  fpsVillage=models.ForeignKey('FPSVillage',null=True,blank=True)
+  minhour=models.PositiveSmallIntegerField(default='8')
+  maxhour=models.PositiveSmallIntegerField(default='20')
+  startDate=models.DateTimeField()
+  endDate=models.DateTimeField()
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
+  modified=models.DateTimeField(null=True,blank=True,auto_now=True)
+  oldbid=models.IntegerField(blank=True,null=True)
+  
+  def __str__(self):
+    return self.name
+
+class AudioLibrary(models.Model):
+  partner=models.ForeignKey('Partner')
+  audioFile=models.FileField(null=True, blank=True,upload_to=get_broadcast_audio_upload_path,max_length=512)
+ 
+   
 def createslug(instance):
   myslug=slugify(instance.name)[:50]
   if myslug == '':
-    if instance.code:
+    if hasattr(instance, 'code'):
       myslug="%s-%s" % (instance.__class__.__name__ , str(instance.code))
     else:
       myslug="%s-%s" % (instance.__class__.__name__ , str(instance.id))
@@ -376,8 +463,11 @@ post_save.connect(location_post_save_receiver,sender=District)
 post_save.connect(location_post_save_receiver,sender=Block)
 post_save.connect(location_post_save_receiver,sender=Panchayat)
 post_save.connect(location_post_save_receiver,sender=FPSShop)
+post_save.connect(location_post_save_receiver,sender=FPSVillage)
 post_save.connect(location_post_save_receiver,sender=Village)
 post_save.connect(location_post_save_receiver,sender=LibtechTag)
+post_save.connect(location_post_save_receiver,sender=Partner)
+post_save.connect(location_post_save_receiver,sender=Broadcast)
 #def state_post_save_receiver(sender,instance,*args,**kwargs):
 #  if not instance.slug:
 #    instance.slug = "some-slug"

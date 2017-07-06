@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,TelanganaJobcard,LibtechTag,TelanganaSSSGroup
+from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,TelanganaJobcard,LibtechTag,TelanganaSSSGroup,FPSVillage,Partner,Phonebook,VillageFPSStatus,Broadcast,AudioLibrary
 
 from .actions import export_as_csv_action
 
@@ -55,6 +55,17 @@ class fpsShopModelAdmin(admin.ModelAdmin):
   def get_district(self,obj):
     return obj.block.district.name
   get_district.description="district"
+
+class fpsVillageModelAdmin(admin.ModelAdmin):
+  list_display=["__str__","fpsShop"]
+
+class villageFPSStatusModelAdmin(admin.ModelAdmin):
+  actions = [export_as_csv_action("CSV Export", fields=["__str__","getVillageType","fpsStatus","getFPSBlock","getFPSMonth","getFPSYear","getAAYDeliveryDate","getPHHDeliveryDate"])]
+  list_display=["__str__","getVillageType","fpsStatus","getFPSBlock","getFPSMonth","getFPSYear","getAAYDeliveryDate","getPHHDeliveryDate"]
+  readonly_fields=["fpsVillage","fpsStatus"]
+  def get_queryset(self, request):
+    qs = super(villageFPSStatusModelAdmin, self).get_queryset(request)
+    return qs.order_by('-fpsStatus__AAYDeliveryDate')
 
 class fpsStatusModelAdmin(admin.ModelAdmin):
   list_display=["id","get_fpsCode","fpsMonth","fpsYear"]
@@ -145,7 +156,7 @@ class musterModelAdmin(admin.ModelAdmin):
 #  actions = [export_as_csv_action("CSV Export", fields=['name','blockName','districtName','stateName'])]
   list_display = ["id","musterNo","musterDownloadAttemptDate","finyear","block","panchayat","workCode","workName"]
   search_fields=["id","musterNo","block__code","panchayat__code","workCode"]
-  list_filter=["isRequired","finyear","isDownloaded","isProcessed","allApplicantFound","block__district__state"]
+  list_filter=["isPanchayatNull","finyear","isDownloaded","isProcessed","allApplicantFound","block__district__state"]
   readonly_fields=["block","panchayat"]
 
 class tjobcardModelAdmin(admin.ModelAdmin):
@@ -175,6 +186,26 @@ class wagelistModelAdmin(admin.ModelAdmin):
   list_display=["id","wagelistNo","block","finyear"] 
   list_filter=["finyear","isDownloaded","isProcessed","isComplete","block__district__state"]
   search_fields=["id","wagelistNo"]
+
+
+class phonebookModelAdmin(admin.ModelAdmin):
+  list_display=["phone","partner"]
+  readonly_fields=["phone","fpsVillage","panchayat"]
+class partnerModelAdmin(admin.ModelAdmin):
+  list_display=["name"]
+
+class broadcastModelAdmin(admin.ModelAdmin):
+  list_display=["name","startDate","endDate","minhour","maxhour"]
+
+class audioLibraryModelAdmin(admin.ModelAdmin):
+  list_display=["partner","audioFile"]
+
+admin.site.register(Broadcast,broadcastModelAdmin)
+admin.site.register(AudioLibrary,audioLibraryModelAdmin)
+admin.site.register(Phonebook,phonebookModelAdmin)
+admin.site.register(Partner,partnerModelAdmin)
+admin.site.register(FPSVillage,fpsVillageModelAdmin)
+admin.site.register(VillageFPSStatus,villageFPSStatusModelAdmin)
 admin.site.register(State,stateModelAdmin)
 admin.site.register(District,districtModelAdmin)
 admin.site.register(Block,blockModelAdmin)

@@ -33,7 +33,6 @@ def argsFetch():
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-limit', '--limit', help='Limit on the number of results', required=False)
-  parser.add_argument('-f', '--finyear', help='Financial year for which data needs to be crawld', required=True)
   parser.add_argument('-s', '--stateCode', help='StateCode for which the numbster needs to be downloaded', required=False)
   parser.add_argument('-nbc', '--nicBlockCode', help='NIC BlockCode for which the numbster needs to be downloaded', required=True)
 
@@ -52,16 +51,30 @@ def main():
   blockCode=args['nicBlockCode']
   myPanchayats=Panchayat.objects.filter(block__code=blockCode)[:limit]
   for eachPanchayat in myPanchayats:
-    logger.info(eachPanchayat.name)   
-    myApplicants=Applicant.objects.filter(panchayat=eachPanchayat).order_by("tjobcard__groupCode","tjobcard__tjobcard")
+    logger.info(eachPanchayat.name)  
+    blockName=eachPanchayat.block.slug 
+    myApplicants=Applicant.objects.filter(panchayat=eachPanchayat).order_by("tjobcard__group__groupCode","tjobcard__tjobcard")
     outcsv=''
-    outcsv+="Panchayat,GroupCode,GropName,Jobcard,name,headofhousehold,age,gender\n"
+    outcsv+=",GroupCode,GropName,Jobcard,name,headofhousehold,age,gender\n"
+    outcsv+="Village,GroupCode,GropName,Jobcard,name\n"
     for eachApplicant in myApplicants:
       if eachApplicant.tjobcard is not None:
-#        logger.info(eachApplicant.tjobcard.tjobcard+eachApplicant.tjobcard.groupCode)
-        outcsv+="%s,%s,%s,%s,%s,%s,%s,%s\n" % (eachPanchayat.name,eachApplicant.tjobcard.groupCode,eachApplicant.tjobcard.groupName,"~"+eachApplicant.tjobcard.tjobcard,eachApplicant.name,eachApplicant.headOfHousehold,str(eachApplicant.age),eachApplicant.gender)
+        if eachApplicant.tjobcard.group  :
+          villageName=eachApplicant.tjobcard.group.village.name
+          groupName=eachApplicant.tjobcard.group.groupName
+          groupCode=eachApplicant.tjobcard.group.groupCode
+        else:
+          villageName=''
+          groupName=''
+          groupCode=''
+        #groupCode=eachApplicant.tjobcard.group.groupCode
+        outcsv+="%s,%s,%s,%s,%s\n" % (villageName,groupCode,groupName,"~"+eachApplicant.tjobcard.tjobcard,eachApplicant.name)
+    filepath="/tmp/chakri/%s/a.csv" % (blockName)
     csvfilename=eachPanchayat.slug+"_phone.csv"
-    with open("/tmp/d/"+csvfilename,"w") as f:
+    cmd="mkdir -p %s" %(filepath) 
+    logger.info(cmd)
+    os.system(cmd)
+    with open("/tmp/chakri/"+blockName+"/"+csvfilename,"w") as f:
       f.write(outcsv)
   logger.info("...END PROCESSING") 
   exit(0)

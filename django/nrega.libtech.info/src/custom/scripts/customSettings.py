@@ -6,4 +6,4 @@ repoDir="/home/libtech/repo/src/"
 djangoDir="/home/libtech/repo/django/nrega.libtech.info/src/"
 djangoSettings="libtech.settings"
 searchIP='164.100.129.6'
-startFinYear='17'
+startFinYear='16'

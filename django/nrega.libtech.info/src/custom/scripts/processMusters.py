@@ -52,11 +52,10 @@ def main():
   stateCode=args['stateCode']
   if stateCode is not None:
     logger.info("StateCode is %s" % stateCode)
-    myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0,panchayat__crawlRequirement="FULL",panchayat__block__district__state__code=stateCode)[:limit] 
-    myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0,panchayat__code="3406007011",panchayat__block__district__state__code=stateCode)[:limit] 
+    myMusters=Muster.objects.filter(isDownloaded=1,isProcessed=0,panchayat__isnull=False,panchayat__crawlRequirement="FULL",panchayat__block__district__state__code=stateCode)[:limit] 
 #    myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0,panchayat__crawlRequirement="FULL",panchayat__block__district__code="3406")[:limit] 
   else:
-    myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0)[:limit]
+    myMusters=Muster.objects.filter(isDownloaded=1,isProcessed=0,panchayat__isnull=False,panchayat__crawlRequirement="FULL")[:limit]
 #  myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,allApplicantFound=0,finyear=18,panchayat__block__district__state__code=stateCode)[:limit]
 #  myMusters=Muster.objects.filter(id=10924) 
   for eachMuster in myMusters:
@@ -92,7 +91,9 @@ def main():
           value="".join(cols[i].text.split())
           if "Status" in value:
             statusindex=i
-          if "A/C No." in cols[i].text:
+          if "Sharpening Charge" in cols[i].text:
+            sharpeningIndex=i
+          if ("A/C No." in cols[i].text) or ("खाता क्रमांक" in cols[i].text):
             acnoPresent=1
           i=i+1
     isComplete=1
@@ -101,6 +102,7 @@ def main():
     totalPending=0
     reMatchString="%s-" % (stateShortCode)
     logger.info("Account No Presnet: %s " % str(acnoPresent))
+    logger.info("Sharpening Index is %s " % str(sharpeningIndex))
     for i in range(len(tr_list)):
       cols=tr_list[i].findAll("td")
       if len(cols) > 7:
@@ -119,16 +121,19 @@ def main():
           name_relationship=nameandjobcardarray.groups()[0]
           name=name_relationship.split("(")[0].lstrip().rstrip()
 #          accountno=cols[statusindex-5].text.lstrip().rstrip()
+          totalWage=cols[sharpeningIndex-2].text.lstrip().rstrip()
+          dayWage=cols[sharpeningIndex-3].text.lstrip().rstrip()
+          daysWorked=cols[sharpeningIndex-4].text.lstrip().rstrip()
           jobcard=reMatchString+nameandjobcardarray.groups()[1].lstrip().rstrip()
-          if acnoPresent == 1:
-            totalWage=cols[statusindex-6].text.lstrip().rstrip()
-            dayWage=cols[statusindex-10].text.lstrip().rstrip()
-            daysWorked=cols[statusindex-11].text.lstrip().rstrip()
-          else:
-            totalWage=cols[statusindex-5].text.lstrip().rstrip()
-            dayWage=cols[statusindex-9].text.lstrip().rstrip()
-            daysWorked=cols[statusindex-10].text.lstrip().rstrip()
-
+         #if acnoPresent == 1:
+         #  totalWage=cols[statusindex-6].text.lstrip().rstrip()
+         #  dayWage=cols[statusindex-10].text.lstrip().rstrip()
+         #  daysWorked=cols[statusindex-11].text.lstrip().rstrip()
+         #else:
+         #  totalWage=cols[statusindex-5].text.lstrip().rstrip()
+         #  dayWage=cols[statusindex-9].text.lstrip().rstrip()
+         #  daysWorked=cols[statusindex-10].text.lstrip().rstrip()
+          logger.info("TotalWage: %s daywage: %s " % (totalWage,dayWage))
           wagelistNo=cols[statusindex-1].text.lstrip().rstrip()
           creditedDateString=cols[statusindex+1].text.lstrip().rstrip()
           if creditedDateString != '':

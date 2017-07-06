@@ -25,6 +25,12 @@ from django.db.models import Count
 #for obj in myobjs:
 #  print(obj.id)
 
+myMusters=Muster.objects.filter(panchayat__isnull=True)
+for eachMuster in myMusters:
+  eachMuster.isPanchayatNull=True
+  eachMuster.save()
+
+groupby='''
 myobjs=Applicant.objects.filter(panchayat__block__district__state__code="36").values("panchayat__block__code","panchayat__block__name","panchayat__name","panchayat__code").annotate(dcount=Count('pk'))
 for obj in myobjs:
   blockName=obj['panchayat__block__name']
@@ -34,7 +40,7 @@ for obj in myobjs:
   scApplicants=Applicant.objects.filter(panchayat__code=panchayatCode,caste__contains='SC')
   scCount=len(scApplicants)
   print("%s,%s,%s,%s" % (blockName,panchayatName,count,str(scCount)))
-
+'''
 testArray='''
 myWorkDetails=WorkDetail.objects.filter(id=823211)[:2]
 for eachWorkDetail in myWorkDetails:

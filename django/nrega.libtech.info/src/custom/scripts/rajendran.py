@@ -50,22 +50,38 @@ def main():
     limit =1
   finyear=args['finyear']
   stateCodes=['33','34','27','24','15','18','16','31','05','17']
-  stateCodes=['34']
+  stateCodes=['15']
   for stateCode in stateCodes:
     myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__code=stateCode)
- 
+    myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__code=stateCode)
+    myState=State.objects.filter(code=stateCode).first()
+    stateName=myState.slug
+    i=0 
     for eachPanchayat in myPanchayats:
+      i=i+1
       logger.info("**********************************************************************************")
       logger.info("Createing work Payment report for panchayat: %s panchayatCode: %s ID: %s" % (eachPanchayat.name,eachPanchayat.code,str(eachPanchayat.id)))
       PanchayatReports=PanchayatReport.objects.filter(panchayat=eachPanchayat)
       for report in PanchayatReports:
         reportType=report.reportType
-        reportURL=report.reportFile.url
-        logger.info("Panchyat Name: %s, reportType: %s, reportURL : %s " % (eachPanchayat.name,reportType,reportURL)) 
-        filepath="/tmp/rajendran/%s/" % (eachPanchayat.block.district.state.name)
-        cmd="mkdir -p %s && cd %s && wget  %s " %(filepath,filepath,reportURL) 
-        logger.info(cmd)
-        os.system(cmd)
+        logger.info(reportType)
+        if reportType == "delayCompensationCSV":
+          suffix="dc"
+        elif reportType == "workPayment":
+          suffix="wp"
+        else:
+          suffix="no"
+        logger.info(suffix)
+        if suffix != "no":
+          logger.info("I am here")
+          reportURL=report.reportFile.url
+          fineyear=report.finyear
+          filename="%s_p%s_%s.csv" % (suffix,str(i),finyear)
+          logger.info("Panchyat Name: %s, reportType: %s, reportURL : %s " % (eachPanchayat.name,reportType,reportURL)) 
+          filepath="/tmp/rajendran/%s/" % (eachPanchayat.block.district.state.name)
+          cmd="mkdir -p %s && cd %s && wget -O %s %s " %(filepath,filepath,filename,reportURL) 
+          logger.info(cmd)
+          os.system(cmd)
   logger.info("...END PROCESSING") 
   exit(0)
 if __name__ == '__main__':
