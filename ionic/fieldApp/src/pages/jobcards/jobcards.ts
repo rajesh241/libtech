@@ -10,15 +10,24 @@ import { TransactionsPage } from '../transactions/transactions';
 })
 export class JobcardsPage {
     transactionsPage = TransactionsPage;
-    panchayatName: string;
+    panchayatSlug: string;
+    // jobcardCode: string;
     jobcards: AfoListObservable<any[]>;
-    url = '/jobcards/';
+    url = '/geo/';
+    // jobcardSlug: string;
 
     constructor(private navCtrl: NavController, private navParams: NavParams, private afoDatabase: AngularFireOfflineDatabase) {
-        this.panchayatName = this.navParams.get('panchayatName');
-        this.url += this.panchayatName;
-        this.jobcards = afoDatabase.list(this.url);
-        console.log(this.url);
+        this.panchayatSlug = this.navParams.get('panchayatSlug');
+        // this.jobcardCode = this.navParams.get('jobcardCode');
+        // this.url += this.jobcardCode;
+        // this.jobcards = afoDatabase.list(this.url);
+        console.log(this.url + this.panchayatSlug); // + this.jobcardCode);
+        this.jobcards = afoDatabase.list(this.url, {
+            query: {
+                orderByChild: 'panchayatSlug',
+                equalTo: this.panchayatSlug
+            }
+        });
     }
 
     goHome() {

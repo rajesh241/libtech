@@ -10,8 +10,9 @@ import { TransactionPage } from '../transaction/transaction';
 })
 export class TransactionsPage {
     transactionPage = TransactionPage;
-    panchayat: string;
+    panchayatSlug: string;
     jobcard: string;
+    jobcardSlug: string;
     url: string;
     phone: string;
     updated = true;
@@ -22,13 +23,22 @@ export class TransactionsPage {
     show: boolean = false;
 
     constructor(public navCtrl: NavController, public navParams: NavParams, private afoDatabase: AngularFireOfflineDatabase) {
-        this.panchayat = this.navParams.get('panchayatName');
-        this.jobcard = this.navParams.get('jobcardNumber');
+        console.log('Inside Transactions Constructor');
+        this.panchayatSlug = this.navParams.get('panchayatSlug');
+        this.jobcardSlug = this.navParams.get('jobcardSlug');
+        this.jobcard = this.jobcardSlug.replace('/', '_');
+        console.log(this.panchayatSlug)
+        console.log(this.jobcard);
+        console.log(this.jobcardSlug);
+
         var ptCode = this.jobcard.substring(0, 13);
         var vilCode = this.jobcard.substring(14, 17);
         var h: string[] = this.jobcard.split('_');
         var hhdCode = h[h.length - 1]
         var geoUrl = '/geo/' + ptCode + '/' + vilCode + '/' + hhdCode + '/'
+        // console.log('Values ' + this.jobcard, ptCode, vilCode, h, hhdCode, geoUrl);
+        console.log(geoUrl);
+
         this.rejInv = afoDatabase.list(geoUrl);
 
         var appUrl = geoUrl + 'applicants/'

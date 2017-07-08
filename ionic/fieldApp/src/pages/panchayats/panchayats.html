@@ -18,8 +18,13 @@
 	<input type="checkbox" [checked]="panchayatSelected[panchayat.name]"
                (click)="choosePanchayat(selectPanchayat, panchayat.name, panchayat.name)">
 	<button ion-button #selectPanchayat [navPush]="jobcardsPage"
-		[navParams]="{panchayatName: panchayat.name}">{{ panchayat.slug }}
+		[navParams]="{panchayatSlug: panchayat.slug}">{{ panchayat.slug }}
 	</button>
+	<!-- TBD
+	     <button>
+	       [navParams]="{panchayatSlug: panchayat.slug, jobcardCode: panchayat.jobcardCode}">{{ panchayat.slug }} 
+	     </button>
+	  -->
       </div>
     </div>
   </div>

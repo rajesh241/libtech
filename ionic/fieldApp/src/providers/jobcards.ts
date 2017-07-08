@@ -8,7 +8,7 @@ export class Jobcards {
     items: AfoListObservable<any>;
 
     constructor(private afoDatabase: AngularFireOfflineDatabase) {
-        //        console.log('Hello Jobcards Provider');
+        console.log('Hello Jobcards Provider');
         this.items = afoDatabase.list('/jobcard/KURHANI');
     }
 
