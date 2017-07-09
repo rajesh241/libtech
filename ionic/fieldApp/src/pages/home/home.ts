@@ -49,7 +49,8 @@ export class HomePage {
         }
         else
             alert('Should NOT reach here!');
-        window.location.reload(false)
+        window.localStorage.removeItem('user');
+        window.location.reload(true)
     }
 
     logout() {
