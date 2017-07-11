@@ -23,7 +23,7 @@ from django.utils import timezone
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
 django.setup()
 
-from nrega.models import State,District,Block,Panchayat,Applicant,PanchayatReport
+from nrega.models import State,District,Block,Panchayat,Applicant,PanchayatReport,Jobcard
 
 def argsFetch():
   '''
@@ -34,6 +34,7 @@ def argsFetch():
   parser = argparse.ArgumentParser(description='This script would parse the worker list from MIS')
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
+  parser.add_argument('-s', '--stateCode', help='State for which the delayed payment report needs to be crawld', required=False)
   parser.add_argument('-limit', '--limit', help='Limit on the number of results', required=False)
 
   args = vars(parser.parse_args())
@@ -50,7 +51,11 @@ def main():
     limit =1
   reportType="jobcardRegisterHTML"
   curfinyear=getCurrentFinYear() 
-  myPanchayats=Panchayat.objects.filter( Q(jobcardCrawlDate__gt = F('jobcardProcessDate')) | Q(jobcardCrawlDate__isnull=False,jobcardProcessDate__isnull=True)   )[:limit]
+  stateCode=args['stateCode']
+  if stateCode is not None:
+    myPanchayats=Panchayat.objects.filter( Q(jobcardCrawlDate__gt = F('jobcardProcessDate')) | Q(jobcardCrawlDate__isnull=False,jobcardProcessDate__isnull=True,block__district__state__code=stateCode)   ).order_by("-code")[:limit]
+  else:
+    myPanchayats=Panchayat.objects.filter( Q(jobcardCrawlDate__gt = F('jobcardProcessDate')) | Q(jobcardCrawlDate__isnull=False,jobcardProcessDate__isnull=True)   ).order_by("-code")[:limit]
   for eachPanchayat in myPanchayats:
     logger.info(eachPanchayat.name+","+eachPanchayat.code)
     panchayatReport=PanchayatReport.objects.filter(reportType=reportType,finyear=curfinyear,panchayat=eachPanchayat).first()
@@ -104,12 +109,25 @@ def main():
               jcNo=jcNo
             else:
               jcNo=0
+            myJobcard=Jobcard.objects.filter(jobcard=jobcard).first()
+            if myJobcard is None:
+              Jobcard.objects.create(jobcard=jobcard)
+            myJobcard=Jobcard.objects.filter(jobcard=jobcard).first()
+            myJobcard.caste=cols[casteIndex]
+            myJobcard.headOfHousehold=cols[headOfHouseholdIndex]
+            myJobcard.village=cols[villageIndex]
+            myJobcard.panchayat=eachPanchayat
+            myJobcard.jcNo=jcNo
+            myJobcard.save()
+            jobcard=myJobcard.jobcard
             logger.info("Processing Jobcard: %s applicantNo: %s " % (jobcard,applicantNo))
-            myApplicant=Applicant.objects.filter(jobcard=jobcard,applicantNo=applicantNo).first()
+            myApplicant=Applicant.objects.filter(jobcard1=jobcard,applicantNo=applicantNo).first()
             if myApplicant is None:
               logger.info("Creating Applicant: %s " % (jobcard))
-              Applicant.objects.create(jobcard=jobcard,applicantNo=applicantNo,panchayat=eachPanchayat)
-            a=Applicant.objects.filter(jobcard=jobcard,applicantNo=applicantNo).first()
+              Applicant.objects.create(jobcard1=jobcard,applicantNo=applicantNo)
+            a=Applicant.objects.filter(jobcard1=jobcard,applicantNo=applicantNo).first()
+            a.panchayat=eachPanchayat
+            a.jobcard=myJobcard
             a.village=cols[villageIndex]
             a.name=cols[nameIndex]
             a.headOfHousehold=cols[headOfHouseholdIndex]

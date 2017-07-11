@@ -11,7 +11,7 @@ django.setup()
 os.chdir(proj_path)
 #from django.contrib.auth.models import User
 #from django.conf.settings import AUTH_USER_MODEL 
-from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,Wagelist,Applicant
+from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,Wagelist,Applicant,LibtechTag
 # This is so models get loaded.
 from django.core.wsgi import get_wsgi_application
 from django.core.files import File
@@ -24,12 +24,12 @@ from django.db.models import Count
 #myobjs=User.objects.filter(username='demo')
 #for obj in myobjs:
 #  print(obj.id)
-
-myMusters=Muster.objects.filter(panchayat__isnull=True)
-for eachMuster in myMusters:
-  eachMuster.isPanchayatNull=True
-  eachMuster.save()
-
+myLibtechTag=LibtechTag.objects.filter(name="JSK").first()
+myPanchayats=Panchayat.objects.filter(jobcardProcessDate__isnull=False)
+for eachPanchayat in myPanchayats:
+  eachPanchayat.jobcardProcessDate=None
+  print(eachPanchayat)
+  eachPanchayat.save()
 groupby='''
 myobjs=Applicant.objects.filter(panchayat__block__district__state__code="36").values("panchayat__block__code","panchayat__block__name","panchayat__name","panchayat__code").annotate(dcount=Count('pk'))
 for obj in myobjs:

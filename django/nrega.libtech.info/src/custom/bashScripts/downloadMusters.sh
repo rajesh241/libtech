@@ -1,7 +1,7 @@
 #!/bin/bash
 cd /home/libtech/repo/django/nrega.libtech.info
 source bin/activate
-cmd="python src/custom/scripts/dm.py -b chrome -n 20 -q 40000 -s 15"
+cmd="python src/custom/scripts/dm.py -b chrome -n 60 -q 1000 -s $1"
 #echo $cmd
 #$cmd
-pgrep -f "$cmd" || $cmd &> /tmp/dm.log
+pgrep -f "$cmd" || $cmd &> /tmp/$1.log

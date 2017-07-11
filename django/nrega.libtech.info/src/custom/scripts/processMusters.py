@@ -13,7 +13,7 @@ sys.path.insert(0, repoDir)
 fileDir=os.path.dirname(os.path.abspath(__file__))
 sys.path.append(djangoDir)
 
-from nregaFunctions import stripTableAttributes,htmlWrapperLocal,getjcNumber
+from nregaFunctions import stripTableAttributes,htmlWrapperLocal,getjcNumber,getVilCode
 from wrappers.logger import loggerFetch
 
 import django
@@ -164,7 +164,8 @@ def main():
         else:
           logger.info(str(len(matchedApplicants)))
           allApplicantFound=0
-        
+        myWDRecord.zjcNo=getjcNumber(jobcard) 
+        myWDRecord.zvilCode=getVilCode(jobcard) 
         myWDRecord.zname=name
         myWDRecord.zjobcard=jobcard
 #        myWDRecord.zaccountNo=accountno

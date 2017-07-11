@@ -69,6 +69,13 @@ def getjcNumber(jobcard):
   jcNumber=re.sub("[^0-9]", "", jobcardArray[1])
   return jcNumber
 
+def getVilCode(jobcard):
+  jobcardArray=jobcard.split('-')
+  jlast=jobcardArray[-1]
+  jlastArray=jlast.split("/")
+  vilCode=jlastArray[0]
+  return vilCode
+  
 
 def htmlWrapperLocal(title = None, head = None, body = None):
   html_text = '''
@@ -163,6 +170,7 @@ def stripTableAttributes(inhtml,tableID):
      tableHTML+='</tr>'
 
     tdCols=eachRow.findAll('td')
+    #print("Length of tdCOls=%s" % (str(len(tdCols))))
     if len(tdCols) > 1:
       tableHTML+='<tr>'
       for eachTD in tdCols:
@@ -174,3 +182,5 @@ def stripTableAttributes(inhtml,tableID):
 
 
 
+def getCenterAlignedHeading(text):
+  return '<div align="center"><h2>%s</h2></div>' % text
