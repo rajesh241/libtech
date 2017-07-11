@@ -21,6 +21,8 @@ import { ProfilePage } from '../pages/profile/profile'
 
 import { Panchayats } from '../providers/panchayats'
 import { Auth } from '../providers/auth';
+import { ExpandableComponent } from '../components/expandable/expandable';
+import { KeysPipe } from '../pipes/keys/keys';
 
 const firebaseConfig = {
     apiKey: "AIzaSyCv6jE0O5QjsAMK_WzUG2pDvEsIlTZCduY",
@@ -38,7 +40,9 @@ const firebaseConfig = {
         JobcardsPage,
         TransactionsPage,
         TransactionPage,
-        ProfilePage
+        ProfilePage,
+	ExpandableComponent,
+	KeysPipe
     ],
     imports: [
         AngularFireDatabaseModule,

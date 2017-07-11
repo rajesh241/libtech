@@ -24,12 +24,16 @@ export class TransactionsPage {
 
     constructor(public navCtrl: NavController, public navParams: NavParams, private afoDatabase: AngularFireOfflineDatabase) {
         console.log('Inside Transactions Constructor');
-        this.panchayatSlug = this.navParams.get('panchayatSlug');
-        this.jobcardSlug = this.navParams.get('jobcardSlug');
-        this.jobcard = this.jobcardSlug.replace('/', '_');
-        console.log(this.panchayatSlug)
+        this.jobcard = this.navParams.get('jobcard').replace('/', '_');
+        // this.jobcardSlug = this.navParams.get('jobcardSlug');
+	// var index = this.jobcardSlug.indexOf('_');
+	// console.log(index);
+	// var hhd = this.jobcardSlug.substring(index+1).replace(/^0+/, '')
+	// console.log(hhd);
+        // this.jobcard = this.jobcardSlug.substring(0, index+1) + hhd;
+        // console.log(this.panchayatSlug)
         console.log(this.jobcard);
-        console.log(this.jobcardSlug);
+        // console.log(this.jobcardSlug);
 
         var ptCode = this.jobcard.substring(0, 13);
         var vilCode = this.jobcard.substring(14, 17);

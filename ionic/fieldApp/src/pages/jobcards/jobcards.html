@@ -10,9 +10,29 @@
 
 <ion-content padding>
   <h4>For Panchayat [{{ panchayatSlug }}]</h4>
-  Total jobcards: {{ totalJobcards }} 
-  Total workers: {{ totalWorkers }}
-  <p *ngFor="let item of jobcards | async"><button ion-button [navPush]="transactionsPage" [navParams]="{panchayatSlug: item.slug, jobcardSlug: item.jobcardSlug}">{{ item.jobcardSlug }}</button></p>
+  <p><b>Total jobcards:</b> {{ totalJobcards }}</p>
+  <p><b>Total workers:</b> {{ totalWorkers }}</p>
+  <!-- {{ jobcards|async|json }} -->
+  <hr />
+  <div *ngFor="let jobcards of jobcardsObservable|async">
+    <button ion-button (click)="expandJobcards(jobcards.$key)">{{ jobcards.$key }}</button>
+      <expandable [expandHeight]="expandHeight" [expanded]="expanded[jobcards.$key]">
+	<div *ngFor="let jobcardKey of jobcards|keys">
+	  <button ion-button [navPush]="transactionsPage" [navParams]="{jobcard: jobcards[jobcardKey].jobcard}">{{ jobcardKey }}</button>
+	</div>
+      </expandable>
+     <!--
+    <p *ngFor="let key of jobcards | keys">
+      {{ key }}
+    </p>
+    <div *ngFor="let jobcardKey of jobcards|keys">
+      {{ jobcardKey }}
+    </div>
+    <p *ngFor="let jobcard of villages"> {{ jobcard }}
+      <button ion-button [navPush]="transactionsPage" [navParams]="{panchayatSlug: villages.panchayatSlug, jobcardSlug: jobcard.jobcardSlug}">{{ jobcard.jobcardSlug }}</button>
+    </p>
+      -->
+  </div>
 </ion-content>
 
 <ion-footer>
