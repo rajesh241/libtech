@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,TelanganaJobcard,LibtechTag,TelanganaSSSGroup,FPSVillage,Partner,Phonebook,VillageFPSStatus,Broadcast,AudioLibrary
+from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,Jobcard,LibtechTag,TelanganaSSSGroup,FPSVillage,Partner,Phonebook,VillageFPSStatus,Broadcast,AudioLibrary
 
 from .actions import export_as_csv_action
 
@@ -154,22 +154,24 @@ class villageReportModelAdmin(admin.ModelAdmin):
 
 class musterModelAdmin(admin.ModelAdmin):
 #  actions = [export_as_csv_action("CSV Export", fields=['name','blockName','districtName','stateName'])]
-  list_display = ["id","musterNo","musterDownloadAttemptDate","finyear","block","panchayat","workCode","workName"]
+  list_display = ["id","musterNo","downloadAttemptCount","musterDownloadAttemptDate","finyear","block","panchayat","workCode","workName"]
   search_fields=["id","musterNo","block__code","panchayat__code","workCode"]
   list_filter=["isPanchayatNull","finyear","isDownloaded","isProcessed","allApplicantFound","block__district__state"]
   readonly_fields=["block","panchayat"]
 
 class tjobcardModelAdmin(admin.ModelAdmin):
-  list_display=["tjobcard"]
-  search_fields=["tjobcard"]
+  list_display=["jobcard","tjobcard"]
+  search_fields=["tjobcard","jobcard"]
+  readonly_fields=["panchayat"]
+  list_filter=["isDownloaded","isProcessed"]
 
 class telanganaSSSgroupModelAdmin(admin.ModelAdmin):
   list_display=["groupName","groupCode"]
 
 class applicantModelAdmin(admin.ModelAdmin):
-  list_display=["jobcard","applicantNo","panchayat","name","age","caste","fatherHusbandName","accountNo"]
-  readonly_fields=["jobcard","applicantNo","panchayat","name","age","caste","fatherHusbandName","accountNo","tjobcard"]
-  search_fields=["jobcard","tjobcard__tjobcard"]
+  list_display=["jobcard1","applicantNo","panchayat","name","age","caste","fatherHusbandName","accountNo"]
+  readonly_fields=["jobcard","applicantNo","panchayat","name","age","caste","fatherHusbandName","accountNo"]
+  search_fields=["jobcard1"]
 
 class workDetailModelAdmin(admin.ModelAdmin):
   list_display=["id","muster","musterIndex","applicant","zjobcard","zname","zaccountNo","creditedDate","musterStatus"]
@@ -214,7 +216,7 @@ admin.site.register(Village,villageModelAdmin)
 admin.site.register(PanchayatReport,panchayatReportModelAdmin)
 admin.site.register(VillageReport,villageReportModelAdmin)
 admin.site.register(Muster,musterModelAdmin)
-admin.site.register(TelanganaJobcard,tjobcardModelAdmin)
+admin.site.register(Jobcard,tjobcardModelAdmin)
 admin.site.register(Applicant,applicantModelAdmin)
 admin.site.register(WorkDetail,workDetailModelAdmin)
 admin.site.register(Wagelist,wagelistModelAdmin)

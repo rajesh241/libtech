@@ -21,7 +21,7 @@ from django.utils import timezone
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
 django.setup()
 
-from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,PanchayatReport
+from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,PanchayatReport,LibtechTag
 
 def argsFetch():
   '''
@@ -51,9 +51,16 @@ def main():
   finyear=args['finyear']
   stateCodes=['33','34','27','24','15','18','16','31','05','17']
   stateCodes=['15']
+  myLibtechTag=LibtechTag.objects.filter(name="August 2017 Hearing")
+  tagArray=[]
+  for eachTag in myLibtechTag:
+    print(eachTag.id)
+    tagArray.append(eachTag)
+
+#  myPanchayats=Panchayat.objects.filter(block__district__state__code='34',crawlRequirement="FULL",libtechTag__in=tagArray)
+  stateCodes=[args['stateCode']]
   for stateCode in stateCodes:
-    myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__code=stateCode)
-    myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__code=stateCode)
+    myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__code=stateCode,libtechTag__in=tagArray)[:limit]
     myState=State.objects.filter(code=stateCode).first()
     stateName=myState.slug
     i=0 
@@ -75,7 +82,7 @@ def main():
         if suffix != "no":
           logger.info("I am here")
           reportURL=report.reportFile.url
-          fineyear=report.finyear
+          finyear=report.finyear
           filename="%s_p%s_%s.csv" % (suffix,str(i),finyear)
           logger.info("Panchyat Name: %s, reportType: %s, reportURL : %s " % (eachPanchayat.name,reportType,reportURL)) 
           filepath="/tmp/rajendran/%s/" % (eachPanchayat.block.district.state.name)

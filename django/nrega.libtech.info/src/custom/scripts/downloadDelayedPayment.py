@@ -70,8 +70,8 @@ def main():
 #  stateCode=args['stateCode']
   stateCodes=['33','34','16','27','24','15','18','35']
   stateCodes=['16','31','05','17']
-  stateCodes=['34']
-  stateCodes=[args['stateCode']]
+  stateCodes=['34','33','17','18','05','27','15','24','16','31','32']
+#  stateCodes=[args['stateCode']]
   for stateCode in stateCodes:
     myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__code=stateCode)
     for eachPanchayat in myPanchayats:

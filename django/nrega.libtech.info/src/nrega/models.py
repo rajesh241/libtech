@@ -34,6 +34,9 @@ def get_muster_upload_path(instance, filename):
   fullfinyear=getFullFinYear(instance.finyear)
   return os.path.join(
     "nrega",instance.block.district.state.slug,instance.block.district.slug,instance.block.slug,"DATA","MUSTERS",fullfinyear,filename)
+def get_telanganajobcard_upload_path(instance, filename):
+  return os.path.join(
+    "nrega",instance.panchayat.block.district.state.slug,instance.panchayat.block.district.slug,instance.panchayat.block.slug,instance.panchayat.slug,"DATA","JOBCARDS",filename)
 def get_panchayatreport_upload_path(instance, filename):
   return os.path.join(
     "nrega",instance.panchayat.block.district.state.slug,instance.panchayat.block.district.slug,instance.panchayat.block.slug,instance.panchayat.slug,"DATA","NICREPORTS",filename)
@@ -237,7 +240,7 @@ class VillageReport(models.Model):
         unique_together = ('village', 'reportType','finyear')  
   def __str__(self):
     return self.village.name+"-"+self.reportType
- 
+
 class PanchayatStat(models.Model):
   panchayat=models.ForeignKey('panchayat',on_delete=models.CASCADE)
   finyear=models.CharField(max_length=2)
@@ -255,24 +258,50 @@ class TelanganaSSSGroup(models.Model):
   def __str__(self):
     return self.groupName
 
-class TelanganaJobcard(models.Model):
+class Jobcard(models.Model):
+  panchayat=models.ForeignKey('Panchayat',on_delete=models.CASCADE,blank=True,null=True)
   group=models.ForeignKey('TelanganaSSSGroup',on_delete=models.CASCADE,blank=True,null=True)
-  tjobcard=models.CharField(max_length=18,unique=True)
+  tjobcard=models.CharField(max_length=18,null=True,blank=True)
+  jobcard=models.CharField(max_length=256,db_index=True,null=True,blank=True)
+  jcNo=models.BigIntegerField(blank=True,null=True)
+  village=models.CharField(max_length=256,blank=True,null=True)
+  headOfHousehold=models.CharField(max_length=512,blank=True,null=True)
+  surname=models.CharField(max_length=512,blank=True,null=True)
+  caste=models.CharField(max_length=64,blank=True,null=True)
+  jobcardFile=models.FileField(null=True, blank=True,upload_to=get_telanganajobcard_upload_path,max_length=512)
+  isDownloaded=models.BooleanField(default=False)
+  isProcessed=models.BooleanField(default=False)
+  downloadAttemptDate=models.DateTimeField(null=True,blank=True)
+  downloadDate=models.DateTimeField(null=True,blank=True)
+  downloadAttemptCount=models.PositiveSmallIntegerField(default=0)
+  downloadCount=models.PositiveSmallIntegerField(default=0)
+  downloadError=models.CharField(max_length=64,blank=True,null=True)
   def __str__(self):
-    return self.tjobcard
+    return self.jobcard
   
+class Stat(models.Model):
+  STAT_OPTIONS = (
+        ('TWD', 'TotalWorkDays'),
+        ('TWA', 'TotalWageAmount'),
+    )
+  panchayat=models.ForeignKey('panchayat',on_delete=models.CASCADE,blank=True,null=True)
+  jobcard=models.ForeignKey('Jobcard',on_delete=models.CASCADE,blank=True,null=True)
+  statType=models.CharField(max_length=4,choices=STAT_OPTIONS,null=True,blank=True)
+  finyear=models.CharField(max_length=2)
+  value=models.BigIntegerField(blank=True,null=True)
  
 class Applicant(models.Model):
   panchayat=models.ForeignKey('Panchayat',on_delete=models.CASCADE)
   name=models.CharField(max_length=512)
-  jobcard=models.CharField(max_length=256,db_index=True)
-  tjobcard=models.ForeignKey('TelanganaJobcard',null=True,blank=True)
+  jobcard=models.ForeignKey('Jobcard',on_delete=models.CASCADE,blank=True,null=True)
+  jobcard1=models.CharField(max_length=256,db_index=True)
   applicantNo=models.PositiveSmallIntegerField()
   jcNo=models.BigIntegerField(blank=True,null=True)
   village=models.CharField(max_length=256,blank=True,null=True)
   headOfHousehold=models.CharField(max_length=512,blank=True,null=True)
   fatherHusbandName=models.CharField(max_length=512,blank=True,null=True)
   caste=models.CharField(max_length=64,blank=True,null=True)
+  relationship=models.CharField(max_length=64,blank=True,null=True)
   gender=models.CharField(max_length=256,blank=True,null=True)
   age=models.PositiveIntegerField(blank=True,null=True)
   accountNo=models.CharField(max_length=256,blank=True,null=True)
@@ -290,7 +319,7 @@ class Applicant(models.Model):
   uid=models.CharField(max_length=128,blank=True,null=True)
    
   class Meta:
-        unique_together = ('jobcard', 'applicantNo')  
+        unique_together = ('jobcard1', 'applicantNo')  
   def __str__(self):
     return self.name
   #     [srno,pname,village,jobcard,applicantNo,name,headOfHousehold,faterHusbandName,caste,gender,age] = cols[0:11]
@@ -369,6 +398,8 @@ class WorkDetail(models.Model):
   musterIndex=models.PositiveSmallIntegerField()
   zname=models.CharField(max_length=512,null=True,blank=True)
   zjobcard=models.CharField(max_length=256,null=True,blank=True)
+  zvilCode=models.CharField(max_length=32,null=True,blank=True)
+  zjcNo=models.BigIntegerField(blank=True,null=True)
   zaccountNo=models.CharField(max_length=256,blank=True,null=True)
   daysWorked=models.PositiveSmallIntegerField(null=True,blank=True)
   dayWage=models.DecimalField(max_digits=10,decimal_places=4,null=True,blank=True)

@@ -8,6 +8,9 @@ import os
 import sys
 import re
 import time
+import re
+regex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
+regex1=re.compile(r'</td></font></td>',re.DOTALL)
 from customSettings import repoDir,djangoDir,djangoSettings
 from customSettings import musterTimeThreshold
 sys.path.insert(0, repoDir)
@@ -72,9 +75,9 @@ def validateMusterHTML(muster,myhtml):
   return error,musterTable,musterSummaryTable
 def populateMusterQueue(logger,q,queueSize,stateCode,panchayatCode,addLimit):
   if panchayatCode is not None:
-    myMusters=Muster.objects.filter(isDownloaded=False,panchayat__code=panchayatCode)[:addLimit]
+    myMusters=Muster.objects.filter( Q(isDownloaded=False,panchayat__isnull=False,panchayat__code=panchayatCode,panchayat__crawlRequirement="FULL") | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isProcessed=1,panchayat__isnull=False,panchayat__code=panchayatCode,panchayat__crawlRequirement="FULL") ).order_by("panchayat__block__district__state__code","downloadAttemptCount","-finyear")[:addLimit]
   elif stateCode is not None:
-    myMusters=Muster.objects.filter( Q(isDownloaded=False,panchayat__isnull=False,panchayat__block__district__state__code=stateCode,panchayat__crawlRequirement="FULL") | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isProcessed=1,panchayat__isnull=False,panchayat__block__district__state__code=stateCode,panchayat__crawlRequirement="FULL") ).order_by("panchayat__block__district__state__code","downloadAttemptCount")[:addLimit]
+    myMusters=Muster.objects.filter( Q(isDownloaded=False,panchayat__isnull=False,panchayat__block__district__state__code=stateCode,panchayat__crawlRequirement="FULL",finyear='17') | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isProcessed=1,panchayat__isnull=False,panchayat__block__district__state__code=stateCode,panchayat__crawlRequirement="FULL",finyear='17') ).order_by("panchayat__block__district__state__code","downloadAttemptCount","-finyear")[:addLimit]
     #myMusters=Muster.objects.filter( Q(isDownloaded=False,isRequired=1,block__district__state__code=stateCode) | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isRequired=1,isProcessed=1,block__district__state__code=stateCode) ).order_by("musterDownloadAttemptDate")[:addLimit]
   else:
     myMusters=Muster.objects.filter( Q(isDownloaded=False,panchayat__isnull=False,panchayat__crawlRequirement="FULL") | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isProcessed=1,panchayat__isnull=False,panchayat__crawlRequirement="FULL") ).order_by("panchayat__block__district__state__code","downloadAttemptCount")[:addLimit]
@@ -90,13 +93,71 @@ def populateMusterQueue(logger,q,queueSize,stateCode,panchayatCode,addLimit):
     logger.info("Added Musters: %s " % musterIDs)
 def musterQueueManager(logger,q,queueSize,stateCode):
   addLimit=queueSize-1100
+  addLimit=1
   while True:
     if(q.qsize() < 1000):
       populateMusterQueue(logger,q,queueSize,stateCode,addLimit)
     else:
       logger.info("Queu is not empty")
     time.sleep(600)
-        
+       
+def getMuster(logger,eachMuster):
+  url = 'http://%s/netnrega/citizen_html/musternew.aspx' % (eachMuster.panchayat.block.district.state.crawlIP)
+  logger.info("Printing Muster URl %s" % url)
+  headers = {
+      'Accept-Encoding': 'gzip, deflate',
+      'Accept-Language': 'en-US,en;q=0.8',
+      'Upgrade-Insecure-Requests': '1',
+      'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.104 Safari/537.36 Vivaldi/1.91.867.42',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+      'Cache-Control': 'max-age=0',
+      'Connection': 'keep-alive',
+  }
+  stateName=eachMuster.panchayat.block.district.state.name
+  districtName=eachMuster.panchayat.block.district.name
+  blockName=eachMuster.panchayat.block.name
+  panchayatName=eachMuster.panchayat.name
+  workCode=eachMuster.workCode
+  workName=eachMuster.workName
+  panchayatCode=eachMuster.panchayat.code
+  musterNo=eachMuster.musterNo
+  fullfinyear=getFullFinYear(eachMuster.finyear)
+  logger.info(stateName+districtName+fullfinyear)
+  dateArray=str(eachMuster.dateFrom).split("-")
+  dateFrom="%s/%s/%s" % (dateArray[2],dateArray[1],dateArray[0])
+  dateArray=str(eachMuster.dateTo).split("-")
+  dateTo="%s/%s/%s" % (dateArray[2],dateArray[1],dateArray[0])
+
+  params = (
+      ('state_name', stateName),
+      ('district_name', districtName),
+      ('block_name', blockName),
+      ('panchayat_name', panchayatName),
+      ('workcode', workCode),
+      ('panchayat_code', panchayatCode),
+      ('msrno', musterNo),
+      ('finyear', fullfinyear),
+      ('dtfrm', dateFrom),
+      ('dtto', dateTo),
+      ('wn', workName),
+      ('id', '1'),
+  )
+
+  response = requests.get(url, headers=headers, params=params)
+  cookies = response.cookies
+  logger.info(cookies)
+      
+  response = requests.get(url, headers=headers, params=params, cookies=cookies)
+  logger.info(response.cookies)
+#  logger.info(response)
+# filename="/tmp/%s.html" % (musterNo) 
+# with open(filename, 'wb') as html_file:
+#     logger.info('Writing [%s]' % filename)
+#     html_file.write(response.text.encode('utf-8'))
+
+  return response.text
+
+
 def musterDownloadWorker(logger,q,inputargs,driver,display):
   while True:
     musterID = q.get()  # if there is no url, this will wait
@@ -107,10 +168,16 @@ def musterDownloadWorker(logger,q,inputargs,driver,display):
     eachMuster=Muster.objects.filter(id=musterID).first()
 #    logger.info(eachMuster.musterURL)  
     try:
-      driver.get(eachMuster.musterURL)
-      driver.get(eachMuster.musterURL)
-      myhtml = driver.page_source
+      myhtml=getMuster(logger,eachMuster)
+      myhtml=myhtml.replace("</td></td>","</td>")
+  #    myhtml=re.sub(regex,"",myhtml)
+  #    myhtml=re.sub(regex1,"</font></td>",myhtml)
+     
+    #  driver.get(eachMuster.musterURL)
+    #  driver.get(eachMuster.musterURL)
+    #  myhtml = driver.page_source
       error,musterTable,musterSummaryTable=validateMusterHTML(eachMuster,myhtml)
+      #logger.info(musterTable)
     except:
       error="downloadError"
   
@@ -127,6 +194,8 @@ def musterDownloadWorker(logger,q,inputargs,driver,display):
     if error is None:  
       outhtml=''
       outhtml+=stripTableAttributes(musterSummaryTable,"musterSummary")
+      #strippedTable=stripTableAttributes(musterTable,"musterDetails")
+      #logger.info(strippedTable)
       outhtml+=stripTableAttributes(musterTable,"musterDetails")
       title="Muster: %s state:%s District:%s block:%s finyear:%s " % (eachMuster.musterNo,eachMuster.block.district.state.name,eachMuster.block.district.name,eachMuster.block.name,getFullFinYear(eachMuster.finyear))
 #      logger.info(title) 
@@ -166,17 +235,18 @@ def main():
     limit = int(args['limit'])
   else:
     limit =1
-  if ((args['queueSize']) and ( int(args['queueSize']) > 200)):
+  #if ((args['queueSize']) and ( int(args['queueSize']) > 200)):
+  if args['queueSize']:
     queueSize=int(args['queueSize'])
   else:
-    queueSize=20000
+    queueSize=20
   if args['numberOfThreads']:
     numberOfThreads=int(args['numberOfThreads'])
   else:
     numberOfThreads=5
   logger.info("Starting Muster Download Script with Queue Size: %s and Number of Threads: %s " % (queueSize,numberOfThreads))
   q = Queue(maxsize=queueSize)
-  addLimit=queueSize-numberOfThreads -1
+  addLimit=queueSize
   populateMusterQueue(logger,q,queueSize,stateCode,panchayatCode,addLimit)
   #t1 = Thread(name = 'musterQueueManager', target=musterQueueManager, args=(logger,q,queueSize,stateCode ))
 #  t1 = Thread(name = 'musterQueueManager', target=populateMusterQueue, args=(logger,q,queueSize,stateCode,addLimit ))
@@ -190,8 +260,8 @@ def main():
   for i in range(numberOfThreads):
     logger.info("Starting worker Thread %s " % str(i))
     
-    display = displayInitialize(args['visible'])
-    driver = driverInitialize(args['browser'])
+    display =''# displayInitialize(args['visible'])
+    driver = ''#driverInitialize(args['browser'])
     driverArray.append(driver)
     displayArray.append(display)
     t = Thread(name = 'Thread-' + str(i), target=musterDownloadWorker, args=(logger,q,args,driver,display ))
@@ -202,10 +272,10 @@ def main():
   q.join()       # block until all tasks are done
   for i in range(numberOfThreads):
     q.put(None)
-  for driver in driverArray:
-    driverFinalize(driver)
-  for display in displayArray:
-    displayFinalize(display)
+# for driver in driverArray:
+#   driverFinalize(driver)
+# for display in displayArray:
+#   displayFinalize(display)
 
   logger.info("...END PROCESSING")     
   exit(0)

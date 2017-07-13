@@ -60,7 +60,7 @@ def main():
     if stateCode is None:
       myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__isNIC=True).order_by('musterCrawlDate')[:limit]
     else:
-      myPanchayats=Panchayat.objects.filter(status='2',crawlRequirement='FULL',block__district__state__code=stateCode,block__district__state__isNIC=True).order_by('musterCrawlDate')[:limit]
+      myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__code=stateCode,block__district__state__isNIC=True).order_by('musterCrawlDate')[:limit]
 #  myPanchayats=Panchayat.objects.filter(fullPanchayatCode='3405003010').order_by('jobcardCrawlDate')[:limit]
 #  myPanchayats=Panchayat.objects.filter(fullPanchayatCode='3405003010').order_by('jobcardCrawlDate')[:limit]
   for eachPanchayat in myPanchayats:
