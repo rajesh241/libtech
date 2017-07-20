@@ -269,8 +269,10 @@ class Jobcard(models.Model):
   surname=models.CharField(max_length=512,blank=True,null=True)
   caste=models.CharField(max_length=64,blank=True,null=True)
   jobcardFile=models.FileField(null=True, blank=True,upload_to=get_telanganajobcard_upload_path,max_length=512)
+  isRequired=models.BooleanField(default=False)
   isDownloaded=models.BooleanField(default=False)
   isProcessed=models.BooleanField(default=False)
+  allApplicantFound=models.BooleanField(default=False)
   downloadAttemptDate=models.DateTimeField(null=True,blank=True)
   downloadDate=models.DateTimeField(null=True,blank=True)
   downloadAttemptCount=models.PositiveSmallIntegerField(default=0)
@@ -288,7 +290,7 @@ class Stat(models.Model):
   jobcard=models.ForeignKey('Jobcard',on_delete=models.CASCADE,blank=True,null=True)
   statType=models.CharField(max_length=4,choices=STAT_OPTIONS,null=True,blank=True)
   finyear=models.CharField(max_length=2)
-  value=models.BigIntegerField(blank=True,null=True)
+  value=models.DecimalField(max_digits=20,decimal_places=4,null=True,blank=True)
  
 class Applicant(models.Model):
   panchayat=models.ForeignKey('Panchayat',on_delete=models.CASCADE)
@@ -317,9 +319,10 @@ class Applicant(models.Model):
   poAccountName=models.CharField(max_length=512,blank=True,null=True)
   accountFrozen=models.CharField(max_length=4,blank=True,null=True)
   uid=models.CharField(max_length=128,blank=True,null=True)
+  source=models.CharField(max_length=8,blank=True,null=True,default='nic')
    
   class Meta:
-        unique_together = ('jobcard1', 'applicantNo')  
+        unique_together = ('jobcard', 'applicantNo')  
   def __str__(self):
     return self.name
   #     [srno,pname,village,jobcard,applicantNo,name,headOfHousehold,faterHusbandName,caste,gender,age] = cols[0:11]
@@ -417,12 +420,19 @@ class PaymentDetail(models.Model):
   applicant=models.ForeignKey('Applicant',on_delete=models.CASCADE,null=True,blank=True)
   workDetail=models.ForeignKey('WorkDetail',on_delete=models.CASCADE,null=True,blank=True)
   fto=models.ForeignKey('FTO',on_delete=models.CASCADE,null=True,blank=True)
+  payorderNo=models.CharField(max_length=256,null=True,blank=True)
+  epayorderNo=models.CharField(max_length=256,null=True,blank=True)
   referenceNo=models.CharField(max_length=256,null=True,blank=True)
   transactionDate=models.DateField(null=True,blank=True)
   processDate=models.DateField(null=True,blank=True)
   status=models.CharField(max_length=256,null=True,blank=True)
   rejectionReason=models.CharField(max_length=256,null=True,blank=True)
   creditedAmount=models.DecimalField(max_digits=10,decimal_places=4,null=True,blank=True)
+  daysWorked=models.PositiveSmallIntegerField(null=True,blank=True)
+  disbursedAmount=models.DecimalField(max_digits=10,decimal_places=4,null=True,blank=True)
+  disbursedDate=models.DateField(null=True,blank=True)
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
+  modified=models.DateTimeField(null=True,blank=True,auto_now=True)
   class Meta:
         unique_together = ('fto', 'referenceNo')  
   def __str__(self):

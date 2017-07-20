@@ -91,7 +91,7 @@ def main():
           value="".join(cols[i].text.split())
           if "Status" in value:
             statusindex=i
-          if "Sharpening Charge" in cols[i].text:
+          if ("Sharpening Charge" in cols[i].text) or ("औज़ार सम्बंधित भुगतान" in cols[i].text):
             sharpeningIndex=i
           if ("A/C No." in cols[i].text) or ("खाता क्रमांक" in cols[i].text):
             acnoPresent=1
@@ -156,7 +156,7 @@ def main():
 
        # myWDRecord.wagelist=matchedWagelist 
         myWDRecord.wagelist.add(matchedWagelist) 
-        matchedApplicants=Applicant.objects.filter(jobcard=jobcard,name=name)
+        matchedApplicants=Applicant.objects.filter(jobcard__jobcard=jobcard,name=name)
         logger.info("jobcard %s name: %snameENds " % (jobcard,name)) 
         if len(matchedApplicants) == 1:
           logger.info("MatchedApplicant Found")

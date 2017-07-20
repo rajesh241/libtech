@@ -124,7 +124,7 @@ def main():
             myApplicant=Applicant.objects.filter(jobcard1=jobcard,applicantNo=applicantNo).first()
             if myApplicant is None:
               logger.info("Creating Applicant: %s " % (jobcard))
-              Applicant.objects.create(jobcard1=jobcard,applicantNo=applicantNo)
+              Applicant.objects.create(jobcard1=jobcard,applicantNo=applicantNo,panchayat=eachPanchayat)
             a=Applicant.objects.filter(jobcard1=jobcard,applicantNo=applicantNo).first()
             a.panchayat=eachPanchayat
             a.jobcard=myJobcard
