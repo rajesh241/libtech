@@ -222,23 +222,19 @@ WHERE
     
     return 'SUCCESS'
 
+
 def panchayats_meta_patch(logger, db):
+    if 0:
+        result = firebase.delete('https://libtech-app.firebaseio.com/panchayats_meta/', None)
+        return 'SUCCESS'
+
     cur = db.cursor()
 
-    panchayatsWithMeta = {}
+    panchayats_meta = {}
     for panchayat in panchayats:
-        logger.info(panchayats[panchayat])
-        state = panchayats[panchayat]['state']
-        district = panchayats[panchayat]['district']  # Goli to Add from django
-        block = panchayats[panchayat]['block']
-        name = panchayats[panchayat]['name']
         slug = panchayats[panchayat]['slug']
-        code = panchayats[panchayat]['code']
         panchayat_id = panchayats[panchayat]['id']
-        jobcardCode = panchayats[panchayat]['jobcardCode']
-        logger.info('District[%s], Name[%s], jobcardCode[%s], Code[%s], block[%s], state[%s], slug[%s], id[%s]' % (district, name, jobcardCode, code, block, state, slug, panchayat_id))
-        #panchayat_parts = panchayat.split('_')
-        #slug = panchayat_parts[2].replace('(', '').replace(')', '')
+        logger.info('slug[%s], id[%s]' % (slug, panchayat_id))
 
         query = 'SELECT COUNT(DISTINCT (jobcard)) AS totalJobcards, COUNT(*) AS totalWorkers FROM nrega_applicant WHERE panchayat_id = "%s"' % panchayat_id
         logger.info('Executing query[%s]' % query)
@@ -247,52 +243,54 @@ def panchayats_meta_patch(logger, db):
         (total_jobcards, total_workers) = res[0]
         logger.info("total_jobcards[%s] total_workers[%s]" % (total_jobcards, total_workers))
 
-        panchayatsWithMeta[slug] = {'total_jobcards': total_jobcards, 'total_workers': total_workers}
+        panchayats_meta[slug] = {'total_jobcards': total_jobcards, 'total_workers': total_workers}
         
         query = 'SELECT finyear, SUM(daysWorked) AS daysWorked, round(SUM(totalWage)) AS totalWage FROM nrega_workdetail, nrega_muster WHERE nrega_workdetail.muster_id = nrega_muster.id AND panchayat_id = "%s" GROUP BY finyear order by finyear' % panchayat_id
         logger.info('Executing query[%s]' % query)
         cur.execute(query)
         res = cur.fetchall()
         if res:
-            for (finyear, days_worked, total_wage) in res:
-                logger.info("(finyear[%s], days_worked[%s], total_wage[%s])" % (finyear, days_worked, total_wage))
-                if 'finyear' not in panchayatsWithMeta[slug]:
-                    panchayatsWithMeta[slug][finyear] = {}
-                panchayatsWithMeta[slug][finyear]['payment_information'] = {'days_worked': days_worked, 'total_wage': total_wage}
-                logger.info('panchayatsWithMeta[slug][finyear][payment_information] = [%s]' % panchayatsWithMeta[slug][finyear]['payment_information'])
+            for (financial_year, days_worked, total_wage) in res:
+                logger.info("(financial_year[%s], days_worked[%s], total_wage[%s])" % (financial_year, days_worked, total_wage))
+                if financial_year not in panchayats_meta[slug]:
+                    panchayats_meta[slug][financial_year] = {}
+                panchayats_meta[slug][financial_year].update({'days_worked': days_worked, 'total_wage': total_wage})
+                logger.info('panchayats_meta[slug][financial_year] = [%s]' % panchayats_meta[slug][financial_year])
 
         query = 'SELECT finyear, count(*), round(AVG(DATEDIFF(paymentDate, dateTo))) AS workToFTOSignDays, round(AVG(DATEDIFF(creditedDate, paymentDate))) AS FTOSignToCredDays, round(AVG(DATEDIFF(creditedDate, dateTo))) AS workToCredDays FROM nrega_workdetail, nrega_muster WHERE nrega_workdetail.muster_id = nrega_muster.id AND panchayat_id = "%s" AND musterStatus = "credited" group by finyear' % panchayat_id
         logger.info('Executing query[%s]' % query)
         cur.execute(query)
         res = cur.fetchall()
         if res:
-            for (finyear, nTxns, workToFTOSignDays, FTOSignToCredDays, workToCredDays) in res:
-                logger.info('(finyear[%s], nTxns[%s], workToFTOSignDays[%s], FTOSignToCredDays[%s], workToCredDays[%s])' % (finyear, nTxns, workToFTOSignDays, FTOSignToCredDays, workToCredDays))        
-                panchayatsWithMeta[slug][finyear]['avg_days_to'] = {'nTxns': nTxns, 'workToFTOSignDays': workToFTOSignDays, 'FTOSignToCredDays': FTOSignToCredDays, 'workToCredDays': workToCredDays}
-                logger.info('panchayatsWithMeta[slug][finyear][avg_days_to] = [%s]' % panchayatsWithMeta[slug][finyear]['avg_days_to'])
+            for (financial_year, number_of_transactions, work_to_fto_sign_days, fto_sign_to_credit_days, work_to_credit_days) in res:
+                logger.info('(financial_year[%s], number_of_transactions[%s], work_to_fto_sign_days[%s], fto_sign_to_credit_days[%s], work_to_credit_days[%s])' % (financial_year, number_of_transactions, work_to_fto_sign_days, fto_sign_to_credit_days, work_to_credit_days))        
+                panchayats_meta[slug][financial_year].update({'number_of_transactions': number_of_transactions, 'work_to_fto_sign_days': work_to_fto_sign_days, 'fto_sign_to_credit_days': fto_sign_to_credit_days, 'work_to_credit_days': work_to_credit_days})
+                logger.info('panchayats_meta[slug][financial_year] = [%s]' % panchayats_meta[slug][financial_year])
 
-        for finyear in ('17', '18'):  # FIXME - where do we pick finyear from?
-            query = 'SELECT SUBSTRING(zjobcard, 15, 3) AS villageCode, COUNT(DISTINCT (jobcard)) AS totalJCs, round(SUM(CASE WHEN musterStatus = "credited" THEN 0 ELSE totalWage END)) AS pendingPayments, round(SUM(daysWorked) / COUNT(DISTINCT (jobcard))) AS AvgWork, sum(case when (musterStatus = "rejected" or musterStatus = "invalid") then 1 else 0 end) as rejInvPayments_JCs FROM nrega_workdetail, nrega_muster, nrega_applicant WHERE nrega_workdetail.muster_id = nrega_muster.id AND nrega_workdetail.applicant_id = nrega_applicant.id AND nrega_muster.panchayat_id = "%s" AND finyear = "%s" group by villageCode' % (panchayat_id, finyear)
+        for financial_year in ('17', '18'):  # FIXME - where do we pick financial_year from?
+            query = 'SELECT SUBSTRING(zjobcard, 15, 3) AS villageCode, COUNT(DISTINCT (jobcard)) AS totalJCs, round(SUM(CASE WHEN musterStatus = "credited" THEN 0 ELSE totalWage END)) AS pendingPayments, round(SUM(daysWorked) / COUNT(DISTINCT (jobcard))) AS AvgWork, sum(case when (musterStatus = "rejected" or musterStatus = "invalid") then 1 else 0 end) as rejInvPayments_JCs FROM nrega_workdetail, nrega_muster, nrega_applicant WHERE nrega_workdetail.muster_id = nrega_muster.id AND nrega_workdetail.applicant_id = nrega_applicant.id AND nrega_muster.panchayat_id = "%s" AND finyear = "%s" group by villageCode' % (panchayat_id, financial_year)
             logger.info('Executing query[%s]' % query)
             cur.execute(query)
             res = cur.fetchall()
             if res:
                 for (village_code, total_jobcards, pending_payments, average_work, rejected_invalid) in res:
                     logger.info('(village_code[%s], total_jobcards[%s], pending_payments[%s], average_work[%s], rejected_invalid[%s])' % (village_code, total_jobcards, pending_payments, average_work, rejected_invalid))
-                    panchayatsWithMeta[slug][finyear][village_code] = { 'total_jobcards': total_jobcards, 'pending_payments': pending_payments, 'average_work': average_work, 'rejected_invalid': rejected_invalid }
-                    logger.info('panchayatsWithMeta[slug][finyear][village_code] = [%s]' % panchayatsWithMeta[slug][finyear][village_code])
+                    if 'villages' not in panchayats_meta[slug][financial_year]:
+                        panchayats_meta[slug][financial_year]['villages'] = {}
+                    panchayats_meta[slug][financial_year]['villages'][village_code] = { 'total_jobcards': total_jobcards, 'pending_payments': pending_payments, 'average_work': average_work, 'rejected_invalid': rejected_invalid }
+                    logger.info('panchayats_meta[slug][financial_year][villages][village_code] = [%s]' % panchayats_meta[slug][financial_year]['villages'][village_code])
 
         query = 'SELECT finyear, COUNT(*) AS totTrans, ROUND(SUM(totalWage)) AS Wage, COUNT(DISTINCT (zjobcard)) AS JCs FROM nrega_workdetail, nrega_muster WHERE nrega_muster.id = nrega_workdetail.muster_id AND musterStatus = "rejected" AND panchayat_id = "%s" GROUP BY finyear' % panchayat_id
         logger.info('Executing query[%s]' % query)
         cur.execute(query)
         res = cur.fetchall()
         if res:
-            for (finyear, totTrans, wage, JCs) in res:
-                logger.info('(finyear[%s], totTrans[%s], wage[%s], JCs[%s])' % (finyear, totTrans, wage, JCs))  
-                panchayatsWithMeta[slug][finyear]['rejected_payments'] = {'totTrans': totTrans, 'wage': wage, 'JCs': JCs}
-                logger.info('Update panchayatsWithMeta[slug][finyear][rejected_payments] = [%s]' % panchayatsWithMeta[slug][finyear]['rejected_payments'])
+            for (financial_year, total_transactions, total_wages, jobcard_count) in res:
+                logger.info('(financial_year[%s], total_transactions[%s], total_wages[%s], jobcard_count[%s])' % (financial_year, total_transactions, total_wages, jobcard_count))  
+                panchayats_meta[slug][financial_year].update({'total_transactions': total_transactions, 'total_wages': total_wages, 'jobcard_count': jobcard_count})
+                logger.info('Update panchayats_meta[slug][financial_year] = [%s]' % panchayats_meta[slug][financial_year])
 
-        for finyear in ('17', '18'):  # FIXME - where do we pick finyear from?
+        for financial_year in ('17', '18'):  # FIXME - where do we pick financial_year from?
             query = '''
 select * from (
 SELECT DISTINCT
@@ -314,18 +312,18 @@ WHERE
     order by daysWorked DESC
 ) as newTable
 where daysWorked > 75
-''' % (panchayat_id, finyear)
+''' % (panchayat_id, financial_year)
             logger.info('Executing query[%s]' % query)
             cur.execute(query)
             res = cur.fetchall()
             if res:
-                for (jobcard, daysWorked, headOfHousehold, vilCode, hhdCode) in res:
-                    logger.info('(jobcard[%s], daysWorked[%s], headOfHousehold[%s], vilCode[%s], hhdCode[%s])' % (jobcard, daysWorked, headOfHousehold, vilCode, hhdCode))
-                    panchayatsWithMeta[slug]['75daysOrMore'] =  {'jobcard': jobcard, 'daysWorked': daysWorked, 'headOfHousehold': headOfHousehold, 'vilCode': vilCode, 'hhdCode': hhdCode}
-                    logger.info('panchayatsWithMeta[slug][finyear][village_code] = [%s]' % panchayatsWithMeta[slug]['75daysOrMore'])
+                for (jobcard, days_worked, head_of_household, village_code, house_hold_code) in res:
+                    logger.info('(jobcard[%s], days_worked[%s], head_of_household[%s], village_code[%s], house_hold_code[%s])' % (jobcard, days_worked, head_of_household, village_code, house_hold_code))
+                    panchayats_meta[slug]['75daysOrMore'] =  {'jobcard': jobcard, 'days_worked': days_worked, 'head_of_household': head_of_household, 'village_code': village_code, 'house_hold_code': house_hold_code}
+                    logger.info('panchayats_meta[slug][75daysOrMore] = [%s]' % panchayats_meta[slug]['75daysOrMore'])
 
-    logger.info(panchayatsWithMeta)
-    # result = firebase.patch('https://libtech-app.firebaseio.com/panchayats_meta/', panchayatsWithMeta)
+    logger.info(panchayats_meta)
+    # result = firebase.patch('https://libtech-app.firebaseio.com/panchayats_meta/', panchayats_meta)
 
     return 'SUCCESS'
     
@@ -372,6 +370,11 @@ def panchayats_patch(logger, db):
 # Patch the Firebase Database
 
 def jobcards_patch(logger, db):
+    # To Delete/Reset enable the if below
+    if 0:
+        result = firebase.delete('https://libtech-app.firebaseio.com/jcs/', None)
+        return 'SUCCESS'
+
     cur = db.cursor()
 
     # # Update status of rejected and invalid payments
@@ -386,19 +389,9 @@ def jobcards_patch(logger, db):
     block_strings = [ 'JH-01-020' ]
     
     geo = {}
-    # To Delete/Reset Uncoment the line below
-    # result = firebase.delete('https://libtech-app.firebaseio.com/jcs/', None)
-    # exit(0)
 
     for blString in block_strings:    
-        # blString = 'JH-01-020'
         logger.info('Block String[%s]' % blString)
-
-        if 0: #Mynk
-            query = 'SELECT COUNT(DISTINCT (jobcard)) AS totalJobcards, COUNT(*) AS totalWorkers FROM nrega_applicant WHERE panchayat_id = "%s"' % (panchayat_id)
-            logger.info('Executing query[%s]' % query)
-            cur.execute(query)
-            res = cur.fetchall()
 
         qRejInvPerJc = "SELECT zjobcard,SUBSTRING(zjobcard, 1, 13) AS ptString,SUBSTRING(zjobcard, 15, 3) AS vString,substring_index(zjobcard, '/', -1) as hString,round(sum(case WHEN musterStatus = 'Credited' then 1 else 0 END ), 0) as totCredited,round(sum(case WHEN musterStatus = '' then 1 else 0 END ), 0) as totPending,round(sum(case WHEN musterStatus = 'Rejected' then 1 else 0 END ), 0) as totRejected,round(sum(case WHEN musterStatus = 'Invalid Account' then 1 else 0 END ), 0) as totInvalid FROM libtech3.nrega_workdetail WHERE musterStatus = 'credited'AND musterStatus != '' AND SUBSTRING(zjobcard, 1, 9) = '{0}' GROUP BY zjobcard ORDER BY zjobcard".format(blString)
         logger.info('Executing query[%s]' % qRejInvPerJc)
@@ -419,12 +412,25 @@ def jobcards_patch(logger, db):
 
             jobcard = pt + '-' + vil
             jobcardSlug = pt + '-' + vil + '_' + hhd_slug
+
+            # district = jobcard2panchayats[pt]['district'].lower().replace(' ', '-')
+            query = 'select diName from panchayatMapping where blName="%s"' % jobcard2panchayats[pt]['block']
+            logger.info('Executing query[%s]' % query)
+            cur.execute(query)
+            res = cur.fetchall()
+            district = res[0][0].lower().replace(' ', '-')
+            logger.info(district)
+
+            (state, block, panchayat) = jobcard2panchayats[pt]['slug'].split('_')
+            logger.info('(state[%s], block[%s], panchayat[%s])' % (state, block, panchayat))
+            panchayat_slug = state + '_' + district + '_' + block + '_' + panchayat
+            logger.info('panchayat_slug[%s]' % panchayat_slug)
             
             if jobcard in geo:
                 pass
             else:
                 if pt in jobcard2panchayats:
-                    geo[jobcard] = {'panchayatSlug': jobcard2panchayats[pt]['slug']}
+                    geo[jobcard] = {'panchayatSlug': panchayat_slug}
                 else:
                     geo[jobcard] = {}
                 logger.info(geo[jobcard])
@@ -433,8 +439,8 @@ def jobcards_patch(logger, db):
             logger.info(geo[jobcard][jobcardSlug])
 
         result = firebase.patch('https://libtech-app.firebaseio.com/jcs/', geo)
-    
-        logger.info(len(result))
+        # logger.info(len(result))
+        exit(0)
 
 
         # # Update jobcard register information
@@ -487,6 +493,7 @@ def jobcards_patch(logger, db):
             geo[jobcard][jobcardSlug]['applicants'][appNo] = nDetails
             logger.info('Applicant to be added to ' + str(geo[jobcard][jobcardSlug]['applicants']))
 
+        logger.info(str(geo))
         result = firebase.patch('https://libtech-app.firebaseio.com/jcs/', geo)
         logger.info(result)
 
@@ -834,10 +841,10 @@ class TestSuite(unittest.TestCase):
   def test_firebase_patch(self):
     # result = pts_collect(self.logger, self.db)
     # result = panchayats_meta_patch(self.logger, self.db)  
-    result = musters_patch(self.logger, self.db)  
+    # result = musters_patch(self.logger, self.db)  
     # result = panchayats_patch(self.logger, self.db)
     # result = firebase_patch(self.logger, self.db)
-    # result = jobcards_patch(self.logger, self.db)
+    result = jobcards_patch(self.logger, self.db)
     self.assertEqual('SUCCESS', result)
 
   def test_load_panchayats(self):

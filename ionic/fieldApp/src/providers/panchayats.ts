@@ -9,7 +9,7 @@ export class Panchayats {
     items: AfoListObservable<any[]>;
     jobcards: AfoListObservable<any[]>;
     panchayats: any;
-    url: string = '/ptsWithData/';
+    url: string = '/panchayats/';
 
     constructor(private afoDatabase: AngularFireOfflineDatabase) {
         console.log('Hello Panchayats Provider');

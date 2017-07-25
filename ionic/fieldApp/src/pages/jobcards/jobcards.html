@@ -10,8 +10,8 @@
 
 <ion-content padding>
   <h4>For Panchayat [{{ panchayatSlug }}]</h4>
-  <p><b>Total jobcards:</b> {{ totalJobcards }}</p>
-  <p><b>Total workers:</b> {{ totalWorkers }}</p>
+  <p><b>Total jobcards:</b> {{ meta.total_jobcards }}</p>
+  <p><b>Total workers:</b> {{ meta.total_workers }}</p>
   <!-- {{ jobcards|async|json }} -->
   <hr />
   <div *ngFor="let jobcards of jobcardsObservable|async">

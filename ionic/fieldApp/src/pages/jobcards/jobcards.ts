@@ -13,7 +13,7 @@ export class JobcardsPage {
     panchayatSlug: string;
     // jobcardCode: string;
     jobcardsObservable: AfoListObservable<any[]>;
-    totalJobcards: Number;
+    meta: AfoListObservable<any[]>;
     items: any;
     jobcards: any;
     url = '/jcs/';
@@ -41,6 +41,9 @@ export class JobcardsPage {
 	    console.log(this.items);
 	    this.items.forEach(jobcard => this.expanded[jobcard] = false);
 	});
+
+	// this.musters = this.afoDatabase.list('/musters/' + this.panchayatSlug);	
+	this.meta = this.afoDatabase.list('/panchayats_meta/' + this.panchayatSlug);	
     }
 
     expandJobcards(jobcard) {
