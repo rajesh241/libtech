@@ -1,9 +1,14 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,Jobcard,LibtechTag,TelanganaSSSGroup,FPSVillage,Partner,Phonebook,VillageFPSStatus,Broadcast,AudioLibrary
+from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,Jobcard,LibtechTag,TelanganaSSSGroup,FPSVillage,Partner,Phonebook,VillageFPSStatus,Broadcast,AudioLibrary,Stat
 
 from .actions import export_as_csv_action
+
+class statModelAdmin(admin.ModelAdmin):
+  list_display=["statType","finyear","value","jobcard","panchayat"]
+  list_filter=["statType","finyear"]
+  readonly_fields=["jobcard","panchayat"]
 
 class libtechTagModelAdmin(admin.ModelAdmin):
   list_display=["name"]
@@ -160,10 +165,10 @@ class musterModelAdmin(admin.ModelAdmin):
   readonly_fields=["block","panchayat"]
 
 class tjobcardModelAdmin(admin.ModelAdmin):
-  list_display=["jobcard","tjobcard"]
-  search_fields=["tjobcard","jobcard"]
-  readonly_fields=["panchayat"]
-  list_filter=["isDownloaded","isProcessed"]
+  list_display=["jobcard","tjobcard","panchayat","allApplicantFound"]
+  search_fields=["tjobcard","jobcard","panchayat__code"]
+  readonly_fields=["panchayat","group"]
+  list_filter=["isDownloaded","isProcessed","isRequired","allApplicantFound","panchayat__block__district__state__name"]
 
 class telanganaSSSgroupModelAdmin(admin.ModelAdmin):
   list_display=["groupName","groupCode"]
@@ -173,6 +178,10 @@ class applicantModelAdmin(admin.ModelAdmin):
   readonly_fields=["jobcard","applicantNo","panchayat","name","age","caste","fatherHusbandName","accountNo"]
   search_fields=["jobcard1"]
 
+class paymentDetailModelAdmin(admin.ModelAdmin):
+  list_display=["id","applicant","fto","referenceNo","disbursedDate"]
+  readonly_fields=["applicant","fto","workDetail"]
+  search_fields=["referenceNo","fto__ftoNo","applicant__jobcard__jobcard"]
 class workDetailModelAdmin(admin.ModelAdmin):
   list_display=["id","muster","musterIndex","applicant","zjobcard","zname","zaccountNo","creditedDate","musterStatus"]
   readonly_fields=["muster","applicant"]
@@ -226,6 +235,8 @@ admin.site.register(FPSShop,fpsShopModelAdmin)
 admin.site.register(FPSStatus,fpsStatusModelAdmin)
 admin.site.register(LibtechTag,libtechTagModelAdmin)
 admin.site.register(TelanganaSSSGroup,telanganaSSSgroupModelAdmin)
+admin.site.register(Stat,statModelAdmin)
+admin.site.register(PaymentDetail,paymentDetailModelAdmin)
 # Reference Code for Downloading CSV
 # def download_csv(self, request, queryset):
 #   import csv

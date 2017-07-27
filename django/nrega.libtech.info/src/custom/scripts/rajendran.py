@@ -68,27 +68,21 @@ def main():
       i=i+1
       logger.info("**********************************************************************************")
       logger.info("Createing work Payment report for panchayat: %s panchayatCode: %s ID: %s" % (eachPanchayat.name,eachPanchayat.code,str(eachPanchayat.id)))
-      PanchayatReports=PanchayatReport.objects.filter(panchayat=eachPanchayat)
-      for report in PanchayatReports:
-        reportType=report.reportType
-        logger.info(reportType)
-        if reportType == "delayCompensationCSV":
-          suffix="dc"
-        elif reportType == "workPayment":
-          suffix="wp"
-        else:
-          suffix="no"
-        logger.info(suffix)
-        if suffix != "no":
-          logger.info("I am here")
-          reportURL=report.reportFile.url
-          finyear=report.finyear
-          filename="%s_p%s_%s.csv" % (suffix,str(i),finyear)
-          logger.info("Panchyat Name: %s, reportType: %s, reportURL : %s " % (eachPanchayat.name,reportType,reportURL)) 
-          filepath="/tmp/rajendran/%s/" % (eachPanchayat.block.district.state.name)
-          cmd="mkdir -p %s && cd %s && wget -O %s %s " %(filepath,filepath,filename,reportURL) 
-          logger.info(cmd)
-          os.system(cmd)
+      dcReport=PanchayatReport.objects.filter(panchayat=eachPanchayat,finyear='17',reportType="delayCompensationCSV").first()
+      wpReport=PanchayatReport.objects.filter(panchayat=eachPanchayat,finyear='17',reportType="workPayment").first()
+      if (dcReport is not None) and (wpReport is not None):
+        dcReportURL=dcReport.reportFile.url
+        wpReportURL=wpReport.reportFile.url
+        filename="%s_p%s_%s.csv" % ('dc',str(i),finyear)
+        filepath="/tmp/rajendran/%s/" % (eachPanchayat.block.district.state.name)
+        cmd="mkdir -p %s && cd %s && wget -O %s %s " %(filepath,filepath,filename,dcReportURL) 
+        logger.info(cmd)
+        os.system(cmd)
+        filename="%s_p%s_%s.csv" % ('wp',str(i),finyear)
+        filepath="/tmp/rajendran/%s/" % (eachPanchayat.block.district.state.name)
+        cmd="mkdir -p %s && cd %s && wget -O %s %s " %(filepath,filepath,filename,wpReportURL) 
+        logger.info(cmd)
+        os.system(cmd)
   logger.info("...END PROCESSING") 
   exit(0)
 if __name__ == '__main__':

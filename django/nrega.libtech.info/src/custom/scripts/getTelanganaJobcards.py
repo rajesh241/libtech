@@ -25,7 +25,7 @@ from django.db.models import F,Q
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
 django.setup()
 
-from nrega.models import State,District,Block,Panchayat,PanchayatReport,TelanganaJobcard
+from nrega.models import State,District,Block,Panchayat,PanchayatReport,Jobcard
 
 def argsFetch():
   '''
@@ -165,14 +165,15 @@ def main():
             cols=row.findAll('td')
             tjobcard=cols[1].text.lstrip().rstrip()
             jobcard=cols[2].text.lstrip().rstrip()
-            telanganaJobcard=TelanganaJobcard.objects.filter(tjobcard=tjobcard).first()
-            if telanganaJobcard is None:
-              TelanganaJobcard.objects.create(tjobcard=tjobcard)
-            telanganaJobcard=TelanganaJobcard.objects.filter(tjobcard=tjobcard).first()
-            telanganaJobcard.panchayat=eachPanchayat
-            telanganaJobcard.jobcard=jobcard
+            myJobcard=Jobcard.objects.filter(jobcard=jobcard).first()
+            if myJobcard is None:
+              Jobcard.objects.create(jobcard=jobcard)
+            myJobcard=Jobcard.objects.filter(jobcard=jobcard).first()
+            myJobcard.panchayat=eachPanchayat
+            myJobcard.tjobcard=tjobcard
+            myJobcard.isRequired=1
             logger.info(tjobcard+jobcard)
-            telanganaJobcard.save()
+            myJobcard.save()
               
   if args['download']:
     logger.info("This script will download Jobcards")

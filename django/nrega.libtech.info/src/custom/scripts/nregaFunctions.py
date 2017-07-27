@@ -27,6 +27,15 @@ def getCurrentFinYear():
     year=year
   return year% 100
 
+def getTelanganaDate(myDateString,dateType):
+  outdate=None
+  if (myDateString != '') and (myDateString!= '-'):
+    if dateType=="smallYear":
+      outdate=datetime.datetime.strptime(myDateString[:9], '%d-%b-%y')
+    elif dateType=="bigYear":
+      outdate=datetime.datetime.strptime(myDateString[:11], '%d-%b-%Y')
+  return outdate
+
 def correctDateFormat(myDateString):
   if myDateString != '':
     myDate = time.strptime(myDateString, '%d/%m/%Y')
@@ -66,7 +75,10 @@ def saveVillageReport(logger,eachVillage,finyear,reportType,filename,filecontent
 def getjcNumber(jobcard):
   jobcardArray=jobcard.split('/')
 #  print(jobcardArray[1])
-  jcNumber=re.sub("[^0-9]", "", jobcardArray[1])
+  if len(jobcardArray) > 1:
+    jcNumber=re.sub("[^0-9]", "", jobcardArray[1])
+  else:
+    jcNumber='0'
   return jcNumber
 
 def getVilCode(jobcard):
