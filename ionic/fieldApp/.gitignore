@@ -11,6 +11,7 @@
 *.tmp.*
 *.*.orig
 *.*.patched
+*.*_patched
 log.txt
 *.sublime-project
 *.sublime-workspace

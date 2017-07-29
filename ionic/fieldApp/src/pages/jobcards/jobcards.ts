@@ -13,7 +13,9 @@ export class JobcardsPage {
     panchayatSlug: string;
     // jobcardCode: string;
     jobcardsObservable: AfoListObservable<any[]>;
-    meta: AfoListObservable<any[]>;
+    metaObservable: AfoListObservable<any[]>;
+    // metaObject: AfoObjectObservable<any>;;
+    meta: any;
     items: any;
     jobcards: any;
     url = '/jcs/';
@@ -42,8 +44,19 @@ export class JobcardsPage {
 	    this.items.forEach(jobcard => this.expanded[jobcard] = false);
 	});
 
-	// this.musters = this.afoDatabase.list('/musters/' + this.panchayatSlug);	
-	this.meta = this.afoDatabase.list('/panchayats_meta/' + this.panchayatSlug);	
+	// this.musters = this.afoDatabase.list('/panchayata_meta/' + this.panchayatSlug);	
+	this. metaObservable = this.afoDatabase.list('/panchayats_meta/' + this.panchayatSlug + '/'); // + '75daysOrMore')
+        console.log('Meta is ');
+        console.log(this.metaObservable);
+
+        /*
+        this.metaObject = this.afoDatabase.object('/panchayats_meta/' + this.panchayatSlug + '/'); // + '75daysOrMore');
+        this.metaObject.subscribe(meta => {
+            console.log('Meta is ');
+            console.log(meta);
+            this.meta = meta;
+        })
+        */
     }
 
     expandJobcards(jobcard) {

@@ -10,8 +10,24 @@
 
 <ion-content padding>
   <h4>For Panchayat [{{ panchayatSlug }}]</h4>
+  <!--
+  {{ meta['75daysOrMore'] }}
+  <div *ngFor="let meta of metaObject | async">
+    {{ meta }}
+  </div>
+  -->
+  <div *ngFor="let field of metaObservable|async">
+    <ion-item *ngIf="field.$value != ''"><b>{{ field.$key }}</b>: {{ field.$value }}</ion-item>
+    <ion-item *ngIf="field.$value == ''"><b>{{ field.$key }}</b>:
+      <div *ngFor="let village of field.$key.villages">
+        <ion-item *ngIf="village.$value != ''"><b>{{ village.$key }}</b>: {{ field.$value }}</ion-item>
+      </div>
+    </ion-item>
+  </div>
+  <!--
   <p><b>Total jobcards:</b> {{ meta.total_jobcards }}</p>
   <p><b>Total workers:</b> {{ meta.total_workers }}</p>
+  -->
   <!-- {{ jobcards|async|json }} -->
   <hr />
   <div *ngFor="let jobcards of jobcardsObservable|async">
@@ -25,7 +41,7 @@
     <p *ngFor="let key of jobcards | keys">
       {{ key }}
     </p>
-    <div *ngFor="let jobcardKey of jobcards|keys">
+    <div *ngFor="let jobcardKey of jobcards | keys">
       {{ jobcardKey }}
     </div>
     <p *ngFor="let jobcard of villages"> {{ jobcard }}
