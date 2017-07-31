@@ -384,10 +384,10 @@ def panchayats_patch(logger, db):
 
 # Patch the Firebase Database
 
-def jobcards_patch(logger, db):
-    # To Delete/Reset enable the if below
-    if 0:
-        result = firebase.delete('https://libtech-app.firebaseio.com/jcs/', None)
+def jobcards_patch(logger, db, purge=False):
+    # To Delete/Reset invoke with purge=True
+    if purge:
+        result = firebase.delete('https://libtech-app.firebaseio.com/jobcards/', None)
         return 'SUCCESS'
 
     cur = db.cursor()
@@ -403,14 +403,15 @@ def jobcards_patch(logger, db):
     ]
     block_strings = [ 'JH-01-020' ]
     
-    geo = {}
+    jobcards = {}
 
     for blString in block_strings:    
         logger.info('Block String[%s]' % blString)
 
-        qRejInvPerJc = "SELECT zjobcard,SUBSTRING(zjobcard, 1, 13) AS ptString,SUBSTRING(zjobcard, 15, 3) AS vString,substring_index(zjobcard, '/', -1) as hString,round(sum(case WHEN musterStatus = 'Credited' then 1 else 0 END ), 0) as totCredited,round(sum(case WHEN musterStatus = '' then 1 else 0 END ), 0) as totPending,round(sum(case WHEN musterStatus = 'Rejected' then 1 else 0 END ), 0) as totRejected,round(sum(case WHEN musterStatus = 'Invalid Account' then 1 else 0 END ), 0) as totInvalid FROM libtech3.nrega_workdetail WHERE musterStatus = 'credited'AND musterStatus != '' AND SUBSTRING(zjobcard, 1, 9) = '{0}' GROUP BY zjobcard ORDER BY zjobcard".format(blString)
-        logger.info('Executing query[%s]' % qRejInvPerJc)
-        cur.execute(qRejInvPerJc)
+        qRejInvPerJc = "SELECT zjobcard,SUBSTRING(zjobcard, 1, 13) AS ptString,SUBSTRING(zjobcard, 15, 3) AS vString,substring_index(zjobcard, '/', -1) as hString,round(sum(case WHEN musterStatus = 'Credited' then 1 else 0 END ), 0) as totCredited,round(sum(case WHEN musterStatus = '' then 1 else 0 END ), 0) as totPending,round(sum(case WHEN musterStatus = 'Rejected' then 1 else 0 END ), 0) as totRejected,round(sum(case WHEN musterStatus = 'Invalid Account' then 1 else 0 END ), 0) as totInvalid FROM libtech3.nrega_workdetail WHERE musterStatus = 'credited' AND musterStatus != '' AND SUBSTRING(zjobcard, 1, 9) = '{0}' GROUP BY zjobcard ORDER BY zjobcard".format(blString)
+        query = "SELECT zjobcard,SUBSTRING(zjobcard, 1, 13) AS ptString,SUBSTRING(zjobcard, 15, 3) AS vString,substring_index(zjobcard, '/', -1) as hString,round(sum(case WHEN musterStatus = 'Credited' then 1 else 0 END ), 0) as totCredited,round(sum(case WHEN musterStatus = '' then 1 else 0 END ), 0) as totPending,round(sum(case WHEN musterStatus = 'Rejected' then 1 else 0 END ), 0) as totRejected,round(sum(case WHEN musterStatus = 'Invalid Account' then 1 else 0 END ), 0) as totInvalid FROM libtech3.nrega_workdetail WHERE SUBSTRING(zjobcard, 1, 9) = '{0}' GROUP BY zjobcard ORDER BY zjobcard".format(blString)
+        logger.info('Executing query[%s]' % query)
+        cur.execute(query)
         rejInvPerJc = cur.fetchall()
 
         for r in rejInvPerJc:
@@ -426,7 +427,7 @@ def jobcards_patch(logger, db):
                 hhd_slug = hhd.zfill(10)
 
             jobcard = pt + '-' + vil
-            jobcardSlug = pt + '-' + vil + '_' + hhd_slug
+            jobcard_slug = pt + '-' + vil + '_' + hhd_slug
 
             # district = jobcard2panchayats[pt]['district'].lower().replace(' ', '-')
             query = 'select diName from panchayatMapping where blName="%s"' % jobcard2panchayats[pt]['block']
@@ -439,25 +440,21 @@ def jobcards_patch(logger, db):
             (state, block, panchayat) = jobcard2panchayats[pt]['slug'].split('_')
             logger.info('(state[%s], block[%s], panchayat[%s])' % (state, block, panchayat))
             panchayat_slug = state + '_' + district + '_' + block + '_' + panchayat
-            logger.info('panchayat_slug[%s]' % panchayat_slug)
+            logger.info('panchayat_slug[%s] jobcard[%s] jobcard_slug[%s]' % (panchayat_slug, jobcard, jobcard_slug))
             
-            if jobcard in geo:
-                pass
-            else:
-                if pt in jobcard2panchayats:
-                    geo[jobcard] = {'panchayatSlug': panchayat_slug}
-                else:
-                    geo[jobcard] = {}
-                logger.info(geo[jobcard])
+            if panchayat_slug not in jobcards:
+                jobcards[panchayat_slug] = {}
 
-            geo[jobcard][jobcardSlug] = {'totCredited': str(r[4]), 'totPending': str(r[5]), 'totRejected': str(r[6]), 'totInvalid': str(r[7]), 'jobcardSlug': jobcardSlug, 'jobcard': jc}
-            logger.info(geo[jobcard][jobcardSlug])
+            if jobcard not in jobcards[panchayat_slug]:
+                jobcards[panchayat_slug][jobcard] = {}
 
-        result = firebase.patch('https://libtech-app.firebaseio.com/jcs/', geo)
-        # logger.info(len(result))
-        exit(0)
+            jobcards[panchayat_slug][jobcard][jobcard_slug] = {'totCredited': str(r[4]), 'totPending': str(r[5]), 'totRejected': str(r[6]), 'totInvalid': str(r[7]), 'jobcard_slug': jobcard_slug, 'jobcard': jc}
+            logger.info(jobcards[panchayat_slug][jobcard][jobcard_slug])
 
+        logger.info(jobcards)
+        result = firebase.patch('https://libtech-app.firebaseio.com/jobcards/', jobcards)
 
+        
         # # Update jobcard register information
         # 
         # Update details on name, etc. from the jobcard register.
@@ -489,14 +486,29 @@ def jobcards_patch(logger, db):
                 hhd_slug = hhd.zfill(10)
 
             jobcard = pt + '-' + vil
-            jobcardSlug = pt + '-' + vil + '_' + hhd_slug
-            logger.info('geo[%s][%s] = ' % (jobcard, jobcardSlug)) # , str(geo[jobcard][jobcardSlug])))
-            
+            jobcard_slug = pt + '-' + vil + '_' + hhd_slug
+            logger.info('jobcards[%s][%s][%s]' % (panchayat_slug, jobcard, jobcard_slug)) # str(jobcards[panchayat_slug][jobcard][jobcard_slug])))
 
-            if 'applicants' in geo[jobcard][jobcardSlug]:
-                logger.info('Passed with PRE value ' + str(geo[jobcard][jobcardSlug]['applicants']))
-            else:
-                geo[jobcard][jobcardSlug]['applicants'] = {}
+            # district = jobcard2panchayats[pt]['district'].lower().replace(' ', '-')
+            query = 'select diName from panchayatMapping where blName="%s"' % jobcard2panchayats[pt]['block']
+            logger.info('Executing query[%s]' % query)
+            cur.execute(query)
+            res = cur.fetchall()
+            district = res[0][0].lower().replace(' ', '-')
+            logger.info(district)
+
+            (state, block, panchayat) = jobcard2panchayats[pt]['slug'].split('_')
+            logger.info('(state[%s], block[%s], panchayat[%s])' % (state, block, panchayat))
+            panchayat_slug = state + '_' + district + '_' + block + '_' + panchayat
+            logger.info('panchayat_slug[%s] jobcard[%s] jobcard_slug[%s]' % (panchayat_slug, jobcard, jobcard_slug))
+
+
+            if jobcard_slug not in jobcards[panchayat_slug][jobcard]:
+                logger.info('Need to skip this one jobcards[%s][%s][%s]' % (panchayat_slug, jobcard, jobcard_slug))
+                continue      # FIXME Shouldn't have gaps. Why is this needed?
+
+            if 'applicants' not in jobcards[panchayat_slug][jobcard][jobcard_slug]:
+                jobcards[panchayat_slug][jobcard][jobcard_slug]['applicants'] = {}
             
             for a in applicantFields:
                 if (n[i] != '') and (n[i] != '0'):
@@ -505,13 +517,12 @@ def jobcards_patch(logger, db):
                     pass
                 i = i+1
                 
-            geo[jobcard][jobcardSlug]['applicants'][appNo] = nDetails
-            logger.info('Applicant to be added to ' + str(geo[jobcard][jobcardSlug]['applicants']))
+            jobcards[panchayat_slug][jobcard][jobcard_slug]['applicants'][appNo] = nDetails
+            logger.info('Applicant to be added to ' + str(jobcards[panchayat_slug][jobcard][jobcard_slug]['applicants']))
 
-        logger.info(str(geo))
-        result = firebase.patch('https://libtech-app.firebaseio.com/jcs/', geo)
-        logger.info(result)
-
+        logger.info(str(jobcards))
+        result = firebase.patch('https://libtech-app.firebaseio.com/jobcards/', jobcards)
+        
     return 'SUCCESS'
 
 
@@ -855,11 +866,11 @@ class TestSuite(unittest.TestCase):
     
   def test_firebase_patch(self):
     # result = pts_collect(self.logger, self.db)
-    result = panchayat_summary_patch(self.logger, self.db)  
+    # result = panchayat_summary_patch(self.logger, self.db)  
     # result = musters_patch(self.logger, self.db)  
     # result = panchayats_patch(self.logger, self.db)
     # result = firebase_patch(self.logger, self.db)
-    # result = jobcards_patch(self.logger, self.db)
+    result = jobcards_patch(self.logger, self.db)
     self.assertEqual('SUCCESS', result)
 
   def test_load_panchayats(self):
