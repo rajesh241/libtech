@@ -12,40 +12,21 @@ export class TransactionsPage {
     transactionPage = TransactionPage;
     panchayatSlug: string;
     jobcard: string;
-    jobcardSlug: string;
     url: string;
     phone: string;
     updated = true;
     items: AfoListObservable<any[]>;
-    rejInv: AfoListObservable<any[]>;
     applicantDetails: AfoListObservable<any[]>;
     //Useful to toggle buttons.  Default is off.
     show: boolean = false;
+    
 
     constructor(public navCtrl: NavController, public navParams: NavParams, private afoDatabase: AngularFireOfflineDatabase) {
         console.log('Inside Transactions Constructor');
         this.jobcard = this.navParams.get('jobcard').replace('/', '_');
-        // this.jobcardSlug = this.navParams.get('jobcardSlug');
-	// var index = this.jobcardSlug.indexOf('_');
-	// console.log(index);
-	// var hhd = this.jobcardSlug.substring(index+1).replace(/^0+/, '')
-	// console.log(hhd);
-        // this.jobcard = this.jobcardSlug.substring(0, index+1) + hhd;
-        // console.log(this.panchayatSlug)
         console.log(this.jobcard);
-        // console.log(this.jobcardSlug);
-
-        var ptCode = this.jobcard.substring(0, 13);
-        var vilCode = this.jobcard.substring(14, 17);
-        var h: string[] = this.jobcard.split('_');
-        var hhdCode = h[h.length - 1]
-        var geoUrl = '/geo/' + ptCode + '/' + vilCode + '/' + hhdCode + '/'
-        // console.log('Values ' + this.jobcard, ptCode, vilCode, h, hhdCode, geoUrl);
-        console.log(geoUrl);
-
-        this.rejInv = afoDatabase.list(geoUrl);
-
-        var appUrl = geoUrl + 'applicants/'
+	
+        let appUrl = this.navParams.get('url') + '/applicants/';
         this.applicantDetails = afoDatabase.list(appUrl);
 
         this.url = '/transactions/' + this.jobcard

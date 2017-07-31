@@ -14,11 +14,15 @@ export class JobcardsPage {
     // jobcardCode: string;
     jobcardsObservable: AfoListObservable<any[]>;
     metaObservable: AfoListObservable<any[]>;
+    finyear16Observable: AfoListObservable<any[]>;
+    finyear17Observable: AfoListObservable<any[]>;
+    finyear18Observable: AfoListObservable<any[]>;
+    dayOrMoreObservable: AfoListObservable<any[]>;
     // metaObject: AfoObjectObservable<any>;;
     meta: any;
     items: any;
     jobcards: any;
-    url = '/jcs/';
+    url = '/jobcards/';
     expanded: any;
     expandHeight;
     // jobcardSlug: string;
@@ -28,14 +32,11 @@ export class JobcardsPage {
 	this.expanded = {};
 	this.expandHeight = 40;
         this.panchayatSlug = this.navParams.get('panchayatSlug');
-        // this.jobcardCode = this.navParams.get('jobcardCode');
-        // this.url += this.jobcardCode;
-        // this.jobcards = afoDatabase.list(this.url);
-        console.log(this.url + this.panchayatSlug); // + this.jobcardCode);
+	this.url += this.panchayatSlug
+        console.log(this.url);
         this.jobcardsObservable = afoDatabase.list(this.url, {
             query: {
-                orderByChild: 'panchayatSlug',
-                equalTo: this.panchayatSlug
+		orderByKey: true
             }
         }); // .map((jobcard):AfoListObservable<any> => {jobcard[expanded] = false; console.log(jobcard); return jobcard;});
 	this.jobcardsObservable.subscribe(items => {
@@ -44,13 +45,28 @@ export class JobcardsPage {
 	    this.items.forEach(jobcard => this.expanded[jobcard] = false);
 	});
 
-	// this.musters = this.afoDatabase.list('/panchayata_meta/' + this.panchayatSlug);	
-	this. metaObservable = this.afoDatabase.list('/panchayats_meta/' + this.panchayatSlug + '/'); // + '75daysOrMore')
+	this.metaObservable = this.afoDatabase.list('/panchayat_summary/' + this.panchayatSlug + '/'); // + '75daysOrMore')
         console.log('Meta is ');
         console.log(this.metaObservable);
 
+	this.finyear16Observable = this.afoDatabase.list('/panchayat_summary/' + this.panchayatSlug + '/' + 'financial_year_2015-16'); // + '75daysOrMore')
+        console.log('financial_year_2015-16 is ');
+        console.log(this.metaObservable);
+
+	this.finyear17Observable = this.afoDatabase.list('/panchayat_summary/' + this.panchayatSlug + '/' + 'financial_year_2016-17'); // + '75daysOrMore')
+        console.log('financial_year_2016-17 is ');
+        console.log(this.metaObservable);
+
+	this.finyear18Observable = this.afoDatabase.list('/panchayat_summary/' + this.panchayatSlug + '/' + 'financial_year_2017-18'); // + '75daysOrMore')
+        console.log('financial_year_2017-18 is ');
+        console.log(this.metaObservable);
+
+	this.dayOrMoreObservable = this.afoDatabase.list('/panchayat_summary/' + this.panchayatSlug + '/' + '75daysOrMore');
+        console.log('dayOrMoreObservable is ');
+        console.log(this.dayOrMoreObservable);
+
         /*
-        this.metaObject = this.afoDatabase.object('/panchayats_meta/' + this.panchayatSlug + '/'); // + '75daysOrMore');
+        this.metaObject = this.afoDatabase.object('/panchayat_summary/' + this.panchayatSlug + '/'); // + '75daysOrMore');
         this.metaObject.subscribe(meta => {
             console.log('Meta is ');
             console.log(meta);

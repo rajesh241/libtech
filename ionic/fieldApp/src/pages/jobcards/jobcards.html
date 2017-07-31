@@ -10,17 +10,47 @@
 
 <ion-content padding>
   <h4>For Panchayat [{{ panchayatSlug }}]</h4>
-  <!--
-  {{ meta['75daysOrMore'] }}
-  <div *ngFor="let meta of metaObject | async">
-    {{ meta }}
-  </div>
-  -->
+  <b>Summary:</b>
   <div *ngFor="let field of metaObservable|async">
+    <ion-item *ngIf="field.$value"><b>{{ field.$key }}</b>: {{ field.$value }}</ion-item>
+  </div>
+  
+  <b>Financial Year 2015-16:</b>
+  <div *ngFor="let field of finyear16Observable|async">
     <ion-item *ngIf="field.$value != ''"><b>{{ field.$key }}</b>: {{ field.$value }}</ion-item>
     <ion-item *ngIf="field.$value == ''"><b>{{ field.$key }}</b>:
-      <div *ngFor="let village of field.$key.villages">
-        <ion-item *ngIf="village.$value != ''"><b>{{ village.$key }}</b>: {{ field.$value }}</ion-item>
+      <div *ngFor="let item of field.$value">
+        <ion-item *ngIf="item.$value != ''"><b>{{ item.$key }}</b>: {{ item.$value }}</ion-item>
+      </div>
+    </ion-item>
+  </div>
+  
+  <b>Financial Year 2016-17:</b>
+  <div *ngFor="let field of finyear17Observable|async">
+    <ion-item *ngIf="field.$value != ''"><b>{{ field.$key }}</b>: {{ field.$value }}</ion-item>
+    <ion-item *ngIf="field.$value == ''"><b>{{ field.$key }}</b>:
+      <div *ngFor="let item of field.$value">
+        <ion-item *ngIf="item.$value != ''"><b>{{ item.$key }}</b>: {{ item.$value }}</ion-item>
+      </div>
+    </ion-item>
+  </div>
+  
+  <b>Financial Year 2017-18:</b>
+  <div *ngFor="let field of finyear18Observable|async">
+    <ion-item *ngIf="field.$value != ''"><b>{{ field.$key }}</b>: {{ field.$value }}</ion-item>
+    <ion-item *ngIf="field.$value == ''"><b>{{ field.$key }}</b>:
+      <div *ngFor="let item of field.$value">
+        <ion-item *ngIf="item.$value != ''"><b>{{ item.$key }}</b>: {{ item.$value }}</ion-item>
+      </div>
+    </ion-item>
+  </div>
+  
+  <b>People Who Worked More than 75 Days:</b>
+  <div *ngFor="let field of dayOrMoreObservable|async">
+    <ion-item *ngIf="field.$value != ''"><b>{{ field.$key }}</b>: {{ field.$value }}</ion-item>
+    <ion-item *ngIf="field.$value == ''"><b>{{ field.$key }}</b>:
+      <div *ngFor="let item of field.$value">
+        <ion-item *ngIf="item.$value != ''"><b>{{ item.$key }}</b>: {{ item.$value }}</ion-item>
       </div>
     </ion-item>
   </div>
@@ -34,7 +64,7 @@
     <button ion-button (click)="expandJobcards(jobcards.$key)">{{ jobcards.$key }}</button>
       <expandable [expandHeight]="expandHeight" [expanded]="expanded[jobcards.$key]">
 	<div *ngFor="let jobcardKey of jobcards|keys">
-	  <button ion-button [navPush]="transactionsPage" [navParams]="{jobcard: jobcards[jobcardKey].jobcard}">{{ jobcardKey }}</button>
+	  <button ion-button [navPush]="transactionsPage" [navParams]="{jobcard: jobcards[jobcardKey].jobcard, url : url + '/' + jobcards.$key + '/' + jobcardKey}">{{ jobcardKey }}</button>
 	</div>
       </expandable>
      <!--
