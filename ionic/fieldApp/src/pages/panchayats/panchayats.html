@@ -15,23 +15,14 @@
   <div *ngIf="preferredPanchayats">
     <div class="row" *ngFor="let panchayat of preferredPanchayats">
       <div class="col">
-	<input type="checkbox" [checked]="panchayatSelected[panchayat.name]"
-               (click)="choosePanchayat(selectPanchayat, panchayat.name, panchayat.name)">
-	<button ion-button #selectPanchayat [navPush]="jobcardsPage"
+	<input type="checkbox" [checked]="panchayatSelected[panchayat.slug]"
+               (click)="choosePanchayat(panchayat.slug, panchayat.slug)">
+	<button ion-button [navPush]="jobcardsPage"
 		[navParams]="{panchayatSlug: panchayat.slug}">{{ panchayat.slug }}
 	</button>
-	<!-- TBD
-	     <button>
-	       [navParams]="{panchayatSlug: panchayat.slug, jobcardCode: panchayat.jobcardCode}">{{ panchayat.slug }} 
-	     </button>
-	  -->
       </div>
     </div>
   </div>
-  <!--
-  <div>{{ displayPanchayats|json }}</div>
-  <div>{{ preferredPanchayats|json }}</div>
-    -->  
   <button ion-button [disabled]="!checked || synced" (click)="syncPanchayats()">
     Sync
   </button>

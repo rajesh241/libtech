@@ -43,7 +43,7 @@ export class PanchayatsPage {
         this.panchayats = this.panchayatList.load();
     }
 
-    choosePanchayat(selected, index, panchayat) {
+    choosePanchayat(index, panchayat) {
         this.checked = true;
         this.synced = false;
         this.panchayatSelected[index] = !this.panchayatSelected[index];
@@ -98,13 +98,6 @@ export class PanchayatsPage {
             }
         });
         alert.present();
-    }
-
-    panchayat2jobcard(panchayatKey) {
-        this.panchayats = this.panchayatList.load();
-        var jcCode = this.panchayats.filter(panchayat => panchayat.panchayatKey === panchayatKey).map(panchayat => panchayat.jobcardCode)
-        // console.log('p2j => ' + JSON.stringify(this.panchayats[panchayatKey]));
-        return jcCode; // this.panchayats[panchayatKey].panchayat
     }
 
     syncPanchayats() {
