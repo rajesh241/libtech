@@ -21,7 +21,7 @@ from django.utils import timezone
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
 django.setup()
 
-from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,PanchayatReport,LibtechTag
+from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,PanchayatReport,LibtechTag,PanchayatStat
 
 def argsFetch():
   '''
@@ -33,6 +33,7 @@ def argsFetch():
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-limit', '--limit', help='Limit on the number of results', required=False)
+  parser.add_argument('-d', '--download', help='Download the Status', required=False,action='store_const', const=1)
   parser.add_argument('-f', '--finyear', help='Financial year for which data needs to be crawld', required=True)
   parser.add_argument('-s', '--stateCode', help='StateCode for which the numbster needs to be downloaded', required=False)
 
@@ -58,31 +59,69 @@ def main():
     tagArray.append(eachTag)
 
 #  myPanchayats=Panchayat.objects.filter(block__district__state__code='34',crawlRequirement="FULL",libtechTag__in=tagArray)
-  stateCodes=[args['stateCode']]
+ # stateCodes=[args['stateCode']]
+  stateCodes=['33','34','27','24','15','18','16','31','05','17','32']
+  consolidatedcsv=''
+  consolidatedcsv="srno,state,district,block,panchayat,nicWorkDays,libtechWorkDays,accuracy\n"
   for stateCode in stateCodes:
     myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__code=stateCode,libtechTag__in=tagArray)[:limit]
     myState=State.objects.filter(code=stateCode).first()
     stateName=myState.slug
-    i=0 
+    i=0
+    j=0
+    outcsv=''  
+    outcsv="srno,district,block,panchayat,nicWorkDays,libtechWorkDays,accuracy\n"
     for eachPanchayat in myPanchayats:
       i=i+1
+      myMusters=Muster.objects.filter(panchayat=eachPanchayat,isDownloaded=0,finyear='17')
+      undownloadedMusters=len(myMusters)
+      myMusters=Muster.objects.filter(panchayat=eachPanchayat,isDownloaded=1,finyear='17')
+      totalMusters=len(myMusters)
       logger.info("**********************************************************************************")
       logger.info("Createing work Payment report for panchayat: %s panchayatCode: %s ID: %s" % (eachPanchayat.name,eachPanchayat.code,str(eachPanchayat.id)))
       dcReport=PanchayatReport.objects.filter(panchayat=eachPanchayat,finyear='17',reportType="delayCompensationCSV").first()
       wpReport=PanchayatReport.objects.filter(panchayat=eachPanchayat,finyear='17',reportType="workPayment").first()
       if (dcReport is not None) and (wpReport is not None):
-        dcReportURL=dcReport.reportFile.url
-        wpReportURL=wpReport.reportFile.url
-        filename="%s_p%s_%s.csv" % ('dc',str(i),finyear)
-        filepath="/tmp/rajendran/%s/" % (eachPanchayat.block.district.state.name)
-        cmd="mkdir -p %s && cd %s && wget -O %s %s " %(filepath,filepath,filename,dcReportURL) 
-        logger.info(cmd)
-        os.system(cmd)
-        filename="%s_p%s_%s.csv" % ('wp',str(i),finyear)
-        filepath="/tmp/rajendran/%s/" % (eachPanchayat.block.district.state.name)
-        cmd="mkdir -p %s && cd %s && wget -O %s %s " %(filepath,filepath,filename,wpReportURL) 
-        logger.info(cmd)
-        os.system(cmd)
+        myPanchayatStat=PanchayatStat.objects.filter(panchayat=eachPanchayat,finyear='17').first()
+        if myPanchayatStat is not None:
+          nicWorkDays=myPanchayatStat.nicWorkDays
+          libtechWorkDays=myPanchayatStat.libtechWorkDays
+          try:
+            accuracy=int(libtechWorkDays*100/nicWorkDays)
+          except:
+            accuracy=0
+        else:
+          nicWorkDays=''
+          libtechWorkDays=''
+          accuracy=0
+          
+        outcsv+="%s,%s,%s,%s,%s,%s,%s,%s,%s" %(str(i),eachPanchayat.block.district.slug,eachPanchayat.block.slug,eachPanchayat.slug,str(nicWorkDays),str(libtechWorkDays),str(accuracy),str(totalMusters),str(undownloadedMusters))
+        consolidatedcsv+="%s,%s,%s,%s,%s,%s,%s,%s,%s,%s" %(str(i),stateName,eachPanchayat.block.district.slug,eachPanchayat.block.slug,eachPanchayat.slug,str(nicWorkDays),str(libtechWorkDays),str(accuracy),str(totalMusters),str(undownloadedMusters))
+        outcsv+="\n"
+        consolidatedcsv+="\n"
+        logger.info("Accurace is %s " % str(accuracy))
+        if ( int(accuracy) >= 90 ) and ( int(accuracy) <= 110 ):
+          eachPanchayat.isDataAccurate=True
+          eachPanchayat.save()
+          j=j+1
+          if args['download']:
+            dcReportURL=dcReport.reportFile.url
+            wpReportURL=wpReport.reportFile.url
+            filename="%s_p%s_%s.csv" % ('dc',str(j),finyear)
+            filepath="/tmp/final/%s/" % (eachPanchayat.block.district.state.slug)
+            cmd="mkdir -p %s && cd %s && wget -O %s %s " %(filepath,filepath,filename,dcReportURL) 
+            logger.info(cmd)
+            os.system(cmd)
+            filename="%s_p%s_%s.csv" % ('wp',str(j),finyear)
+            filepath="/tmp/final/%s/" % (eachPanchayat.block.district.state.slug)
+            cmd="mkdir -p %s && cd %s && wget -O %s %s " %(filepath,filepath,filename,wpReportURL) 
+            logger.info(cmd)
+            os.system(cmd)
+    with open("/tmp/%s.csv" % stateName,"w") as f:
+      f.write(outcsv)
+  with open("/tmp/%s.csv" % "consolidated","w") as f:
+    f.write(consolidatedcsv)
+
   logger.info("...END PROCESSING") 
   exit(0)
 if __name__ == '__main__':

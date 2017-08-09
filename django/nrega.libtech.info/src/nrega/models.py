@@ -70,6 +70,7 @@ class District(models.Model):
   state=models.ForeignKey('state',on_delete=models.CASCADE)
   name=models.CharField(max_length=256)
   code=models.CharField(max_length=4,unique=True)
+  tcode=models.CharField(max_length=8,blank=True,null=True)
   fpsCode=models.CharField(max_length=4,unique=True,blank=True,null=True)
   slug=models.SlugField(blank=True) 
   def stateName(self):
@@ -198,6 +199,7 @@ class Panchayat(models.Model):
   name=models.CharField(max_length=256)
   remarks=models.CharField(max_length=256,blank=True,null=True)
   code=models.CharField(max_length=10,unique=True)
+  tcode=models.CharField(max_length=10,blank=True,null=True)
   slug=models.SlugField(blank=True) 
   libtechTag=models.ManyToManyField('LibtechTag',related_name="panchayatTag",blank=True)
   crawlRequirement=models.CharField(max_length=4,choices=CRAWL_CHOICES,default='NONE')
@@ -209,6 +211,7 @@ class Panchayat(models.Model):
   musterCrawlDate=models.DateTimeField(null=True,blank=True,default=datetime.datetime.now)
   statsCrawlDate=models.DateTimeField(null=True,blank=True)
   jobcardRegisterFile=models.FileField(null=True, blank=True,upload_to=get_panchayat_upload_path,max_length=512)
+  isDataAccurate=models.BooleanField(default=False)
 
 
   def __str__(self):
@@ -279,7 +282,7 @@ class Jobcard(models.Model):
   downloadCount=models.PositiveSmallIntegerField(default=0)
   downloadError=models.CharField(max_length=64,blank=True,null=True)
   def __str__(self):
-    return self.jobcard
+    return str(self.id)
   
 class Stat(models.Model):
   STAT_OPTIONS = (
@@ -428,7 +431,7 @@ class PaymentDetail(models.Model):
   status=models.CharField(max_length=256,null=True,blank=True)
   rejectionReason=models.CharField(max_length=256,null=True,blank=True)
   creditedAmount=models.DecimalField(max_digits=10,decimal_places=4,null=True,blank=True)
-  daysWorked=models.PositiveSmallIntegerField(null=True,blank=True)
+  daysWorked=models.DecimalField(null=True,blank=True,max_digits=21,decimal_places=2)
   disbursedAmount=models.DecimalField(max_digits=10,decimal_places=4,null=True,blank=True)
   disbursedDate=models.DateField(null=True,blank=True)
   created=models.DateTimeField(null=True,blank=True,auto_now_add=True)

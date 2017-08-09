@@ -37,6 +37,7 @@ def argsFetch():
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-limit', '--limit', help='Limit on the number of results', required=False)
   parser.add_argument('-s', '--stateCode', help='StateCode for which the numbster needs to be downloaded', required=False)
+  parser.add_argument('-m', '--musterID', help='Muster ID for whcih muster needs tobe processed', required=False)
 
   args = vars(parser.parse_args())
   return args
@@ -50,7 +51,10 @@ def main():
   else:
     limit =1
   stateCode=args['stateCode']
-  if stateCode is not None:
+  musterID=args['musterID']
+  if musterID is not None:
+    myMusters=Muster.objects.filter(id=musterID)
+  elif stateCode is not None:
     logger.info("StateCode is %s" % stateCode)
     myMusters=Muster.objects.filter(isDownloaded=1,isProcessed=0,panchayat__isnull=False,panchayat__crawlRequirement="FULL",panchayat__block__district__state__code=stateCode)[:limit] 
 #    myMusters=Muster.objects.filter(isRequired=1,isDownloaded=1,isProcessed=0,panchayat__crawlRequirement="FULL",panchayat__block__district__code="3406")[:limit] 
@@ -91,7 +95,7 @@ def main():
           value="".join(cols[i].text.split())
           if "Status" in value:
             statusindex=i
-          if ("Sharpening Charge" in cols[i].text) or ("औज़ार सम्बंधित भुगतान" in cols[i].text):
+          if ("Travel and living exp." in cols[i].text) or ("Sharpening Charge" in cols[i].text) or ("औज़ार सम्बंधित भुगतान" in cols[i].text):
             sharpeningIndex=i
           if ("A/C No." in cols[i].text) or ("खाता क्रमांक" in cols[i].text):
             acnoPresent=1

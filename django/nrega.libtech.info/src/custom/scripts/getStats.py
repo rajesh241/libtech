@@ -67,17 +67,22 @@ def main():
     limit = int(args['limit'])
   else:
     limit =1
-  stateCode=args['stateCode']
+  stateCode=[args['stateCode']]
 
+  #stateCode=['34','33','17','18','05','27','15','24','16','31','32']
   if args['download']:
     if stateCode is not None:
-      myPanchayats=Panchayat.objects.filter(Q (crawlRequirement="FULL")  &  (Q (statsCrawlDate__lt = jobCardRegisterTimeThreshold) | Q(statsCrawlDate__isnull = True ) ) & Q (block__district__state__code=stateCode)).order_by('statsCrawlDate')[:limit]
+      #myPanchayats=Panchayat.objects.filter(Q (crawlRequirement="FULL")  &  (Q (statsCrawlDate__lt = jobCardRegisterTimeThreshold) | Q(statsCrawlDate__isnull = True ) ) & Q (block__district__state__code__in=stateCode)).order_by('statsCrawlDate')[:limit]
+      myPanchayats=Panchayat.objects.filter(Q (crawlRequirement="FULL")  &  (Q(statsCrawlDate__isnull = True ) ) & Q (block__district__state__code__in=stateCode)).order_by('-block__district__state__code')[:limit]
     else:
       myPanchayats=Panchayat.objects.filter(Q (crawlRequirement="FULL")  &  (Q (statsCrawlDate__lt = jobCardRegisterTimeThreshold) | Q(statsCrawlDate__isnull = True ) ) ).order_by('statsCrawlDate')[:limit]
    
     finyear=getCurrentFinYear()
+    logger.info("Total Panchayats  %s " % str(len(myPanchayats)))
+    i=0
     for eachPanchayat in myPanchayats:
-      logger.info("Downloading Data for Panchayat: %s, PanchayatCode: %s " % (eachPanchayat.name, eachPanchayat.code)) 
+      i=i+1
+      logger.info("%s of Total %s  Panchayat: %s, PanchayatCode: %s " % (str(i),str(len(myPanchayats)),eachPanchayat.name, eachPanchayat.code)) 
       statsURL="http://mnregaweb4.nic.in/netnrega/all_lvl_details_new.aspx"
       statusURL="%s?panchayat_code=%s&panchayat_name=%s&block_code=%s&block_name=%s&district_code=%s&district_name=%s&state_code=%s&state_name=%s&page=p&fin_year=2014-2015" % (statsURL,eachPanchayat.code,eachPanchayat.name,eachPanchayat.block.code,eachPanchayat.block.name,eachPanchayat.block.district.code,eachPanchayat.block.district.name,eachPanchayat.block.district.state.code,eachPanchayat.block.district.state.name)
       logger.info(statusURL) 
@@ -151,7 +156,7 @@ def main():
         for i,finyear in enumerate(fArray):
           if i != 0:
             workDays=fArrayData[i]
-            libtechWorkDays=WorkDetail.objects.filter(applicant__panchayat=eachPanchayat,muster__finyear=finyear).aggregate(Sum('daysWorked')).get('daysWorked__sum')
+            libtechWorkDays=WorkDetail.objects.filter(muster__panchayat=eachPanchayat,muster__finyear=finyear).aggregate(Sum('daysWorked')).get('daysWorked__sum')
             libtechTotalMusters=Muster.objects.filter(panchayat=eachPanchayat,finyear=finyear).count()
             libtechTotalApplicants=Applicant.objects.filter(panchayat=eachPanchayat).count()
             logger.info("Finyear:%s   WorkDays: %s libtechWorkDays: %s " %(finyear,str(workDays),str(libtechWorkDays)))

@@ -26,10 +26,12 @@ from django.db.models import Count
 #  print(obj.id)
 myLibtechTag=LibtechTag.objects.filter(name="JSK").first()
 telanganaStateCode='36'
-myobjs=Jobcard.objects.filter(panchayat__block__district__state__code=telanganaStateCode,isDownloaded=1,isProcessed=1)
+myobjs=Panchayat.objects.filter(isDataAccurate=True).values("block__district__code","block__district__name","block__district__state__name").annotate(dcount=Count('pk'))
 for obj in myobjs:
-  obj.isProcessed=0
-  obj.save()
+  districtName=obj['block__district__name']
+  stateName=obj['block__district__state__name']
+  count=obj['dcount']
+  print("%s,%s,%s" % (stateName,districtName,str(count)))
 
 groupby='''
 myobjs=Applicant.objects.filter(panchayat__block__district__state__code="36").values("panchayat__block__code","panchayat__block__name","panchayat__name","panchayat__code").annotate(dcount=Count('pk'))
