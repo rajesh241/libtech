@@ -17,11 +17,11 @@ from wrappers.logger import loggerFetch
 # Global Declarations
 #######################
 
-timeout = 10
+timeout = 30
 browser = "Firefox"
 visible = 0
 logfile = "/tmp/%s_firefox_console.log"%os.environ.get('USER')
-size = (width, height) = (1024,768)
+size = (width, height) = (1920, 1080)
 chromedriver = '/usr/lib/chromium-browser/chromedriver'
 
 
@@ -119,8 +119,8 @@ def driverInitialize(browser=None, path=None):
     driver = webdriver.Chrome(chromedriver)
 
   driver.implicitly_wait(timeout)
-  driver.maximize_window() # Mynk is this really needed anymore?
-  # driver.set_window_size(width, height)
+  # driver.maximize_window() # Mynk is this really needed anymore? Why is FF55 causing problem still?
+  driver.set_window_size(width, height)
   # print(driver.get_window_size())
     
 
