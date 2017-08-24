@@ -53,6 +53,7 @@ def main():
 
   myLibtechTag=LibtechTag.objects.filter(name="August 2017 Hearing").first()
   myStates=["18","17","27","24","33","15","16","31","34","05","32"]
+  myStates=["29"]
   for eachState in myStates:
     myobjs=District.objects.filter(state__isNIC=True,state__code=eachState)
     if args['limit']:

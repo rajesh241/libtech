@@ -36,17 +36,22 @@ def argsFetch():
   parser = argparse.ArgumentParser(description='These scripts will download jobcard list for Telangana')
   parser.add_argument('-d', '--download', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-p', '--process', help='Make the browser visible', required=False, action='store_const', const=1)
+  parser.add_argument('-g', '--generate', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-limit', '--limit', help='Limit on the number of results', required=False)
   parser.add_argument('-s', '--stateCode', help='StateCode for which the numbster needs to be downloaded', required=False)
+  parser.add_argument('-pc', '--panchayatCode', help='Panchayat Code', required=False)
 
   args = vars(parser.parse_args())
   return args
-def fetchData(logger,fullPanchayatCode):
+def fetchData(logger,fullPanchayatCode,eachPanchayat):
   stateCode='02'
-  districtCode=fullPanchayatCode[2:4]
-  blockCode=fullPanchayatCode[5:7]
+  districtCode=eachPanchayat.block.district.code[-2:]
+  blockCode=eachPanchayat.block.tcode[-2:]
+  #districtCode=fullPanchayatCode[2:4]
+  #blockCode=fullPanchayatCode[5:7]
   panchayatCode=fullPanchayatCode[8:10]
+  logger.info("DistrictCode: %s, blockCode : %s , panchayatCode: %s " % (districtCode,blockCode,panchayatCode))
   headers = {
     'Host': 'www.nrega.telangana.gov.in',
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:54.0) Gecko/20100101 Firefox/54.0',
@@ -146,13 +151,18 @@ def main():
   reportType="telanganaJobcardRegister"
   if args['process']:
     logger.info("Processing the jobcards")
-    myPanchayats=Panchayat.objects.filter(crawlRequirement="FULL",block__district__state__code=telanganaStateCode)[:limit]
+    inPanchayatCode=args['panchayatCode']
+    if inPanchayatCode is not None:
+      myPanchayats=Panchayat.objects.filter(crawlRequirement="FULL",block__district__state__code=telanganaStateCode,code=inPanchayatCode)[:limit]
+    else:
+      myPanchayats=Panchayat.objects.filter(crawlRequirement="FULL",block__district__state__code=telanganaStateCode)[:limit]
     for eachPanchayat in myPanchayats:
       logger.info(eachPanchayat.block.name+eachPanchayat.code+eachPanchayat.name) 
       panchayatReport=PanchayatReport.objects.filter(reportType=reportType,finyear=finyear,panchayat=eachPanchayat).first()
       fullPanchayatCode=eachPanchayat.code
-      districtCode=fullPanchayatCode[2:4]
-      jobcardPrefix="TS-%s-" %(districtCode)
+      districtCode=eachPanchayat.block.district.code[-2:]
+      #jobcardPrefix="TS-%s-" %(districtCode)
+      jobcardPrefix="TS-" 
       if panchayatReport is not None:
         logger.info("Panchayat Report Exists")
         myhtml=panchayatReport.reportFile.read()  
@@ -174,40 +184,63 @@ def main():
             myJobcard.isRequired=1
             logger.info(tjobcard+jobcard)
             myJobcard.save()
-              
-  if args['download']:
-    logger.info("This script will download Jobcards")
+           
+  if args['generate']:
+    logger.info("Generating panchayatwise stat")
     myPanchayats=Panchayat.objects.filter(crawlRequirement="FULL",block__district__state__code=telanganaStateCode)[:limit]
+    outcsv=''
     for eachPanchayat in myPanchayats:
       logger.info(eachPanchayat.block.name+eachPanchayat.code+eachPanchayat.name) 
-      fullPanchayatCode=eachPanchayat.code
-      stateName=eachPanchayat.block.district.state.name
-      districtName=eachPanchayat.block.district.name
-      blockName=eachPanchayat.block.name
-      panchayatName=eachPanchayat.name
+      districtName=eachPanchayat.block.district.slug
+      blockName=eachPanchayat.block.slug
+      panchayatName=eachPanchayat.slug
+      allJobcards=Jobcard.objects.filter(panchayat=eachPanchayat,isRequired=True)
+      totalJobcards=str(len(allJobcards))
+      scJobcards=Jobcard.objects.filter(panchayat=eachPanchayat,caste__contains="SC",isRequired=True)
+      totalSC=str(len(scJobcards))
+      outcsv+="%s,%s,%s,%s,%s\n" % (districtName,blockName,panchayatName,totalJobcards,totalSC)
+    with open("/tmp/tpanchayatReport.csv","w") as f:
+      f.write(outcsv)
+       
+  if args['download']:
+    logger.info("This script will download Jobcards")
+    inPanchayatCode=args['panchayatCode']
+    if inPanchayatCode is not None:
+      myPanchayats=Panchayat.objects.filter(crawlRequirement="FULL",block__district__state__code=telanganaStateCode,code=inPanchayatCode)[:limit]
+    else:
+      myPanchayats=Panchayat.objects.filter(crawlRequirement="FULL",block__district__state__code=telanganaStateCode)[:limit]
+    for eachPanchayat in myPanchayats:
+      logger.info(eachPanchayat.block.name+eachPanchayat.code+eachPanchayat.name) 
+      panchayatReport=PanchayatReport.objects.filter(reportType=reportType,finyear=finyear,panchayat=eachPanchayat).first()
+      if panchayatReport is None:
+        fullPanchayatCode=eachPanchayat.code
+        stateName=eachPanchayat.block.district.state.name
+        districtName=eachPanchayat.block.district.name
+        blockName=eachPanchayat.block.name
+        panchayatName=eachPanchayat.name
 
-      myhtml=fetchData(logger,fullPanchayatCode)
-      myhtml=myhtml.replace("<tbody>","")
-      myhtml=myhtml.replace("</tbody>","")
-      error,myTable=validateData(logger,myhtml) 
-      if error is  None:
-        logger.info('No Error')
-        outhtml=''
-        outhtml+=stripTableAttributes(myTable,"myTable")
-        title="jobcards state:%s District:%s block:%s panchayat: %s finyear:%s " % (stateName,districtName,blockName,panchayatName,fullfinyear)
-        outhtml=htmlWrapperLocal(title=title, head='<h1 aling="center">'+title+'</h1>', body=outhtml)
-        try:
-          outhtml=outhtml.encode("UTF-8")
-        except:
-          outhtml=outhtml
-        filename="jr_%s_%s.html" % (eachPanchayat.slug,finyear)
-        savePanchayatReport(logger,eachPanchayat,finyear,reportType,filename,outhtml)
+        myhtml=fetchData(logger,fullPanchayatCode,eachPanchayat)
+        myhtml=myhtml.replace("<tbody>","")
+        myhtml=myhtml.replace("</tbody>","")
+        error,myTable=validateData(logger,myhtml) 
+        if error is  None:
+          logger.info('No Error')
+          outhtml=''
+          outhtml+=stripTableAttributes(myTable,"myTable")
+          title="jobcards state:%s District:%s block:%s panchayat: %s finyear:%s " % (stateName,districtName,blockName,panchayatName,fullfinyear)
+          outhtml=htmlWrapperLocal(title=title, head='<h1 aling="center">'+title+'</h1>', body=outhtml)
+          try:
+            outhtml=outhtml.encode("UTF-8")
+          except:
+            outhtml=outhtml
+          filename="jr_%s_%s.html" % (eachPanchayat.slug,finyear)
+          savePanchayatReport(logger,eachPanchayat,finyear,reportType,filename,outhtml)
   
  
-      filename="/tmp/%s.html" % (fullPanchayatCode) 
-      with open(filename, 'wb') as html_file:
-          logger.info('Writing [%s]' % filename)
-          html_file.write(myhtml.encode('utf-8'))
+#       filename="/tmp/%s.html" % (fullPanchayatCode) 
+#       with open(filename, 'wb') as html_file:
+#           logger.info('Writing [%s]' % filename)
+#           html_file.write(myhtml.encode('utf-8'))
   logger.info("...END PROCESSING") 
   exit(0)
 if __name__ == '__main__':

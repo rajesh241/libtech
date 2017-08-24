@@ -59,37 +59,43 @@ def main():
 #  if stateCode is not None:
 #    logger.info("StateCode is %s" % stateCode)
     myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__code=stateCode)
+    reportType="workPayment"
 #  else:
 #    myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL')[:limit]
 
     for eachPanchayat in myPanchayats:
       logger.info("**********************************************************************************")
-      logger.info("Createing work Payment report for panchayat: %s panchayatCode: %s ID: %s" % (eachPanchayat.name,eachPanchayat.code,str(eachPanchayat.id)))
-      outcsv=''
-      outcsv+="jobcard,name,musterNo,workCode,workName,dateFrom,dateTo,daysWorked,totalWage,accountNo,musterStatus,creditedDate,secondSignatoryDate,wagelistNo"
-      outcsv+="\n"
-      workRecords=WorkDetail.objects.filter(muster__block__panchayat__id=eachPanchayat.id,muster__finyear=finyear)
-      workRecords=WorkDetail.objects.filter(muster__panchayat=eachPanchayat,muster__finyear=finyear)
-      logger.info("Total Work Records: %s " %str(len(workRecords)))
-      for wd in workRecords:
-        workName=wd.muster.workName.replace(","," ")
-        applicantName=wd.zname.replace(",","")
-        wagelistArray=wd.wagelist.all()
-        wagelist=wagelistArray[len(wagelistArray) -1 ]
-        if wd.applicant:
-          fatherHusbandName=wd.applicant.fatherHusbandName.replace(",","")
-        else:
-          fatherHusbandName=None
-        outcsv+="%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s" % (wd.zjobcard,applicantName,wd.muster.musterNo,wd.muster.workCode,workName,str(wd.muster.dateFrom),str(wd.muster.dateTo),str(wd.daysWorked),str(wd.totalWage),wd.zaccountNo,wd.musterStatus,str(wd.creditedDate),str(wd.muster.paymentDate),wagelist)
+      
+      panchayatReport=PanchayatReport.objects.filter(reportType=reportType,finyear=finyear,panchayat=eachPanchayat).first()
+      if panchayatReport is None:
+        logger.info("Createing work Payment report for panchayat: %s panchayatCode: %s ID: %s" % (eachPanchayat.name,eachPanchayat.code,str(eachPanchayat.id)))
+        outcsv=''
+        outcsv+="jobcard,name,musterNo,workCode,workName,dateFrom,dateTo,daysWorked,totalWage,accountNo,musterStatus,creditedDate,secondSignatoryDate,wagelistNo"
         outcsv+="\n"
+        workRecords=WorkDetail.objects.filter(muster__block__panchayat__id=eachPanchayat.id,muster__finyear=finyear)
+        workRecords=WorkDetail.objects.filter(muster__panchayat=eachPanchayat,muster__finyear=finyear)
+        logger.info("Total Work Records: %s " %str(len(workRecords)))
+        for wd in workRecords:
+          workName=wd.muster.workName.replace(","," ")
+          applicantName=wd.zname.replace(",","")
+          wagelistArray=wd.wagelist.all()
+          if len(wagelistArray) > 0:
+            wagelist=wagelistArray[len(wagelistArray) -1 ]
+          else:
+            wagelist=''
+          if wd.applicant:
+            fatherHusbandName=wd.applicant.fatherHusbandName.replace(",","")
+          else:
+            fatherHusbandName=None
+          outcsv+="%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s" % (wd.zjobcard,applicantName,wd.muster.musterNo,wd.muster.workCode,workName,str(wd.muster.dateFrom),str(wd.muster.dateTo),str(wd.daysWorked),str(wd.totalWage),wd.zaccountNo,wd.musterStatus,str(wd.creditedDate),str(wd.muster.paymentDate),wagelist)
+          outcsv+="\n"
    
-      try:
-        outcsv=outcsv.encode("UTF-8")
-      except:
-        outcsv=outcsv
-      csvfilename=eachPanchayat.slug+"_"+finyear+"_wp.csv"
-      reportType="workPayment"
-      savePanchayatReport(logger,eachPanchayat,finyear,reportType,csvfilename,outcsv)
+        try:
+          outcsv=outcsv.encode("UTF-8")
+        except:
+          outcsv=outcsv
+        csvfilename=eachPanchayat.slug+"_"+finyear+"_wp.csv"
+        savePanchayatReport(logger,eachPanchayat,finyear,reportType,csvfilename,outcsv)
 
   logger.info("...END PROCESSING") 
   exit(0)

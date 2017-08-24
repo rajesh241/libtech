@@ -168,7 +168,7 @@ class tjobcardModelAdmin(admin.ModelAdmin):
   list_display=["jobcard","tjobcard","panchayat","allApplicantFound"]
   search_fields=["tjobcard","jobcard","panchayat__code"]
   readonly_fields=["panchayat","group"]
-  list_filter=["isDownloaded","isProcessed","isRequired","allApplicantFound","panchayat__block__district__state__name"]
+  list_filter=["isDownloaded","isProcessed","isRequired","allApplicantFound","caste","panchayat__block__district__state__name"]
 
 class telanganaSSSgroupModelAdmin(admin.ModelAdmin):
   list_display=["groupName","groupCode"]

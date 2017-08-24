@@ -1,4 +1,7 @@
 from bs4 import BeautifulSoup
+from queue import Queue
+from threading import Thread
+import threading
 from datetime import datetime,date
 import httplib2
 from urllib.request import urlopen
@@ -7,7 +10,7 @@ import os
 import sys
 import re
 import requests
-from customSettings import repoDir,djangoDir,djangoSettings,jobCardRegisterTimeThreshold,telanganaThresholdDate
+from customSettings import repoDir,djangoDir,djangoSettings,jobCardRegisterTimeThreshold,telanganaThresholdDate,telanganaJobcardTimeThreshold
 from lxml import etree
 sys.path.insert(0, repoDir)
 fileDir=os.path.dirname(os.path.abspath(__file__))
@@ -27,6 +30,17 @@ django.setup()
 
 from nrega.models import State,District,Block,Panchayat,PanchayatReport,Jobcard,Applicant,Stat,FTO,PaymentDetail
 
+def downloadWorker(logger,q,inputargs):
+  while True:
+    objID = q.get()  # if there is no url, this will wait
+    if objID is None:
+      break
+    name = threading.currentThread().getName()
+    logger.info("Downloading Jobcard ID: %s Thread %s " % (str(objID),name))
+    eachJobcard=Jobcard.objects.filter(id=objID).first()
+    downloadJobcard(logger,eachJobcard)
+    q.task_done()
+
 def argsFetch():
   '''
   Paser for the argument list that returns the args list
@@ -36,8 +50,11 @@ def argsFetch():
   parser = argparse.ArgumentParser(description='These scripts will download jobcard list for Telangana')
   parser.add_argument('-d', '--download', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-p', '--process', help='Make the browser visible', required=False, action='store_const', const=1)
+  parser.add_argument('-g', '--generate', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-limit', '--limit', help='Limit on the number of results', required=False)
+  parser.add_argument('-n', '--numberOfThreads', help='Number of Threads default 5', required=False)
+  parser.add_argument('-q', '--queueSize', help='Number of Musters in Queue default 200', required=False)
   parser.add_argument('-s', '--stateCode', help='StateCode for which the numbster needs to be downloaded', required=False)
   parser.add_argument('-j', '--jobcard', help='Jobcard for which the numbster needs to be downloaded', required=False)
 
@@ -134,7 +151,62 @@ def validateDatai1(logger,myhtml):
       logger.info("Found Aggregate Table")
     i=i+1
   return error,jobcardTable,workerTable,aggregateTable,paymentTable
+
+def downloadJobcard(logger,eachJobcard):
+  logger.info(eachJobcard.tjobcard) 
+  tjobcard=eachJobcard.tjobcard
+  eachPanchayat=eachJobcard.panchayat
+  stateName=eachPanchayat.block.district.state.name
+  districtName=eachPanchayat.block.district.name
+  blockName=eachPanchayat.block.name
+  panchayatName=eachPanchayat.name
+
+  myhtml=fetchJobcard(logger,tjobcard)
+ # Kludge because of missing </tr> Tag
+#  myhtml=myhtml.replace('<tr  class="alternateRow"','</tr><tr  class="alternateRow"')
+#  myhtml=myhtml.replace('</tr></tr><tr  class="alternateRow"','</tr><tr  class="alternateRow"')
+  error,jobcardTable,workerTable,aggregateTable,paymentTable=validateData(logger,myhtml)
+  if error is None:
+    logger.info("Yipee no Error")
+    outhtml=''
+    outhtml+=getCenterAlignedHeading("Jobcard Details")      
+    outhtml+=stripTableAttributes(jobcardTable,"jobcardTable")
+    outhtml+=getCenterAlignedHeading("Worker Details")      
+    outhtml+=stripTableAttributes(workerTable,"workerTable")
+    outhtml+=getCenterAlignedHeading("Aggregate Work Details")      
+    outhtml+=stripTableAttributes(aggregateTable,"aggregateTable")
+    outhtml+=getCenterAlignedHeading("Payment Details")      
+    outhtml+=stripTableAttributes(paymentTable,"paymentTable")
+    title="Jobcard Details state:%s District:%s block:%s panchayat: %s jobcard:%s " % (stateName,districtName,blockName,panchayatName,tjobcard)
+    outhtml=htmlWrapperLocal(title=title, head='<h1 aling="center">'+title+'</h1>', body=outhtml)
+    try:
+      outhtml=outhtml.encode("UTF-8")
+    except:
+      outhtml=outhtml
+
+    filename="%s.html" % (tjobcard)
+    eachJobcard.jobcardFile.save(filename, ContentFile(outhtml))
+    eachJobcard.isDownloaded=True
+    eachJobcard.isProcessed=False
+    eachJobcard.downloadAttemptCount=eachJobcard.downloadAttemptCount+1
+    eachJobcard.downloadCount=eachJobcard.downloadCount+1
+    eachJobcard.downloadAttemptDate=timezone.now()
+    eachJobcard.downloadDate=timezone.now()
+    eachJobcard.downloadError=None
+  else:
+    logger.info("Error: %s " % error)
+    eachJobcard.downloadAttemptDate=timezone.now()
+    eachJobcard.downloadAttemptCount=eachJobcard.downloadAttemptCount+1
+    #eachJobcard.downloadError=error
+  eachJobcard.save()
   
+def getStat(eachJobcard,statType,finyear):
+  myStat=Stat.objects.filter(jobcard=eachJobcard,statType=statType,finyear=finyear).first()
+  if myStat is not None:
+    myValue=myStat.value
+  else:
+    myValue=0
+  return myValue
 def main():
   regex=re.compile("^[0-9]{4}-[0-9]{4}$")
   benchMark = datetime.strptime(telanganaThresholdDate, "%Y-%m-%d") 
@@ -149,6 +221,36 @@ def main():
   injobcard=args['jobcard']
   finyear=getCurrentFinYear()
   fullfinyear=getFullFinYear(finyear)
+  if args['generate']:
+    logger.info("Generating Report")
+    outcsv=''
+    outcsv+="district,block,panchayat,panchayatCode,jobcard,nicJobcard,ifSC,FY12,FY13,FY14,FY15,FY16,FY17,FY18\n"
+    myJobcards=Jobcard.objects.filter(panchayat__block__district__state__code=telanganaStateCode,isDownloaded=1,isProcessed=1)[:limit]
+    logger.info('Length of Jobcards: %s ' % str(len(myJobcards)))
+    i=0
+    for eachJobcard in myJobcards:
+      i=i+1
+      logger.info("Processing %s-%s" % (str(i),eachJobcard.tjobcard))
+      districtName=eachJobcard.panchayat.block.district.slug
+      blockName=eachJobcard.panchayat.block.slug
+      panchayatName=eachJobcard.panchayat.slug
+      ifSC=0
+      if eachJobcard.caste is not None:
+        if "SC" in eachJobcard.caste:
+          ifSC=1
+      FY12TWD=getStat(eachJobcard,"TWD",12)
+      FY13TWD=getStat(eachJobcard,"TWD",13)
+      FY14TWD=getStat(eachJobcard,"TWD",14)
+      FY15TWD=getStat(eachJobcard,"TWD",15)
+      FY16TWD=getStat(eachJobcard,"TWD",16)
+      FY17TWD=getStat(eachJobcard,"TWD",17)
+      FY18TWD=getStat(eachJobcard,"TWD",18)
+      outcsv+="%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s " % (districtName,blockName,panchayatName,eachJobcard.panchayat.code,eachJobcard.tjobcard,eachJobcard.jobcard,str(ifSC),str(FY12TWD),str(FY13TWD),str(FY14TWD),str(FY15TWD),str(FY16TWD),str(FY17TWD),str(FY18TWD))
+      outcsv+="\n"
+    with open("/tmp/tReport.csv","w") as f:
+      f.write(outcsv)
+    
+ 
   if args['process']:
     logger.info("Processing the jobcards")
     myJobcards=Jobcard.objects.filter(panchayat__block__district__state__code=telanganaStateCode,isDownloaded=1,isProcessed=0)[:limit]
@@ -173,34 +275,37 @@ def main():
       #myhtml=eachPanchayat.jobcardRegisterFile.read()
       htmlsoup=BeautifulSoup(myhtml,"lxml")
       myTable=htmlsoup.find('table',id="workerTable")
-      rows=myTable.findAll('tr')
       allApplicantFound=True
-      for row in rows:
-        cols=row.findAll('td')
-        if len(cols)>0:
-          applicantNo=cols[1].text.lstrip().rstrip()
-          if applicantNo.isdigit():
-            applicantNo=int(applicantNo)
-          else:
-        #  if isinstance(applicantNo,int) is False:
-            applicantNo=0
-          logger.info("applicantNo is %s " % str(applicantNo)) 
-          name=cols[2].text.lstrip().rstrip()
-          logger.info(str(applicantNo)+name)
-          myApplicant=Applicant.objects.filter(jobcard=eachJobcard,applicantNo=applicantNo).first()
-          if myApplicant is None:
-            logger.info("Applicant not Found")
-            Applicant.objects.create(jobcard=eachJobcard,applicantNo=applicantNo,panchayat=eachPanchayat)
+      if  "Relationship" in str(myTable):
+        logger.info("Found the Worker Table")
+        rows=myTable.findAll('tr')
+        for row in rows:
+          cols=row.findAll('td')
+          if len(cols)>0:
+            logger.info(str(row))
+            applicantNo=cols[1].text.lstrip().rstrip()
+            if applicantNo.isdigit():
+              applicantNo=int(applicantNo)
+            else:
+          #  if isinstance(applicantNo,int) is False:
+              applicantNo=0
+            logger.info("applicantNo is %s " % str(applicantNo)) 
+            name=cols[2].text.lstrip().rstrip()
+            logger.info(str(applicantNo)+name)
             myApplicant=Applicant.objects.filter(jobcard=eachJobcard,applicantNo=applicantNo).first()
-            myApplicant.source='tel'
-            allApplicantFound=False
-          else:
-            logger.info("Applicant Found")
-          myApplicant.panchayat=eachPanchayat
-          myApplicant.gender=cols[4].text.lstrip().rstrip()
-          myApplicant.age=cols[3].text.lstrip().rstrip()
-          myApplicant.relationship=cols[5].text.lstrip().rstrip()
-          myApplicant.save()
+            if myApplicant is None:
+              logger.info("Applicant not Found")
+              Applicant.objects.create(jobcard=eachJobcard,applicantNo=applicantNo,panchayat=eachPanchayat)
+              myApplicant=Applicant.objects.filter(jobcard=eachJobcard,applicantNo=applicantNo).first()
+              myApplicant.source='tel'
+              allApplicantFound=False
+            else:
+              logger.info("Applicant Found")
+            myApplicant.panchayat=eachPanchayat
+            myApplicant.gender=cols[4].text.lstrip().rstrip()
+            myApplicant.age=cols[3].text.lstrip().rstrip()
+            myApplicant.relationship=cols[5].text.lstrip().rstrip()
+            myApplicant.save()
 
       myTable=htmlsoup.find('table',id="paymentTable")
       rows=myTable.findAll('tr')
@@ -287,57 +392,41 @@ def main():
      
   if args['download']:
     logger.info("Download Jobcard Details Page")
-    myJobcards=Jobcard.objects.filter(panchayat__block__district__state__code=telanganaStateCode,panchayat__isnull=False,isDownloaded=False,tjobcard__isnull=False)[:limit]
+    if args['limit']:
+      limit = int(args['limit'])
+    else:
+      limit =1
+  #if ((args['queueSize']) and ( int(args['queueSize']) > 200)):
+    if args['queueSize']:
+      queueSize=int(args['queueSize'])
+    else:
+      queueSize=20
+    if args['numberOfThreads']:
+      numberOfThreads=int(args['numberOfThreads'])
+    else:
+      numberOfThreads=1
+    logger.info("Starting Muster Download Script with Queue Size: %s and Number of Threads: %s " % (queueSize,numberOfThreads))
+    q = Queue(maxsize=queueSize)
+    addLimit=queueSize-numberOfThreads-2
+   # myJobcards=Jobcard.objects.filter(panchayat__block__district__state__code=telanganaStateCode,panchayat__isnull=False,isDownloaded=False,tjobcard__isnull=False)[:limit]
+    myJobcards=Jobcard.objects.filter(Q (panchayat__block__district__state__code=telanganaStateCode,panchayat__isnull=False,tjobcard__isnull=False)  &  (Q (downloadAttemptDate__lt = telanganaJobcardTimeThreshold) | Q(isDownloaded= False ) ) ).order_by('downloadAttemptDate')[:addLimit]
     for eachJobcard in myJobcards:
-      logger.info(eachJobcard.tjobcard) 
-      tjobcard=eachJobcard.tjobcard
-      eachPanchayat=eachJobcard.panchayat
-      stateName=eachPanchayat.block.district.state.name
-      districtName=eachPanchayat.block.district.name
-      blockName=eachPanchayat.block.name
-      panchayatName=eachPanchayat.name
+      q.put(eachJobcard.id)
 
-      myhtml=fetchJobcard(logger,tjobcard)
-     # Kludge because of missing </tr> Tag
-    #  myhtml=myhtml.replace('<tr  class="alternateRow"','</tr><tr  class="alternateRow"')
-    #  myhtml=myhtml.replace('</tr></tr><tr  class="alternateRow"','</tr><tr  class="alternateRow"')
-      error,jobcardTable,workerTable,aggregateTable,paymentTable=validateData(logger,myhtml)
-      if error is None:
-        logger.info("Yipee no Error")
-        outhtml=''
-        outhtml+=getCenterAlignedHeading("Jobcard Details")      
-        outhtml+=stripTableAttributes(jobcardTable,"jobcardTable")
-        outhtml+=getCenterAlignedHeading("Worker Details")      
-        outhtml+=stripTableAttributes(workerTable,"workerTable")
-        outhtml+=getCenterAlignedHeading("Aggregate Work Details")      
-        outhtml+=stripTableAttributes(aggregateTable,"aggregateTable")
-        outhtml+=getCenterAlignedHeading("Payment Details")      
-        outhtml+=stripTableAttributes(paymentTable,"paymentTable")
-        title="Jobcard Details state:%s District:%s block:%s panchayat: %s jobcard:%s " % (stateName,districtName,blockName,panchayatName,tjobcard)
-        outhtml=htmlWrapperLocal(title=title, head='<h1 aling="center">'+title+'</h1>', body=outhtml)
-        try:
-          outhtml=outhtml.encode("UTF-8")
-        except:
-          outhtml=outhtml
-   
-        filename="%s.html" % (tjobcard)
-        eachJobcard.jobcardFile.save(filename, ContentFile(outhtml))
-        eachJobcard.isDownloaded=True
-        eachJobcard.isProcessed=False
-        eachJobcard.downloadAttemptCount=eachJobcard.downloadAttemptCount+1
-        eachJobcard.downloadCount=eachJobcard.downloadCount+1
-        eachJobcard.downloadAttemptDate=timezone.now()
-        eachJobcard.downloadDate=timezone.now()
-        eachJobcard.downloadError=None
-      else:
-        logger.info("Error: %s " % error)
-        eachJobcard.downloadAttemptDate=timezone.now()
-        eachJobcard.downloadAttemptCount=eachJobcard.downloadAttemptCount+1
-        #eachJobcard.downloadError=error
-      eachJobcard.save()
-      with open('/tmp/%s.html' % tjobcard,"w") as f:
-        f.write(myhtml) 
+    for i in range(numberOfThreads):
+      logger.info("Starting worker Thread %s " % str(i))
+      t = Thread(name = 'Thread-' + str(i), target=downloadWorker, args=(logger,q,args, ))
+      t.daemon = True
+      t.start()
+
+    q.join()       # block until all tasks are done
+    for i in range(numberOfThreads):
+      q.put(None)
+
+
   logger.info("...END PROCESSING") 
   exit(0)
 if __name__ == '__main__':
   main()
+
+
