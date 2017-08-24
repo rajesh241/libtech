@@ -37,12 +37,13 @@ tid = "3"
 tn = "खेड"
 vid = "273200030399810000"
 vn = "वावे तर्फे खेड"
+vn = "सार्पिली"
 
 cmd = '''curl 'https://mahabhulekh.maharashtra.gov.in/Konkan/Home.aspx/getSnos' -X POST -H 'Accept: application/json, text/plain, */*' -H 'Accept-Encoding: gzip, deflate, br' -H 'Accept-Language: en-US,en;q=0.5' -H 'Connection: keep-alive' -H 'Content-Length: 60' -H 'Content-Type: application/json;charset=utf-8' -H 'Cookie: ASP.NET_SessionId=xgahrcwef0hoicteddbwrxxo' -H 'Host: mahabhulekh.maharashtra.gov.in' -H 'Referer: https://mahabhulekh.maharashtra.gov.in/Konkan/Home.aspx' -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/50.0' -d "{'ptxt':'%s','vid':'273200030399810000','did':'32','tid':'3'}" -o %s.json ''' % (gat, gat)
 
 gat_list = [ 1, 2, 3, 4, 5, 6, 7, 13, 21, 23, 25, 26, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 53, 54, 55, 56, 57, 59, 60, 61, 62, 63, 64, 72, 86, 91, 92, 93, 94, 95, 96, 97, 98, 105, 128, 129, 143, 149, 150, 151, 152, 153, 154, 155, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 175, 176, 177, 178, 179, 180, 182, 186, 188, 191, 192, 193, 194, 196, 197, 198, ]
 
-gat_list = range(1, 991)
+gat_list = range(1, 911)
 
 #############
 # Functions
@@ -73,6 +74,7 @@ def runTestSuite():
     Select(driver.find_element_by_id("distSelect")).select_by_visible_text(dn)
     Select(driver.find_element_by_id("talSelect")).select_by_visible_text(tn)
     Select(driver.find_element_by_id("vilSelect")).select_by_visible_text(vn)
+    # Select(driver.find_element_by_id("vilSelect")).select_by_visible_text(u"सार्पिली")
     # driver.find_element_by_css_selector("option[value=\"string:273200030399810000\"]").click()
     driver.find_element_by_id("rbsryno").click()
     driver.find_element_by_xpath("//input[@type='number']").clear()
@@ -155,7 +157,7 @@ def runTestSuite():
         driver.switch_to_window(parent_handle)
         continue
       body = body.findNext('tbody')
-      logger.info(body)
+      logger.debug(body)
       td = body.find('td')
       td = td.findAll('td')
   
