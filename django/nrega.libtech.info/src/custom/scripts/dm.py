@@ -31,7 +31,7 @@ from django.utils import timezone
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
 django.setup()
 
-from nrega.models import State,District,Block,Panchayat,Muster
+from nrega.models import State,District,Block,Panchayat,Muster,LibtechTag
 
 maxMusterDownloadQueue=200
 def argsFetch():
@@ -74,13 +74,14 @@ def validateMusterHTML(muster,myhtml):
     error="Jobcard Prefix not found"
   return error,musterTable,musterSummaryTable
 def populateMusterQueue(logger,q,queueSize,stateCode,panchayatCode,addLimit):
+  alwaysTag=LibtechTag.objects.filter(name="Always")
   if panchayatCode is not None:
     myMusters=Muster.objects.filter( Q(isDownloaded=False,panchayat__isnull=False,panchayat__code=panchayatCode,panchayat__crawlRequirement="FULL") | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isProcessed=1,panchayat__isnull=False,panchayat__code=panchayatCode,panchayat__crawlRequirement="FULL") ).order_by("panchayat__block__district__state__code","downloadAttemptCount","-finyear")[:addLimit]
   elif stateCode is not None:
-    myMusters=Muster.objects.filter( Q(isDownloaded=False,panchayat__isnull=False,panchayat__block__district__state__code=stateCode,panchayat__crawlRequirement="FULL",finyear='17') | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isProcessed=1,panchayat__isnull=False,panchayat__block__district__state__code=stateCode,panchayat__crawlRequirement="FULL",finyear='17') ).order_by("panchayat__block__district__state__code","downloadAttemptCount","-finyear")[:addLimit]
+    myMusters=Muster.objects.filter( Q(isDownloaded=False,panchayat__isnull=False,panchayat__block__district__state__code=stateCode,panchayat__crawlRequirement="FULL") | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isProcessed=1,panchayat__isnull=False,panchayat__block__district__state__code=stateCode,panchayat__crawlRequirement="FULL") ).order_by("panchayat__block__district__state__code","downloadAttemptCount","-finyear")[:addLimit]
     #myMusters=Muster.objects.filter( Q(isDownloaded=False,isRequired=1,block__district__state__code=stateCode) | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isRequired=1,isProcessed=1,block__district__state__code=stateCode) ).order_by("musterDownloadAttemptDate")[:addLimit]
   else:
-    myMusters=Muster.objects.filter( Q(isDownloaded=False,panchayat__isnull=False,panchayat__crawlRequirement="FULL") | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isProcessed=1,panchayat__isnull=False,panchayat__crawlRequirement="FULL") ).order_by("panchayat__block__district__state__code","downloadAttemptCount")[:addLimit]
+    myMusters=Muster.objects.filter( Q(isDownloaded=False,panchayat__isnull=False,panchayat__crawlRequirement="FULL",panchayat__libtechTag__in=alwaysTag) | Q(musterDownloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isProcessed=1,panchayat__isnull=False,panchayat__crawlRequirement="FULL",panchayat__libtechTag__in=alwaysTag) ).order_by("panchayat__block__district__state__code","downloadAttemptCount")[:addLimit]
   musterIDs=''
   logger.info("Lenght of myMusters is "+str(len(myMusters)))
   if len(myMusters) > 0:

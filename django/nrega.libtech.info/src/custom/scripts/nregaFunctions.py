@@ -82,10 +82,10 @@ def getjcNumber(jobcard):
   return jcNumber
 
 def getVilCode(jobcard):
-  jobcardArray=jobcard.split('-')
-  jlast=jobcardArray[-1]
-  jlastArray=jlast.split("/")
-  vilCode=jlastArray[0]
+  jobcardArray=jobcard.split('/')
+  jobcardFirst=jobcardArray[0]
+  jlastArray=jobcardFirst.split("-")
+  vilCode=jlastArray[-1]
   return vilCode
   
 

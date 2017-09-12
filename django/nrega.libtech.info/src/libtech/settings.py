@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'nrega',
+    'rest_framework',
     'storages'
 ]
 
@@ -164,6 +165,11 @@ AWS_HEADERS = {
 	'Cache-Control': 'max-age=%d' % (int(two_months.total_seconds()), ),
 }
 ##AMazon Settings files
-
+REST_FRAMEWORK = {
+#    'DEFAULT_PERMISSION_CLASSES': [
+#        'rest_framework.permissions.IsAdminUser',
+#    ],
+    'PAGE_SIZE': 10
+}
 
 

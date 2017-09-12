@@ -72,13 +72,24 @@ def main():
     logger.info("**********************************************************************************")
     logger.info("Createing work Payment report for panchayat: %s panchayatCode: %s ID: %s" % (eachPanchayat.name,eachPanchayat.code,str(eachPanchayat.id)))
     outcsv=''
-    outcsv+="vilCode,hhdCode,zname,work,totalWage_musterStatus,dateTo_ftoSign_creditedDate,sNo"
+    rejectedcsv=''
+    invalidcsv=''
+    outcsv+="vilCode,hhdCode,zname,work,workCode,wagelist,totalWage_musterStatus,dateTo_ftoSign_creditedDate,sNo"
+    rejectedcsv+="vilCode,hhdCode,zname,work,workCode,wagelist,totalWage_musterStatus,dateTo_ftoSign_creditedDate,sNo\n"
+    invalidcsv+="vilCode,hhdCode,zname,work,workCode,wagelist,totalWage_musterStatus,dateTo_ftoSign_creditedDate,sNo\n"
     outcsv+="\n"
     workRecords=WorkDetail.objects.filter(muster__block__panchayat__id=eachPanchayat.id,muster__finyear=finyear)
     workRecords=WorkDetail.objects.filter(muster__panchayat=eachPanchayat,muster__finyear=finyear).order_by('zvilCode','zjcNo','creditedDate')
     logger.info("Total Work Records: %s " %str(len(workRecords)))
     for wd in workRecords:
       workName=wd.muster.workName.replace(","," ")
+      workCode=wd.muster.workCode
+      wagelistArray=wd.wagelist.all()
+      if len(wagelistArray) > 0:
+        wagelist=wagelistArray[len(wagelistArray) -1 ]
+      else:
+        wagelist=''
+      
       applicantName=wd.zname.replace(",","")
       work=workName+"/"+str(wd.muster.musterNo)
       wageStatus=str(wd.totalWage).split(".")[0]+"/"+wd.musterStatus
@@ -96,17 +107,36 @@ def main():
       else:
         paymentDate=""
       dateString="%s / %s / %s" %(dateTo,paymentDate,creditedDate)
-      outcsv+="%s,%s,%s,%s,%s,%s,%s" % (wd.zvilCode,str(wd.zjcNo),applicantName,work,wageStatus,dateString,srNo)
+      outcsv+="%s,%s,%s,%s,%s,%s,%s,%s,%s,%s" % (wd.zvilCode,str(wd.zjcNo),applicantName,work,workCode,wagelist,wageStatus,dateString,srNo,wd.zjobcard)
       outcsv+="\n"
+
+      if wd.musterStatus == 'Rejected':
+        rejectedcsv+="%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (wd.zvilCode,str(wd.zjcNo),applicantName,work,workCode,wagelist,wageStatus,dateString,srNo,wd.zjobcard)
+      if wd.musterStatus == 'Invalid Account':
+        invalidcsv+="%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (wd.zvilCode,str(wd.zjcNo),applicantName,work,workCode,wagelist,wageStatus,dateString,srNo,wd.zjobcard)
   
     try:
       outcsv=outcsv.encode("UTF-8")
     except:
       outcsv=outcsv
-    logger.info(outcsv)
+    try:
+      rejectedcsv=rejectedcsv.encode("UTF-8")
+    except:
+      rejectedcsv=rejectedcsv
+    try:
+      invalidcsv=invalidcsv.encode("UTF-8")
+    except:
+      invalidcsv=invalidcsv
+
     filename="/tmp/%s_%s.csv" % (eachPanchayat.slug,finyear)
     with open(filename,"wb") as f:
       f.write(outcsv)
+    filename="/tmp/%s_rejected_%s.csv" % (eachPanchayat.slug,finyear)
+    with open(filename,"wb") as f:
+      f.write(rejectedcsv)
+    filename="/tmp/%s_invalid_%s.csv" % (eachPanchayat.slug,finyear)
+    with open(filename,"wb") as f:
+      f.write(invalidcsv)
    #  csvfilename=eachPanchayat.slug+"_"+finyear+"_wp.csv"
    #  reportType="workPayment"
    #  savePanchayatReport(logger,eachPanchayat,finyear,reportType,csvfilename,outcsv)
