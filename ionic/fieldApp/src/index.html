@@ -9,6 +9,8 @@
 
   <link rel="icon" type="image/x-icon" href="assets/icon/favicon.ico">
   <link rel="manifest" href="manifest.json">
+
+  <!-- Customization -->
   <meta name="theme-color" content="#EF2D32">
   
   <!-- cordova.js required for cordova apps -->
@@ -24,6 +26,19 @@
 
   <link href="build/main.css" rel="stylesheet">
 
+  <!-- BootStrap Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  <!-- Social Buttions -->
+  <link href="assets/css/bootstrap-social.css" rel="stylesheet">
+
+  <!-- Ion Icons FIXME
+  <link href="assets/css/ionicons.min.css" rel="stylesheet"> -->
+
+  <!-- Font Awesome CDN -->
+  <link href="assets/css/font-awesome.min.css" rel="stylesheet">
+
 </head>
 <body>
 
@@ -35,6 +50,29 @@
 
   <!-- The bundle js is generated during the build process -->
   <script src="build/main.js"></script>
+
+  <!-- jQuery Google CDN -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <!-- jQuery local fallback -->
+  <script>window.jQuery || document.write('<script src="assets/js/jquery-3.2.1.min.js"><\/script>')</script>
+  <!-- Latest compiled and minified JavaScript -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+	  integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  <!-- Bootstrap JS local fallback -->
+  <script>if(typeof($.fn.modal) === 'undefined') {document.write('<script src="assets/js/bootstrap.min.js"><\/script>')}</script>
+  <!-- Bootstrap CSS local fallback -->
+  <div id="bootstrapCssTest" class="hidden"></div>
+  <script>
+    $(function() {
+      if ($('#bootstrapCssTest').is(':visible')) {
+        $("head").prepend('<link rel="stylesheet" href="assets/css/bootstrap.min.css">');
+      }
+    });
+  </script>
+
+  <!-- Font Awesome CDN FIXME
+       <script src="https://use.fontawesome.com/88fa914886.js"></script> 
+  -->
 
 </body>
 </html>

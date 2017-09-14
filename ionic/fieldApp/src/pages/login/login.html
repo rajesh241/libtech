@@ -14,7 +14,48 @@
     <ion-input type="password" name="password" [(ngModel)]="password" placeholder="Password"></ion-input>
     <button ion-button round block (click)="login()">Login</button>
     -->
-    <button ion-button round block (click)="loginWithGoogle()">Login with Google</button>
-    <button ion-button round block (click)="loginWithFacebook()">Login with Facebook</button>
+    
+    <div text-center padding>
+      <a class="btn btn-block btn-social btn-google" (click)="loginWithGoogle()">
+	<span class="fa fa-google"></span> Sign in with Google
+      </a>
+
+      <a class="btn btn-block btn-social btn-facebook" (click)="loginWithFacebook()">
+	<span class="fa fa-facebook"></span> Sign in with Facebook
+      </a>
+
+      <a class="btn btn-block btn-social btn-twitter">
+	<span class="fa fa-twitter"></span> Sign in with Twitter
+      </a>
+    </div>
+
+    <!--
+    Ion Icons
+    <div text-center padding>
+      <a class="btn btn-block btn-social btn-google" (click)="loginWithGoogle()">
+	<span class="ion-social-google"></span> Sign in with Google
+      </a>
+
+      <a class="btn btn-block btn-social btn-facebook" (click)="loginWithFacebook()">
+	<span class="ion-social-facebook"></span> Sign in with Facebook
+      </a>
+
+      <a class="btn btn-block btn-social btn-twitter">
+	<span class="ion-social-twitter"></span> Sign in with Twitter
+      </a>
+    </div>
+
+    Social Icons
+    <ul class="list-inline">
+      <li><a href="#" class="icoRss" title="Rss"><i class="fa fa-rss"></i></a></li>
+      <li><a href="#" class="icoFacebook" title="Facebook"><i class="fa fa-facebook"></i></a></li>
+      <li><a href="#" class="icoTwitter" title="Twitter"><i class="fa fa-twitter"></i></a></li>
+      <li><a href="#" class="icoGoogle" title="Google +"><i class="fa fa-google-plus"></i></a></li>
+      <li><a href="#" class="icoLinkedin" title="Linkedin"><i class="fa fa-linkedin"></i></a></li>
+    </ul>
+
+    <button btn class="btn btn-social btn-facebook" (click)="loginWithFacebook()">Login with Facebook</button>
+    -->
+    
   </form>
 </ion-content>
