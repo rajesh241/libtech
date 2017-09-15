@@ -24,14 +24,24 @@ from django.db.models import Count
 #myobjs=User.objects.filter(username='demo')
 #for obj in myobjs:
 #  print(obj.id)
-myLibtechTag=LibtechTag.objects.filter(name="JSK").first()
-telanganaStateCode='36'
-myobjs=Panchayat.objects.filter(isDataAccurate=True).values("block__district__code","block__district__name","block__district__state__name").annotate(dcount=Count('pk'))
+surveyTag=LibtechTag.objects.filter(name="baseLineSurvey").first()
+replacementTag=LibtechTag.objects.filter(name="baseLineSurveyReplacement").first()
+a='''
+myobjs=Jobcard.objects.filter(libtechTag__in=myLibtechTag)
+i=0
 for obj in myobjs:
-  districtName=obj['block__district__name']
-  stateName=obj['block__district__state__name']
-  count=obj['dcount']
-  print("%s,%s,%s" % (stateName,districtName,str(count)))
+  i=i+1
+  print(i)
+  print(obj.code)
+  obj.libtechTag.add(alwaysTag)
+  obj.save() 
+'''
+telanganaStateCode='36'
+#myobjs=Panchayat.objects.filter(isDataAccurate=True).values("block__district__code","block__district__name","block__district__state__name").annotate(dcount=Count('pk'))
+#myobjs=Muster.objects.filter(panchayat__code="3405008014")
+#for obj in myobjs:
+#  obj.isProcessed=False
+#  obj.save()
 
 groupby='''
 myobjs=Applicant.objects.filter(panchayat__block__district__state__code="36").values("panchayat__block__code","panchayat__block__name","panchayat__name","panchayat__code").annotate(dcount=Count('pk'))
@@ -63,18 +73,26 @@ for eachWDRecord in myWDRecords:
 #if myDistrict is not None:
 #  print(myDistrict.code)
 '''
-fileopen='''
-with open('/tmp/fpsBlocks.txt') as fp:
+#fileopen='''
+with open('/tmp/maddur.csv') as fp:
     for line in fp:
       line=line.lstrip().rstrip()
       if line != '':
         print(line)
-        myBlock=Block.objects.filter(code=line).first()
-        myBlock.fpsRequired=True
-        myBlock.save()
-        print(myBlock.id)
-        
-'''
+        lineArray=line.split(",")
+        jobcard=lineArray[0]
+        remarks=lineArray[1]
+        print(jobcard)
+        obj=Jobcard.objects.filter(jobcard=jobcard).first()
+        #obj.libtechTag.add(surveyTag)
+        if "Replacement" in remarks:
+          print("This is Replacement")
+          obj.isBaselineReplacement=True
+        else:
+          obj.isBaselineSurvey=True
+        obj.save()
+ #'''
+
 groupby= '''
 myUser=User.objects.filter(username='demo').first()
 myobjs=Muster.objects.filter(isProcessed=1)

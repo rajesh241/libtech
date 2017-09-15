@@ -228,11 +228,12 @@ class Village(models.Model):
   panchayat=models.ForeignKey('Panchayat',on_delete=models.CASCADE,null=True,blank=True)
   slug=models.SlugField(blank=True) 
   name=models.CharField(max_length=256,null=True,blank=True)
-  tcode=models.CharField(max_length=12,unique=True)
+  tcode=models.CharField(max_length=12,null=True,blank=True)
   code=models.CharField(max_length=12,null=True,blank=True)  #Field only for compatibility with otherlocations not used for TElangana
 
   def __str__(self):
     return self.name
+
 class VillageReport(models.Model):
   village=models.ForeignKey('Village',on_delete=models.CASCADE)
   reportFile=models.FileField(null=True, blank=True,upload_to=get_villagereport_upload_path,max_length=512)
@@ -263,18 +264,24 @@ class TelanganaSSSGroup(models.Model):
 
 class Jobcard(models.Model):
   panchayat=models.ForeignKey('Panchayat',on_delete=models.CASCADE,blank=True,null=True)
+  village=models.ForeignKey('Village',blank=True,null=True)
+  libtechTag=models.ManyToManyField('LibtechTag',related_name="jobcardTag",blank=True)
   group=models.ForeignKey('TelanganaSSSGroup',on_delete=models.CASCADE,blank=True,null=True)
   tjobcard=models.CharField(max_length=18,null=True,blank=True)
   jobcard=models.CharField(max_length=256,db_index=True,null=True,blank=True)
   jcNo=models.BigIntegerField(blank=True,null=True)
-  village=models.CharField(max_length=256,blank=True,null=True)
   headOfHousehold=models.CharField(max_length=512,blank=True,null=True)
   surname=models.CharField(max_length=512,blank=True,null=True)
   caste=models.CharField(max_length=64,blank=True,null=True)
+  issueDate=models.DateField(null=True,blank=True,auto_now_add=True)
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
+  modified=models.DateTimeField(null=True,blank=True,auto_now=True)
   jobcardFile=models.FileField(null=True, blank=True,upload_to=get_telanganajobcard_upload_path,max_length=512)
   isRequired=models.BooleanField(default=False)
   isDownloaded=models.BooleanField(default=False)
   isProcessed=models.BooleanField(default=False)
+  isBaselineSurvey=models.BooleanField(default=False)
+  isBaselineReplacement=models.BooleanField(default=False)
   allApplicantFound=models.BooleanField(default=False)
   downloadAttemptDate=models.DateTimeField(null=True,blank=True)
   downloadDate=models.DateTimeField(null=True,blank=True)
@@ -282,8 +289,30 @@ class Jobcard(models.Model):
   downloadCount=models.PositiveSmallIntegerField(default=0)
   downloadError=models.CharField(max_length=64,blank=True,null=True)
   def __str__(self):
-    return str(self.id)
-  
+    return self.jobcard
+
+
+class Worker(models.Model):
+  name=models.CharField(max_length=512)
+  jobcard=models.ForeignKey('Jobcard',on_delete=models.CASCADE,blank=True,null=True)
+  applicantNo=models.PositiveSmallIntegerField()
+  fatherHusbandName=models.CharField(max_length=512,blank=True,null=True)
+  relationship=models.CharField(max_length=64,blank=True,null=True)
+  gender=models.CharField(max_length=256,blank=True,null=True)
+  age=models.PositiveIntegerField(blank=True,null=True)
+  isDeleted=models.BooleanField(default=False)
+  isDisabled=models.BooleanField(default=False)
+  isMinority=models.BooleanField(default=False)
+  remarks=models.CharField(max_length=512,blank=True,null=True)
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
+  modified=models.DateTimeField(null=True,blank=True,auto_now=True)
+   
+  class Meta:
+        unique_together = ('jobcard', 'name')  
+  def __str__(self):
+    return self.name
+
+ 
 class Stat(models.Model):
   STAT_OPTIONS = (
         ('TWD', 'TotalWorkDays'),
@@ -383,6 +412,7 @@ class Muster(models.Model):
   isProcessed=models.BooleanField(default=False)
   isComplete=models.BooleanField(default=False)
   allApplicantFound=models.BooleanField(default=False)
+  allWorkerFound=models.BooleanField(default=False)
   isPanchayatNull=models.BooleanField(default=False)
   musterDownloadAttemptDate=models.DateTimeField(null=True,blank=True)
   downloadAttemptCount=models.PositiveSmallIntegerField(default=0)
@@ -398,6 +428,7 @@ class Muster(models.Model):
 
 class WorkDetail(models.Model):  
   applicant=models.ForeignKey('Applicant',on_delete=models.CASCADE,null=True,blank=True)
+  worker=models.ForeignKey('Worker',on_delete=models.CASCADE,null=True,blank=True)
   muster=models.ForeignKey('Muster',on_delete=models.CASCADE)
 #  wagelist=models.ForeignKey('Wagelist',on_delete=models.CASCADE,null=True,blank=True)
   wagelist=models.ManyToManyField('Wagelist',related_name="wdWagelist",blank=True)
