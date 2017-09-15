@@ -9,6 +9,7 @@ export class Panchayats {
     items: AfoListObservable<any[]>;
     jobcards: AfoListObservable<any[]>;
     panchayats: any;
+    panchayat_summary: AfoListObservable<any[]>;
     url: string = '/panchayats/';
 
     constructor(private afoDatabase: AngularFireOfflineDatabase) {
@@ -59,6 +60,7 @@ export class Panchayats {
     }
 
     sync(panchayatsChosen) {
+	console.log(JSON.stringify(panchayatsChosen));
         panchayatsChosen.forEach(panchayat => {
             console.log(JSON.stringify(panchayat));
             var url = '/jobcards/' + panchayat;
@@ -70,6 +72,9 @@ export class Panchayats {
                     this.afoDatabase.list('/transactions/' + element['$key']);
                 });
             });
+            this.panchayat_summary = this.afoDatabase.list('/panchayat_summary/' + panchayat);
+            console.log('Panchayat Summary Synced:');	    
+            console.log(this.panchayat_summary);
         });
     }
 }
