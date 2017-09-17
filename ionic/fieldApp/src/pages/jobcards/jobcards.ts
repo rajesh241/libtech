@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
 
-import { AngularFireOfflineDatabase, AfoListObservable } from 'angularfire2-offline/database';
+import { AngularFireOfflineDatabase, AfoListObservable, AfoObjectObservable } from 'angularfire2-offline/database';
 import { TransactionsPage } from '../transactions/transactions';
 
 @Component({
@@ -18,7 +18,7 @@ export class JobcardsPage {
     finyear17Observable: AfoListObservable<any[]>;
     finyear18Observable: AfoListObservable<any[]>;
     dayOrMoreObservable: AfoListObservable<any[]>;
-    // metaObject: AfoObjectObservable<any>;;
+    metaObject: AfoObjectObservable<any>;;
     meta: any;
     items: any;
     jobcards: any;
@@ -65,14 +65,12 @@ export class JobcardsPage {
         console.log('dayOrMoreObservable is ');
         console.log(this.dayOrMoreObservable);
 
-        /*
         this.metaObject = this.afoDatabase.object('/panchayat_summary/' + this.panchayatSlug + '/'); // + '75daysOrMore');
         this.metaObject.subscribe(meta => {
-            console.log('Meta is ');
+            console.log('MetaObject is ');
             console.log(meta);
             this.meta = meta;
         })
-        */
     }
 
     expandJobcards(jobcard) {

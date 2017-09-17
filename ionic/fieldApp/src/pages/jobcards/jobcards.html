@@ -10,54 +10,127 @@
 
 <ion-content padding>
   <h4>For Panchayat [{{ panchayatSlug }}]</h4>
-  <b>Summary:</b>
-  <div *ngFor="let field of metaObservable|async">
-    <ion-item *ngIf="field.$value"><b>{{ field.$key }}</b>: {{ field.$value }}</ion-item>
-  </div>
   
-  <b>Financial Year 2015-16:</b>
-  <div *ngFor="let field of finyear16Observable|async">
-    <ion-item *ngIf="field.$value != ''"><b>{{ field.$key }}</b>: {{ field.$value }}</ion-item>
-    <ion-item *ngIf="field.$value == ''"><b>{{ field.$key }}</b>:
-      <div *ngFor="let item of field.$value">
-        <ion-item *ngIf="item.$value != ''"><b>{{ item.$key }}</b>: {{ item.$value }}</ion-item>
+  <div *ngIf="meta">
+    <div *ngIf="meta.total_jobcards">
+      <div *ngIf="false">
+	<ion-item *ngIf="field.$value"><b>{{ field.$key }}</b>: {{ field.$value }}</ion-item>
       </div>
-    </ion-item>
+      <ion-card *ngIf="meta['75daysOrMore']">
+	<ion-card-header>Object Approach</ion-card-header>
+	<ion-card-content>
+	  <p><b>Total jobcards:</b> {{ meta.total_jobcards }}</p>
+	  <p><b>Total workers:</b> {{ meta.total_workers }}</p>
+
+	  <ion-card-title>Worked for 75 days or more</ion-card-title>
+	  <b>Days worked</b>: {{ meta['75daysOrMore'].days_worked }} <br />
+	  <b>Head of household</b>: {{ meta['75daysOrMore'].head_of_household }} <br />
+	  <b>Household code</b>: {{ meta['75daysOrMore'].house_hold_code }} <br />
+	  <b>Jobcard</b>: {{ meta['75daysOrMore'].jobcard }} <br />
+	  <b>Village code</b>: {{ meta['75daysOrMore'].village_code }} <br />
+	</ion-card-content>
+      </ion-card>
+
+      <ion-card>
+	<ion-card-header>Loop Approach</ion-card-header>
+	<ion-card-content>
+	  <ion-card-title>People Who Worked More than 75 Days:</ion-card-title>
+	  <div *ngFor="let field of dayOrMoreObservable|async">
+	    <div *ngIf="field.$value != ''"><b>{{ field.$key }}</b>: {{ field.$value }}</div>
+	    <div *ngIf="field.$value == ''"><b>{{ field.$key }}</b>:
+	      <div *ngFor="let item of field.$value">
+		<div *ngIf="item.$value != ''"><b>{{ item.$key }}</b>: {{ item.$value }}</div>
+	      </div>
+	    </div>
+	  </div>
+	</ion-card-content>
+      </ion-card>
+
+      <ion-card>
+	<ion-card-header>
+	  Summary:
+	</ion-card-header>      
+	<ion-card-content>
+	  <div *ngFor="let field of metaObservable|async">
+	    <span *ngIf="field.$value"><b>{{ field.$key }}</b>: {{ field.$value }}</span>
+	  </div>
+	</ion-card-content>
+      </ion-card>
+
+      
+      <ion-card>
+	<ion-card-header>
+	  <b>Experiment:</b>
+	</ion-card-header>
+	<ion-card-content>
+	  <div *ngFor="let field of metaObservable|async">
+	    <div *ngIf="field.$value != ''"><b>{{ field.$key }}Yes</b>: {{ field.$value }}</div>
+	    <div *ngIf="field.$value == ''"><b>{{ field.$key }}No</b>:</div>
+	    <div *ngIf="field.$key == '75daysOrMore'">
+	      how to access sub-fields {{ field.$exists }} from here?
+	      <ion-list *ngFor="let item of field.$value">
+		<ion-item *ngIf="item.$value != ''"><b item-left>{{ item.$key }}</b>: <span item-right>{{ item.$value }}</span></ion-item>
+	      </ion-list>
+	    </div>
+	  </div>
+	</ion-card-content>
+      </ion-card>
+
+      <ion-card>
+	<ion-card-header>
+	  Financial Year 2015-16:
+	</ion-card-header>
+	<ion-card-content>
+	  <ion-list>
+	    <ion-item *ngFor="let field of finyear16Observable|async">
+	      <b item-left>{{ field.$key }}</b>: <span item-right>{{ field.$value }}</span>
+	    </ion-item>
+	  </ion-list>
+	</ion-card-content>
+      </ion-card>      
+      
+      <ion-card>
+	<ion-card-header>
+	  <b>Financial Year 2016-17:</b>
+	</ion-card-header>
+	<ion-card-content>
+	  <ion-list>
+	    <ion-item *ngFor="let field of finyear17Observable|async">
+	      <b item-left>{{ field.$key }}</b>: <span item-right>{{ field.$value }}</span>
+	    </ion-item>
+	  </ion-list>
+	</ion-card-content>
+      </ion-card>      
+      
+      <ion-card>
+	<ion-card-header>
+	  <b>Financial Year 2017-18:</b>
+	</ion-card-header>
+	<ion-card-content>
+	  <ion-list>
+	    <ion-item *ngFor="let field of finyear18Observable|async">
+	      <b item-left>{{ field.$key }}</b>: <span item-right>{{ field.$value }}</span>
+	    </ion-item>
+	  </ion-list>
+	</ion-card-content>
+      </ion-card>      
+      
+      <ion-card>
+	<ion-card-header>
+	  <b>People Who Worked More than 75 Days:</b>
+	</ion-card-header>
+	<ion-card-content>
+	  <ion-list>
+	    <ion-item *ngFor="let field of dayOrMoreObservable|async">
+	      <b item-left>{{ field.$key }}</b>: <span item-right>{{ field.$value }}</span>
+	    </ion-item>
+	  </ion-list>
+	</ion-card-content>
+      </ion-card>      
+      
+    </div>
   </div>
-  
-  <b>Financial Year 2016-17:</b>
-  <div *ngFor="let field of finyear17Observable|async">
-    <ion-item *ngIf="field.$value != ''"><b>{{ field.$key }}</b>: {{ field.$value }}</ion-item>
-    <ion-item *ngIf="field.$value == ''"><b>{{ field.$key }}</b>:
-      <div *ngFor="let item of field.$value">
-        <ion-item *ngIf="item.$value != ''"><b>{{ item.$key }}</b>: {{ item.$value }}</ion-item>
-      </div>
-    </ion-item>
-  </div>
-  
-  <b>Financial Year 2017-18:</b>
-  <div *ngFor="let field of finyear18Observable|async">
-    <ion-item *ngIf="field.$value != ''"><b>{{ field.$key }}</b>: {{ field.$value }}</ion-item>
-    <ion-item *ngIf="field.$value == ''"><b>{{ field.$key }}</b>:
-      <div *ngFor="let item of field.$value">
-        <ion-item *ngIf="item.$value != ''"><b>{{ item.$key }}</b>: {{ item.$value }}</ion-item>
-      </div>
-    </ion-item>
-  </div>
-  
-  <b>People Who Worked More than 75 Days:</b>
-  <div *ngFor="let field of dayOrMoreObservable|async">
-    <ion-item *ngIf="field.$value != ''"><b>{{ field.$key }}</b>: {{ field.$value }}</ion-item>
-    <ion-item *ngIf="field.$value == ''"><b>{{ field.$key }}</b>:
-      <div *ngFor="let item of field.$value">
-        <ion-item *ngIf="item.$value != ''"><b>{{ item.$key }}</b>: {{ item.$value }}</ion-item>
-      </div>
-    </ion-item>
-  </div>
-  <!--
-  <p><b>Total jobcards:</b> {{ meta.total_jobcards }}</p>
-  <p><b>Total workers:</b> {{ meta.total_workers }}</p>
-  -->
+
   <!-- {{ jobcards|async|json }} -->
   <hr />
   <div *ngFor="let jobcards of jobcardsObservable|async">
