@@ -17,7 +17,6 @@ from wrappers.logger import loggerFetch
 # Global Declarations
 #######################
 
-timeout = 30
 browser = "Firefox"
 visible = 0
 logfile = "/tmp/%s_firefox_console.log"%os.environ.get('USER')
@@ -88,9 +87,11 @@ def xDisplayInitialize(isVisible=0):
 def xDisplayFinalize(display):
   display.stop()
 
-def driverInitialize(browser=None, path=None):
+def driverInitialize(browser=None, path=None, timeout=None):
   if not browser:
     browser="Firefox"
+  if not timeout:
+    timeout=30
   if browser == "Firefox":
     if path:
       fp = webdriver.FirefoxProfile(path)
@@ -106,6 +107,16 @@ def driverInitialize(browser=None, path=None):
       fp.set_preference("browser.download.dir", os.getcwd())
       fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.ms-excel")
       fp.set_preference("browser.privatebrowsing.autostart", False)
+
+    # To use when downloading using a profile excel/csv, etc - e.g. googlesheets-downlaod.py  
+    if False:
+      fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "text/csv")
+      fp.set_preference("browser.helperApps.alwaysAsk.force", False)
+      fp.set_preference("browser.download.manager.alertOnEXEOpen", False)
+      fp.set_preference("browser.download.manager.focusWhenStarting", False)
+      fp.set_preference("browser.download.manager.useWindow", False)
+      fp.set_preference("browser.download.manager.showAlertOnComplete", False)
+      fp.set_preference("browser.download.manager.closeWhenDone", False)
       
     # Got this working by fixing the size in xulstore.json (src - https://support.mozilla.org/t5/Firefox/How-to-open-maximized/td-p/1327140)
     fp.set_preference('browser.window.width', width)

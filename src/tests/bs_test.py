@@ -30,7 +30,7 @@ def runTestSuite():
   logger.info("BEGIN PROCESSING...")
 
   display = displayInitialize(1)
-  driver = driverInitialize()
+  driver = driverInitialize(path='/opt/firefox/')
 
   driver.get(url)
   logger.info("Fetching...[%s]" % url)
@@ -56,7 +56,7 @@ def runTestSuite():
     elem.click()
     
     filename="/tmp/%s.html" % panchayat
-    with open(filename, 'w') as html_file:
+    with open(filename, 'wb') as html_file:
       logger.info("Writing [%s]" % filename)
       html_file.write(driver.page_source.encode('utf-8'))
 
