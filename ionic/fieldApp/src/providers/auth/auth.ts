@@ -1,10 +1,12 @@
 import { Injectable } from '@angular/core';
+
 import * as firebase from 'firebase/app';
 import { AngularFireAuth } from 'angularfire2/auth';
 import { AngularFireOfflineDatabase, AfoListObservable, AfoObjectObservable } from 'angularfire2-offline/database';
 
 @Injectable()
-export class Auth {
+export class AuthProvider {
+    
     users: AfoListObservable<any[]>;
     user: any;
     url = '/users/'
@@ -14,7 +16,7 @@ export class Auth {
     userObject: AfoObjectObservable<any>;
 
     constructor(private afAuth: AngularFireAuth, private afoDatabase: AngularFireOfflineDatabase) {
-        console.log('Hello Auth Provider');
+	console.log('Hello AuthProvider Provider');
         this.users = afoDatabase.list(this.url);
         console.log(this.users);
     }
@@ -38,65 +40,32 @@ export class Auth {
         }
         return this.user;
     }
-    /*
-        login(email, password) {
-            return this.afAuth.auth.signInWithEmailAndPassword({
-                email: email,
-                password: password
-            }, {
-                    provider: AuthProviders.Password,
-                    method: AuthMethods.Password
-                }).then((response) => {
-                    console.log('auth ' + 'Login Success' + JSON.stringify(response));
-                    let user = {
-                        email: response.auth.email,
-                        picture: response.auth.photoURL
-                    };
-                    console.log('auth ' + JSON.stringify(user));
-                    window.localStorage.setItem('user', JSON.stringify(user));
-                }).catch((error) => {
-                    console.log(error);
-                    alert(error);
-                });
-        }
-    */
-    loginWithGoogle() {
-        return this.afAuth.auth.signInWithPopup(
-            new firebase.auth.GoogleAuthProvider()
-        ).then((response) => {
-            console.log('Login with Google Success' + JSON.stringify(response));
-            this.postLogin(response.user);
-        }).catch((error) => {
-            console.log(error);
-            alert(error);
-        });
-    }
-
-    loginWithFacebook() {
-        return this.afAuth.auth.signInWithPopup(
-            new firebase.auth.FacebookAuthProvider()
-        ).then((response) => {
-            console.log('Login with Facebook Success' + JSON.stringify(response));
-            this.postLogin(response.user);
-        }).catch((error) => {
-            console.log(error);
-            alert(error);
-        });
-    }
-
-    logout() {
-        this.user = null;
-        window.localStorage.removeItem('user');
-        return this.afAuth.auth.signOut();
+    
+    login(email: string, password: string): firebase.Promise<any> {
+	/* Mynk FIXME
+	let authData = this.afAuth.auth.signInWithEmailAndPassword(email, password);
+	console.log(authData);
+	let user = {
+	    email: authData.email,
+	    name: authData.displayName,
+	    picture: authData.photoURL
+	}
+	this.postLogin(user);
+	return authData;
+	*/
+	return this.afAuth.auth.signInWithEmailAndPassword(email, password);
     }
 
     postLogin(user) {
+	console.log(user);
         this.user = {
+	    name: user.displayName,
             username: (user.email.slice(0, user.email.indexOf("@"))).replace(".", "_"),
             email: user.email,
             picture: user.photoURL,
             panchayats: {}
         };
+	console.log(this.user);
         this.userObject = this.afoDatabase.object(this.url + this.user.username);
         console.log(this.userObject);
         this.userObject.subscribe(user => {
@@ -112,6 +81,38 @@ export class Auth {
         this.users.update(this.user.username, this.user); // FIXME why needed when up to date?
         console.log('POST Login ' + JSON.stringify(this.user));
         window.localStorage.setItem('user', JSON.stringify(this.user));
+    }
+    
+    resetPassword(email: string): firebase.Promise<any> {
+	return this.afAuth.auth.sendPasswordResetEmail(email);
+    }
+
+    logout(): firebase.Promise<any> {
+        this.user = null;
+        window.localStorage.removeItem('user');
+	return this.afAuth.auth.signOut();
+    }
+
+    signup(email: string, password: string): firebase.Promise<any> {
+	return this.afAuth.auth.createUserWithEmailAndPassword(email, password);
+    }
+
+    loginWithGoogle() {
+        return this.afAuth.auth.signInWithPopup(
+            new firebase.auth.GoogleAuthProvider()
+        );
+    }
+
+    loginWithFacebook() {
+        return this.afAuth.auth.signInWithPopup(
+            new firebase.auth.FacebookAuthProvider()
+        );
+    }
+
+    loginWithTwitter() {
+        return this.afAuth.auth.signInWithPopup(
+            new firebase.auth.TwitterAuthProvider()
+        );
     }
 
     userExists() {
@@ -183,4 +184,5 @@ export class Auth {
         window.localStorage.setItem('user', JSON.stringify(this.user));
         this.users.update(this.user.username, this.user);
     }
+    
 }

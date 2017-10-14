@@ -9,7 +9,7 @@
 </ion-header>
 
 <ion-content padding>
-  <div *ngIf ="!getUser()"><p>You are not logged in!</p>
+  <div *ngIf ="!getUser()" text-center padding><p>You are not logged in!</p>
       <button ion-button [navPush]="loginPage">Login</button>
   </div>
   <div text-center padding *ngIf="getUser()">

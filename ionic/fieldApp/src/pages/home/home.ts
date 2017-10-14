@@ -1,26 +1,27 @@
 import { Component } from '@angular/core';
 
-import { NavController } from 'ionic-angular';
-import { LoginPage } from '../login/login';
-import { PanchayatsPage } from '../panchayats/panchayats'
-import { ProfilePage } from '../profile/profile'
+import { IonicPage, NavController } from 'ionic-angular';
+import { PanchayatsPage } from '../panchayats/panchayats';
+import { ProfilePage } from '../profile/profile';
 
-import { Auth } from '../../providers/auth';
+import { AuthProvider } from '../../providers/auth/auth';
 
+@IonicPage()
 @Component({
     selector: 'page-home',
     templateUrl: 'home.html'
 })
 export class HomePage {
     user: any;
-    loginPage = LoginPage;
     panchayatsPage = PanchayatsPage;
     profilePage = ProfilePage;
+    loginPage = 'LoginPage';
 
-    constructor(public navCtrl: NavController, private auth: Auth) {
+    constructor(public navCtrl: NavController, private auth: AuthProvider) {
         this.user = this.auth.getUser();
         if (!this.user) {
-            this.navCtrl.push(LoginPage);
+	    console.log('Should NOT be here');
+	    this.navCtrl.setRoot('LoginPage');
         }
         console.log('After Login');
     }

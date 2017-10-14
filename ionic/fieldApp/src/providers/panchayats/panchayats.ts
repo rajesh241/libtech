@@ -5,7 +5,7 @@ import { AngularFireOfflineDatabase, AfoListObservable } from 'angularfire2-offl
 // import { Panchayat } from '../models/panchayats'
 
 @Injectable()
-export class Panchayats {
+export class PanchayatsProvider {
     items: AfoListObservable<any[]>;
     jobcards: AfoListObservable<any[]>;
     panchayats: any;
@@ -33,28 +33,28 @@ export class Panchayats {
             this.panchayats = {};
             snapshots.forEach(snapshot => this.panchayats[snapshot.$key] = snapshot);
 	    /* Useful to populate the Firebase Database
-            snapshots.forEach(panchayat => {
-                let slug = panchayat.panchayatKey.replace(/_/g, ' ').replace(/-/g, '_').replace(/ /g, '-')
+               snapshots.forEach(panchayat => {
+               let slug = panchayat.panchayatKey.replace(/_/g, ' ').replace(/-/g, '_').replace(/ /g, '-')
 
-                this.panchayats[slug] = { 'state': panchayat.state, 'district': 'DistrictFromDjango', 'block': panchayat.block, 'name': panchayat.panchayat, 'slug': slug, 'code': 'CodeFromDjango', 'jobcardCode': panchayat.jobcardCode }
-            });
+               this.panchayats[slug] = { 'state': panchayat.state, 'district': 'DistrictFromDjango', 'block': panchayat.block, 'name': panchayat.panchayat, 'slug': slug, 'code': 'CodeFromDjango', 'jobcardCode': panchayat.jobcardCode }
+               });
 	    */
 
             /*
-            this.panchayats = snapshots;
-.map(snapshot => {
-            return { snapshot.$key: {
-                // panchayatKey: (snapshot.state + '-' + snapshot.block + '-' + snapshot.panchayat).toLowerCase().replace(' ', '_'), 
-                panchayatCode: 'fromDjango', jobcardCode: snapshot.jobcardCode, panchayatKey: snapshot.$key, panchayat: snapshot.panchayat, block: snapshot.block, state: snapshot.state
-            }
-        };
-    }); */
+              this.panchayats = snapshots;
+	      .map(snapshot => {
+              return { snapshot.$key: {
+              // panchayatKey: (snapshot.state + '-' + snapshot.block + '-' + snapshot.panchayat).toLowerCase().replace(' ', '_'), 
+              panchayatCode: 'fromDjango', jobcardCode: snapshot.jobcardCode, panchayatKey: snapshot.$key, panchayat: snapshot.panchayat, block: snapshot.block, state: snapshot.state
+              }
+              };
+	      }); */
             console.log('Fecthing all the panchaytas asynchronously!');
             console.log(JSON.stringify(this.panchayats));
         },
-            err => { console.log('Error: ' + err) },
-            () => { console.log('Load Completed!') } // Will never execute
-        );
+			     err => { console.log('Error: ' + err) },
+			     () => { console.log('Load Completed!') } // Will never execute
+			    );
 
         return this.panchayats;
     }

@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
 
-import { JobcardsPage } from '../jobcards/jobcards'
+import { JobcardsPage } from '../jobcards/jobcards';
 
-import { Auth } from '../../providers/auth';
-import { Panchayats } from '../../providers/panchayats'
+import { AuthProvider } from '../../providers/auth/auth';
+import { PanchayatsProvider } from '../../providers/panchayats/panchayats';
 
 import { AlertController } from 'ionic-angular';
 
@@ -23,8 +23,8 @@ export class PanchayatsPage {
     checked = false;
     synced = false;
 
-    constructor(public navCtrl: NavController, private navParams: NavParams, private auth: Auth,
-        private panchayatList: Panchayats, public alertCtrl: AlertController) {
+    constructor(public navCtrl: NavController, private navParams: NavParams, private auth: AuthProvider,
+        private panchayatList: PanchayatsProvider, public alertCtrl: AlertController) {
         this.user = this.navParams.data;
         console.log('USER ' + JSON.stringify(this.user));
         this.displayPanchayats = this.user.panchayats;
