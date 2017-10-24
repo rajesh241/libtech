@@ -11,7 +11,6 @@ import { IonicApp, IonicModule, IonicErrorHandler } from 'ionic-angular';
 
 import { MyApp } from './app.component';
 
-import { KeysPipe } from '../pipes/keys/keys';
 import { AuthProvider } from '../providers/auth/auth';
 import { PanchayatsProvider } from '../providers/panchayats/panchayats';
 import { JobcardsProvider } from '../providers/jobcards/jobcards';
@@ -25,8 +24,7 @@ const firebaseConfig = {
 
 @NgModule({
     declarations: [
-        MyApp,
-	KeysPipe
+        MyApp
     ],
     imports: [
         AngularFireDatabaseModule,
