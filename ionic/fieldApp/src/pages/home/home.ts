@@ -1,8 +1,6 @@
 import { Component } from '@angular/core';
 
 import { IonicPage, NavController } from 'ionic-angular';
-import { PanchayatsPage } from '../panchayats/panchayats';
-import { ProfilePage } from '../profile/profile';
 
 import { AuthProvider } from '../../providers/auth/auth';
 
@@ -13,8 +11,8 @@ import { AuthProvider } from '../../providers/auth/auth';
 })
 export class HomePage {
     user: any;
-    panchayatsPage = PanchayatsPage;
-    profilePage = ProfilePage;
+    panchayatsPage = 'PanchayatsPage';
+    profilePage = 'ProfilePage';
     loginPage = 'LoginPage';
 
     constructor(public navCtrl: NavController, private auth: AuthProvider) {

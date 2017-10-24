@@ -1,19 +1,18 @@
 import { Component } from '@angular/core';
-import { NavController, NavParams } from 'ionic-angular';
-
-import { JobcardsPage } from '../jobcards/jobcards';
+import { IonicPage, NavController, NavParams } from 'ionic-angular';
 
 import { AuthProvider } from '../../providers/auth/auth';
 import { PanchayatsProvider } from '../../providers/panchayats/panchayats';
 
 import { AlertController } from 'ionic-angular';
 
+@IonicPage()
 @Component({
     selector: 'page-panchayats',
     templateUrl: 'panchayats.html'
 })
 export class PanchayatsPage {
-    jobcardsPage = JobcardsPage;
+    jobcardsPage = 'JobcardsPage';
     panchayats: any;
     user: any;
     displayPanchayats: any;

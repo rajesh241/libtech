@@ -10,14 +10,7 @@ import { AngularFireOfflineModule } from 'angularfire2-offline';
 import { IonicApp, IonicModule, IonicErrorHandler } from 'ionic-angular';
 
 import { MyApp } from './app.component';
-import { ProfilePage } from '../pages/profile/profile'
 
-import { PanchayatsPage } from '../pages/panchayats/panchayats'
-import { JobcardsPage } from '../pages/jobcards/jobcards'
-import { TransactionsPage } from '../pages/transactions/transactions'
-import { TransactionPage } from '../pages/transaction/transaction'
-
-import { ExpandableComponent } from '../components/expandable/expandable';
 import { KeysPipe } from '../pipes/keys/keys';
 import { AuthProvider } from '../providers/auth/auth';
 import { PanchayatsProvider } from '../providers/panchayats/panchayats';
@@ -33,12 +26,6 @@ const firebaseConfig = {
 @NgModule({
     declarations: [
         MyApp,
-        PanchayatsPage,
-        JobcardsPage,
-        TransactionsPage,
-        TransactionPage,
-        ProfilePage,
-	ExpandableComponent,
 	KeysPipe
     ],
     imports: [
@@ -51,12 +38,7 @@ const firebaseConfig = {
     ],
     bootstrap: [IonicApp],
     entryComponents: [
-        MyApp,
-        PanchayatsPage,
-        JobcardsPage,
-        TransactionsPage,
-        TransactionPage,
-        ProfilePage
+        MyApp
     ],
     providers: [
         StatusBar,

@@ -1,15 +1,15 @@
 import { Component } from '@angular/core';
-import { NavController, NavParams } from 'ionic-angular';
+import { IonicPage, NavController, NavParams } from 'ionic-angular';
 
 import { AngularFireOfflineDatabase, AfoListObservable } from 'angularfire2-offline/database';
-import { TransactionPage } from '../transaction/transaction';
 
+@IonicPage()
 @Component({
     selector: 'page-transactions',
     templateUrl: 'transactions.html'
 })
 export class TransactionsPage {
-    transactionPage = TransactionPage;
+    transactionPage = 'TransactionPage';
     panchayatSlug: string;
     jobcard: string;
     url: string;

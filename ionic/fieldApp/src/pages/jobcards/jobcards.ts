@@ -1,15 +1,15 @@
 import { Component } from '@angular/core';
-import { NavController, NavParams } from 'ionic-angular';
+import { IonicPage, NavController, NavParams } from 'ionic-angular';
 
 import { AngularFireOfflineDatabase, AfoListObservable, AfoObjectObservable } from 'angularfire2-offline/database';
-import { TransactionsPage } from '../transactions/transactions';
 
+@IonicPage()
 @Component({
     selector: 'page-jobcards',
     templateUrl: 'jobcards.html'
 })
 export class JobcardsPage {
-    transactionsPage = TransactionsPage;
+    transactionsPage = 'TransactionsPage';
     panchayatSlug: string;
     // jobcardCode: string;
     jobcardsObservable: AfoListObservable<any[]>;
