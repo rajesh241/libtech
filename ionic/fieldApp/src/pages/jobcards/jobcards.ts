@@ -1,5 +1,10 @@
 import { Component } from '@angular/core';
-import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { IonicPage,
+	 NavController,
+	 NavParams,
+	 LoadingController,
+	 Loading
+       } from 'ionic-angular';
 
 import { AngularFireOfflineDatabase, AfoListObservable, AfoObjectObservable } from 'angularfire2-offline/database';
 
@@ -26,8 +31,12 @@ export class JobcardsPage {
     expanded: any;
     expandHeight;
     // jobcardSlug: string;
+    loading: Loading;
 
-    constructor(private navCtrl: NavController, private navParams: NavParams, private afoDatabase: AngularFireOfflineDatabase) {
+    constructor(private navCtrl: NavController,
+		private navParams: NavParams,
+		private afoDatabase: AngularFireOfflineDatabase,
+		private loadingCtrl: LoadingController) {
 	console.log('Inside Jobcards Constructor');
 	this.expanded = {};
 	this.expandHeight = 40;
@@ -77,6 +86,15 @@ export class JobcardsPage {
 	this.expanded[jobcard] = !this.expanded[jobcard];
     }
 
+    presentSpinner(msg) {
+	this.loading = this.loadingCtrl.create({
+	    content: msg,
+	    dismissOnPageChange: true,
+	});
+
+	this.loading.present();
+    }
+    
     goHome() {
         this.navCtrl.popToRoot();
     }

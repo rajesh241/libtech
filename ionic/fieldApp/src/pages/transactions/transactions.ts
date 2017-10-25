@@ -1,5 +1,10 @@
 import { Component } from '@angular/core';
-import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { IonicPage,
+	 NavController,
+	 NavParams,
+	 LoadingController,
+	 Loading
+       } from 'ionic-angular';
 
 import { AngularFireOfflineDatabase, AfoListObservable } from 'angularfire2-offline/database';
 
@@ -19,9 +24,12 @@ export class TransactionsPage {
     applicantDetails: AfoListObservable<any[]>;
     //Useful to toggle buttons.  Default is off.
     show: boolean = false;
-    
+    loading: Loading;
 
-    constructor(public navCtrl: NavController, public navParams: NavParams, private afoDatabase: AngularFireOfflineDatabase) {
+    constructor(public navCtrl: NavController,
+		public navParams: NavParams,
+		private afoDatabase: AngularFireOfflineDatabase,
+	        private loadingCtrl: LoadingController) {
         console.log('Inside Transactions Constructor');
         this.jobcard = this.navParams.get('jobcard').replace('/', '_');
         console.log(this.jobcard);
@@ -44,6 +52,15 @@ export class TransactionsPage {
         console.log('ionViewDidLoad TransactionsPage');
     }
 
+    presentSpinner(msg) {
+	this.loading = this.loadingCtrl.create({
+	    content: msg,
+	    dismissOnPageChange: true,
+	});
+
+	this.loading.present();
+    }
+    
     goHome() {
         this.navCtrl.popToRoot();
     }

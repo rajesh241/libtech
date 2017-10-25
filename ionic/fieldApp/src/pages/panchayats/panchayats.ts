@@ -1,5 +1,10 @@
 import { Component } from '@angular/core';
-import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { IonicPage,
+	 NavController,
+	 NavParams,
+	 LoadingController,
+	 Loading
+       } from 'ionic-angular';
 
 import { AuthProvider } from '../../providers/auth/auth';
 import { PanchayatsProvider } from '../../providers/panchayats/panchayats';
@@ -21,9 +26,14 @@ export class PanchayatsPage {
     panchayatsToSync: any;
     checked = false;
     synced = false;
+    loading:Loading;
 
-    constructor(public navCtrl: NavController, private navParams: NavParams, private auth: AuthProvider,
-        private panchayatList: PanchayatsProvider, public alertCtrl: AlertController) {
+    constructor(public navCtrl: NavController,
+		private navParams: NavParams,
+		private auth: AuthProvider,
+		private panchayatList: PanchayatsProvider,
+		private alertCtrl: AlertController,
+		private loadingCtrl: LoadingController) {
         this.user = this.navParams.data;
         console.log('USER ' + JSON.stringify(this.user));
         this.displayPanchayats = this.user.panchayats;
@@ -99,9 +109,20 @@ export class PanchayatsPage {
         alert.present();
     }
 
+    presentSpinner(msg) {
+	this.loading = this.loadingCtrl.create({
+	    content: msg,
+	    dismissOnPageChange: true,
+	});
+
+	this.loading.present();
+    }
+        
     syncPanchayats() {
+	this.presentSpinner('Syncing Panchayats...');
         this.panchayatList.sync(this.panchayatsToSync);
         this.synced = true;
+	this.loading.dismiss();
     }
 
     goHome() {

@@ -54,7 +54,7 @@
     <p>
       <ion-list *ngIf="item">
 	<ion-item>
-	  <button item-left default ion-button [navPush]="transactionPage" [navParams]="{ jobcard: jobcard, key: item.$key, transaction: item, url: url}">{{ item.dateTo }}</button>
+	  <button item-left default ion-button [navPush]="transactionPage" [navParams]="{ jobcard: jobcard, key: item.$key, transaction: item, url: url}" (click)="presentSpinner('Loading Transaction...')">{{ item.dateTo }}</button>
 	  <span item-right>{{item.workName}}</span>
 	</ion-item>
       </ion-list>

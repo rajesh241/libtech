@@ -18,7 +18,7 @@
 	<input type="checkbox" [checked]="panchayatSelected[panchayat.slug]"
                (click)="choosePanchayat(panchayat.slug, panchayat.slug)">
 	<button ion-button [navPush]="jobcardsPage"
-		[navParams]="{panchayatSlug: panchayat.slug}">{{ panchayat.slug }}
+		[navParams]="{panchayatSlug: panchayat.slug}" (click)="presentSpinner('Loading Jobcards...')">{{ panchayat.slug }}
 	</button>
       </div>
     </div>

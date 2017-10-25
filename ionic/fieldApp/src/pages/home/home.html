@@ -13,7 +13,7 @@
       <button ion-button [navPush]="loginPage">Login</button>
   </div>
   <div text-center padding *ngIf="getUser()">
-    <button ion-button [navPush]="panchayatsPage" [navParams]="user">
+    <button ion-button [navPush]="panchayatsPage" [navParams]="user" (click)= "presentSpinner('Loading Panchayats...')">
       Panchayats
     </button>
   </div>

@@ -137,7 +137,7 @@
     <button ion-button (click)="expandJobcards(jobcards.$key)">{{ jobcards.$key }}</button>
       <expandable [expandHeight]="expandHeight" [expanded]="expanded[jobcards.$key]">
 	<div *ngFor="let jobcardKey of jobcards|keys">
-	  <button ion-button [navPush]="transactionsPage" [navParams]="{jobcard: jobcards[jobcardKey].jobcard, url : url + '/' + jobcards.$key + '/' + jobcardKey}">{{ jobcardKey }}</button>
+	  <button ion-button [navPush]="transactionsPage" [navParams]="{jobcard: jobcards[jobcardKey].jobcard, url : url + '/' + jobcards.$key + '/' + jobcardKey}" (click)="presentSpinner('Loading Transactions...')">{{ jobcardKey }}</button>
 	</div>
       </expandable>
      <!--
