@@ -88,12 +88,14 @@ class TestSuite(unittest.TestCase):
     def tearDown(self):
         self.logger.info('...END PROCESSING')
 
-    def tst_direct_cmd(self):
+    @unittest.skip('Skipping direct command approach')
+    def test_direct_cmd(self):
         url = 'http://mnregaweb2.nic.in/netnrega/writereaddata/citizen_out/panchregpeople_2721001029_eng1718.html'
         cmd = 'curl -L -O %s' % url
         os.system(cmd)
 
-    def tst_fetch_panchregpeople(self):
+    @unittest.skip('Skipping the curl approach')
+    def test_fetch_panchregpeople(self):
         result = fetch_panchregpeople(self.logger)
         self.assertEqual('SUCCESS', result)
 
