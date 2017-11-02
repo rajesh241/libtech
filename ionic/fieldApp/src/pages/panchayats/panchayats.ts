@@ -20,7 +20,7 @@ export class PanchayatsPage {
     jobcardsPage = 'JobcardsPage';
     panchayats: any;
     user: any;
-    displayPanchayats: any;
+    userPanchayats: any;
     preferredPanchayats: any[];
     panchayatSelected = {};
     panchayatsToSync: any;
@@ -31,13 +31,13 @@ export class PanchayatsPage {
     constructor(public navCtrl: NavController,
 		private navParams: NavParams,
 		private auth: AuthProvider,
-		private panchayatList: PanchayatsProvider,
+		private panchayatsProvider: PanchayatsProvider,
 		private alertCtrl: AlertController,
 		private loadingCtrl: LoadingController) {
         this.user = this.navParams.data;
         console.log('USER ' + JSON.stringify(this.user));
-        this.displayPanchayats = this.user.panchayats;
-        this.preferredPanchayats = this.dictToArray(this.displayPanchayats)
+        this.userPanchayats = this.user.panchayats;
+        this.preferredPanchayats = this.dictToArray(this.userPanchayats)
         console.log(this.preferredPanchayats);
         console.log('InsideConstructor');
         this.panchayatsToSync = [];
@@ -49,7 +49,7 @@ export class PanchayatsPage {
 
     ionViewDidLoad() {
         console.log('ionViewDidLoad PanchayatsPage');
-        this.panchayats = this.panchayatList.load();
+        // this.panchayats = this.panchayatsProvider.load();  FIXME
     }
 
     choosePanchayat(index, panchayat) {
@@ -75,14 +75,14 @@ export class PanchayatsPage {
         let alert = this.alertCtrl.create();
         alert.setTitle('Select the Panchayats:');
 
-        this.panchayats = this.panchayatList.load();
+        this.panchayats = this.panchayatsProvider.load();
         Object.keys(this.panchayats).forEach(panchayatKey => {
             console.log('PANCHAYAT ' + JSON.stringify(panchayatKey));
             alert.addInput({
                 type: 'checkbox',
                 label: panchayatKey,
                 value: panchayatKey,
-                checked: panchayatKey in this.displayPanchayats // (this.displayPanchayats.indexOf(panchayatKey) != -1) // 
+                checked: panchayatKey in this.userPanchayats // (this.userPanchayats.indexOf(panchayatKey) != -1) // 
             });
         });
 
@@ -93,17 +93,17 @@ export class PanchayatsPage {
                 console.log('Data Handler: ');
                 console.log(JSON.stringify(data));
                 console.log(this.panchayats);
-                this.displayPanchayats = {};
+                this.userPanchayats = {};
 		/*
                 this.panchayats.forEach(panchayat => {
-                    if (panchayat.panchayatKey in data) this.displayPanchayats[panchayat.panchayatKey] = panchayat
+                    if (panchayat.panchayatKey in data) this.userPanchayats[panchayat.panchayatKey] = panchayat
                     else console.log('AKBC')
                 }); */
-                data.forEach(panchayatKey => { console.log('For this key - ' + panchayatKey); this.displayPanchayats[panchayatKey] = this.panchayats[panchayatKey]; console.log('This panchayat ' + this.displayPanchayats[panchayatKey]) });
-                console.log(this.displayPanchayats);
-                this.preferredPanchayats = this.dictToArray(this.displayPanchayats)
+                data.forEach(panchayatKey => { console.log('For this key - ' + panchayatKey); this.userPanchayats[panchayatKey] = this.panchayats[panchayatKey]; console.log('This panchayat ' + this.userPanchayats[panchayatKey]) });
+                console.log(this.userPanchayats);
+                this.preferredPanchayats = this.dictToArray(this.userPanchayats)
                 console.log(this.preferredPanchayats);
-                this.auth.update(this.displayPanchayats);
+                this.auth.update(this.userPanchayats);
             }
         });
         alert.present();
@@ -120,7 +120,7 @@ export class PanchayatsPage {
         
     syncPanchayats() {
 	this.presentSpinner('Syncing Panchayats...');
-        this.panchayatList.sync(this.panchayatsToSync);
+        this.panchayatsProvider.sync(this.panchayatsToSync);
         this.synced = true;
 	this.loading.dismiss();
     }
