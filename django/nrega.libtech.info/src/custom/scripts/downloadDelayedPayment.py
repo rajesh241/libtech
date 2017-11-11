@@ -5,6 +5,8 @@ import os
 import sys
 import re
 import time
+fileDir=os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'includes'))
 from customSettings import repoDir,djangoDir,djangoSettings
 
 sys.path.insert(0, repoDir)
@@ -21,7 +23,7 @@ from django.utils import timezone
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
 django.setup()
 
-from nrega.models import State,District,Block,Panchayat,Muster,PanchayatReport
+from nrega.models import State,District,Block,Panchayat,Muster,PanchayatReport,PanchayatCrawlQueue
 def validateDCReport(panchayat,myhtml):
   error=None
   dcTable=None
@@ -71,11 +73,17 @@ def main():
   stateCodes=['33','34','16','27','24','15','18','35']
   stateCodes=['16','31','05','17']
   stateCodes=['34','33','17','18','05','27','15','24','16','31','32']
+  stateCodes=[]
+  stateCodes.append(args['stateCode'])
 #  stateCodes=[args['stateCode']]
   for stateCode in stateCodes:
-    myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__code=stateCode)
-    for eachPanchayat in myPanchayats:
-      logger.info("Processing : panchayat: %s " % (eachPanchayat.name))
+    logger.info(stateCode)
+    myPanchayatCrawlQueues=PanchayatCrawlQueue.objects.filter(panchayat__block__district__state__code=stateCode)
+    j=len(myPanchayatCrawlQueues)
+    for obj in myPanchayatCrawlQueues:
+      eachPanchayat=obj.panchayat
+      logger.info("Processing : %s panchayat: %s " % (str(j),eachPanchayat.name))
+      j=j-1
       stateCode=eachPanchayat.block.district.state.code
       fullDistrictCode=eachPanchayat.block.district.code
       fullBlockCode=eachPanchayat.block.code

@@ -169,7 +169,27 @@ REST_FRAMEWORK = {
 #    'DEFAULT_PERMISSION_CLASSES': [
 #        'rest_framework.permissions.IsAdminUser',
 #    ],
+    'DEFAULT_PARSER_CLASSES': (
+        'rest_framework.parsers.JSONParser',
+    ),
     'PAGE_SIZE': 10
 }
 
-
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR + '/debug.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}

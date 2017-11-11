@@ -1,0 +1,10 @@
+{
+    "totalJobcards": {
+                "Hindi": "जॉबकार्ड संख्या ",
+                "English": "Total number of Jobcards"
+    },
+    "totalWorkers":{
+                "Hindi": "मजदूरों की संख्या ",
+                "English": "Total number of Workers"
+    }
+}

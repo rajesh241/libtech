@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,Jobcard,LibtechTag,TelanganaSSSGroup,FPSVillage,Partner,Phonebook,VillageFPSStatus,Broadcast,AudioLibrary,Stat,Worker
+from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,Jobcard,LibtechTag,TelanganaSSSGroup,FPSVillage,Partner,Phonebook,VillageFPSStatus,Broadcast,AudioLibrary,Stat,Worker,PanchayatCrawlQueue
 
 from .actions import export_as_csv_action
 
@@ -85,6 +85,12 @@ class villageModelAdmin(admin.ModelAdmin):
   readonly_fields=["panchayat"]
   search_fields=["name","tcode"]
 
+class panchayatCrawlQueueModelAdmin(admin.ModelAdmin):
+  list_display = ["__str__","crawlAttemptDate","created","priority"]
+  list_filter=["isError","isComplete","status","panchayat__block__district__state"]
+  search_fields=["panchayat__name","panchayat__code"]
+  readonly_fields=["panchayat"]
+
 class panchayatModelAdmin(admin.ModelAdmin):
   actions = [export_as_csv_action("CSV Export", fields=['name','id','remarks'])]
   list_display = ["__str__","name","code"]
@@ -103,9 +109,10 @@ class panchayatModelAdmin(admin.ModelAdmin):
     model=Panchayat
 
 class panchayatStatModelAdmin(admin.ModelAdmin):
-  actions = [export_as_csv_action("CSV Export", fields=['__str__','finyear','nicWorkDays','libtechWorkDays'])]
-  list_display=["get_panchayat","get_block","get_district","finyear","nicWorkDays","libtechWorkDays"]
-  search_fields=["panchayat__code","panchayat__name","panchayat__block__name"]
+  actions = [export_as_csv_action("CSV Export", fields=['__str__','finyear','nicWorkDays','nicJobcardsTotal','nicWorkersTotal','libtechWorkDays','libtechWorkDaysPanchayatwise','jobcardsTotal','workersTotal','mustersTotal','mustersPendingDownload','mustersPendingProcessing','mustersInComplete','musterMissingApplicants','mustersDownloaded','mustersProcessed'])]
+  list_display=["get_panchayat","get_block","get_district","workDaysAccuracyIndex","finyear","nicWorkDays","libtechWorkDays"]
+  search_fields=["panchayat__code","panchayat__name","panchayat__block__name","panchayat__block__code"]
+  list_filter=["finyear","panchayat__crawlRequirement","panchayat__block__district__state__name"]
   readonly_fields=["panchayat"]
   def get_panchayat(self,obj):
     return obj.panchayat.name
@@ -161,13 +168,13 @@ class musterModelAdmin(admin.ModelAdmin):
 #  actions = [export_as_csv_action("CSV Export", fields=['name','blockName','districtName','stateName'])]
   list_display = ["id","musterNo","downloadAttemptCount","musterDownloadAttemptDate","finyear","block","panchayat","workCode","workName"]
   search_fields=["id","musterNo","block__code","panchayat__code","workCode"]
-  list_filter=["isPanchayatNull","finyear","allWorkerFound","isDownloaded","isProcessed","allApplicantFound","block__district__state"]
+  list_filter=["isPanchayatNull","panchayat__crawlRequirement","finyear","allWorkerFound","isDownloaded","isProcessed","allApplicantFound","block__district__state"]
   readonly_fields=["block","panchayat"]
 
 class tjobcardModelAdmin(admin.ModelAdmin):
   list_display=["jobcard","tjobcard","panchayat","allApplicantFound"]
-  search_fields=["tjobcard","jobcard","panchayat__code"]
-  readonly_fields=["panchayat","group"]
+  search_fields=["tjobcard","jobcard","panchayat__code","panchayat__block__code","panchayat__block__name"]
+  readonly_fields=["panchayat","group","village"]
   list_filter=["isDownloaded","isProcessed","isRequired","allApplicantFound","caste","panchayat__block__district__state__name"]
 
 class telanganaSSSgroupModelAdmin(admin.ModelAdmin):
@@ -188,8 +195,9 @@ class applicantModelAdmin(admin.ModelAdmin):
 
 class paymentDetailModelAdmin(admin.ModelAdmin):
   list_display=["id","applicant","fto","referenceNo","disbursedDate"]
-  readonly_fields=["applicant","fto","workDetail"]
-  search_fields=["referenceNo","fto__ftoNo","applicant__jobcard__jobcard"]
+  readonly_fields=["applicant","fto","workDetail","worker"]
+  search_fields=["referenceNo","fto__ftoNo","applicant__jobcard__jobcard","applicant__jobcard__tjobcard","worker__jobcard__panchayat__code"]
+  list_filter=["applicant__panchayat__block__district__state__name"]
 class workDetailModelAdmin(admin.ModelAdmin):
   list_display=["id","muster","musterIndex","applicant","zjobcard","zname","zaccountNo","creditedDate","musterStatus"]
   readonly_fields=["muster","applicant","wagelist"]
@@ -246,6 +254,7 @@ admin.site.register(TelanganaSSSGroup,telanganaSSSgroupModelAdmin)
 admin.site.register(Stat,statModelAdmin)
 admin.site.register(PaymentDetail,paymentDetailModelAdmin)
 admin.site.register(Worker,workerModelAdmin)
+admin.site.register(PanchayatCrawlQueue,panchayatCrawlQueueModelAdmin)
 # Reference Code for Downloading CSV
 # def download_csv(self, request, queryset):
 #   import csv

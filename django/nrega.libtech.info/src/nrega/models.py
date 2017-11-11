@@ -37,6 +37,9 @@ def get_muster_upload_path(instance, filename):
 def get_telanganajobcard_upload_path(instance, filename):
   return os.path.join(
     "nrega",instance.panchayat.block.district.state.slug,instance.panchayat.block.district.slug,instance.panchayat.block.slug,instance.panchayat.slug,"DATA","JOBCARDS",filename)
+def get_blockreport_upload_path(instance, filename):
+  return os.path.join(
+    "nrega",instance.panchayat.block.district.state.slug,instance.panchayat.block.district.slug,instance.panchayat.block.slug,"DATA","NICREPORTS",filename)
 def get_panchayatreport_upload_path(instance, filename):
   return os.path.join(
     "nrega",instance.panchayat.block.district.state.slug,instance.panchayat.block.district.slug,instance.panchayat.block.slug,instance.panchayat.slug,"DATA","NICREPORTS",filename)
@@ -112,13 +115,29 @@ class nicBlockReport(models.Model):
         unique_together = ('block', 'reportType','finyear')  
   def __str__(self):
     return self.reportType+self.finyear
-  
+ 
+class BlockReport(models.Model):
+  block=models.ForeignKey('block',on_delete=models.CASCADE)
+  reportFile=models.FileField(null=True, blank=True,upload_to=get_blockreport_upload_path,max_length=512)
+  reportType=models.CharField(max_length=256)
+  finyear=models.CharField(max_length=2)
+  updateDate=models.DateTimeField(auto_now=True)
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
+  isProcessed=models.BooleanField(default=False)
+  class Meta:
+        unique_together = ('block', 'reportType','finyear')  
+  def __str__(self):
+    return self.block.name+"-"+self.reportType
+ 
+ 
 class PanchayatReport(models.Model):
   panchayat=models.ForeignKey('panchayat',on_delete=models.CASCADE)
   reportFile=models.FileField(null=True, blank=True,upload_to=get_panchayatreport_upload_path,max_length=512)
   reportType=models.CharField(max_length=256)
   finyear=models.CharField(max_length=2)
   updateDate=models.DateTimeField(auto_now=True)
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
+  isProcessed=models.BooleanField(default=False)
   class Meta:
         unique_together = ('panchayat', 'reportType','finyear')  
   def __str__(self):
@@ -187,6 +206,7 @@ class Panchayat(models.Model):
         ('FULL', 'Full Data'),
         ('NONE', 'No Crawl'),
         ('STAT', 'Only Statistics'),
+        ('ONET', 'One Time '),
     )
   STAT_CHOICES = (
         ('0', 'No Data'),
@@ -204,12 +224,17 @@ class Panchayat(models.Model):
   libtechTag=models.ManyToManyField('LibtechTag',related_name="panchayatTag",blank=True)
   crawlRequirement=models.CharField(max_length=4,choices=CRAWL_CHOICES,default='NONE')
   status=models.CharField(max_length=4,choices=STAT_CHOICES,default='0')
+  lastCrawlDate=models.DateTimeField(null=True,blank=True)
+  lastCrawlDuration=models.IntegerField(blank=True,null=True)  #This is Duration that last Crawl took in Minutes
+  accuracyIndex=models.IntegerField(blank=True,null=True)  #This is Accuracy Index of Last Financial Year
+  accuracyIndexAverage=models.IntegerField(blank=True,null=True)
   jobcardCrawlDate=models.DateTimeField(null=True,blank=True,default=datetime.datetime.now)
   jobcardProcessDate=models.DateTimeField(null=True,blank=True,default=datetime.datetime.now)
   applicationRegisterCrawlDate=models.DateTimeField(null=True,blank=True)
   applicationRegisterProcessDate=models.DateTimeField(null=True,blank=True)
   musterCrawlDate=models.DateTimeField(null=True,blank=True,default=datetime.datetime.now)
   statsCrawlDate=models.DateTimeField(null=True,blank=True)
+  statsProcessDate=models.DateTimeField(null=True,blank=True)
   jobcardRegisterFile=models.FileField(null=True, blank=True,upload_to=get_panchayat_upload_path,max_length=512)
   isDataAccurate=models.BooleanField(default=False)
 
@@ -217,6 +242,33 @@ class Panchayat(models.Model):
   def __str__(self):
     return "%s-%s-%s-%s" % (self.block.district.state.name,self.block.district.name,self.block.name,self.name)
 
+class PanchayatCrawlQueue(models.Model):
+  CRAWL_STAGES = (
+        ('0', 'No Data'),
+        ('1', 'STATSDownloaded'),
+        ('2', 'JobcardRegisterCrawledProcessed'),
+        ('3', 'MustersDownloadedProcessed'),
+        ('4', 'StatsComputed'),
+        ('5', 'ReportsGenerated'),
+    )
+ 
+  panchayat=models.ForeignKey('panchayat',on_delete=models.CASCADE)
+  priority=models.PositiveSmallIntegerField(default=0)
+  startFinYear=models.CharField(max_length=2,default='16')
+  progress=models.PositiveSmallIntegerField(default=0)
+  downloadAttemptCount=models.PositiveSmallIntegerField(default=0)
+  crawlStartDate=models.DateTimeField(null=True,blank=True)
+  crawlAttemptDate=models.DateTimeField(null=True,blank=True)
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
+  modified=models.DateTimeField(null=True,blank=True,auto_now=True)
+  isComplete=models.BooleanField(default=False)
+  isError=models.BooleanField(default=False)
+  status=models.CharField(max_length=4,choices=CRAWL_STAGES,default='0')
+  error=models.CharField(max_length=1024,blank=True,null=True)
+  def __str__(self):
+    return "%s-%s-%s-%s" % (self.panchayat.block.district.state.name,self.panchayat.block.district.name,self.panchayat.block.name,self.panchayat.name)
+   
+   
 class LibtechTag(models.Model):
   name=models.CharField(max_length=256,default='NONE')
   slug=models.SlugField(blank=True) 
@@ -249,7 +301,20 @@ class PanchayatStat(models.Model):
   panchayat=models.ForeignKey('panchayat',on_delete=models.CASCADE)
   finyear=models.CharField(max_length=2)
   nicWorkDays=models.IntegerField(blank=True,null=True)
+  nicJobcardsTotal=models.IntegerField(blank=True,null=True)
+  nicWorkersTotal=models.IntegerField(blank=True,null=True)
   libtechWorkDays=models.IntegerField(blank=True,null=True)
+  libtechWorkDaysPanchayatwise=models.IntegerField(blank=True,null=True)
+  jobcardsTotal=models.IntegerField(blank=True,null=True)
+  workersTotal=models.IntegerField(blank=True,null=True)
+  mustersTotal=models.IntegerField(blank=True,null=True)
+  mustersPendingDownload=models.IntegerField(blank=True,null=True)
+  mustersPendingProcessing=models.IntegerField(blank=True,null=True)
+  mustersInComplete=models.IntegerField(blank=True,null=True)
+  musterMissingApplicants=models.IntegerField(blank=True,null=True)
+  mustersDownloaded=models.IntegerField(blank=True,null=True)
+  mustersProcessed=models.IntegerField(blank=True,null=True)
+  workDaysAccuracyIndex=models.IntegerField(blank=True,null=True)
 
   def __str__(self):
     return self.panchayat.name+"-"+self.panchayat.block.name
@@ -263,7 +328,7 @@ class TelanganaSSSGroup(models.Model):
     return self.groupName
 
 class Jobcard(models.Model):
-  panchayat=models.ForeignKey('Panchayat',on_delete=models.CASCADE,blank=True,null=True)
+  panchayat=models.ForeignKey('Panchayat',db_index=True,on_delete=models.CASCADE,blank=True,null=True)
   village=models.ForeignKey('Village',blank=True,null=True)
   libtechTag=models.ManyToManyField('LibtechTag',related_name="jobcardTag",blank=True)
   group=models.ForeignKey('TelanganaSSSGroup',on_delete=models.CASCADE,blank=True,null=True)
@@ -291,10 +356,22 @@ class Jobcard(models.Model):
   def __str__(self):
     return self.jobcard
 
+class SurveyJobcard(models.Model):
+  jobcard=models.ForeignKey('Jobcard',on_delete=models.CASCADE,blank=True,null=True)
+  isBaselineSurvey=models.BooleanField(default=False)
+  isBaselineReplacement=models.BooleanField(default=False)
+  isMainSurveyDone=models.BooleanField(default=False)
+  mainSurveyIndex=models.PositiveSmallIntegerField(null=True,blank=True)
+  mainTimeStamp=models.DateTimeField(null=True,blank=True)
+  isQ5SurveyDone=models.BooleanField(default=False)
+  q5SurveyIndex=models.PositiveSmallIntegerField(null=True,blank=True)
+  q5TimeStamp=models.DateTimeField(null=True,blank=True)
+  def __str__(self):
+    return self.jobcard.jobcard
 
 class Worker(models.Model):
   name=models.CharField(max_length=512)
-  jobcard=models.ForeignKey('Jobcard',on_delete=models.CASCADE,blank=True,null=True)
+  jobcard=models.ForeignKey('Jobcard',db_index=True,on_delete=models.CASCADE,blank=True,null=True)
   applicantNo=models.PositiveSmallIntegerField()
   fatherHusbandName=models.CharField(max_length=512,blank=True,null=True)
   relationship=models.CharField(max_length=64,blank=True,null=True)
@@ -310,7 +387,7 @@ class Worker(models.Model):
   class Meta:
         unique_together = ('jobcard', 'name')  
   def __str__(self):
-    return self.name
+    return self.name+"-"+str(self.id)
 
  
 class Stat(models.Model):
@@ -411,6 +488,7 @@ class Muster(models.Model):
   isDownloaded=models.BooleanField(default=False)
   isProcessed=models.BooleanField(default=False)
   isComplete=models.BooleanField(default=False)
+  isDownloadError=models.BooleanField(default=False)
   allApplicantFound=models.BooleanField(default=False)
   allWorkerFound=models.BooleanField(default=False)
   isPanchayatNull=models.BooleanField(default=False)
@@ -427,8 +505,8 @@ class Muster(models.Model):
     return self.musterNo
 
 class WorkDetail(models.Model):  
-  applicant=models.ForeignKey('Applicant',on_delete=models.CASCADE,null=True,blank=True)
-  worker=models.ForeignKey('Worker',on_delete=models.CASCADE,null=True,blank=True)
+  applicant=models.ForeignKey('Applicant',on_delete=models.CASCADE,null=True,blank=True)  #OutDaed please do not use this field
+  worker=models.ForeignKey('Worker',on_delete=models.CASCADE,db_index=True,null=True,blank=True)
   muster=models.ForeignKey('Muster',on_delete=models.CASCADE)
 #  wagelist=models.ForeignKey('Wagelist',on_delete=models.CASCADE,null=True,blank=True)
   wagelist=models.ManyToManyField('Wagelist',related_name="wdWagelist",blank=True)
@@ -451,7 +529,8 @@ class WorkDetail(models.Model):
     return self.muster.musterNo+" "+str(self.musterIndex)
   
 class PaymentDetail(models.Model):
-  applicant=models.ForeignKey('Applicant',on_delete=models.CASCADE,null=True,blank=True)
+  applicant=models.ForeignKey('Applicant',on_delete=models.CASCADE,null=True,blank=True) #OutDated please do no use this field
+  worker=models.ForeignKey('Worker',on_delete=models.CASCADE,db_index=True,null=True,blank=True)
   workDetail=models.ForeignKey('WorkDetail',on_delete=models.CASCADE,null=True,blank=True)
   fto=models.ForeignKey('FTO',on_delete=models.CASCADE,null=True,blank=True)
   payorderNo=models.CharField(max_length=256,null=True,blank=True)
@@ -472,6 +551,18 @@ class PaymentDetail(models.Model):
   def __str__(self):
     return self.referenceNo
 
+class PendingPostalPayment(models.Model):
+  worker=models.ForeignKey('Worker',on_delete=models.CASCADE)
+  balance=models.DecimalField(max_digits=10,decimal_places=4)  # Pending Amount
+  statusDate=models.DateField(null=True,blank=True) #Date on which the money was pending
+  lastTransactionDate=models.DateField(null=True,blank=True) #Last Transaction as Per Postal Data
+  libtechTag=models.ForeignKey('LibtechTag',null=True,blank=True)
+  tableName=models.CharField(max_length=256,null=True,blank=True)
+  
+  class Meta:
+        unique_together = ('worker', 'statusDate')  
+  def __str__(self):
+    return self.worker.name+"-"+str(self.balance)
 
 ##Modesl for Broadcast
 class Partner(models.Model):
@@ -485,6 +576,7 @@ class Phonebook(models.Model):
   phone=models.CharField(max_length=10,unique=True)
   partner=models.ForeignKey('Partner',on_delete=models.CASCADE)
   panchayat=models.ForeignKey('Panchayat',null=True,blank=True)
+  worker=models.ForeignKey('Worker',null=True,blank=True)
   fpsVillage=models.ForeignKey('FPSVillage',null=True,blank=True)
   def _str__(self):
     return self.phone
