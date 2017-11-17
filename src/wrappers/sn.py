@@ -118,7 +118,7 @@ def driverInitialize(browser=None, path=None, timeout=None):
       fp.set_preference("browser.download.manager.showAlertOnComplete", False)
       fp.set_preference("browser.download.manager.closeWhenDone", False)
       
-    # Got this working by fixing the size in xulstore.json (src - https://support.mozilla.org/t5/Firefox/How-to-open-maximized/td-p/1327140)
+    # Got this working by fixing the size in xulstore.json search 'main-window' (src - https://support.mozilla.org/t5/Firefox/How-to-open-maximized/td-p/1327140)
     fp.set_preference('browser.window.width', width)
     fp.set_preference('browser.window.height', height)
       

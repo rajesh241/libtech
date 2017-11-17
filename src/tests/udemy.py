@@ -24,8 +24,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 delay = 2
 base_url = 'https://www.udemy.com/'
 filename = './cmd.txt'
-#url = 'https://www.udemy.com/aws-certified-solutions-architect-associate/learn/v4/content'  # Content Approach
-url = 'https://www.udemy.com/aws-certified-solutions-architect-associate/learn/v4/t/lecture/4266378?start=0'
+url = 'https://www.udemy.com/python-for-data-science-and-machine-learning-bootcamp/learn/v4/t/lecture/5440650?start=0'
 
 
 #############
@@ -60,7 +59,7 @@ class TestSuite(unittest.TestCase):
         self.logger.info('BEGIN PROCESSING')
         self.display = displayInitialize(self.args['visible'])
         self.driver = driverInitialize(browser=self.args['browser'] , path='/home/mayank/.mozilla/firefox/4s3bttuq.default/')
-        self.cmd = 'nohup youtube-dl --username %s --password %s ' % (user, password)
+        self.cmd = 'nohup youtube-dl --username %s --password %s -o %s ' % (user, password, '"%(title)s.%(ext)s"')
         self.url = self.args['url']
 
 
