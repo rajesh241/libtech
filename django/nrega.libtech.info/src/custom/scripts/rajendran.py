@@ -35,6 +35,7 @@ def argsFetch():
   parser.add_argument('-limit', '--limit', help='Limit on the number of results', required=False)
   parser.add_argument('-d', '--download', help='Download the Status', required=False,action='store_const', const=1)
   parser.add_argument('-f', '--finyear', help='Financial year for which data needs to be crawld', required=True)
+  parser.add_argument('-g', '--gather', help='Gather all the Reports', required=True)
   parser.add_argument('-s', '--stateCode', help='StateCode for which the numbster needs to be downloaded', required=False)
 
   args = vars(parser.parse_args())

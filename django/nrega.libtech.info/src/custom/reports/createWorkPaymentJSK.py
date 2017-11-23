@@ -36,6 +36,7 @@ def argsFetch():
   parser.add_argument('-limit', '--limit', help='Limit on the number of results', required=False)
   parser.add_argument('-f', '--finyear', help='Financial year for which data needs to be crawld', required=True)
   parser.add_argument('-s', '--stateCode', help='StateCode for which the numbster needs to be downloaded', required=False)
+  parser.add_argument('-cr', '--crawlRequirement', help='Kindly put the tag of crawlRequiremtn that panchayats are tagged with, by default it will do it for panchayats which are tagged with crawlRequirement of FULL', required=False)
   parser.add_argument('-p', '--panchayatCode', help='panchaytCode for which the numbster needs to be downloaded', required=False)
 
   args = vars(parser.parse_args())
@@ -46,6 +47,10 @@ def main():
   args = argsFetch()
   logger = loggerFetch(args.get('log_level'))
   logger.info('args: %s', str(args))
+  if args['crawlRequirement']:
+    crawlRequirement=args['crawlRequirement']
+  else:
+    crawlRequirement="FULL"
   if args['limit']:
     limit = int(args['limit'])
   else:
@@ -63,9 +68,9 @@ def main():
   if panchayatCode is not None:
     myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',code=panchayatCode)
   elif stateCode is not None:
-    myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL',block__district__state__code=stateCode)
+    myPanchayats=Panchayat.objects.filter(crawlRequirement=crawlRequirement,block__district__state__code=stateCode)
   else:
-    myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL')[:limit]
+    myPanchayats=Panchayat.objects.filter(crawlRequirement=crawlRequirement)[:limit]
 #  else:
 #    myPanchayats=Panchayat.objects.filter(crawlRequirement='FULL')[:limit]
   for eachPanchayat in myPanchayats:

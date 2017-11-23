@@ -6,6 +6,7 @@ import sys
 import re
 import time
 sys.path.insert(0, "./../scripts")
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'includes'))
 from customSettings import repoDir,djangoDir,djangoSettings
 
 sys.path.insert(0, repoDir)
@@ -35,7 +36,6 @@ def argsFetch():
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-l', '--log-level', help='Log level defining verbosity', required=False)
   parser.add_argument('-limit', '--limit', help='Limit on the number of results', required=False)
-  parser.add_argument('-f', '--finyear', help='Financial year for which data needs to be crawld', required=True)
   parser.add_argument('-s', '--stateCode', help='StateCode for which the numbster needs to be downloaded', required=False)
   parser.add_argument('-p', '--panchayatCode', help='panchaytCode for which the numbster needs to be downloaded', required=False)
   parser.add_argument('-b', '--blockCode', help='panchaytCode for which the numbster needs to be downloaded', required=False)
@@ -51,12 +51,14 @@ def main():
     limit = int(args['limit'])
   else:
     limit =1
-  finyear=args['finyear']
+#  finyear=args['finyear']
+  finyear='17'
   surveyTag=LibtechTag.objects.filter(name="baseLineSurvey")
   replacementTag=LibtechTag.objects.filter(name="baseLineSurveyReplacement")
   
   inblock=args['blockCode']
-  blockCodes=['3614008','3614007','3614006','3614005'] 
+  #blockCodes=['3614008','3614007','3614006','3614005'] 
+  blockCodes=['3614008','3614007'] 
  # if inblock is not None:
   for inblock in blockCodes:
     myBlock=Block.objects.filter(code=inblock).first()
@@ -71,7 +73,9 @@ def main():
       i=i+1
       panchayatcsv=""
       panchayatcsv+="Block,%s, ,Panchayat,%s\n\n" % (blockName,eachPanchayat.slug) 
-      panchayatcsv+="srNo,village,jobcard,caste,surname,applicants\n"
+      panchayatcsv+="ID,village,jobcard,caste,surname,applicants\n"
+      panchayatcsvA=panchayatcsv
+      panchayatcsvB=panchayatcsv
       logger.info(eachPanchayat.name)
       myJobcards=Jobcard.objects.filter( Q(panchayat=eachPanchayat) & Q( Q(isBaselineSurvey=True) | Q(isBaselineReplacement= True))).order_by("-isBaselineSurvey")
       j=0
@@ -89,7 +93,8 @@ def main():
           villageName=eachJobcard.village.name
         if eachJobcard.isBaselineReplacement == True:
           remarks='replacement'
-        myobjs=PaymentDetail.objects.filter(applicant__jobcard__jobcard=eachJobcard,fto__finyear=finyear).values("applicant__id","applicant__name").annotate(dcount=Count('pk'),dsum=Sum('daysWorked')).order_by('-dsum')
+        myobjs=PaymentDetail.objects.filter(applicant__jobcard=eachJobcard,fto__finyear=finyear).values("applicant__id","applicant__name").annotate(dcount=Count('pk'),dsum=Sum('daysWorked')).order_by('-dsum')
+#        myobjs=PaymentDetail.objects.filter(worker__jobcard__jobcard=eachJobcard,fto__finyear=finyear).values("worker__id","worker__name").annotate(dcount=Count('pk'),dsum=Sum('daysWorked')).order_by('-dsum')
         k=0
         jobcardcsv+="%s,%s,%s,%s,%s\n"%(blockName,eachPanchayat.slug,eachJobcard.jobcard,tjobcard,tjobcard.lstrip("~"))
         #jobcardcsv+="\n"
@@ -101,9 +106,20 @@ def main():
           applicantName=obj['applicant__name']
           applicants+=applicantName
           applicants+=","
-        panchayatcsv+="%s,%s,%s,%s,%s,%s\n" % (str(j),villageName,tjobcard,caste,surname,applicants)
-      with open("/tmp/reports/%s_%s.csv" % (blockName,eachPanchayat.slug) , "w") as f:
-        f.write(panchayatcsv)
+        if len(myobjs) == 0:
+          myApplicants=Applicant.objects.filter(jobcard=eachJobcard)
+          for eachApplicant in myApplicants:
+            applicants+=applicantName
+            applicants+=","
+            
+        if (j<9) or (j==17) or (j==18):
+          panchayatcsvA+="%s,%s,%s,%s,%s,%s\n" % (str(srNo),villageName,tjobcard,caste,surname,applicants)
+        else:
+          panchayatcsvB+="%s,%s,%s,%s,%s,%s\n" % (str(srNo),villageName,tjobcard,caste,surname,applicants)
+      with open("/tmp/reports/%s_%s_A.csv" % (blockName,eachPanchayat.slug) , "w") as f:
+        f.write(panchayatcsvA)
+      with open("/tmp/reports/%s_%s_B.csv" % (blockName,eachPanchayat.slug) , "w") as f:
+        f.write(panchayatcsvB)
 #    with open("/tmp/reports/%s.csv" % blockName,"w") as f:
 #      f.write(outcsv)
     with open("/tmp/reports/%s_block.csv" % blockName,"w") as f:

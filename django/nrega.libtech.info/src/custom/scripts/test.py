@@ -11,7 +11,7 @@ django.setup()
 os.chdir(proj_path)
 #from django.contrib.auth.models import User
 #from django.conf.settings import AUTH_USER_MODEL 
-from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,Wagelist,Applicant,LibtechTag,Jobcard
+from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,Wagelist,Applicant,LibtechTag,Jobcard,PanchayatCrawlQueue
 # This is so models get loaded.
 from django.core.wsgi import get_wsgi_application
 from django.core.files import File
@@ -19,13 +19,51 @@ from django.core.files.base import ContentFile
 application = get_wsgi_application()
 #my_obj.categories.add(fragmentCategory.objects.get(id=1))
 from django.contrib.auth.models import User
-from django.db.models import Count
+from django.db.models import Count,Sum
 
 #myobjs=User.objects.filter(username='demo')
 #for obj in myobjs:
 #  print(obj.id)
+myobjs=PanchayatCrawlQueue.objects.filter(panchayat__block__district__state__code='02')
+for obj in myobjs:
+  obj.priority=200
+  obj.save()
+exit(0)
+myWorkDetails=WorkDetail.objects.filter(worker__jobcard__panchayat__block__id=2639,musterStatus='Rejected').values("worker__jobcard__panchayat__block__id","muster__finyear").annotate(dcount=Count('pk'),tcount=Sum('totalWage'))
+for obj in myWorkDetails:
+  s="finyear %s count %s sum %s " % (obj["muster__finyear"],str(obj["dcount"]),str(obj["tcount"]))
+  print(s)
+exit(0)
 surveyTag=LibtechTag.objects.filter(name="baseLineSurvey").first()
+alwaysTag=LibtechTag.objects.filter(name="always")
 replacementTag=LibtechTag.objects.filter(name="baseLineSurveyReplacement").first()
+blockCodes=['3614005','3614006','3614007','3614004','3614008']
+
+pid=68012
+jcEnd='64'
+
+myWorkDetails=WorkDetail.objects.filter(worker__jobcard__panchayat__id=pid,worker__jobcard__jobcard__endswith=jcEnd).values("worker__jobcard__jobcard","worker__jobcard__headOfHousehold").annotate(dcount=Count('pk'))
+for eachWorkDetail in myWorkDetails:
+  print(eachWorkDetail["worker__jobcard__jobcard"])
+  print(eachWorkDetail["worker__jobcard__headOfHousehold"])
+  print(eachWorkDetail["dcount"])
+
+baselineSurvey='''
+blockCodes=['3614007','3614008']
+for eachblockcode in blockCodes:
+  myBlock=Block.objects.filter(code=eachblockcode).first()
+  myJobcards=Jobcard.objects.filter(panchayat__block=myBlock,isBaselineSurvey=True)
+  for eachJobcard in myJobcards:
+    eachJobcard.isBaselineSurvey=False
+    print(eachJobcard.tjobcard)
+    eachJobcard.save()
+  myJobcards=Jobcard.objects.filter(panchayat__block=myBlock,isBaselineReplacement=True)
+  for eachJobcard in myJobcards:
+    eachJobcard.isBaselineReplacement=False
+    print(eachJobcard.tjobcard)
+    eachJobcard.save()
+'''
+
 a='''
 myobjs=Jobcard.objects.filter(libtechTag__in=myLibtechTag)
 i=0
@@ -73,8 +111,8 @@ for eachWDRecord in myWDRecords:
 #if myDistrict is not None:
 #  print(myDistrict.code)
 '''
-#fileopen='''
-with open('/tmp/maddur.csv') as fp:
+fileopen='''
+with open('/tmp/survey.csv') as fp:
     for line in fp:
       line=line.lstrip().rstrip()
       if line != '':
@@ -91,7 +129,7 @@ with open('/tmp/maddur.csv') as fp:
         else:
           obj.isBaselineSurvey=True
         obj.save()
- #'''
+'''
 
 groupby= '''
 myUser=User.objects.filter(username='demo').first()
