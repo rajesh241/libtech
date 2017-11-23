@@ -117,6 +117,10 @@ export class PanchayatsPage {
 
 	this.loading.present();
     }
+
+    editPanchayatPage() {
+	this.navCtrl.push('EditPanchayatsPage', this.user);
+    }
         
     syncPanchayats() {
 	this.presentSpinner('Syncing Panchayats...');

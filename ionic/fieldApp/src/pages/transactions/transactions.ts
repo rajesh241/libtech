@@ -42,10 +42,13 @@ export class TransactionsPage {
     }
 
     update(index) {
-        if (this.phone)
-            this.applicantDetails.update(String(index), { phone: this.phone });
+	this.presentSpinner('Syncing Panchayats...');
+        if (this.phone) {
+	    let date = new Date().getTime()
+	    this.applicantDetails.update(String(index), { phone: this.phone, timeStamp: date });
+	}
         this.updated = true;
-        alert("Updated Phone");
+	this.loading.dismiss();
     }
 
     ionViewDidLoad() {

@@ -17,11 +17,12 @@
     <ion-item>
     <b item-left>{{detail.$key}}. {{detail.name}}</b> <br />
 
-    <button item-right ion-button default (click)="show = !show">{{show ? 'hide' : 'View details'}}</button>
+    <button item-right ion-button default (click)="show = !show">{{show ? 'Hide' : 'View details'}}</button>
     </ion-item>
 
     <ion-card *ngIf="show">
       <b>Phone</b>: {{ detail.phone }} <br />
+      <b>Time Stamp</b>: {{ detail.timeStamp }} <br />
       <b>Age</b>: {{detail.age}} <br />
       <b>Caste</b>: {{detail.caste}} <br />
       <b>Gender</b>: {{detail.gender}} <br />

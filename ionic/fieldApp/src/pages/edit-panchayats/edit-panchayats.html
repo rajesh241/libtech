@@ -1,0 +1,42 @@
+<!--
+  Generated template for the EditPanchayatsPage page.
+
+  See http://ionicframework.com/docs/components/#navigation for more info on
+  Ionic pages and navigation.
+-->
+<ion-header>
+
+  <ion-navbar>
+    <ion-item>
+      <ion-title item-left>Edit Panchayats</ion-title>
+      <button ion-button item-right default (click)="goHome()">Home</button>
+    </ion-item>
+  </ion-navbar>
+
+</ion-header>
+
+
+<ion-content padding>
+  Please select the Panchayats:
+  <!--
+  <ion-list>
+    Slide frm here wth wrap
+    <ion-item-sliding>
+      <div text-wrap *ngFor="let panchayat of panchayats">
+	<ion-label text-wrap primary>{{ panchayat }}</ion-label>
+	<ion-checkbox checked="panchayat in userPanchayats"></ion-checkbox>
+      </div>
+    </ion-item-sliding>
+  </ion-list>
+  Yippie
+  -->
+  <ion-list>
+    <ion-item-sliding>
+      <ion-item *ngFor="let panchayat of panchayats">
+	<ion-checkbox item-left color="dark" checked="panchayat in userPanchayats"></ion-checkbox>
+	<span item-left>{{ panchayat }}</span>
+      </ion-item>
+    </ion-item-sliding>
+  </ion-list>
+  
+</ion-content>

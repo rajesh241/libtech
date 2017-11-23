@@ -42,8 +42,10 @@ export class TransactionPage {
 
     update() {
 	this.presentSpinner('Updating records...');
-        if (this.remarks)
-            this.parent.update(this.key, { remarks: this.remarks });
+        if (this.remarks) {
+	    let date = new Date().getTime()
+            this.parent.update(this.key, { remarks: this.remarks, timeStamp: date });
+	}
         this.parent.update(this.key, { createComplaint: this.createComplaint });
         this.updated = true;
 	this.loading.dismiss();

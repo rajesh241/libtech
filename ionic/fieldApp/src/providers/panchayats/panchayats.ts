@@ -9,6 +9,7 @@ export class PanchayatsProvider {
     items: AfoListObservable<any[]>;
     jobcards: AfoListObservable<any[]>;
     panchayats: any;
+    panchayatArray: any[];
     panchayat_summary: AfoListObservable<any[]>;
     url: string = '/panchayats/';
 
@@ -22,6 +23,7 @@ export class PanchayatsProvider {
         console.log('PROVIDERS ');
         console.log(this.items);
         this.panchayats = [];
+        this.panchayatArray = [];
     }
 
     load() {
@@ -49,7 +51,7 @@ export class PanchayatsProvider {
               }
               };
 	      }); */
-            console.log('Fecthing all the panchaytas asynchronously!');
+            console.log('Fecthing all the panchayats asynchronously!');
             console.log(JSON.stringify(this.panchayats));
         },
 			     err => { console.log('Error: ' + err) },
@@ -59,6 +61,27 @@ export class PanchayatsProvider {
         return this.panchayats;
     }
 
+    list() {
+        console.log('Inside List');
+        if (this.panchayatArray.length != 0) {// To avoid multiple subscribes
+	    console.log(this.panchayatArray);
+            return this.panchayatArray;
+	}
+	
+        this.items.subscribe(snapshots => {
+            this.panchayatArray = [];
+            snapshots.forEach(snapshot => this.panchayatArray.push(snapshot.$key));
+            console.log('Fecthing the panchayat array asynchronously!');
+	    console.log(this.panchayatArray);
+            console.log(JSON.stringify(this.panchayatArray));
+        },
+			     err => { console.log('Error: ' + err) },
+			     () => { console.log('Load Completed!') } // Will never execute
+			    );
+
+        return this.panchayatArray;
+    }
+    
     sync(panchayatsChosen) {
 	console.log(JSON.stringify(panchayatsChosen));
         panchayatsChosen.forEach(panchayat => {

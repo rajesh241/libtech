@@ -16,6 +16,9 @@
       <div *ngIf="false">
 	<ion-item *ngIf="field.$value"><b>{{ field.$key }}</b>: {{ field.$value }}</ion-item>
       </div>
+
+      <!-- Commenting 
+      <div *ngIf="false">
       <ion-card *ngIf="meta['75daysOrMore']">
 	<ion-card-header>Object Approach</ion-card-header>
 	<ion-card-content>
@@ -48,18 +51,6 @@
 
       <ion-card>
 	<ion-card-header>
-	  Summary:
-	</ion-card-header>      
-	<ion-card-content>
-	  <div *ngFor="let field of metaObservable|async">
-	    <span *ngIf="field.$value"><b>{{ field.$key }}</b>: {{ field.$value }}</span>
-	  </div>
-	</ion-card-content>
-      </ion-card>
-
-      
-      <ion-card>
-	<ion-card-header>
 	  <b>Experiment:</b>
 	</ion-card-header>
 	<ion-card-content>
@@ -74,8 +65,22 @@
 	    </div>
 	  </div>
 	</ion-card-content>
+      </ion-card>      
+      
+      </div>
+      -->
+      
+      <ion-card>
+	<ion-card-header>
+	  Summary:
+	</ion-card-header>      
+	<ion-card-content>
+	  <div *ngFor="let field of metaObservable|async">
+	    <span *ngIf="field.$value"><b>{{ field.$key }}</b>: {{ field.$value }}</span>
+	  </div>
+	</ion-card-content>
       </ion-card>
-
+      
       <ion-card>
 	<ion-card-header>
 	  Financial Year 2015-16:
