@@ -334,7 +334,10 @@ where daysWorked > 75
             if res:
                 for (jobcard, days_worked, head_of_household, village_code, house_hold_code) in res:
                     logger.info('(jobcard[%s], days_worked[%s], head_of_household[%s], village_code[%s], house_hold_code[%s])' % (jobcard, days_worked, head_of_household, village_code, house_hold_code))
-                    panchayat_summary[slug]['75daysOrMore'] =  {'jobcard': jobcard, 'days_worked': days_worked, 'head_of_household': head_of_household, 'village_code': village_code, 'house_hold_code': house_hold_code}
+                    if '75daysOrMore' not in panchayat_summary[slug]:
+                        panchayat_summary[slug]['75daysOrMore'] = {}
+                    
+                    panchayat_summary[slug]['75daysOrMore'][jobcard] =  {'jobcard': jobcard, 'days_worked': days_worked, 'head_of_household': head_of_household, 'village_code': village_code, 'house_hold_code': house_hold_code}
                     logger.info('panchayat_summary[slug][75daysOrMore] = [%s]' % panchayat_summary[slug]['75daysOrMore'])
 
     logger.info(panchayat_summary)
