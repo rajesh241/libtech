@@ -248,8 +248,10 @@ class PanchayatCrawlQueue(models.Model):
         ('1', 'STATSDownloaded'),
         ('2', 'JobcardRegisterCrawledProcessed'),
         ('3', 'MustersDownloadedProcessed'),
-        ('4', 'StatsComputed'),
-        ('5', 'ReportsGenerated'),
+        ('4', 'WagelistDownloadedProcessed'),
+        ('5', 'FTODownloadedProcessed'),
+        ('6', 'StatsComputed'),
+        ('7', 'ReportsGenerated'),
     )
  
   panchayat=models.ForeignKey('panchayat',on_delete=models.CASCADE)
@@ -332,7 +334,7 @@ class Jobcard(models.Model):
   village=models.ForeignKey('Village',blank=True,null=True)
   libtechTag=models.ManyToManyField('LibtechTag',related_name="jobcardTag",blank=True)
   group=models.ForeignKey('TelanganaSSSGroup',on_delete=models.CASCADE,blank=True,null=True)
-  tjobcard=models.CharField(max_length=18,null=True,blank=True)
+  tjobcard=models.CharField(max_length=18,null=True,blank=True,db_index=True)
   jobcard=models.CharField(max_length=256,db_index=True,null=True,blank=True)
   jcNo=models.BigIntegerField(blank=True,null=True)
   headOfHousehold=models.CharField(max_length=512,blank=True,null=True)
@@ -552,17 +554,19 @@ class PaymentDetail(models.Model):
     return self.referenceNo
 
 class PendingPostalPayment(models.Model):
-  worker=models.ForeignKey('Worker',on_delete=models.CASCADE)
+  jobcard=models.ForeignKey('Jobcard',db_index=True,on_delete=models.CASCADE,blank=True,null=True)
+  name=models.CharField(max_length=512)
   balance=models.DecimalField(max_digits=10,decimal_places=4)  # Pending Amount
+  worker=models.ForeignKey('Worker',null=True,blank=True)
   statusDate=models.DateField(null=True,blank=True) #Date on which the money was pending
   lastTransactionDate=models.DateField(null=True,blank=True) #Last Transaction as Per Postal Data
   libtechTag=models.ForeignKey('LibtechTag',null=True,blank=True)
   tableName=models.CharField(max_length=256,null=True,blank=True)
   
   class Meta:
-        unique_together = ('worker', 'statusDate')  
+        unique_together = ('jobcard','name','lastTransactionDate','balance')  
   def __str__(self):
-    return self.worker.name+"-"+str(self.balance)
+    return self.jobcard.tjobcard+"-"+str(self.balance)
 
 ##Modesl for Broadcast
 class Partner(models.Model):

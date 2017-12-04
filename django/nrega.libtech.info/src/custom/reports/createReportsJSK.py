@@ -80,6 +80,7 @@ def argsFetch():
   parser.add_argument('-c', '--create', help='Create Reports', required=False,action='store_const', const=1)
   parser.add_argument('-d', '--download', help='Download Reports', required=False,action='store_const', const=1)
   parser.add_argument('-a', '--archive', help='Archive Reports', required=False,action='store_const', const=1)
+  parser.add_argument('-g', '--gather', help='Archive Reports', required=False,action='store_const', const=1)
   parser.add_argument('-s', '--stateCode', help='StateCode for which the numbster needs to be downloaded', required=False)
   parser.add_argument('-b', '--blockCode', help='BlockCode for which the reports need to be archived', required=False)
   parser.add_argument('-cr', '--crawlRequirement', help='Kindly put the tag of crawlRequiremtn that panchayats are tagged with, by default it will do it for panchayats which are tagged with crawlRequirement of FULL', required=False)
@@ -105,10 +106,29 @@ def main():
   stateCode=args['stateCode']
   panchayatCode=args['panchayatCode']
   logger.info(panchayatCode)
-  
+ #Telangana Block 3614005  
+  if args['gather']:
+    reports=['workPayment','rejectedPayment','pendingPayment','inValidPayment']
+    finyears=["16","17","18"]
+    inpanchayatCode=args['panchayatCode']
+    eachPanchayat=Panchayat.objects.filter(code=inpanchayatCode).first()
+    filepath="/tmp/%s/csv/" % (eachPanchayat.slug)
+    for eachReport in reports:
+      for finyear in finyears:
+        logger.info(finyear+eachReport+str(eachPanchayat))
+        myPanchayatReport=PanchayatReport.objects.filter(panchayat=eachPanchayat,reportType=eachReport,finyear=finyear).first()
+        url=myPanchayatReport.reportFile.url
+        logger.info(url)
+        htmlReport=eachReport+"HTML"
+        filename="%s_%s_%s.csv" % (eachPanchayat.slug,eachReport,finyear)
+        cmd="mkdir -p %s && cd %s && wget -O %s %s " %(filepath,filepath,filename,url) 
+        logger.info(cmd)
+        os.system(cmd)
+ 
   if args['archive']:
     reports=['workPayment','rejectedPayment','pendingPayment','inValidPayment']
-#    reports=['paymentDetailsTelangana']
+    reports=['paymentDetailsTelangana']
+#    reports=['workPaymentDelayAnalysis']
     finyears=["16","17","18"]
     if args['blockCode']:
       inblockCode=args['blockCode']

@@ -11,7 +11,7 @@ django.setup()
 os.chdir(proj_path)
 #from django.contrib.auth.models import User
 #from django.conf.settings import AUTH_USER_MODEL 
-from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,Wagelist,Applicant,LibtechTag,Jobcard,PanchayatCrawlQueue
+from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,Wagelist,Applicant,LibtechTag,Jobcard,PanchayatCrawlQueue,PendingPostalPayment
 # This is so models get loaded.
 from django.core.wsgi import get_wsgi_application
 from django.core.files import File
@@ -24,9 +24,22 @@ from django.db.models import Count,Sum
 #myobjs=User.objects.filter(username='demo')
 #for obj in myobjs:
 #  print(obj.id)
-myobjs=PanchayatCrawlQueue.objects.filter(panchayat__block__district__state__code='02')
+myobjs=PanchayatCrawlQueue.objects.filter(isComplete=True)
 for obj in myobjs:
-  obj.priority=200
+  print(obj.status)
+  obj.status='7'
+  obj.save()
+exit(0)
+
+myobjs=PendingPostalPayment.objects.all()
+for obj in myobjs:
+  print(obj.id)
+  obj.delete()
+exit(0) 
+myobjs=PanchayatCrawlQueue.objects.filter(panchayat__block__code='3614057')
+for obj in myobjs:
+  obj.priority=300
+  obj.status=0
   obj.save()
 exit(0)
 myWorkDetails=WorkDetail.objects.filter(worker__jobcard__panchayat__block__id=2639,musterStatus='Rejected').values("worker__jobcard__panchayat__block__id","muster__finyear").annotate(dcount=Count('pk'),tcount=Sum('totalWage'))

@@ -79,6 +79,7 @@ def main():
       
   if args["augustHearing"]:
     startFinYear='18' 
+    priority=args['priority']
     stateCode=args['stateCode']
     logger.info("Populating the Queue for August Hearing") 
     myLibtechTag=LibtechTag.objects.filter(name="August 2017 Hearing")
@@ -87,7 +88,7 @@ def main():
     for eachPanchayat in myPanchayats:
       i=i+1
       logger.info("crawl %s Panchayat %s Block %s District %s State %s" % (str(i),eachPanchayat.name,eachPanchayat.block.name,eachPanchayat.block.district.name,eachPanchayat.block.district.state.name))
-      PanchayatCrawlQueue.objects.create(panchayat=eachPanchayat,priority=5,startFinYear=startFinYear)
+      PanchayatCrawlQueue.objects.create(panchayat=eachPanchayat,priority=priority,startFinYear=startFinYear)
       logger.info("Putting The panchayat in the CrawlQueue")
   logger.info("...END PROCESSING") 
   exit(0)

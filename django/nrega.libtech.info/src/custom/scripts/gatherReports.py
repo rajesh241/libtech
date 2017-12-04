@@ -57,29 +57,33 @@ def main():
   stateCodes=[]
   stateCodes.append(args['stateCode'])
   outdir="/tmp/datafy18/"
-  stateCodes=['33','34','15','18','16','05','17']
+  stateCodes=['18','24','31','33']
+  stateCodes=['34','32']
+  stateCodes=['27']
+  stateCodes=['24','27','31','32','33','34','15','18','16','05','17']
   if args['gather']:
     for stateCode in stateCodes:
       logger.info(stateCode)
       i=0
       outcsv=''
-      outcsv+="i,state,district,block,panchayat,workDays,accuracy,musters\n"
+      outcsv+="i,panchayatCode,state,district,block,panchayat,workDays,accuracy,musters\n"
       myState=State.objects.filter(code=stateCode).first()
       fileDir="%s/%s/" % (outdir,myState.slug)
       cmd="mkdir -p %s " % (fileDir) 
       os.system(cmd)
       myPanchayatCrawlQueues=PanchayatCrawlQueue.objects.filter(panchayat__block__district__state__code=stateCode,status='5').order_by("panchayat__accuracyIndex")
-      j=len(myPanchayatCrawlQueues)
-      for obj in myPanchayatCrawlQueues:
-        eachPanchayat=obj.panchayat
+      myLibtechTag=LibtechTag.objects.filter(name="August 2017 Hearing")
+      myPanchayats=Panchayat.objects.filter(block__district__state__code=stateCode,libtechTag__in=myLibtechTag)
+      j=len(myPanchayats)
+      for eachPanchayat in myPanchayats:
         logger.info("Processing : %s panchayat: %s " % (str(j),eachPanchayat.name))
-        dcReport=PanchayatReport.objects.filter(panchayat=eachPanchayat,finyear='17',reportType="delayCompensationCSV").first()
-        wpReport=PanchayatReport.objects.filter(panchayat=eachPanchayat,finyear='17',reportType="workPayment").first()
+        dcReport=PanchayatReport.objects.filter(panchayat=eachPanchayat,finyear=finyear,reportType="delayCompensationCSV").first()
+        wpReport=PanchayatReport.objects.filter(panchayat=eachPanchayat,finyear=finyear,reportType="workPaymentDelayAnalysis").first()
         isDownload=False
         srNo=0
         accuracyIndex=eachPanchayat.accuracyIndex
         if (dcReport is not None) and (wpReport is not None):
-          if ( int(accuracyIndex) >= 90 ) and ( int(accuracyIndex) <= 110 ):
+          if ( int(accuracyIndex) >= 0 ) and ( int(accuracyIndex) <= 500 ):
             isDownload=True 
             i=i+1
             srNo=i
@@ -88,7 +92,7 @@ def main():
           myPanchayatStat=PanchayatStat.objects.filter(panchayat=eachPanchayat,finyear=finyear).first()
           libtechWorkDays=myPanchayatStat.libtechWorkDays
           totalMusters=myPanchayatStat.mustersTotal
-          outcsv+="%s,%s,%s,%s,%s,%s,%s,%s\n" %(str(srNo),eachPanchayat.block.district.state.slug,eachPanchayat.block.district.slug,eachPanchayat.block.slug,eachPanchayat.slug,str(libtechWorkDays),str(accuracyIndex),str(totalMusters))
+          outcsv+="%s,%s,%s,%s,%s,%s,%s,%s,%s\n" %(str(srNo),eachPanchayat.code,eachPanchayat.block.district.state.slug,eachPanchayat.block.district.slug,eachPanchayat.block.slug,eachPanchayat.slug,str(libtechWorkDays),str(accuracyIndex),str(totalMusters))
           if args['download']:
             dcReportURL=dcReport.reportFile.url
             wpReportURL=wpReport.reportFile.url

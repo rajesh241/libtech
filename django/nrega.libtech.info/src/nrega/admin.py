@@ -1,7 +1,8 @@
 from django.contrib import admin
+from django.db.models import F,Q,Sum,Count
 
 # Register your models here.
-from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,Jobcard,LibtechTag,TelanganaSSSGroup,FPSVillage,Partner,Phonebook,VillageFPSStatus,Broadcast,AudioLibrary,Stat,Worker,PanchayatCrawlQueue
+from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,Jobcard,LibtechTag,TelanganaSSSGroup,FPSVillage,Partner,Phonebook,VillageFPSStatus,Broadcast,AudioLibrary,Stat,Worker,PanchayatCrawlQueue,PendingPostalPayment
 
 from .actions import export_as_csv_action
 
@@ -86,8 +87,8 @@ class villageModelAdmin(admin.ModelAdmin):
   search_fields=["name","tcode"]
 
 class panchayatCrawlQueueModelAdmin(admin.ModelAdmin):
-  list_display = ["__str__","crawlAttemptDate","created","priority"]
-  list_filter=["isError","isComplete","status","panchayat__block__district__state"]
+  list_display = ["__str__","status","crawlAttemptDate","created","priority"]
+  list_filter=["isError","isComplete","priority","status","panchayat__block__district__state"]
   search_fields=["panchayat__name","panchayat__code"]
   readonly_fields=["panchayat"]
 
@@ -129,7 +130,7 @@ class panchayatStatModelAdmin(admin.ModelAdmin):
 
 class panchayatReportModelAdmin(admin.ModelAdmin):
   list_display=["__str__","get_reportFile","finyear","updateDate","get_block","get_district","get_state"]
-  readonly_fields=["panchayat","finyear","reportType","reportFile"]
+  readonly_fields=["panchayat","finyear","reportType","reportFile","isProcessed"]
   list_filter=["finyear","reportType"]
   search_fields=["panchayat__name","panchayat__block__name","panchayat__code"]
   def get_block(self, obj):
@@ -139,7 +140,7 @@ class panchayatReportModelAdmin(admin.ModelAdmin):
   def get_state(self, obj):
     return obj.panchayat.block.district.state.name
   def get_reportFile(self,obj):
-    return "<a href='%s'>Download</a>" % obj.reportFile
+    return "<a href='%s'>Download</a>" % obj.reportFile.url
   get_reportFile.allow_tags = True
   get_reportFile.description='Download'
   get_block.admin_order_field  = 'block'  #Allows column order sorting
@@ -148,6 +149,11 @@ class panchayatReportModelAdmin(admin.ModelAdmin):
   get_district.short_description = 'District '  #Renames column head
 #  get_state.admin_order_field  = 'state'  #Allows column order sorting
   get_state.short_description = 'State '  #Renames column head
+  def get_queryset(self, request):
+    qs = super(panchayatReportModelAdmin, self).get_queryset(request)
+    if request.user.is_superuser:
+      return qs
+    return qs.filter( Q(panchayat__block__district__state__code='34') & (Q(reportType='pendingPayment') | Q(reportType='workPayment') | Q(reportType='inValidPayment') | Q(reportType='rejectedPayment')))
 
 class villageReportModelAdmin(admin.ModelAdmin):
   list_display=["__str__","finyear","updateDate","get_panchayat","get_block"]
@@ -202,6 +208,10 @@ class workDetailModelAdmin(admin.ModelAdmin):
   list_display=["id","muster","musterIndex","applicant","zjobcard","zname","zaccountNo","creditedDate","musterStatus"]
   readonly_fields=["muster","applicant","wagelist"]
   search_fields=["id","zjobcard","muster__id"]
+
+class pendingPostalPaymentModelAdmin(admin.ModelAdmin):
+  list_display=["id","__str__","name","balance","statusDate","lastTransactionDate"]
+  readonly_fields=["worker","jobcard"]
 #  def get_musterLink(self,obj):
 #    return "<a href='%s'>Muster</a>" % obj.muster.
 class ftoModelAdmin(admin.ModelAdmin):
@@ -217,7 +227,7 @@ class wagelistModelAdmin(admin.ModelAdmin):
 
 class phonebookModelAdmin(admin.ModelAdmin):
   list_display=["phone","partner"]
-  readonly_fields=["phone","fpsVillage","panchayat"]
+  readonly_fields=["phone","fpsVillage","panchayat","worker"]
 class partnerModelAdmin(admin.ModelAdmin):
   list_display=["name"]
 
@@ -255,6 +265,8 @@ admin.site.register(Stat,statModelAdmin)
 admin.site.register(PaymentDetail,paymentDetailModelAdmin)
 admin.site.register(Worker,workerModelAdmin)
 admin.site.register(PanchayatCrawlQueue,panchayatCrawlQueueModelAdmin)
+admin.site.register(PendingPostalPayment,pendingPostalPaymentModelAdmin)
+
 # Reference Code for Downloading CSV
 # def download_csv(self, request, queryset):
 #   import csv

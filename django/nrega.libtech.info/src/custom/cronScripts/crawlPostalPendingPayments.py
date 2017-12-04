@@ -189,23 +189,35 @@ def processPostalReport(logger,panchayatReport):
             if "-" in cols[3].text:
               tjobcard=cols[3].text.lstrip().rstrip().split("-")[0]
               applicantName=cols[2].text.lstrip().rstrip()
-              
-              applicantNo=int(cols[3].text.lstrip().rstrip().split("-")[1])
-              myWorker=Worker.objects.filter(jobcard__tjobcard=tjobcard,applicantNo=applicantNo).first()
-              errorString="WorkerMissing"
-              if myWorker is not None:
+              myWorkers=Worker.objects.filter(jobcard__tjobcard=tjobcard)
+              myWorker=None
+              for eachWorker in myWorkers:
+                if eachWorker.name.lower() in applicantName.lower():
+                  #logger.info("Found the worker")
+                  myWorker=eachWorker 
+              myJobcard=Jobcard.objects.filter(tjobcard=tjobcard).first()
+             #myWorker=Worker.objects.filter(jobcard__tjobcard=tjobcard,applicantNo=applicantNo).first()
+             #errorString="WorkerMissing"
+              if myJobcard is not None:
+                s="Found Jobcard"
                 errorString=''
                 transactionDateString=cols[5].text.lstrip().rstrip()
                 transactionDate=datetime.strptime(transactionDateString, '%d/%m/%Y')
                 #logger.info(transactionDate)
                 balance=cols[4].text.lstrip().rstrip().replace(",","")
-                lastPostalStatus=PendingPostalPayment.objects.filter(worker=myWorker,lastTransactionDate=transactionDate,balance=balance).first()
+                lastPostalStatus=PendingPostalPayment.objects.filter(jobcard=myJobcard,name=applicantName,lastTransactionDate=transactionDate,balance=balance).first()
                 if lastPostalStatus is not None:
-                  #logger.info("Postal Status Exists")
                   e=1
                 else:
-                  PendingPostalPayment.objects.create(worker=myWorker,lastTransactionDate=transactionDate,balance=balance,statusDate=timezone.now())
-              logger.info("%s Jobcard %s Appliatnat %s panchayatName %s BlockName %s panchayatCode %s " % (errorString,tjobcard,str(applicantNo),eachPanchayat.slug,eachPanchayat.block.slug,eachPanchayat.code))        
+                  PendingPostalPayment.objects.create(jobcard=myJobcard,name=applicantName,lastTransactionDate=transactionDate,balance=balance,statusDate=timezone.now())
+              else:
+                s="Jobcard Not Found"
+              if myWorker is not None:
+                lastPostalStatus=PendingPostalPayment.objects.filter(jobcard=myJobcard,name=applicantName,lastTransactionDate=transactionDate,balance=balance).first()
+                lastPostalStatus.worker=myWorker
+                lastPostalStatus.save()
+                
+              logger.info("%s Jobcard %s Appliatnat %s panchayatName %s BlockName %s panchayatCode %s " % (s,tjobcard,str(applicantName),eachPanchayat.slug,eachPanchayat.block.slug,eachPanchayat.code))        
                
 
 def downloadPage(logger,eachPanchayat):
@@ -331,7 +343,7 @@ def main():
     enumerateCodes(logger)
   if args['download']:
     logger.info("Attempting to Download Postal P ayments")
-    myPanchayats=Panchayat.objects.filter(crawlRequirement="FULL",block__district__state__code=telanganaStateCode)[:limit]
+    myPanchayats=Panchayat.objects.filter(crawlRequirement="FULL",block__district__state__code=telanganaStateCode)
    # for eachPanchayat in myPanchayats:
    #   downloadPage(logger,eachPanchayat)
     queueManager(logger,myPanchayats,'download')

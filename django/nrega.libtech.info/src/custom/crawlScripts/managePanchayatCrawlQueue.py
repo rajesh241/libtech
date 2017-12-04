@@ -40,6 +40,7 @@ def argsFetch():
   parser.add_argument('-p', '--panchayatCode', help='Panchayat for which the delayed payment report needs to be crawld', required=False)
   parser.add_argument('-m', '--manage', help='Manage Panchayat Crawl Queue', required=False,action='store_const', const=1)
   parser.add_argument('-e', '--execute', help='Manage Panchayat Crawl Queue', required=False,action='store_const', const=1)
+  parser.add_argument('-se', '--singleExecute', help='Manage Panchayat Crawl Queue', required=False,action='store_const', const=1)
   parser.add_argument('-d', '--debug', help='Debug Panchayat Crawl Queue', required=False,action='store_const', const=1)
   parser.add_argument('-t', '--test', help='Manage Panchayat Crawl Queue', required=False,action='store_const', const=1)
 
@@ -81,7 +82,23 @@ def main():
       if myPanchayatCrawlQueue is None:
         PanchayatCrawlQueue.objects.create(panchayat=eachPanchayat,priority=5)
         logger.info("Putting The panchayat in the CrawlQueue")
-      
+     
+
+  if args['singleExecute']:
+    stateCode=args['stateCode']
+    panchayatCode=args['panchayatCode']
+    step=None
+    if stateCode is not None:
+      curQueue=PanchayatCrawlQueue.objects.filter( Q(isComplete=False,isError=False,panchayat__block__district__state__code=stateCode) | Q(isError=True,isComplete=False,crawlStartDate__lt=panchayatRetryThreshold,panchayat__block__district__state__code=stateCode) ).order_by("-priority","crawlAttemptDate","created")[:limit]
+    elif panchayatCode is not None:
+      curQueue=PanchayatCrawlQueue.objects.filter( Q(isComplete=False,isError=False,panchayat__code=panchayatCode) | Q(isError=True,isComplete=False,crawlStartDate__lt=panchayatRetryThreshold,panchayat__code=panchayatCode) ).order_by("-priority","crawlAttemptDate","created")[:limit]
+    else:
+      curQueue=PanchayatCrawlQueue.objects.filter( Q(isComplete=False,isError=False) | Q(isError=True,isComplete=False,crawlStartDate__lt=panchayatRetryThreshold) ).order_by("-priority","crawlAttemptDate","created")[:limit]
+    for obj in curQueue:
+      qid=obj.id
+      logger.info("Starting to Crawl Panchayat %s " % str(qid))
+      crawlPanchayat(logger,qid,step)
+     
        
   if args['execute']:
     if args['debug']:

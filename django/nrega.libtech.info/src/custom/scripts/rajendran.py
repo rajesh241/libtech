@@ -80,10 +80,10 @@ def main():
       totalMusters=len(myMusters)
       logger.info("**********************************************************************************")
       logger.info("Createing work Payment report for panchayat: %s panchayatCode: %s ID: %s" % (eachPanchayat.name,eachPanchayat.code,str(eachPanchayat.id)))
-      dcReport=PanchayatReport.objects.filter(panchayat=eachPanchayat,finyear='17',reportType="delayCompensationCSV").first()
-      wpReport=PanchayatReport.objects.filter(panchayat=eachPanchayat,finyear='17',reportType="workPayment").first()
+      dcReport=PanchayatReport.objects.filter(panchayat=eachPanchayat,finyear='18',reportType="delayCompensationCSV").first()
+      wpReport=PanchayatReport.objects.filter(panchayat=eachPanchayat,finyear='18',reportType="workPaymentDelayAnalysis").first()
       if (dcReport is not None) and (wpReport is not None):
-        myPanchayatStat=PanchayatStat.objects.filter(panchayat=eachPanchayat,finyear='17').first()
+        myPanchayatStat=PanchayatStat.objects.filter(panchayat=eachPanchayat,finyear='18').first()
         if myPanchayatStat is not None:
           nicWorkDays=myPanchayatStat.nicWorkDays
           libtechWorkDays=myPanchayatStat.libtechWorkDays
