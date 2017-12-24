@@ -10,7 +10,7 @@
 
 <ion-content padding>
   <h4>For [{{ key }}]</h4>
-  
+
   <p><b>Jobcard Number</b>:    {{transaction['jobcard']}}</p>
   <p><b>Worker Name</b>:    {{transaction['name']}}</p>
   <p><b>Muster No.</b>:    {{transaction['musterNo']}}</p>
@@ -29,10 +29,26 @@
   <p><b>Credited date</b>:    {{transaction['creditedDate']}}</p>
   <p><b>FTO Status</b>:    {{transaction['ftoStatus']}}</p>
   <p><b>Reason for rejection (if rejected)</b>:    {{transaction['rejectionReason']}}</p>
-  <p><b>Remarks:</b> <input #remarkInput type="textarea" placeholder="{{ transaction['remarks'] }}" (input)="remarks=remarkInput.value; updated=false"> {{ remarks }}</p>
-  <p><b>Create Complaint:</b><input #complaintBox type="checkbox" (change)="createComplaint = complaintBox.checked; updated=false" [checked]="transaction['createComplaint']"></p>
-  <p><button ion-button [disabled]="updated" (click)=update()>Update</button></p>
-  
+
+  <ion-card>
+    <p><b>Remarks:</b> <input #remarkInput type="textarea" placeholder="{{ transaction['remarks'] }}" (input)="remarks=remarkInput.value; updated=false"> {{ remarks }}</p>
+    <p><button ion-button [disabled]="updated" (click)=remarksUpdate()>Update</button></p>
+  </ion-card>
+  <ion-card *ngIf="transaction['complaint']">
+    <p><b>Complaint(s):</b></p>
+    <!-- <p><b>Complaint:</b><input #complaintBox type="checkbox" (change)="let xcreateComplaint = complaintBox.checked" [checked]="transaction['complaint']"></p> -->
+    <p><b>Description:</b> <input #descInput type="textarea" placeholder="{{ transaction['complaint']['desc'] }}" (input)="complaintDesc=descInput.value"></p>
+    <p><button ion-button (click)="createComplaint(transaction['complaint'])">Edit Complaint</button></p>
+    <!-- <p><button ion-button [disabled]="complaintUpdated" (click)=complaintUpdate()>Update</button></p> -->
+  </ion-card>
+
+  <ion-card *ngIf="!transaction['complaint']">
+    <p><b>Complaint(s):</b></p>
+    <p><b>Description:</b> <input #descInput type="textarea" placeholder="No complaints yet. File one?" (input)="complaintDesc=descInput.value"></p>
+    <p><button ion-button (click)="createComplaint(null)">Create Complaint</button></p>
+  </ion-card>
+
+
   <!-- To give padding at the bottom (FIXME) -->
   <br />
   <br />
