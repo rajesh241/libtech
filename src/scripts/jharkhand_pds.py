@@ -17,60 +17,14 @@ dealer_list_file = 'dealer_list.html'
 filename = 'z.html' 
 
 # Get the Dealer List
-def fetch_dealer_list(logger):
+def fetch_dealer_cmd(logger):
     cmd= '''curl -L -o dealer_list.html 'http://aahar.jharkhand.gov.in/dealer_monthly_reports' -H 'Host: aahar.jharkhand.gov.in' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Referer: http://aahar.jharkhand.gov.in/block_city_monthly_reports' -H 'Cookie: CAKEPHP=2lsnclgccoaspcud6u46ector6; _ga=GA1.3.727748505.1512904756; _gid=GA1.3.1119544342.1513048166' -H 'Connection: keep-alive' --data '_method=POST&data%5BDealerMonthlyReport%5D%5Bide%5D=151%2C01%2C5%2C14' '''
 
     os.system(cmd)
     logger.info('Executing [%s]' % cmd)
 
-def fetch_dealer(logger):
-    url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
-    response = requests.post(url)
-    cookies = response.cookies
-
-    headers = {
-        'Host': 'aahar.jharkhand.gov.in',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-GB,en;q=0.5',
-        'Referer': 'http://aahar.jharkhand.gov.in/block_city_monthly_reports',
-        'Connection': 'keep-alive',
-    }
-    
-    data = [
-        ('_method', 'POST'),
-        ('data[DealerMonthlyReport][ide]', '151,01,5,14'),
-    ]
-
-    response = requests.post('http://aahar.jharkhand.gov.in/dealer_monthly_reports', headers=headers, cookies=cookies, data=data)
-    
-    with open(dealer_list_file, 'wb') as dealer_file:
-        logger.info('Writing [%s]' % dealer_list_file)
-        dealer_file.write(response.content)
-
-    html_source = response.content
-
-    bs = BeautifulSoup(html_source, 'html.parser')
-    click_list = bs.findAll('a')
-    logger.debug(str(click_list))
-
-    for anchor in click_list:
-        a = str(anchor)
-        pos = a.find('onclick="javascript:send(')
-        logger.info(pos)
-        if pos > 0:
-            logger.info('Yippie')
-            beg = a.find("('") + 2
-            end = a.find("')") 
-            dealer_code = a[beg:end]  # 28:71
-            logger.info(dealer_code)
-            fetch_dealer_detail(logger, dealer_code)
-        else:
-            logger.info('Oops')
-
     return 'SUCCESS'
 
-    
 
 # Fetch the PDS reports
 def fetch_dealer_detail(logger, dealer_code):
@@ -113,16 +67,68 @@ def fetch_dealer_detail(logger, dealer_code):
     logger.debug(shop_name)
     
     # filename = './dealers/' + dealer_code[0:36] + '.html'
+    # Remove dealer code from below - Sakina
     filename = './dealers/' + district_name + '_' + block_name + '_' + shop_name + '_' + dealer_code[0:36] + '.html'
     logger.info(filename)
 
-    exit(0)
     with open(filename, 'wb') as html_file:
         logger.info('Writing [%s]' % filename)
         html_file.write(response.content)
 
     return 'SUCCESS'
 
+
+def fetch_dealer_list(logger, district_name = '', block_name = ''):
+    url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
+    response = requests.post(url)
+    cookies = response.cookies
+
+    headers = {
+        'Host': 'aahar.jharkhand.gov.in',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-GB,en;q=0.5',
+        'Referer': 'http://aahar.jharkhand.gov.in/block_city_monthly_reports',
+        'Connection': 'keep-alive',
+    }
+    
+    data = [
+        ('_method', 'POST'),
+        ('data[DealerMonthlyReport][ide]', '151,01,5,14'),
+    ]
+
+    return requests.post('http://aahar.jharkhand.gov.in/dealer_monthly_reports', headers=headers, cookies=cookies, data=data)
+    
+
+def fetch_dealer(logger):
+
+    response = fetch_dealer_list(logger)
+
+    # Don't have to create files if writing to DB
+    with open(dealer_list_file, 'wb') as dealer_file:
+        logger.info('Writing [%s]' % dealer_list_file)
+        dealer_file.write(response.content)
+
+    html_source = response.content
+
+    bs = BeautifulSoup(html_source, 'html.parser')
+    click_list = bs.findAll('a')
+    logger.debug(str(click_list))
+
+    for anchor in click_list:
+        a = str(anchor)
+        pos = a.find('onclick="javascript:send(')
+        logger.debug(pos)
+        if pos > 0:
+            beg = a.find("('") + 2
+            end = a.find("')") 
+            dealer_code = a[beg:end]  # 28:71
+            logger.info(dealer_code)
+            fetch_dealer_detail(logger, dealer_code)
+
+    return 'SUCCESS'
+
+    
 
 
 
@@ -189,12 +195,8 @@ class TestSuite(unittest.TestCase):
 
     @unittest.skip('Skipping direct command approach')
     def test_direct_cmd(self):
-        url = """http://aahar.jharkhand.gov.in/district_monthly_reports' -H 'Host: aahar.jharkhand.gov.in' -H 'User-Agent: Mozilla/5.0 \(Macintosh; Intel Mac OS X 10.12; rv:45.0\) Gecko/20100101 Firefox/45.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Referer: http://aahar.jharkhand.gov.in/district_monthly_reports/' -H 'Cookie: CAKEPHP=2lsnclgccoaspcud6u46ector6; _ga=GA1.3.727748505.1512904756; _gid=GA1.3.1119544342.1513048166; _gat=1' -H 'Connection: keep-alive' --data '_method=POST&data%5BDistrictMonthlyReport%5D%5Bmnthyer%5D=11-2017"""
-        cmd = 'curl -L -O %s' % url
-        cmd = '''curl -L -o z.html 'http://aahar.jharkhand.gov.in/district_monthly_reports' -H 'Host: aahar.jharkhand.gov.in' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Referer: http://aahar.jharkhand.gov.in/district_monthly_reports/' -H 'Cookie: CAKEPHP=2lsnclgccoaspcud6u46ector6; _ga=GA1.3.727748505.1512904756; _gid=GA1.3.1119544342.1513048166; _gat=1' -H 'Connection: keep-alive' --data '_method=POST&data%5BDistrictMonthlyReport%5D%5Bmnthyer%5D=10-2017' '''
-        cmd='''curl -L -o z.html 'http://aahar.jharkhand.gov.in/block_city_monthly_reports' -H 'Host: aahar.jharkhand.gov.in' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Referer: http://aahar.jharkhand.gov.in/district_monthly_reports' -H 'Cookie: CAKEPHP=2lsnclgccoaspcud6u46ector6; _ga=GA1.3.727748505.1512904756; _gid=GA1.3.1119544342.1513048166; _gat=1' -H 'Connection: keep-alive' --data '_method=POST&data%5BBlockCityMonthlyReport%5D%5Bide%5D=12%2C10%2C4' '''
-        cmd= '''curl -L -o z.html 'http://aahar.jharkhand.gov.in/dealer_monthly_reports' -H 'Host: aahar.jharkhand.gov.in' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Referer: http://aahar.jharkhand.gov.in/block_city_monthly_reports' -H 'Cookie: CAKEPHP=2lsnclgccoaspcud6u46ector6; _ga=GA1.3.727748505.1512904756; _gid=GA1.3.1119544342.1513048166' -H 'Connection: keep-alive' --data '_method=POST&data%5BDealerMonthlyReport%5D%5Bide%5D=151%2C10%2C4%2C12' '''
-        os.system(cmd)
+        result = fetch_dealer_cmd(logger)
+        self.assertEqual('SUCCESS', result)
 
     def test_fetch_pds(self):
         result = fetch_dealer(self.logger)
