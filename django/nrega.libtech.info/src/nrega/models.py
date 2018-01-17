@@ -598,11 +598,13 @@ class Broadcast(models.Model):
   broadcastType=models.CharField(max_length=4,choices=BROADCAST_TYPE_CHOICES,default='NONE')
   fpsVillage=models.ForeignKey('FPSVillage',null=True,blank=True)
   minhour=models.PositiveSmallIntegerField(default='8')
+  priority=models.PositiveSmallIntegerField(default='8')
   maxhour=models.PositiveSmallIntegerField(default='20')
   startDate=models.DateTimeField()
   endDate=models.DateTimeField()
   created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
   modified=models.DateTimeField(null=True,blank=True,auto_now=True)
+  messageList=models.ManyToManyField('AudioLibrary',related_name="mstList",blank=True)
   oldbid=models.IntegerField(blank=True,null=True)
   
   def __str__(self):
@@ -611,7 +613,30 @@ class Broadcast(models.Model):
 class AudioLibrary(models.Model):
   partner=models.ForeignKey('Partner')
   audioFile=models.FileField(null=True, blank=True,upload_to=get_broadcast_audio_upload_path,max_length=512)
+
+class PhoneCall(models.Model): 
+  broadcast=models.ForeignKey('Broadcast',null=True,blank=True)
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
+  modified=models.DateTimeField(null=True,blank=True,auto_now=True)
+  callRequestTime=models.DateTimeField(null=True,blank=True)
+  callTo=models.ForeignKey('Phonebook')
+  inProgress=models.BooleanField(default=False)
+  sid=models.CharField(max_length=256)
+  vendor=models.CharField(max_length=64)
+  callStatus=models.CharField(max_length=64,default='pending')
+  preference=models.IntegerField(default=5000)
+   
+class CallLog(models.Model):
+  phonecall=models.ForeignKey('PhoneCall',null=True,blank=True)
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
+  modified=models.DateTimeField(null=True,blank=True,auto_now=True)
+  callStartTime=models.DateTimeField(null=True,blank=True)
+  cost=models.DecimalField(max_digits=5,decimal_places=2,null=True,blank=True)
+  duration=models.IntegerField(default=5000)
+  vendor=models.CharField(max_length=64)
+   
  
+
    
 def createslug(instance):
   myslug=slugify(instance.name)[:50]
