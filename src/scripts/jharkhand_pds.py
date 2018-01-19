@@ -14,7 +14,10 @@ import requests
 district_name = 'LATEHAR'
 block_name = 'MANIKA'
 dealer_list_file = 'dealer_list.html'
-filename = 'z.html' 
+filename = 'z.html'
+district_lookup = {}
+block_lookup = {}
+year_code = 0
 
 # Get the Dealer List
 def fetch_dealer_cmd(logger):
@@ -26,17 +29,91 @@ def fetch_dealer_cmd(logger):
     return 'SUCCESS'
 
 
-# Fetch the PDS reports
+# Fetch the list of all the districts for the given month and year
+def fetch_district_list(logger, month='01', year='2018'):
+    url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
+    response = requests.post(url)
+    cookies = response.cookies
+
+    headers = {
+        'Host': 'aahar.jharkhand.gov.in',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-GB,en;q=0.5',
+        'Referer': 'http://aahar.jharkhand.gov.in/district_monthly_reports/',
+        'Connection': 'keep-alive',
+    }
+
+    parameters = '%s-%s' % (month, year)
+    data = [
+        ('_method', 'POST'),
+        ('data[DistrictMonthlyReport][mnthyer]', parameters),
+    ]
+
+    response =  requests.post('http://aahar.jharkhand.gov.in/district_monthly_reports', headers=headers, cookies=cookies, data=data)
+
+    return response.content
+
+
+# Fetch the dealer list of all the blocks given the district
+def fetch_block_list(logger, district_code='14', month='01', year_code='5'):
+    url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
+    response = requests.post(url)
+    cookies = response.cookies
+
+    headers = {
+        'Host': 'aahar.jharkhand.gov.in',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-GB,en;q=0.5',
+        'Referer': 'http://aahar.jharkhand.gov.in/district_monthly_reports',
+        'Connection': 'keep-alive',
+    }
+
+    parameters = district_code + ',' + month + ',' + year_code
+    logger.info('Parameters for block list [%s]' % parameters)
+    data = [
+        ('_method', 'POST'),
+        ('data[BlockCityMonthlyReport][ide]', parameters),
+    ]
+
+    response = requests.post('http://aahar.jharkhand.gov.in/block_city_monthly_reports', headers=headers, cookies=cookies, data=data)
+
+    return response.content
+
+
+
+# Fetch the dealer list where you can find all the dealer codes for the given block
+def fetch_dealer_list(logger, district_name = '', block_name = '', month='01', year=''):
+    url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
+    response = requests.post(url)
+    cookies = response.cookies
+
+    headers = {
+        'Host': 'aahar.jharkhand.gov.in',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-GB,en;q=0.5',
+        'Referer': 'http://aahar.jharkhand.gov.in/block_city_monthly_reports',
+        'Connection': 'keep-alive',
+    }
+
+    # parameters = '151,01,5,14'
+    block_code = '151'
+    year_code = '5'
+    district_code = '14' # get_district_code(district_name)
+    parameters = block_code = block_code + ',' + month + ',' + year_code + ',' + district_code
+    logger.info('Using Parameters[%s]' % parameters)
+    data = [
+        ('_method', 'POST'),
+        ('data[DealerMonthlyReport][ide]', parameters),
+    ]
+
+    return requests.post('http://aahar.jharkhand.gov.in/dealer_monthly_reports', headers=headers, cookies=cookies, data=data).content
+
+
+# Fetch the details of the dealer given the dealer code
 def fetch_dealer_detail(logger, dealer_code):
-
-    '''
-    fetch_dealer_list(logger)
-
-    with open(dealer_list_file, 'rb') as dealer_file:
-        logger.info('Reading [%s]' % dealer_list_file)
-        dealer_file.read()
-    '''
-    
     url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
     response = requests.post(url)
     cookies = response.cookies
@@ -78,40 +155,15 @@ def fetch_dealer_detail(logger, dealer_code):
     return 'SUCCESS'
 
 
-def fetch_dealer_list(logger, district_name = '', block_name = ''):
-    url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
-    response = requests.post(url)
-    cookies = response.cookies
+def populate_district_lookup(logger):
+    logger.info('Fetching district_list...')
+    district_list_html = fetch_district_list(logger, month = '01', year = '2018')
+    filename = 'district_lists.html'
+    with open(filename, 'wb') as html_file:
+        logger.info('Writing [%s]' % filename)
+        html_file.write(district_list_html)
 
-    headers = {
-        'Host': 'aahar.jharkhand.gov.in',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-GB,en;q=0.5',
-        'Referer': 'http://aahar.jharkhand.gov.in/block_city_monthly_reports',
-        'Connection': 'keep-alive',
-    }
-    
-    data = [
-        ('_method', 'POST'),
-        ('data[DealerMonthlyReport][ide]', '151,01,5,14'),
-    ]
-
-    return requests.post('http://aahar.jharkhand.gov.in/dealer_monthly_reports', headers=headers, cookies=cookies, data=data)
-    
-
-def fetch_dealer(logger):
-
-    response = fetch_dealer_list(logger)
-
-    # Don't have to create files if writing to DB
-    with open(dealer_list_file, 'wb') as dealer_file:
-        logger.info('Writing [%s]' % dealer_list_file)
-        dealer_file.write(response.content)
-
-    html_source = response.content
-
-    bs = BeautifulSoup(html_source, 'html.parser')
+    bs = BeautifulSoup(district_list_html, 'html.parser')
     click_list = bs.findAll('a')
     logger.debug(str(click_list))
 
@@ -121,65 +173,21 @@ def fetch_dealer(logger):
         logger.debug(pos)
         if pos > 0:
             beg = a.find("('") + 2
+
+    for anchor in click_list:
+        a = str(anchor)
+        pos = a.find('onclick="javascript:send(')
+        logger.debug(pos)
+        if pos > 0:
+            beg = a.find("('") + 2
             end = a.find("')") 
             dealer_code = a[beg:end]  # 28:71
-            logger.info(dealer_code)
+            logger.info('Fetching the dealer[%s]...' % dealer_code)
             fetch_dealer_detail(logger, dealer_code)
 
     return 'SUCCESS'
 
     
-
-
-
-# Fetch the PDS reports
-def get_pds(logger):
-    # Obtain a cookie
-    url = 'http://aahar.jharkhand.gov.in/'
-    response = requests.get(url)
-    logger.debug(response.text)
-    cookies = response.cookies
-    logger.info(cookies)
-    '''
-    cookies = {
-        'CAKEPHP': '19h8dpqfh4p9jjtuoshk01hm36',
-        '_ga': 'GA1.3.2142996971.1513122286',
-        '_gid': 'GA1.3.305220395.1513122286',
-    }
-    logger.info(cookies)
-    '''
-
-    # Fetch the actual page
-    district_url = 'http://aahar.jharkhand.gov.in/district_monthly_reports/'
-
-    headers = {
-        'Host': 'aahar.jharkhand.gov.in',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-GB,en;q=0.5',
-        'Accept-Encoding': 'gzip, deflate',
-        'Referer': 'http://aahar.jharkhand.gov.in/district_monthly_reports/',
-        'Connection': 'keep-alive',
-        'Content-Type': 'application/x-www-form-urlencoded',
-    }
-
-    data = [
-        ('_method', 'POST'),
-        ('data[DistrictMonthlyReport][mnthyer]', '11-2017'),
-    ]
-
-    requests.post('http://aahar.jharkhand.gov.in/district_monthly_reports', headers=headers, cookies=cookies, data=data)
-    
-    # response = requests.get(fetch_url, headers=headers, params=params, cookies=cookies)
-    logger.debug(response.content)
-    
-    with open(filename, 'wb') as html_file:
-        logger.info('Writing [%s]' % filename)
-        html_file.write(response.content)
-
-    return 'SUCCESS'
-
-
 
 ##########
 # Tests
@@ -198,8 +206,8 @@ class TestSuite(unittest.TestCase):
         result = fetch_dealer_cmd(logger)
         self.assertEqual('SUCCESS', result)
 
-    def test_fetch_pds(self):
-        result = fetch_dealer(self.logger)
+    def test_fetch_pds_transactions(self):
+        result = fetch_pds(self.logger)
         self.assertEqual('SUCCESS', result)
 
 if __name__ == '__main__':
