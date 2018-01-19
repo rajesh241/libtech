@@ -58,7 +58,6 @@ def main():
 
   for eachWagelist in myWagelists:
     logger.info("Wage list id: %s, wagelistno : %s " % (str(eachWagelist.id),eachWagelist.wagelistNo))
-#  myMusters=Muster.objects.filter(id=10924) 
     myhtml=eachWagelist.wagelistFile.read()
     stateShortCode=eachWagelist.block.district.state.stateShortCode
     htmlsoup=BeautifulSoup(myhtml,"html.parser")
