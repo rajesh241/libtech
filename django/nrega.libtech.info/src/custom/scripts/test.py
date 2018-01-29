@@ -11,7 +11,7 @@ django.setup()
 os.chdir(proj_path)
 #from django.contrib.auth.models import User
 #from django.conf.settings import AUTH_USER_MODEL 
-from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,Wagelist,Applicant,LibtechTag,Jobcard,PanchayatCrawlQueue,PendingPostalPayment
+from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,Wagelist,Applicant,LibtechTag,Jobcard,PanchayatCrawlQueue,PendingPostalPayment,FTO
 # This is so models get loaded.
 from django.core.wsgi import get_wsgi_application
 from django.core.files import File
@@ -24,6 +24,17 @@ from django.db.models import Count,Sum
 #myobjs=User.objects.filter(username='demo')
 #for obj in myobjs:
 #  print(obj.id)
+
+#myobjs=Wagelist.objects.filter(block__code="1603004")
+myobjs=FTO.objects.filter(block__code="1603004")
+#myobjs=Muster.objects.filter(panchayat__code="1603004002")
+for obj in myobjs:
+  obj.isDownloaded=False
+  obj.isProcessed=False
+  obj.save()
+
+exit(0)
+
 myobjs=PanchayatCrawlQueue.objects.filter(isComplete=True)
 for obj in myobjs:
   print(obj.status)

@@ -75,9 +75,7 @@ def getFTO(logger,fullfinyear,stateCode,ftoNo,districtName):
     html_source = response.read()
     bs = BeautifulSoup(html_source, "html.parser")
     state = bs.find(id='__VIEWSTATE').get('value')
-#    logger.info('state[%s]' % state)
     validation = bs.find(id='__EVENTVALIDATION').get('value')
-#    logger.info('value[%s]' % validation)
     data = {
       '__EVENTTARGET':'ctl00$ContentPlaceHolder1$Ddfto',
       '__EVENTARGUMENT':'',

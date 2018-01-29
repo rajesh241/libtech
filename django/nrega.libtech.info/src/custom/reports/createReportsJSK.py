@@ -127,7 +127,7 @@ def main():
  
   if args['archive']:
     reports=['workPayment','rejectedPayment','pendingPayment','inValidPayment']
-    reports=['paymentDetailsTelangana']
+ #   reports=['paymentDetailsTelangana']
 #    reports=['workPaymentDelayAnalysis']
     finyears=["16","17","18"]
     if args['blockCode']:

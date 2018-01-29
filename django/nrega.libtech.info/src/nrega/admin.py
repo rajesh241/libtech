@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.db.models import F,Q,Sum,Count
 
 # Register your models here.
-from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,Jobcard,LibtechTag,TelanganaSSSGroup,FPSVillage,Partner,Phonebook,VillageFPSStatus,Broadcast,AudioLibrary,Stat,Worker,PanchayatCrawlQueue,PendingPostalPayment
+from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,Jobcard,LibtechTag,TelanganaSSSGroup,FPSVillage,Partner,Phonebook,VillageFPSStatus,Broadcast,AudioLibrary,Stat,Worker,PanchayatCrawlQueue,PendingPostalPayment,PaymentInfo
 
 from .actions import export_as_csv_action
 
@@ -199,6 +199,11 @@ class applicantModelAdmin(admin.ModelAdmin):
   def get_jobcard(self,obj):
     return obj.jobcard.jobcard
 
+class paymentInfoModelAdmin(admin.ModelAdmin):
+  list_display=["id","workDetail","wagelist","referenceNo","disbursedDate"]
+  readonly_fields=["workDetail","fto","wagelist"]
+  search_fields=["referenceNo","fto__ftoNo","worker__jobcard__panchayat__code"]
+  
 class paymentDetailModelAdmin(admin.ModelAdmin):
   list_display=["id","applicant","fto","referenceNo","disbursedDate"]
   readonly_fields=["applicant","fto","workDetail","worker"]
@@ -263,6 +268,7 @@ admin.site.register(LibtechTag,libtechTagModelAdmin)
 admin.site.register(TelanganaSSSGroup,telanganaSSSgroupModelAdmin)
 admin.site.register(Stat,statModelAdmin)
 admin.site.register(PaymentDetail,paymentDetailModelAdmin)
+admin.site.register(PaymentInfo,paymentInfoModelAdmin)
 admin.site.register(Worker,workerModelAdmin)
 admin.site.register(PanchayatCrawlQueue,panchayatCrawlQueueModelAdmin)
 admin.site.register(PendingPostalPayment,pendingPostalPaymentModelAdmin)
