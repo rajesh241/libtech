@@ -56,7 +56,7 @@ def fetch_district_list(logger, month='01', year='2018'):
 
 
 # Fetch the dealer list of all the blocks given the district
-def fetch_block_list(logger, district_code='14', month='01', year_code='5'):
+def fetch_block_list(logger, district_code='14', month='01', year_code='5', district_param=None, district_lookup=None):
     url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
     response = requests.post(url)
     cookies = response.cookies
@@ -70,7 +70,10 @@ def fetch_block_list(logger, district_code='14', month='01', year_code='5'):
         'Connection': 'keep-alive',
     }
 
-    parameters = district_code + ',' + month + ',' + year_code
+    if district_param:
+        parameters = district_param
+    else:
+        parameters = district_code + ',' + month + ',' + year_code
     logger.info('Parameters for block list [%s]' % parameters)
     data = [
         ('_method', 'POST'),
@@ -84,7 +87,7 @@ def fetch_block_list(logger, district_code='14', month='01', year_code='5'):
 
 
 # Fetch the dealer list where you can find all the dealer codes for the given block
-def fetch_dealer_list(logger, district_name = '', block_name = '', month='01', year=''):
+def fetch_dealer_list(logger, district_name = '', block_name = '', month='01', year='', block_param=None):
     url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
     response = requests.post(url)
     cookies = response.cookies
@@ -98,17 +101,27 @@ def fetch_dealer_list(logger, district_name = '', block_name = '', month='01', y
         'Connection': 'keep-alive',
     }
 
-    # parameters = '151,01,5,14'
-    block_code = '151'
-    year_code = '5'
-    district_code = '14' # get_district_code(district_name)
-    parameters = block_code = block_code + ',' + month + ',' + year_code + ',' + district_code
+    if block_param:
+        parameters = block_param
+        # parameters = '151,01,5,14'
+    else:
+        block_code = '151'
+        year_code = '5'
+        district_code = '14' # get_district_code(district_name)
+        parameters = block_code = block_code + ',' + month + ',' + year_code + ',' + district_code
     logger.info('Using Parameters[%s]' % parameters)
     data = [
         ('_method', 'POST'),
         ('data[DealerMonthlyReport][ide]', parameters),
     ]
 
+    filename = 'dealer_list.html'
+    logger.info(filename)
+
+    with open(filename, 'wb') as html_file:
+        logger.info('Writing [%s]' % filename)
+        html_file.write(response.content)
+    
     return requests.post('http://aahar.jharkhand.gov.in/dealer_monthly_reports', headers=headers, cookies=cookies, data=data).content
 
 
@@ -140,17 +153,47 @@ def fetch_dealer_detail(logger, dealer_code):
 
     bs = BeautifulSoup(response.content, 'html.parser')
     
-    shop_name = bs.find('b').text.strip().replace(' ', '_')
+    shop_name = bs.find('b').text.strip().replace(' ', '-')
     logger.debug(shop_name)
     
     # filename = './dealers/' + dealer_code[0:36] + '.html'
     # Remove dealer code from below - Sakina
-    filename = './dealers/' + district_name + '_' + block_name + '_' + shop_name + '_' + dealer_code[0:36] + '.html'
+    # filename = './dealers/' + district_name + '_' + block_name + '_' + shop_name + '_' + dealer_code[0:36] + '.html'
+    filename = './dealers/' + district_name + '_' + block_name + '_' + shop_name + '.html'
     logger.info(filename)
 
     with open(filename, 'wb') as html_file:
         logger.info('Writing [%s]' % filename)
         html_file.write(response.content)
+
+    return 'SUCCESS'
+
+
+def populate_dealer_lookup(logger, block_param):
+    logger.info('Fetching Dealer List for [%s]...' % (block_param))
+    dealer_list_html = fetch_dealer_list(logger, block_param)
+
+    '''
+    filename = 'dealer_lists.html'
+    with open(filename, 'wb') as html_file:
+        logger.info('Writing [%s]' % filename)
+        html_file.write(dealer_list_html)
+    '''
+    
+    bs = BeautifulSoup(dealer_list_html, 'html.parser')
+    click_list = bs.findAll('a')
+    logger.debug(str(click_list))
+
+    for anchor in click_list:
+        a = str(anchor)
+        pos = a.find('onclick="javascript:send(')
+        logger.debug(pos)
+        if pos > 0:
+            beg = a.find("('") + 2
+            end = a.find("')") 
+            dealer_code = a[beg:end]  # 28:71
+            logger.info('Fetching the dealer[%s]...' % dealer_code)
+            fetch_dealer_detail(logger, dealer_code)
 
     return 'SUCCESS'
 
@@ -173,6 +216,30 @@ def populate_district_lookup(logger):
         logger.debug(pos)
         if pos > 0:
             beg = a.find("('") + 2
+            end = a.find("')")
+            district_param = a[beg:end]  # 28:71
+            logger.debug('district_param[%s]...' % district_param)
+            beg = a.find('value="') + len('value="')
+            end = a[beg:].find('"')
+            district_name = a[beg:beg+end]
+            logger.debug(district_name)
+            district_lookup[district_name] = district_param
+    logger.info('District Lookup[%s]' % district_lookup)
+
+    return district_lookup
+
+
+def populate_block_lookup(logger, district_param=None, district_lookup=None):
+    logger.info('Fetching block_list...')
+    block_list_html = fetch_block_list(logger, district_param=district_param, district_lookup=district_lookup)
+    filename = 'block_lists.html'
+    with open(filename, 'wb') as html_file:
+        logger.info('Writing [%s]' % filename)
+        html_file.write(block_list_html)
+
+    bs = BeautifulSoup(block_list_html, 'html.parser')
+    click_list = bs.findAll('a')
+    logger.debug(str(click_list))
 
     for anchor in click_list:
         a = str(anchor)
@@ -180,13 +247,29 @@ def populate_district_lookup(logger):
         logger.debug(pos)
         if pos > 0:
             beg = a.find("('") + 2
-            end = a.find("')") 
-            dealer_code = a[beg:end]  # 28:71
-            logger.info('Fetching the dealer[%s]...' % dealer_code)
-            fetch_dealer_detail(logger, dealer_code)
+            end = a.find("')")
+            block_param = a[beg:end]  # 28:71
+            logger.debug('block_param[%s]...' % block_param)
+            beg = a.find('value="') + len('value="')
+            end = a[beg:].find('"')
+            block_name = a[beg:beg+end]
+            logger.debug(block_name)
+            block_lookup[block_name] = block_param
+    logger.info('Block Lookup[%s]' % block_lookup)
+
+    return block_lookup
+
+
+def fetch_pds(logger):
+    logger.info('Fetching PDS related info...')
+
+    district_lookup = populate_district_lookup(logger)
+
+    block_lookup = populate_block_lookup(logger, district_lookup=district_lookup, district_param=district_lookup[district_name]) # district_param='14,01,5')
+
+    populate_dealer_lookup(logger, block_lookup[block_name])
 
     return 'SUCCESS'
-
     
 
 ##########
