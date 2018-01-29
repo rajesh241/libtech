@@ -114,13 +114,6 @@ def fetch_dealer_list(logger, district_name = '', block_name = '', month='01', y
         ('_method', 'POST'),
         ('data[DealerMonthlyReport][ide]', parameters),
     ]
-
-    filename = 'dealer_list.html'
-    logger.info(filename)
-
-    with open(filename, 'wb') as html_file:
-        logger.info('Writing [%s]' % filename)
-        html_file.write(response.content)
     
     return requests.post('http://aahar.jharkhand.gov.in/dealer_monthly_reports', headers=headers, cookies=cookies, data=data).content
 
@@ -173,12 +166,10 @@ def populate_dealer_lookup(logger, block_param):
     logger.info('Fetching Dealer List for [%s]...' % (block_param))
     dealer_list_html = fetch_dealer_list(logger, block_param)
 
-    '''
-    filename = 'dealer_lists.html'
+    filename = 'dealer_list.html'
     with open(filename, 'wb') as html_file:
         logger.info('Writing [%s]' % filename)
         html_file.write(dealer_list_html)
-    '''
     
     bs = BeautifulSoup(dealer_list_html, 'html.parser')
     click_list = bs.findAll('a')
@@ -267,10 +258,10 @@ def fetch_pds(logger):
 
     block_lookup = populate_block_lookup(logger, district_lookup=district_lookup, district_param=district_lookup[district_name]) # district_param='14,01,5')
 
-    populate_dealer_lookup(logger, block_lookup[block_name])
+    populate_dealer_lookup(logger, block_lookup[block_name]) # '151,01,5,14') # 
 
     return 'SUCCESS'
-    
+
 
 ##########
 # Tests
