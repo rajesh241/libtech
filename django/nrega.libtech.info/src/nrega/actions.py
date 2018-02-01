@@ -1,6 +1,8 @@
 import unicodecsv
 from django.http import HttpResponse
-
+import time
+import datetime
+import os
 def export_as_csv_action(description="Export selected objects as CSV file",
                          fields=None, exclude=None, header=True):
     """
@@ -31,3 +33,21 @@ def export_as_csv_action(description="Export selected objects as CSV file",
         return response
     export_as_csv.short_description = description
     return export_as_csv
+
+
+def download_reports_zip(modeladmin, request, queryset):
+    curTimeStamp=str(int(time.time()))
+    dateString=datetime.date.today().strftime("%B_%d_%Y_%I_%M")
+    baseDir="/tmp/genericReports/%s_%s" % (dateString,curTimeStamp)
+    s='' 
+    for obj in queryset:
+      filepath="%s/%s" % (baseDir,obj.panchayat.slug)
+      filename="%s_%s.csv" % (obj,obj.finyear)
+      cmd="mkdir -p %s && cd %s && wget -O %s %s " %(filepath,filepath,filename,obj.reportFile.url) 
+      os.system(cmd)
+      s+=obj.reportFile.url
+      s+="\n"
+    with open("/tmp/test.csv","w") as f:
+      f.write(s)
+    
+download_reports_zip.short_description = "Download Selected Reports as Zip" 

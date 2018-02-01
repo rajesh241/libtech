@@ -37,6 +37,10 @@ def get_muster_upload_path(instance, filename):
 def get_telanganajobcard_upload_path(instance, filename):
   return os.path.join(
     "nrega",instance.panchayat.block.district.state.slug,instance.panchayat.block.district.slug,instance.panchayat.block.slug,instance.panchayat.slug,"DATA","JOBCARDS",filename)
+
+def get_genericreport_upload_path(instance,filename):
+  return os.path.join("genericReport",filename)
+
 def get_blockreport_upload_path(instance, filename):
   return os.path.join(
     "nrega",instance.panchayat.block.district.state.slug,instance.panchayat.block.district.slug,instance.panchayat.block.slug,"DATA","NICREPORTS",filename)
@@ -115,7 +119,14 @@ class nicBlockReport(models.Model):
         unique_together = ('block', 'reportType','finyear')  
   def __str__(self):
     return self.reportType+self.finyear
- 
+
+class genericReport(models.Model):
+  reportFile=models.FileField(null=True, blank=True,upload_to=get_genericreport_upload_path,max_length=512)
+  updateDate=models.DateTimeField(auto_now=True)
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
+  def __str__(self):
+    return self.reportFile.url
+   
 class BlockReport(models.Model):
   block=models.ForeignKey('block',on_delete=models.CASCADE)
   reportFile=models.FileField(null=True, blank=True,upload_to=get_blockreport_upload_path,max_length=512)

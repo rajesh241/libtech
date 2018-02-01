@@ -23,6 +23,7 @@ urlpatterns = [
     url(r'^api/paymentdetails/$', apiviews.getPaymentDetail),
     url(r'^api/daystopay/$', apiviews.paymentDays),
     url(r'^api/crawldatapt/$', apiviews.crawlDataForPt),
+    url(r'^api/crawldatarequest/$', apiviews.crawlDataRequest),
     url(r'^api/crawlstatuspt/$', apiviews.crawlStatusPt),
 ]
 
