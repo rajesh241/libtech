@@ -262,6 +262,98 @@ def fetch_pds(logger):
 
     return 'SUCCESS'
 
+############################################################################
+
+def post_ration_req(logger, cookies=None, village_code='366884', card_type='7', ration_number=None):
+    logger.info('Fetch the Ration List for Village[%s] Card Type[%s]' % (village_code, card_type))
+
+    if not cookies:        
+        url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
+        response = requests.post(url)
+        cookies = response.cookies
+
+    headers = {
+        'Origin': 'http://aahar.jharkhand.gov.in',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.97 Safari/537.36 Vivaldi/1.94.1008.44',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Cache-Control': 'max-age=0',
+        'Referer': 'http://aahar.jharkhand.gov.in/secc_cardholders/searchRation',
+        'Connection': 'keep-alive',
+    }
+
+    data = [
+        ('_method', 'POST'),
+        ('data[SeccCardholder][rgi_district_code]', '359'),
+        ('data[SeccCardholder][rgi_block_code]', '02635'),
+        ('r1', 'panchayat'),
+        ('data[SeccCardholder][rgi_village_code]', village_code),
+        ('data[SeccCardholder][dealer_id]', ''),
+        ('data[SeccCardholder][cardtype_id]', card_type),
+    ]
+    if ration_number:
+        data.append(('data[SeccCardholder][rationcard_no]', ration_number))
+    logger.info('Data [%s]' % data)
+    
+    response = requests.post('http://aahar.jharkhand.gov.in/secc_cardholders/searchRationResults', headers=headers, cookies=cookies, data=data)
+
+    filename = 'ration_list.html'
+    if ration_number:
+        filename = './ration/' + ration_number + '.html'
+    logger.info(filename)
+
+    with open(filename, 'wb') as html_file:
+        logger.info('Writing [%s]' % filename)
+        html_file.write(response.content)
+
+    return response.content
+
+
+def populate_ration_list(logger, cookies=None, village_code='366884', card_type='7'):
+    logger.info('Fetch the Ration List for Village[%s] Card Type[%s]' % (village_code, card_type))
+
+    ration_list_html = post_ration_req(logger, cookies=cookies, village_code=village_code, card_type=card_type)
+
+    bs = BeautifulSoup(ration_list_html, 'html.parser')
+
+    click_list = bs.findAll('a')
+    logger.debug(str(click_list))
+
+    for anchor in click_list:
+        a = str(anchor)
+        logger.debug(a)
+        pos = a.find('onclick="javascript:send(')
+        logger.debug(pos)
+        if pos > 0:
+            beg = a.find("('") + 2
+            end = a.find("')") 
+            ration_number = a[beg:end]  # 28:71
+            logger.info('Fetching the dealer[%s]...' % ration_number)
+            fetch_ration_details(logger, cookies=cookies, village_code=village_code, card_type=card_type, ration_number=ration_number)
+            # ration_list.append(ration_number)
+
+    return 'SUCCESS'
+
+def fetch_ration_details(logger, cookies=None, village_code='366884', card_type='7', ration_number='202006979912'):
+    logger.info('Getting the Ration Details')
+
+    return post_ration_req(logger, cookies=cookies, village_code=village_code, card_type=card_type, ration_number=ration_number)
+
+
+def fetch_ration(logger):
+    logger.info('Getting the Ration Details')
+    url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
+    response = requests.post(url)
+    cookies = response.cookies
+
+    ration_list = populate_ration_list(logger, cookies=cookies, village_code='366890', card_type='5')
+
+    # fetch_ration_details(logger, ration_list=ration_list)
+    
+    return 'SUCCESS'
 
 ##########
 # Tests
@@ -281,7 +373,7 @@ class TestSuite(unittest.TestCase):
         self.assertEqual('SUCCESS', result)
 
     def test_fetch_pds_transactions(self):
-        result = fetch_pds(self.logger)
+        result = fetch_ration(self.logger)
         self.assertEqual('SUCCESS', result)
 
 if __name__ == '__main__':
