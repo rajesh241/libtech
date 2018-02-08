@@ -1,10 +1,13 @@
 import re
 import shutil
 import unicodecsv as csv
+import httplib2
+from urllib.request import urlopen
+from urllib.parse import urlencode
 #import csv
 from io import BytesIO
 from bs4 import BeautifulSoup
-from customSettings import repoDir,djangoDir,djangoSettings,telanganaThresholdDate,telanganaJobcardTimeThreshold,searchIP,wagelistTimeThreshold
+from customSettings import repoDir,djangoDir,djangoSettings,telanganaThresholdDate,telanganaJobcardTimeThreshold,searchIP,wagelistTimeThreshold,musterTimeThreshold
 import sys
 import time
 import os
@@ -26,7 +29,7 @@ from django.db.models import F,Q,Sum
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
 django.setup()
 
-from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,PanchayatReport,VillageReport,Village,Jobcard,Worker,Wagelist,Applicant,PanchayatStat,PanchayatCrawlQueue,Stat,FTO,PaymentDetail
+from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,PanchayatReport,VillageReport,Village,Jobcard,Worker,Wagelist,Applicant,PanchayatStat,PanchayatCrawlQueue,Stat,FTO,PaymentDetail,PaymentInfo
 from nregaFunctions import stripTableAttributes,htmlWrapperLocal,getFullFinYear,getCurrentFinYear,savePanchayatReport,correctDateFormat,getjcNumber,getVilCode,getEncodedData,getCenterAlignedHeading,getTelanganaDate,table2csv
 
 musterregex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
@@ -173,6 +176,7 @@ def crawlPanchayat(logger,qid,stage=None):
     logger.info("Step 3: Download and Process FTOs")
     for finyear in range(int(startFinYear),int(endFinYear)+1):
       finyear=str(finyear)
+      #downloadFTO(logger,eachPanchayat,finyear)
     myQueueObject=PanchayatCrawlQueue.objects.filter(id=qid).first()
     myQueueObject.status=5
     myQueueObject.save()
@@ -282,11 +286,97 @@ def processWagelist(logger,eachPanchayat,finyear):
     eachWagelist.isComplete=isComplete
     eachWagelist.save()
 
+def downloadFTO(logger,eachPanchayat,finyear):
+  eachBlock=eachPanchayat.block
+  myobjs=FTO.objects.filter( Q(isDownloaded=False,block=eachBlock) | Q(downloadAttemptDate__lt = musterTimeThreshold,isComplete=0,isProcessed=1,block=eachBlock) ).order_by("downloadAttemptDate")
+  j=len(myobjs)
+  if len(myobjs) > 0:
+    n=getNumberProcesses(len(myobjs))
+    queueSize=n+len(myobjs)+10
+    q = Queue(maxsize=queueSize)
+    logger.info("Queue Size %s Numbe of Threads %s " % (str(queueSize),str(n)))
+    for obj in myobjs:
+      q.put(obj.id)
+      obj.downloadAttemptDate=timezone.now()
+      obj.save()
+
+    for i in range(n):
+      logger.info("Starting worker Thread %s " % str(i))
+      t = Thread(name = 'Thread-' + str(i), target=FTODownloadWorker, args=(logger,q ))
+      t.daemon = True  
+      t.start()
+
+
+    q.join()       # block until all tasks are done
+    for i in range(n):
+      q.put(None)
+
+def FTODownloadWorker(logger,q):
+  while True:
+    FTOID = q.get()  # if there is no url, this will wait
+    if FTOID is None:
+      break
+    name = threading.currentThread().getName()
+
+    eachFTO=FTO.objects.filter(id=FTOID).first()
+    errorString=''
+    logger.info("Current Queue: %s Thread : %s FTOID: %s FullblockCode: %s status: %s" % (str(q.qsize()),name,str(eachFTO.id),eachFTO.block.code,errorString))
+ 
+#    logger.info("%s FTO ID: %s FTO No: %s " % (str(j),str(eachFTO.id),eachFTO.ftoNo)) 
+    stateCode=eachFTO.block.district.state.code
+    ftoNo=eachFTO.ftoNo
+    splitFTO=ftoNo.split("_")
+    ftoyear=splitFTO[1][4:6]
+    ftomonth=splitFTO[1][2:4]
+    if int(ftomonth) > 3:
+      ftofinyear=str(int(ftoyear)+1)
+    else:
+      ftofinyear=ftoyear
+    finyear=eachFTO.finyear
+    logger.info("FTO Finyear is %s finyear is %s " % (ftofinyear,finyear))
+    fullfinyear=getFullFinYear(ftofinyear)
+    block=eachFTO.block
+    blockName=block.name
+    districtName=block.district.name
+    stateName=block.district.state.name
+    htmlresponse,htmlsource = getFTO(logger,fullfinyear,stateCode,ftoNo,districtName)
+    logger.info("Response = %s " % htmlresponse)
+    if htmlresponse['status'] == '200':
+      logger.info("Status is 200")
+      error,myTable,summaryTable=validateFTO(block,htmlsource)
+      if error is None:
+        logger.info("No error")
+        outhtml=''
+        outhtml+=stripTableAttributes(summaryTable,"summaryTable")
+        outhtml+=stripTableAttributes(myTable,"myTable")
+        #outcsv+=table2csv(dcTable)
+        title="FTO state:%s District:%s block:%s FTO No: %s finyear:%s " % (stateName,districtName,blockName,ftoNo,fullfinyear)
+        outhtml=htmlWrapperLocal(title=title, head='<h1 aling="center">'+title+'</h1>', body=outhtml)
+        try:
+          outhtml=outhtml.encode("UTF-8")
+        except:
+          outhtml=outhtml
+        filename="%s.html" % (ftoNo)
+        eachFTO.ftoFile.save(filename, ContentFile(outhtml))
+        eachFTO.downloadAttemptDate=timezone.now()
+        eachFTO.isDownloaded=True
+        eachFTO.isProcessed=False
+        eachFTO.ftofinyear=ftofinyear
+        eachFTO.save()
+      else:
+        logger.info(error)
+        eachFTO.downloadAttemptDate=timezone.now()
+        eachFTO.ftofinyear=ftofinyear
+        eachFTO.downloadError=error
+        eachFTO.save()
+    q.task_done()
+
 
 def downloadWagelist(logger,eachPanchayat,finyear):
   wagelistRegex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
   eachBlock=eachPanchayat.block
   myWagelists=Wagelist.objects.filter(Q(block=eachBlock,finyear=finyear,isComplete=False) & Q( Q(downloadAttemptDate__lt = wagelistTimeThreshold) | Q (downloadAttemptDate__isnull = True))   )
+  n = len(myWagelists)
   for eachWagelist in myWagelists:
     wagelistNo=eachWagelist.wagelistNo
     fullfinyear=getFullFinYear(eachWagelist.finyear)
@@ -297,7 +387,8 @@ def downloadWagelist(logger,eachPanchayat,finyear):
     stateShortCode=eachWagelist.block.district.state.stateShortCode
     blockName=eachWagelist.block.name
     eachBlock=eachWagelist.block
-    logger.info(wagelistNo)
+    logger.info("%s - %s " % (str(n),wagelistNo))
+    n=n-1
     url="http://%s/netnrega/srch_wg_dtl.aspx?state_code=&district_code=%s&state_name=%s&district_name=%s&block_code=%s&wg_no=%s&short_name=%s&fin_year=%s&mode=wg" % (searchIP,fullDistrictCode,stateName.upper(),districtName.upper(),fullBlockCode,wagelistNo,stateShortCode,fullfinyear)
     logger.info(url)
     try:
@@ -917,6 +1008,12 @@ def parseMuster(logger,eachMuster):
         matchedWagelist=Wagelist.objects.filter(wagelistNo=wagelistNo,block=eachMuster.panchayat.block,finyear=eachMuster.finyear).first()
 
         myWDRecord.wagelist.add(matchedWagelist)
+
+        # Now we would create the record for all the  PaymentInfo
+        myPaymentInfo=PaymentInfo.objects.filter(workDetail=myWDRecord,wagelist=matchedWagelist).first()
+        if myPaymentInfo is None:
+          myPaymentInfo=PaymentInfo.objects.create(workDetail=myWDRecord,wagelist=matchedWagelist)
+
         matchedWorkers=Worker.objects.filter(jobcard__jobcard=jobcard,name=name)
         if len(matchedWorkers) == 1:
           myWDRecord.worker=matchedWorkers.first()
@@ -1921,3 +2018,57 @@ def createPaymentReportTelangana(logger,eachPanchayat,finyear):
   savePanchayatReport(logger,eachPanchayat,finyear,reportType,csvfilename,outcsv)
 #  with open("/tmp/%s_%s.csv" % (eachPanchayat.slug,finyear),"w") as f:
 #    f.write(outcsv)
+
+def validateFTO(block,myhtml):
+  error=None
+  myTable=None
+  summaryTable=None
+  jobcardPrefix=block.district.state.stateShortCode+"-"
+  if (jobcardPrefix in str(myhtml)):
+    htmlsoup=BeautifulSoup(myhtml,"html.parser")
+    tables=htmlsoup.findAll('table')
+    for table in tables:
+      if"FTO_Acc_signed_dt_p2w"  in str(table):
+        summaryTable=table
+      elif "Reference No" in str(table):
+        myTable=table
+    if myTable is None:
+      error="FTO Details Table Not Found"
+    if summaryTable is None:
+      error="Summary Table not found"
+  else:
+    error="Jobcard Prefix not found"
+  return error,myTable,summaryTable
+
+def getFTO(logger,fullfinyear,stateCode,ftoNo,districtName):
+  httplib2.debuglevel = 1
+  h = httplib2.Http('.cache')
+  url = "http://164.100.129.6/netnrega/fto/fto_status_dtl.aspx?fto_no=%s&fin_year=%s&state_code=%s" % (ftoNo, fullfinyear, stateCode)
+  logger.info("FTO URL %s " % url)
+  logger.info("finyear: %s, stateCode: %s, ftoNo: %s, districtName: %s " % (fullfinyear,stateCode,ftoNo,districtName))
+  try:
+    response = urlopen(url)
+    html_source = response.read()
+    bs = BeautifulSoup(html_source, "html.parser")
+    state = bs.find(id='__VIEWSTATE').get('value')
+    validation = bs.find(id='__EVENTVALIDATION').get('value')
+    data = {
+      '__EVENTTARGET':'ctl00$ContentPlaceHolder1$Ddfto',
+      '__EVENTARGUMENT':'',
+      '__LASTFOCUS':'',
+      '__VIEWSTATE': state,
+      '__VIEWSTATEENCRYPTED':'',
+      '__EVENTVALIDATION': validation,
+      'ctl00$ContentPlaceHolder1$Ddfin': fullfinyear,
+      'ctl00$ContentPlaceHolder1$Ddstate': stateCode,
+      'ctl00$ContentPlaceHolder1$Txtfto': ftoNo,
+      'ctl00$ContentPlaceHolder1$Ddfto': ftoNo,
+    }
+    response, content = h.request(url, 'POST', urlencode(data), headers = {'Content-Type': 'application/x-www-form-urlencoded'})
+  except:
+    response={'status': '404'}
+    content=''
+
+  return response,content
+
+

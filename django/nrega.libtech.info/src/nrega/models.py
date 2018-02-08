@@ -37,6 +37,10 @@ def get_muster_upload_path(instance, filename):
 def get_telanganajobcard_upload_path(instance, filename):
   return os.path.join(
     "nrega",instance.panchayat.block.district.state.slug,instance.panchayat.block.district.slug,instance.panchayat.block.slug,instance.panchayat.slug,"DATA","JOBCARDS",filename)
+
+def get_genericreport_upload_path(instance,filename):
+  return os.path.join("genericReport",filename)
+
 def get_blockreport_upload_path(instance, filename):
   return os.path.join(
     "nrega",instance.panchayat.block.district.state.slug,instance.panchayat.block.district.slug,instance.panchayat.block.slug,"DATA","NICREPORTS",filename)
@@ -115,7 +119,14 @@ class nicBlockReport(models.Model):
         unique_together = ('block', 'reportType','finyear')  
   def __str__(self):
     return self.reportType+self.finyear
- 
+
+class genericReport(models.Model):
+  reportFile=models.FileField(null=True, blank=True,upload_to=get_genericreport_upload_path,max_length=512)
+  updateDate=models.DateTimeField(auto_now=True)
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
+  def __str__(self):
+    return self.reportFile.url
+   
 class BlockReport(models.Model):
   block=models.ForeignKey('block',on_delete=models.CASCADE)
   reportFile=models.FileField(null=True, blank=True,upload_to=get_blockreport_upload_path,max_length=512)
@@ -444,6 +455,8 @@ class FTO(models.Model):
   block=models.ForeignKey('block',on_delete=models.CASCADE)
   ftoNo=models.CharField(max_length=256)
   finyear=models.CharField(max_length=2)
+  firstSignatoryDate=models.DateField(null=True,blank=True)
+  secondSignatoryDate=models.DateField(null=True,blank=True)
   ftofinyear=models.CharField(max_length=2,blank=True,null=True)
   ftoFile=models.FileField(null=True, blank=True,upload_to=get_fto_upload_path,max_length=512)
   isDownloaded=models.BooleanField(default=False)
@@ -529,7 +542,30 @@ class WorkDetail(models.Model):
         unique_together = ('muster', 'musterIndex')  
   def __str__(self):
     return self.muster.musterNo+" "+str(self.musterIndex)
-  
+ 
+class PaymentInfo(models.Model):
+  workDetail=models.ForeignKey('WorkDetail',on_delete=models.CASCADE)
+  wagelist=models.ForeignKey('Wagelist',on_delete=models.CASCADE)
+  fto=models.ForeignKey('FTO',on_delete=models.CASCADE,null=True,blank=True)
+  payorderNo=models.CharField(max_length=256,null=True,blank=True)
+  epayorderNo=models.CharField(max_length=256,null=True,blank=True)
+  referenceNo=models.CharField(max_length=256,null=True,blank=True)
+  transactionDate=models.DateField(null=True,blank=True)
+  processDate=models.DateField(null=True,blank=True)
+  status=models.CharField(max_length=256,null=True,blank=True)
+  rejectionReason=models.CharField(max_length=256,null=True,blank=True)
+  creditedAmount=models.DecimalField(max_digits=10,decimal_places=4,null=True,blank=True)
+  daysWorked=models.DecimalField(null=True,blank=True,max_digits=21,decimal_places=2)
+  disbursedAmount=models.DecimalField(max_digits=10,decimal_places=4,null=True,blank=True)
+  disbursedDate=models.DateField(null=True,blank=True)
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
+  modified=models.DateTimeField(null=True,blank=True,auto_now=True)
+  class Meta:
+        unique_together = ('workDetail', 'wagelist')  
+  def __str__(self):
+    return str(self.workDetail.id)
+
+
 class PaymentDetail(models.Model):
   applicant=models.ForeignKey('Applicant',on_delete=models.CASCADE,null=True,blank=True) #OutDated please do no use this field
   worker=models.ForeignKey('Worker',on_delete=models.CASCADE,db_index=True,null=True,blank=True)

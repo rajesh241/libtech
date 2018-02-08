@@ -2,9 +2,9 @@ from django.contrib import admin
 from django.db.models import F,Q,Sum,Count
 
 # Register your models here.
-from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,Jobcard,LibtechTag,TelanganaSSSGroup,FPSVillage,Partner,Phonebook,VillageFPSStatus,Broadcast,AudioLibrary,Stat,Worker,PanchayatCrawlQueue,PendingPostalPayment
+from .models import State,District,Block,Panchayat,Muster,Applicant,PanchayatReport,VillageReport,WorkDetail,Wagelist,PanchayatStat,FTO,FPSShop,PaymentDetail,FPSStatus,Village,Jobcard,LibtechTag,TelanganaSSSGroup,FPSVillage,Partner,Phonebook,VillageFPSStatus,Broadcast,AudioLibrary,Stat,Worker,PanchayatCrawlQueue,PendingPostalPayment,PaymentInfo
 
-from .actions import export_as_csv_action
+from .actions import export_as_csv_action,download_reports_zip
 
 class statModelAdmin(admin.ModelAdmin):
   list_display=["statType","finyear","value","jobcard","panchayat"]
@@ -36,19 +36,27 @@ class districtModelAdmin(admin.ModelAdmin):
 
 class blockModelAdmin(admin.ModelAdmin):
   actions = [export_as_csv_action("CSV Export", fields=['name','districtName','stateName','code'])]
-  list_display = ["name","districtName","stateName","code"]
+  list_display = ["name","districtName","stateName","code","get_crawlRequest_link"]
   list_display_links=["name"]
   list_filter=["district__state"]
   search_fields=["name","code"]
-  def get_queryset(self, request):
-    qs = super(blockModelAdmin, self).get_queryset(request)
-    print("This is getting accesed")
-    if request.user.is_superuser:
-      return qs
-    else:
-      myList=[request.user.id]
-      return qs.filter(partners__in = myList)
+  readonly_fields=["partners","district","name","code","tcode","crawlRequirement","fpsCode","slug"]
+# def get_queryset(self, request):
+#   qs = super(blockModelAdmin, self).get_queryset(request)
+#   print("This is getting accesed")
+#   if request.user.is_superuser:
+#     return qs
+#   else:
+#     myList=[request.user.id]
+#     return qs.filter(partners__in = myList)
   
+  def get_crawlRequest_link(self,obj):
+    url="http://b.libtech.info:8000/api/crawldatarequest/?code=%s" % obj.code
+    myhtml='<a href="%s">Crawl</a>' % url
+    return myhtml
+  get_crawlRequest_link.allow_tags = True
+  get_crawlRequest_link.description='Download'
+
   class Meta:
     model=Block
 
@@ -90,21 +98,28 @@ class panchayatCrawlQueueModelAdmin(admin.ModelAdmin):
   list_display = ["__str__","status","crawlAttemptDate","created","priority"]
   list_filter=["isError","isComplete","priority","status","panchayat__block__district__state"]
   search_fields=["panchayat__name","panchayat__code"]
-  readonly_fields=["panchayat"]
+  readonly_fields=["panchayat","startFinYear","progress","status"]
 
 class panchayatModelAdmin(admin.ModelAdmin):
   actions = [export_as_csv_action("CSV Export", fields=['name','id','remarks'])]
-  list_display = ["__str__","name","code"]
+  list_display = ["__str__","name","code","get_crawlRequest_link"]
   list_filter=["crawlRequirement","status","block__district__state"]
   search_fields=["name","code"]
+  readonly_fields=["block","name","remarks","code","tcode","slug","crawlRequirement"]
+  def get_crawlRequest_link(self,obj):
+    url="http://b.libtech.info:8000/api/crawldatarequest/?code=%s" % obj.code
+    myhtml='<a href="%s">Crawl</a>' % url
+    return myhtml
+  get_crawlRequest_link.allow_tags = True
+  get_crawlRequest_link.description='Download'
 
-  def get_queryset(self, request):
-    qs = super(panchayatModelAdmin, self).get_queryset(request)
-    if request.user.is_superuser:
-      return qs
-    else:
-      myList=[request.user.id]
-      return qs.filter(block__partners__in = myList,crawlRequirement="FULL")
+# def get_queryset(self, request):
+#   qs = super(panchayatModelAdmin, self).get_queryset(request)
+#   if request.user.is_superuser:
+#     return qs
+#   else:
+#     myList=[request.user.id]
+#     return qs.filter(block__partners__in = myList,crawlRequirement="FULL")
 
   class Meta:
     model=Panchayat
@@ -129,6 +144,7 @@ class panchayatStatModelAdmin(admin.ModelAdmin):
   get_state.description="state"
 
 class panchayatReportModelAdmin(admin.ModelAdmin):
+  actions = [download_reports_zip]
   list_display=["__str__","get_reportFile","finyear","updateDate","get_block","get_district","get_state"]
   readonly_fields=["panchayat","finyear","reportType","reportFile","isProcessed"]
   list_filter=["finyear","reportType"]
@@ -153,7 +169,7 @@ class panchayatReportModelAdmin(admin.ModelAdmin):
     qs = super(panchayatReportModelAdmin, self).get_queryset(request)
     if request.user.is_superuser:
       return qs
-    return qs.filter( Q(panchayat__block__district__state__code='34') & (Q(reportType='pendingPayment') | Q(reportType='workPayment') | Q(reportType='inValidPayment') | Q(reportType='rejectedPayment')))
+    return qs.filter( Q(panchayat__block__district__state__code='34') & (Q(reportType='pendingPayment') | Q(reportType='workPayment') | Q(reportType='inValidPayment') | Q(reportType="jobcardRegisterCSV") |  Q(reportType='rejectedPayment')))
 
 class villageReportModelAdmin(admin.ModelAdmin):
   list_display=["__str__","finyear","updateDate","get_panchayat","get_block"]
@@ -199,6 +215,11 @@ class applicantModelAdmin(admin.ModelAdmin):
   def get_jobcard(self,obj):
     return obj.jobcard.jobcard
 
+class paymentInfoModelAdmin(admin.ModelAdmin):
+  list_display=["id","workDetail","wagelist","referenceNo","disbursedDate"]
+  readonly_fields=["workDetail","fto","wagelist"]
+  search_fields=["referenceNo","fto__ftoNo","worker__jobcard__panchayat__code"]
+  
 class paymentDetailModelAdmin(admin.ModelAdmin):
   list_display=["id","applicant","fto","referenceNo","disbursedDate"]
   readonly_fields=["applicant","fto","workDetail","worker"]
@@ -263,6 +284,7 @@ admin.site.register(LibtechTag,libtechTagModelAdmin)
 admin.site.register(TelanganaSSSGroup,telanganaSSSgroupModelAdmin)
 admin.site.register(Stat,statModelAdmin)
 admin.site.register(PaymentDetail,paymentDetailModelAdmin)
+admin.site.register(PaymentInfo,paymentInfoModelAdmin)
 admin.site.register(Worker,workerModelAdmin)
 admin.site.register(PanchayatCrawlQueue,panchayatCrawlQueueModelAdmin)
 admin.site.register(PendingPostalPayment,pendingPostalPaymentModelAdmin)

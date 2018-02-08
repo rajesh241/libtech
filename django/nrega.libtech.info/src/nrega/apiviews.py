@@ -32,6 +32,29 @@ def crawlDataForPt(request):
     return JsonResponse(output, safe=False)    
 
 @csrf_exempt
+def crawlDataRequest(request):
+    """
+    This is the api to initiate a crawl 
+    """
+    code=request.GET.get('code', '')
+    if len(code) == 7:
+      myPanchayats=Panchayat.objects.filter(block__code=code)
+    elif len(code) == 10:
+      myPanchayats=Panchayat.objects.filter(code=code)
+    else:
+      myPanchayats=None
+    for eachPanchayat in myPanchayats:
+      inQueueCount=len(PanchayatCrawlQueue.objects.filter(panchayat=eachPanchayat,isComplete=False))
+      if inQueueCount == 0:
+          PanchayatCrawlQueue.objects.create(panchayat=eachPanchayat,priority=5000)
+      else:
+          pass
+    output = {"Response": "Added to queue"}
+    return JsonResponse(output, safe=False)    
+
+
+
+@csrf_exempt
 def crawlStatusPt(request):
     ptid=request.GET.get('ptid', '')
     if ptid == '':
