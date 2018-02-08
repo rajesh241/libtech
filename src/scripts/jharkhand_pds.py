@@ -264,7 +264,189 @@ def fetch_pds(logger):
 
 ############################################################################
 
-def post_ration_req(logger, cookies=None, village_code='366884', card_type='7', ration_number=None):
+card_types = {
+    '5' : 'PH',
+    '6' : 'AAY',
+    '7' : 'WHITE',
+    }
+
+
+village_codes = {
+    '366879':'Agardih Mandhania',
+    '366847':'Ambatikar',
+    '366846':'Antikheta',
+    '366917':'Ara',
+    '366922':'Aunratanr',
+    '366881':'Bandua',
+    '366855':'Banri',
+    '366871':'Baraitola',
+    '366892':'Baraitu',
+    '366926':'Barkadih',
+    '366864':'Barwadih',
+    '366884':'Barwaia Kalan',
+    '366886':'Barwaia Khurd',
+    '366902':'Beang',
+    '366885':'Betla',
+    '366868':'Bhatko',
+    '366913':'Bichlidag',
+    '366904':'Bikra',
+    '366910':'Bishunbandh',
+    '366888':'Chama',
+    '366859':'Chechendha',
+    '366867':'Dasdih',
+    '366925':'Deobar',
+    '366890':'Doki',
+    '366865':'Dumbi',
+    '366872':'Dumri',
+    '366914':'Dundu',
+    '366856':'Ejamar',
+    '366845':'Hatla',
+    '366893':'Hesatu',
+    '366850':'Humamara',
+    '366848':'Jabla',
+    '366869':'Jagtu',
+    '366909':'Jalima',
+    '366882':'Jamho',
+    '366852':'Jamuna',
+    '366870':'Jerua',
+    '366921':'Jungur',
+    '366866':'Khapiadih',
+    '366876':'Koili',
+    '366873':'Kope',
+    '366905':'Kuchal',
+    '366877':'Kui',
+    '366901':'Kurid',
+    '366844':'Kurumkheta',
+    '366900':'Kurund',
+    '366860':'Kutmu',
+    '366923':'Lali',
+    '366874':'Lanka',
+    '366927':'Lawagara',
+    '366912':'Madandih',
+    '366915':'Mail',
+    '366854':'Manika',
+    '366858':'Manikdih',
+    '366918':'Matlaung',
+    '366906':'Matnag',
+    '366887':'Matnog',
+    '366924':'Nadbelwa',
+    '366899':'Naihara',
+    '366857':'Namudag',
+    '366862':'Nawadih',
+    '366903':'Newar',
+    '366894':'Pagar',
+    '366919':'Palhea',
+    '366896':'Pasagam',
+    '366849':'Patki',
+    '366883':'Patna',
+    '366861':'Pokhri',
+    '366920':'Puruipalhea',
+    '366878':'Ranki Kalan',
+    '366907':'Rewad Kalan',
+    '366908':'Rewad Khurd',
+    '366880':'Sadhwadih',
+    '366911':'Salgi',
+    '366898':'Sardandag',
+    '366895':'Seldag',
+    '366889':'Sewan',
+    '366875':'Sewdhara',
+    '366863':'Simri',
+    '366853':'Sinjo',
+    '366891':'Siris',
+    '366851':'Siwacharan Tola',
+    '366897':'Sonsdohar',
+    '366916':'Uraontoli',
+
+    }
+
+village_list = {
+    'Agardih Mandhania':'366879',
+    'Ambatikar':'366847',
+    'Antikheta':'366846',
+    'Ara':'366917',
+    'Aunratanr':'366922',
+    'Bandua':'366881',
+    'Banri':'366855',
+    'Baraitola':'366871',
+    'Baraitu':'366892',
+    'Barkadih':'366926',
+    'Barwadih':'366864',
+    'Barwaia Kalan':'366884',
+    'Barwaia Khurd':'366886',
+    'Beang':'366902',
+    'Betla':'366885',
+    'Bhatko':'366868',
+    'Bichlidag':'366913',
+    'Bikra':'366904',
+    'Bishunbandh':'366910',
+    'Chama':'366888',
+    'Chechendha':'366859',
+    'Dasdih':'366867',
+    'Deobar':'366925',
+    'Doki':'366890',
+    'Dumbi':'366865',
+    'Dumri':'366872',
+    'Dundu':'366914',
+    'Ejamar':'366856',
+    'Hatla':'366845',
+    'Hesatu':'366893',
+    'Humamara':'366850',
+    'Jabla':'366848',
+    'Jagtu':'366869',
+    'Jalima':'366909',
+    'Jamho':'366882',
+    'Jamuna':'366852',
+    'Jerua':'366870',
+    'Jungur':'366921',
+    'Khapiadih':'366866',
+    'Koili':'366876',
+    'Kope':'366873',
+    'Kuchal':'366905',
+    'Kui':'366877',
+    'Kurid':'366901',
+    'Kurumkheta':'366844',
+    'Kurund':'366900',
+    'Kutmu':'366860',
+    'Lali':'366923',
+    'Lanka':'366874',
+    'Lawagara':'366927',
+    'Madandih':'366912',
+    'Mail':'366915',
+    'Manika':'366854',
+    'Manikdih':'366858',
+    'Matlaung':'366918',
+    'Matnag':'366906',
+    'Matnog':'366887',
+    'Nadbelwa':'366924',
+    'Naihara':'366899',
+    'Namudag':'366857',
+    'Nawadih':'366862',
+    'Newar':'366903',
+    'Pagar':'366894',
+    'Palhea':'366919',
+    'Pasagam':'366896',
+    'Patki':'366849',
+    'Patna':'366883',
+    'Pokhri':'366861',
+    'Puruipalhea':'366920',
+    'Ranki Kalan':'366878',
+    'Rewad Kalan':'366907',
+    'Rewad Khurd':'366908',
+    'Sadhwadih':'366880',
+    'Salgi':'366911',
+    'Sardandag':'366898',
+    'Seldag':'366895',
+    'Sewan':'366889',
+    'Sewdhara':'366875',
+    'Simri':'366863',
+    'Sinjo':'366853',
+    'Siris':'366891',
+    'Siwacharan Tola':'366851',
+    'Sonsdohar':'366897',
+    'Uraontoli':'366916',
+}
+
+def post_ration_req(logger, cookies=None, village_code=None, card_type=None, ration_number=None):
     logger.info('Fetch the Ration List for Village[%s] Card Type[%s]' % (village_code, card_type))
 
     if not cookies:        
@@ -303,6 +485,8 @@ def post_ration_req(logger, cookies=None, village_code='366884', card_type='7', 
     filename = 'ration_list.html'
     if ration_number:
         filename = './ration/' + ration_number + '.html'
+    if village_code:
+        filename = './ration/' + village_codes[village_code] + '_' + card_types[card_type] + '.html'
     logger.info(filename)
 
     with open(filename, 'wb') as html_file:
@@ -334,6 +518,7 @@ def populate_ration_list(logger, cookies=None, village_code='366884', card_type=
             logger.info('Fetching the dealer[%s]...' % ration_number)
             fetch_ration_details(logger, cookies=cookies, village_code=village_code, card_type=card_type, ration_number=ration_number)
             # ration_list.append(ration_number)
+            # exit(0)
 
     return 'SUCCESS'
 
@@ -345,11 +530,17 @@ def fetch_ration_details(logger, cookies=None, village_code='366884', card_type=
 
 def fetch_ration(logger):
     logger.info('Getting the Ration Details')
-    url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
+    url='http://aahar.jharkhand.gov.in/secc_cardholders/searchRation'
+    #url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
     response = requests.post(url)
     cookies = response.cookies
 
-    ration_list = populate_ration_list(logger, cookies=cookies, village_code='366890', card_type='5')
+    #ration_list = populate_ration_list(logger, cookies=cookies, village_code='366890', card_type='5')
+
+    for village_code in village_codes.keys():
+        ration_list_html = post_ration_req(logger, cookies=cookies, village_code=village_code, card_type='5')
+        ration_list_html = post_ration_req(logger, cookies=cookies, village_code=village_code, card_type='6')
+        ration_list_html = post_ration_req(logger, cookies=cookies, village_code=village_code, card_type='7')
 
     # fetch_ration_details(logger, ration_list=ration_list)
     
