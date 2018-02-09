@@ -264,6 +264,8 @@ def fetch_pds(logger):
 
 ############################################################################
 
+
+
 card_types = {
     '5' : 'PH',
     '6' : 'AAY',
@@ -538,11 +540,178 @@ def fetch_ration(logger):
     #ration_list = populate_ration_list(logger, cookies=cookies, village_code='366890', card_type='5')
 
     for village_code in village_codes.keys():
+        for card_type in card_types.keys():
+            ration_list_html = post_ration_req(logger, cookies=cookies, village_code=village_code, card_type=card_type)
+
+    '''
         ration_list_html = post_ration_req(logger, cookies=cookies, village_code=village_code, card_type='5')
         ration_list_html = post_ration_req(logger, cookies=cookies, village_code=village_code, card_type='6')
         ration_list_html = post_ration_req(logger, cookies=cookies, village_code=village_code, card_type='7')
-
     # fetch_ration_details(logger, ration_list=ration_list)
+    '''
+    
+    return 'SUCCESS'
+
+
+def post_ration_reference(logger, cookies=None, district_code=None, block_code=None):
+    logger.info('Fetch the Ration Summary Cookies[%s]' % cookies)
+
+    if not cookies:        
+        url='http://aahar.jharkhand.gov.in/secc_districts/districts'
+        response = requests.post(url)
+        cookies = response.cookies
+
+    headers = {
+        'Host': 'aahar.jharkhand.gov.in',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:57.0) Gecko/20100101 Firefox/57.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Referer': 'http://aahar.jharkhand.gov.in/secc_blocks/blockCardholderCount',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+    }
+    
+    data = [
+        ('_method', 'POST'),
+        # ('data[SeccBlockReport][distId]', '365'),
+        # ('data[SeccBlockReport][ide]', '02704'),
+    ]
+
+    if district_code:
+        if block_code:
+            data.append(('data[SeccBlockReport][distId]', district_code))
+            data.append(('data[SeccBlockReport][ide]', block_code))
+            logger.info('Posting with Data[%s]' % str(data))
+            logger.info('Posting with district[%s] block [%s]' % (district_code, block_code))
+            response = requests.post('http://aahar.jharkhand.gov.in/secc_village_wards/villageCardholderCount', headers=headers, cookies=cookies, data=data)
+            filename = district_code + '_district_' + block_code + '_block.html'
+        else:
+            data.append(('data[SeccDistrictReport][ide]', district_code))
+            logger.info('Posting with District [%s]' % district_code)
+            logger.info('Posting with Data[%s]' % str(data))
+            response = requests.post('http://aahar.jharkhand.gov.in/secc_blocks/blockCardholderCount', headers=headers, cookies=cookies, data=data)
+            filename = district_code + '_district.html'
+    else:
+        response = requests.get('http://aahar.jharkhand.gov.in/secc_districts/districts', headers=headers, cookies=cookies)
+        filename = 'blocks_reference.html'
+        
+    with open(filename, 'wb') as html_file:
+        logger.info('Writing [%s]' % filename)
+        html_file.write(response.content)
+
+    return response.content
+
+
+'''
+def post_ration_districts(logger, cookies=None):
+    logger.info('Fetch the Ration Summary Cookies[%s]' % cookies)
+
+    if not cookies:        
+        url='http://aahar.jharkhand.gov.in/secc_districts/districts'
+        response = requests.post(url)
+        cookies = response.cookies
+
+    headers = {
+        'Host': 'aahar.jharkhand.gov.in',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:57.0) Gecko/20100101 Firefox/57.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+    }
+
+    response = requests.get('http://aahar.jharkhand.gov.in/secc_districts/districts', headers=headers, cookies=cookies)
+
+    filename = 'district_reference.html'
+    with open(filename, 'wb') as html_file:
+        logger.info('Writing [%s]' % filename)
+        html_file.write(response.content)
+
+    return response.content
+'''
+
+def ration_block_fetch(logger, cookies=None, district_name=None):
+    logger.info('Getting the Ration Block Lists for District[%s]' % district_name)
+    block_ration_html = post_ration_reference(logger, cookies=cookies, district_code=district_lookup[district_name])
+    logger.debug(block_ration_html)
+    
+    bs = BeautifulSoup(block_ration_html, 'html.parser')
+    click_list = bs.findAll('a')
+    logger.debug(str(click_list))
+
+    for anchor in click_list:
+        a = str(anchor)
+        pos = a.find('onclick="javascript:send(')
+        logger.debug(pos)
+        if pos > 0:
+            beg = a.find("('") + 2
+            end = a.find("')")
+            block_param = a[beg:end]
+            logger.info('block_param[%s]...' % block_param)
+            beg = a.find('<span name="') + len('<span name="data[SeccDistrictReport][i]" style="color:#0000FF; font-size:12px;">')
+            end = a[beg:].find('</span>')
+            block_name = a[beg:beg+end]
+            logger.info(block_name)
+            block_lookup[block_name] = block_param
+    logger.info('Block Lookup[%s]' % block_lookup)
+    
+
+
+def ration_reports(logger):
+    logger.info('Getting the Ration Summary')
+    url='http://aahar.jharkhand.gov.in/secc_districts/districts'
+    response = requests.post(url)
+    cookies = response.cookies
+
+    district_ration_html = post_ration_reference(logger, cookies=cookies)
+    logger.debug(district_ration_html)
+    
+    bs = BeautifulSoup(district_ration_html, 'html.parser')
+    click_list = bs.findAll('a')
+    logger.debug(str(click_list))
+
+    for anchor in click_list:
+        a = str(anchor)
+        pos = a.find('onclick="javascript:send(')
+        logger.debug(pos)
+        if pos > 0:
+            beg = a.find("('") + 2
+            end = a.find("')")
+            district_param = a[beg:end]
+            logger.info('district_param[%s]...' % district_param)
+            beg = a.find('<span name="') + len('<span name="data[SeccDistrictReport][i]" style="color:#0000FF; font-size:12px ;">')
+            end = a[beg:].find('</span>')
+            district_name = a[beg:beg+end]
+            logger.info(district_name)
+            district_lookup[district_name] = district_param
+    logger.info('District Lookup[%s]' % district_lookup)
+
+    ration_block_fetch(logger, cookies, district_name='Latehar')
+    ration_block_fetch(logger, cookies, district_name='Khunti')
+    ration_block_fetch(logger, cookies, district_name='Ranchi')
+    
+    '''
+    tr_list = bs.findAll('tr')
+    logger.info(str(tr_list))
+    
+    for tr in tr_list:
+        row = str(tr)
+        pos = row.find('onclick="javascript:send(')
+        logger.debug(pos)
+        if pos > 0:
+            beg = row.find("('") + 2
+            end = row.find("')") 
+            block_name = row[beg:end] 
+            logger.info('Fetching the block[%s]...' % block_name)
+            # fetch_dealer_detail(logger, dealer_code)
+            a = row
+            beg = a.find('<span') + len('value="')
+            end = a[beg:].find('"')
+            district_name = a[beg:beg+end]
+            logger.info(district_name)
+            # district_lookup[district_name] = district_param
+    '''
     
     return 'SUCCESS'
 
@@ -564,7 +733,7 @@ class TestSuite(unittest.TestCase):
         self.assertEqual('SUCCESS', result)
 
     def test_fetch_pds_transactions(self):
-        result = fetch_ration(self.logger)
+        result = ration_reports(self.logger)
         self.assertEqual('SUCCESS', result)
 
 if __name__ == '__main__':
