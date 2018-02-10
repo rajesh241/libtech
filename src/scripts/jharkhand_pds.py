@@ -655,8 +655,104 @@ def ration_block_fetch(logger, cookies=None, district_name=None):
             logger.info(block_name)
             block_lookup[block_name] = block_param
     logger.info('Block Lookup[%s]' % block_lookup)
-    
 
+
+def ration_village_fetch(logger, cookies=None, district_name=None, block_name=None):
+    logger.info('Getting the Ration Block Lists for District[%s] Block[%s]' % (district_name, block_name))
+    village_ration_html = post_ration_reference(logger, cookies=cookies, district_code=district_lookup[district_name], block_code=block_lookup[block_name]) # '02635')
+    logger.debug(village_ration_html)
+    
+    bs = BeautifulSoup(village_ration_html, 'html.parser')
+    tr_list = bs.findAll('tr')
+    logger.debug(str(tr_list))
+    
+    for tr in tr_list:
+        td = tr.find('td')
+
+        #logger.info('Name[%s] in Hindi[%s]' %(td.text.strip(), td.findNext('td').text.strip()))
+        count = 11
+        while count:
+            count -= 1
+            try:
+                td = td.findNext('td')
+            except:
+                logger.error('Should not come here!')
+
+        logger.info('Sl No[%s]' % td.text.strip())
+        td = td.findNext('td')
+                
+        logger.info('Name[%s]' % td.text.strip())
+        td = td.findNext('td')
+                
+        logger.info('Hindi[%s]' % td.text.strip())
+        td = td.findNext('td')
+                
+        logger.info('PH Head[%s]' % td.text.strip())
+        td = td.findNext('td')
+                
+        logger.info('PH Member[%s]' % td.text.strip())
+        td = td.findNext('td')
+                
+        logger.info('AAY Head[%s]' % td.text.strip())
+        td = td.findNext('td')
+                
+        logger.info('AAY Member[%s]' % td.text.strip())
+        td = td.findNext('td')
+                
+        logger.info('Total Heads[%s]' % td.text.strip())
+        td = td.findNext('td')
+                
+        logger.info('Total Members[%s]' % td.text.strip())
+        td = td.findNext('td')
+                
+        logger.info('White Head[%s]' % td.text.strip())
+        td = td.findNext('td')
+                
+        logger.info('White Member[%s]' % td.text.strip())
+        td = td.findNext('td')
+                
+        '''
+        while True:
+            logger.info(td.text.strip())
+            try:
+                td = td.findNext('td')
+            except:
+                exit(0)
+        '''
+        exit(0)
+        if False:
+            # if pos > 0:
+            beg = row.find("('") + 2
+            end = row.find("')") 
+            block_name = row[beg:end] 
+            logger.info('Fetching the block[%s]...' % block_name)
+            # fetch_dealer_detail(logger, dealer_code)
+            a = row
+            beg = a.find('<span') + len('value="')
+            end = a[beg:].find('"')
+            district_name = a[beg:beg+end]
+            logger.info(district_name)
+            # district_lookup[district_name] = district_param
+    '''
+    click_list = bs.findAll('a')
+    logger.debug(str(click_list))
+
+    for anchor in click_list:
+        a = str(anchor)
+        pos = a.find('onclick="javascript:send(')
+        logger.debug(pos)
+        if pos > 0:
+            beg = a.find("('") + 2
+            end = a.find("')")
+            block_param = a[beg:end]
+            logger.info('block_param[%s]...' % block_param)
+            beg = a.find('<span name="') + len('<span name="data[SeccDistrictReport][i]" style="color:#0000FF; font-size:12px;">')
+            end = a[beg:].find('</span>')
+            block_name = a[beg:beg+end]
+            logger.info(block_name)
+            block_lookup[block_name] = block_param
+    logger.info('Block Lookup[%s]' % block_lookup)
+    '''
 
 def ration_reports(logger):
     logger.info('Getting the Ration Summary')
@@ -687,33 +783,14 @@ def ration_reports(logger):
             district_lookup[district_name] = district_param
     logger.info('District Lookup[%s]' % district_lookup)
 
-    ration_block_fetch(logger, cookies, district_name='Latehar')
-    ration_block_fetch(logger, cookies, district_name='Khunti')
-    ration_block_fetch(logger, cookies, district_name='Ranchi')
+    ration_block_fetch(logger, cookies, district_name='Latehar')    
+    ration_village_fetch(logger, cookies, district_name='Latehar', block_name='Manika')
     
-    '''
-    tr_list = bs.findAll('tr')
-    logger.info(str(tr_list))
-    
-    for tr in tr_list:
-        row = str(tr)
-        pos = row.find('onclick="javascript:send(')
-        logger.debug(pos)
-        if pos > 0:
-            beg = row.find("('") + 2
-            end = row.find("')") 
-            block_name = row[beg:end] 
-            logger.info('Fetching the block[%s]...' % block_name)
-            # fetch_dealer_detail(logger, dealer_code)
-            a = row
-            beg = a.find('<span') + len('value="')
-            end = a[beg:].find('"')
-            district_name = a[beg:beg+end]
-            logger.info(district_name)
-            # district_lookup[district_name] = district_param
-    '''
+    # ration_block_fetch(logger, cookies, district_name='Khunti')
+    # ration_block_fetch(logger, cookies, district_name='Ranchi')
     
     return 'SUCCESS'
+
 
 ##########
 # Tests
