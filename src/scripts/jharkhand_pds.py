@@ -19,6 +19,9 @@ district_lookup = {}
 block_lookup = {}
 year_code = 0
 
+dealer_lookup = {}
+csv_buffer=['Dealer Name, Transaction Count, Ration Card Count, Ration Disbursed, Ration Allocated, Deficit\n']
+
 # Get the Dealer List
 def fetch_dealer_cmd(logger):
     cmd= '''curl -L -o dealer_list.html 'http://aahar.jharkhand.gov.in/dealer_monthly_reports' -H 'Host: aahar.jharkhand.gov.in' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Referer: http://aahar.jharkhand.gov.in/block_city_monthly_reports' -H 'Cookie: CAKEPHP=2lsnclgccoaspcud6u46ector6; _ga=GA1.3.727748505.1512904756; _gid=GA1.3.1119544342.1513048166' -H 'Connection: keep-alive' --data '_method=POST&data%5BDealerMonthlyReport%5D%5Bide%5D=151%2C01%2C5%2C14' '''
@@ -87,7 +90,7 @@ def fetch_block_list(logger, district_code='14', month='01', year_code='5', dist
 
 
 # Fetch the dealer list where you can find all the dealer codes for the given block
-def fetch_dealer_list(logger, district_name = '', block_name = '', month='01', year='', block_param=None):
+def fetch_dealer_list(logger, district_name=None, block_name=None, month='01', year='', block_param=None):
     url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
     response = requests.post(url)
     cookies = response.cookies
@@ -182,10 +185,79 @@ def populate_dealer_lookup(logger, block_param):
         if pos > 0:
             beg = a.find("('") + 2
             end = a.find("')") 
-            dealer_code = a[beg:end]  # 28:71
-            logger.info('Fetching the dealer[%s]...' % dealer_code)
-            fetch_dealer_detail(logger, dealer_code)
+            dealer_param = a[beg:end]
+            logger.info('Fetching the dealer[%s]...' % dealer_param)
+            fetch_dealer_detail(logger, dealer_param)
+            dealer_code = dealer_param[:dealer_param.find(',')]
+            dealer_lookup[dealer_code] = dealer_name
+    logger.info('Dealer Lookup[%s]' % dealer_lookup)
+    
+    return 'SUCCESS'
 
+def dealer_gaps_report(logger, block_param):
+    logger.info('Fetching Dealer List for [%s]...' % (block_param))
+    dealer_list_html = fetch_dealer_list(logger, block_param)
+
+    filename = 'dealer_list.html'
+    with open(filename, 'wb') as html_file:
+        logger.info('Writing [%s]' % filename)
+        html_file.write(dealer_list_html)
+    
+    bs = BeautifulSoup(dealer_list_html, 'html.parser')
+    click_list = bs.findAll('a')
+    logger.debug(str(click_list))
+
+    for anchor in click_list:
+        a = str(anchor)
+        pos = a.find('onclick="javascript:send(')
+        logger.info(a)
+        if pos > 0:
+            tr = anchor.parent.parent
+            td = tr.find('td')
+            td = td.findNext('td')
+            dealer_name = td.text.strip()
+            logger.info('Dealer Name[%s]' % dealer_name)
+
+            td = td.findNext('td')
+            td = td.findNext('td')
+            td = td.findNext('td')
+            a = str(td)
+            beg = a.find('value="') + len('value="')
+            end = a[beg:].find('"')
+            transaction_count = a[beg:beg+end]            
+            logger.info('Txn Count[%s]' % transaction_count)
+
+            td = td.findNext('td')
+            ration_card_count = td.text.strip()
+            logger.info('Rc Count[%s]' % ration_card_count)
+            
+            td = td.findNext('td')
+            td = td.findNext('td')
+            ration_disbursed = int(td.text.strip())
+            logger.info('Disbursed[%s]' % ration_disbursed)
+
+            beg = a.find("('") + 2
+            end = a.find("')") 
+            dealer_param = a[beg:end]
+            # fetch_dealer_detail(logger, dealer_code)  Mynk - can be enabled if need be with dealer_param
+            dealer_code = dealer_param[:dealer_param.find(',')]
+            logger.info('Fetching the dealer[%s]...' % dealer_code)
+            dealer_lookup[dealer_code] = dealer_name
+
+            ph_allocated = fetch_cardholders_for_dealer(logger, card_type='5', dealer_code=dealer_code)
+            aay_allocated = fetch_cardholders_for_dealer(logger, card_type='6', dealer_code=dealer_code)
+            ration_allocated = ph_allocated + aay_allocated
+            logger.info('Allocated[%s]' % str(ration_allocated))
+            
+            logger.info('%s,%s,%s,%s,%s,%s' % (dealer_name, transaction_count, ration_card_count, ration_disbursed, ration_allocated, ration_allocated-ration_disbursed))
+            csv_buffer.append('%s,%s,%s,%s,%s,%s\n' % (dealer_name, transaction_count, ration_card_count, ration_disbursed, ration_allocated, ration_allocated-ration_disbursed))
+    logger.info('Gaps Report[%s]' % csv_buffer)
+
+    filename = './dealers/dealer_wise_comparison.csv'
+    with open(filename, 'w') as csv_file:
+        logger.info("Writing to [%s]" % filename)
+        csv_file.write(''.join(csv_buffer))
+    
     return 'SUCCESS'
 
 
@@ -251,7 +323,7 @@ def populate_block_lookup(logger, district_param=None, district_lookup=None):
     return block_lookup
 
 
-def fetch_pds(logger):
+def fetch_via_masik_vitaran(logger):
     logger.info('Fetching PDS related info...')
 
     district_lookup = populate_district_lookup(logger)
@@ -259,6 +331,17 @@ def fetch_pds(logger):
     block_lookup = populate_block_lookup(logger, district_lookup=district_lookup, district_param=district_lookup[district_name]) # district_param='14,01,5')
 
     populate_dealer_lookup(logger, block_lookup[block_name]) # '151,01,5,14') # 
+
+    return 'SUCCESS'
+
+def pds_gaps(logger):
+    logger.info('Generating report dealer wise gaps')
+
+    district_lookup = populate_district_lookup(logger)
+
+    block_lookup = populate_block_lookup(logger, district_lookup=district_lookup, district_param=district_lookup[district_name]) # district_param='14,01,5')
+
+    dealer_gaps_report(logger, block_lookup[block_name]) # '151,01,5,14') # 
 
     return 'SUCCESS'
 
@@ -448,7 +531,7 @@ village_list = {
     'Uraontoli':'366916',
 }
 
-def post_ration_req(logger, cookies=None, village_code=None, card_type=None, ration_number=None):
+def post_ration_req(logger, cookies=None, village_code=None, card_type=None, ration_number=None, dealer_code=None):
     logger.info('Fetch the Ration List for Village[%s] Card Type[%s]' % (village_code, card_type))
 
     if not cookies:        
@@ -469,17 +552,35 @@ def post_ration_req(logger, cookies=None, village_code=None, card_type=None, rat
         'Connection': 'keep-alive',
     }
 
-    data = [
-        ('_method', 'POST'),
-        ('data[SeccCardholder][rgi_district_code]', '359'),
-        ('data[SeccCardholder][rgi_block_code]', '02635'),
-        ('r1', 'panchayat'),
-        ('data[SeccCardholder][rgi_village_code]', village_code),
-        ('data[SeccCardholder][dealer_id]', ''),
-        ('data[SeccCardholder][cardtype_id]', card_type),
-    ]
+    if village_code:
+        data = [
+            ('_method', 'POST'),
+            ('data[SeccCardholder][rgi_district_code]', '359'),
+            ('data[SeccCardholder][rgi_block_code]', '02635'),
+            ('r1', 'panchayat'),
+            ('data[SeccCardholder][rgi_village_code]', village_code),
+            ('data[SeccCardholder][dealer_id]', ''),
+            ('data[SeccCardholder][cardtype_id]', card_type),
+        ]
+
     if ration_number:
         data.append(('data[SeccCardholder][rationcard_no]', ration_number))
+
+    # This and above are mutually exclusive
+    if dealer_code:
+        data = [
+            ('_method', 'POST'),
+            ('data[SeccCardholder][rgi_district_code]', '359'),
+            ('data[SeccCardholder][rgi_block_code]', '02635'),
+            ('r1', 'dealer'),
+            ('data[SeccCardholder][rgi_village_code]', ''),
+            # ('data[SeccCardholder][dealer_id]', '4f51aa25-0e24-477f-985f-0f60c0a80102'),
+            ('data[SeccCardholder][dealer_id]', dealer_code),
+            ('data[SeccCardholder][cardtype_id]', card_type),
+            ('data[SeccCardholder][rationcard_no]', ''),
+            # ('data[SeccCardholder][captcha]', 'b8d79'),
+        ]
+
     logger.info('Data [%s]' % data)
     
     response = requests.post('http://aahar.jharkhand.gov.in/secc_cardholders/searchRationResults', headers=headers, cookies=cookies, data=data)
@@ -489,6 +590,9 @@ def post_ration_req(logger, cookies=None, village_code=None, card_type=None, rat
         filename = './ration/' + ration_number + '.html'
     if village_code:
         filename = './ration/' + village_codes[village_code] + '_' + card_types[card_type] + '.html'
+
+    if dealer_code:
+        filename = './dealers/' + dealer_lookup[dealer_code] + '_' + card_types[card_type] + '.html'
     logger.info(filename)
 
     with open(filename, 'wb') as html_file:
@@ -529,15 +633,64 @@ def fetch_ration_details(logger, cookies=None, village_code='366884', card_type=
 
     return post_ration_req(logger, cookies=cookies, village_code=village_code, card_type=card_type, ration_number=ration_number)
 
+def fetch_cardholders_for_dealer(logger, cookies=None, card_type=None, dealer_code=None):
+    logger.info('Fetch the Ration List for Dealer[%s] Card Type[%s]' % (dealer_lookup[dealer_code], card_type))
 
-def fetch_ration(logger):
+    ration_list_html = post_ration_req(logger, cookies=cookies, dealer_code=dealer_code, card_type=card_type)
+
+    bs = BeautifulSoup(ration_list_html, 'html.parser')
+
+    if card_type == '5':
+        td_list = bs.findAll('td')
+        logger.debug('TD_LIST[%s]' % str(td_list))
+        total_family_members = td_list[-5].text.strip()
+        logger.info('Yippie[%s]'  % total_family_members)
+        return int(total_family_members) * 5
+
+    if card_type == '6':
+        td_list = bs.findAll('td')
+        logger.debug('TD_LIST[%s]' % str(td_list))
+        total_family_members = td_list[-5].text.strip()
+        logger.info('TOTAL[%s]'  % total_family_members)
+        if total_family_members == '0':
+            logger.info('No Data[%s]'  % total_family_members)
+            return 0
+        tr_list = bs.findAll('tr')
+        logger.debug('TR_LIST[%s]' % str(tr_list))
+        tr = tr_list[-2]
+        td = tr.find('td')
+        total_cards = td.text.strip()
+        logger.info('Yippie[%s]'  % total_cards)
+        return int(total_cards) * 35
+        
+
+    '''    
+    click_list = bs.findAll('a')
+    logger.debug(str(click_list))
+
+    for anchor in click_list:
+        a = str(anchor)
+        logger.debug(a)
+        pos = a.find('onclick="javascript:send(')
+        logger.debug(pos)
+        if pos > 0:
+            beg = a.find("('") + 2
+            end = a.find("')") 
+            ration_number = a[beg:end]  # 28:71
+            logger.info('Fetching the dealer[%s]...' % ration_number)
+    '''
+
+def fetch_cardholders_via_vivaran(logger):
     logger.info('Getting the Ration Details')
     url='http://aahar.jharkhand.gov.in/secc_cardholders/searchRation'
-    #url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
     response = requests.post(url)
     cookies = response.cookies
 
     #ration_list = populate_ration_list(logger, cookies=cookies, village_code='366890', card_type='5')
+
+    fetch_cardholders_for_dealer(logger, cookies=cookies, card_type='5', dealer_code='4f51aa25-0e24-477f-985f-0f60c0a80102')
+    fetch_cardholders_for_dealer(logger, cookies=cookies, card_type='6', dealer_code='4f51aa25-0e24-477f-985f-0f60c0a80102')
+    fetch_cardholders_for_dealer(logger, cookies=cookies, card_type='7', dealer_code='4f51aa25-0e24-477f-985f-0f60c0a80102')
 
     for village_code in village_codes.keys():
         for card_type in card_types.keys():
@@ -551,7 +704,7 @@ def fetch_ration(logger):
     '''
     
     return 'SUCCESS'
-
+    
 
 def post_ration_reference(logger, cookies=None, district_code=None, block_code=None):
     logger.info('Fetch the Ration Summary Cookies[%s]' % cookies)
@@ -754,7 +907,7 @@ def ration_village_fetch(logger, cookies=None, district_name=None, block_name=No
     logger.info('Block Lookup[%s]' % block_lookup)
     '''
 
-def ration_reports(logger):
+def fetch_via_ditigalikaran(logger):
     logger.info('Getting the Ration Summary')
     url='http://aahar.jharkhand.gov.in/secc_districts/districts'
     response = requests.post(url)
@@ -810,7 +963,10 @@ class TestSuite(unittest.TestCase):
         self.assertEqual('SUCCESS', result)
 
     def test_fetch_pds_transactions(self):
-        result = ration_reports(self.logger)
+        result = pds_gaps(self.logger)
+        # result = fetch_via_masik_vitaran(self.logger)
+        # result = fetch_cardholders_via_vivaran(self.logger)
+        # result = fetch_via_ditigalikaran(self.logger)
         self.assertEqual('SUCCESS', result)
 
 if __name__ == '__main__':
