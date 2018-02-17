@@ -11,10 +11,13 @@ from wrappers.logger import loggerFetch
 import unittest
 import requests
 
-district_name = 'RANCHI'
-block_name = 'NAGRI'
+district_name = 'LATEHAR'
+# block_name = 'MAHUADANR'
+block_name = 'MANIKA'
 district_name = 'KHUNTI'
 block_name = 'KHUNTI'
+district_name = 'RANCHI'
+block_name = 'NAGRI'
 dealer_list_file = 'dealer_list.html'
 filename = 'z.html'
 district_lookup = {}
@@ -22,7 +25,19 @@ block_lookup = {}
 year_code = 0
 
 dealer_lookup = {}
-csv_buffer=['Dealer Name, Transaction Count, Ration Card Count, Ration Disbursed, Ration Allocated, Deficit\n']
+
+rgi_district_code = {
+    'LATEHAR': '359',
+    'RANCHI': '364',
+    'KHUNTI': '365',
+}
+rgi_block_code = {
+    'MANIKA': '02635',
+    'NAGRI': '02692',
+    'KHUNTI': '02704',
+}
+
+csv_buffer=['Dealer Name, Transaction Count, Ration Card Count, Transaction(%), Ration Disbursed, Ration Allocated, Ratio(%)\n']
 
 # Get the Dealer List
 def fetch_dealer_cmd(logger):
@@ -124,7 +139,7 @@ def fetch_dealer_list(logger, block_param=None, district_name=None, block_name=N
 
 
 # Fetch the details of the dealer given the dealer code
-def fetch_dealer_detail(logger, dealer_code):
+def fetch_dealer_detail(logger, dealer_code=None):
     url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
     response = requests.post(url)
     cookies = response.cookies
@@ -146,7 +161,7 @@ def fetch_dealer_detail(logger, dealer_code):
         ('data[DealerMonthlyReport][ide]', dealer_code),
     ]
 
-    logger.info('Data [%s]' % data)
+    logger.debug('Data [%s]' % data)
     response = requests.post('http://aahar.jharkhand.gov.in/transactions/transaction', headers=headers, data=data,cookies=cookies)
 
     bs = BeautifulSoup(response.content, 'html.parser')
@@ -200,7 +215,7 @@ def dealer_gaps_report(logger, block_param):
     logger.info('Fetching Dealer List for [%s]...' % (block_param))
     dealer_list_html = fetch_dealer_list(logger, block_param)
 
-    filename = 'dealer_list.html'
+    filename = './dealers/dealer_list.html'
     with open(filename, 'wb') as html_file:
         logger.info('Writing [%s]' % filename)
         html_file.write(dealer_list_html)
@@ -234,6 +249,9 @@ def dealer_gaps_report(logger, block_param):
             logger.info('Rc Count[%s]' % ration_card_count)
             
             td = td.findNext('td')
+            transaction_percentage = td.text.strip()
+            logger.info('Rc Count[%s]' % transaction_percentage)
+            
             td = td.findNext('td')
             ration_disbursed = int(td.text.strip())
             logger.info('Disbursed[%s]' % ration_disbursed)
@@ -241,18 +259,20 @@ def dealer_gaps_report(logger, block_param):
             beg = a.find("('") + 2
             end = a.find("')") 
             dealer_param = a[beg:end]
-            # fetch_dealer_detail(logger, dealer_code)  Mynk - can be enabled if need be with dealer_param
             dealer_code = dealer_param[:dealer_param.find(',')]
             logger.info('Fetching the dealer[%s]...' % dealer_code)
+            # fetch_dealer_detail(logger, dealer_code) #  Mynk - can be enabled if need be with dealer_param
             dealer_lookup[dealer_code] = dealer_name
 
-            ph_allocated = fetch_cardholders_for_dealer(logger, card_type='5', dealer_code=dealer_code)
-            aay_allocated = fetch_cardholders_for_dealer(logger, card_type='6', dealer_code=dealer_code)
+            ph_allocated = fetch_cardholders_for_dealer(logger, card_type='5', dealer_code=dealer_code, district_name=district_name, block_name=block_name)
+            aay_allocated = fetch_cardholders_for_dealer(logger, card_type='6', dealer_code=dealer_code, district_name=district_name, block_name=block_name)
             ration_allocated = ph_allocated + aay_allocated
             logger.info('Allocated[%s]' % str(ration_allocated))
+
+            ration_percentage = int((ration_disbursed/ration_allocated)*100)
             
-            logger.info('%s,%s,%s,%s,%s,%s' % (dealer_name, transaction_count, ration_card_count, ration_disbursed, ration_allocated, ration_allocated-ration_disbursed))
-            csv_buffer.append('%s,%s,%s,%s,%s,%s\n' % (dealer_name, transaction_count, ration_card_count, ration_disbursed, ration_allocated, ration_allocated-ration_disbursed))
+            logger.info('%s,%s,%s,%s,%s,%s,%s' % (dealer_name, transaction_count, ration_card_count, transaction_percentage, ration_disbursed, ration_allocated, ration_percentage))
+            csv_buffer.append('%s,%s,%s,%s,%s,%s,%s\n' % (dealer_name, transaction_count, ration_card_count, transaction_percentage, ration_disbursed, ration_allocated, ration_percentage))
     logger.info('Gaps Report[%s]' % csv_buffer)
 
     filename = './dealers/%s_dealer_wise_comparison.csv' % (block_name)
@@ -534,7 +554,8 @@ village_list = {
     'Uraontoli':'366916',
 }
 
-def post_ration_req(logger, cookies=None, village_code=None, card_type=None, ration_number=None, dealer_code=None):
+# If ration number is given - FIXME you need to also get block and district code along with village/dealer code
+def post_ration_req(logger, cookies=None, village_code=None, card_type=None, ration_number=None, dealer_code=None, block_code=None, district_code=None):
     logger.info('Fetch the Ration List for Village[%s] Card Type[%s]' % (village_code, card_type))
 
     if not cookies:        
@@ -558,8 +579,8 @@ def post_ration_req(logger, cookies=None, village_code=None, card_type=None, rat
     if village_code:
         data = [
             ('_method', 'POST'),
-            ('data[SeccCardholder][rgi_district_code]', '359'),
-            ('data[SeccCardholder][rgi_block_code]', '02635'),
+            ('data[SeccCardholder][rgi_district_code]', district_code),
+            ('data[SeccCardholder][rgi_block_code]', block_code),
             ('r1', 'panchayat'),
             ('data[SeccCardholder][rgi_village_code]', village_code),
             ('data[SeccCardholder][dealer_id]', ''),
@@ -573,8 +594,8 @@ def post_ration_req(logger, cookies=None, village_code=None, card_type=None, rat
     if dealer_code:
         data = [
             ('_method', 'POST'),
-            ('data[SeccCardholder][rgi_district_code]', '359'),
-            ('data[SeccCardholder][rgi_block_code]', '02635'),
+            ('data[SeccCardholder][rgi_district_code]', district_code),
+            ('data[SeccCardholder][rgi_block_code]', block_code),
             ('r1', 'dealer'),
             ('data[SeccCardholder][rgi_village_code]', ''),
             # ('data[SeccCardholder][dealer_id]', '4f51aa25-0e24-477f-985f-0f60c0a80102'),
@@ -636,10 +657,10 @@ def fetch_ration_details(logger, cookies=None, village_code='366884', card_type=
 
     return post_ration_req(logger, cookies=cookies, village_code=village_code, card_type=card_type, ration_number=ration_number)
 
-def fetch_cardholders_for_dealer(logger, cookies=None, card_type=None, dealer_code=None):
+def fetch_cardholders_for_dealer(logger, cookies=None, card_type=None, dealer_code=None, district_name=None, block_name=None):
     logger.info('Fetch the Ration List for Dealer[%s] Card Type[%s]' % (dealer_lookup[dealer_code], card_type))
 
-    ration_list_html = post_ration_req(logger, cookies=cookies, dealer_code=dealer_code, card_type=card_type)
+    ration_list_html = post_ration_req(logger, cookies=cookies, dealer_code=dealer_code, card_type=card_type, district_code=rgi_district_code[district_name], block_code=rgi_block_code[block_name])
 
     bs = BeautifulSoup(ration_list_html, 'html.parser')
 
