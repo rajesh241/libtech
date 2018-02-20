@@ -1,6 +1,6 @@
 from django.conf.urls import url
 from nrega import apiviews
-
+from nrega import botviews
 urlpatterns = [
     url(r'^api/panchayats/$', apiviews.getPanchayats),
     url(r'^api/accuratedatapts/$', apiviews.getPanchayatsAccurateData),
@@ -25,5 +25,6 @@ urlpatterns = [
     url(r'^api/crawldatapt/$', apiviews.crawlDataForPt),
     url(r'^api/crawldatarequest/$', apiviews.crawlDataRequest),
     url(r'^api/crawlstatuspt/$', apiviews.crawlStatusPt),
+    url(r'^api/bot/$', botviews.UserList.as_view()),
 ]
 

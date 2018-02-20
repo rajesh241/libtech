@@ -474,10 +474,16 @@ def createReportsJSK(logger,eachPanchayat,finyear):
   fpp.write(u'\ufeff'.encode('utf8'))
   pp = csv.writer(fpp, encoding='utf-8-sig',delimiter=',')
 
+  fjr = BytesIO()
+  fjr.write(u'\ufeff'.encode('utf8'))
+  jr = csv.writer(fjr, encoding='utf-8-sig',delimiter=',')
+
   wpdata=[]
   rejecteddata=[]
   invaliddata=[]
   pendingdata=[]
+  jrdata=[]
+
   a=[]
   tableCols=["vil","hhd","name","Name of work","workCode","wage_status","dateTo_ftoSign_credited","sNo"]
   a.extend(["vil","hhd","name","Name of work","workCode","wage_status","dateTo_ftoSign_credited","sNo"])
@@ -485,6 +491,26 @@ def createReportsJSK(logger,eachPanchayat,finyear):
   rp.writerow(a)
   ip.writerow(a)
   pp.writerow(a)
+  ajr=[]
+  jrTableCols=["panchayat","village","jobcard","jcNo","headOfHousehold","caste","applicants"]
+  ajr.extend(["panchayat","village","jobcard","jcNo","headOfHousehold","caste","applicants"])
+  jr.writerow(ajr)
+
+  myJobcards=Jobcard.objects.filter(panchayat=eachPanchayat)
+  for eachJobcard in myJobcards:
+    nameString=''
+    if eachJobcard.village is not None:
+      villageName=eachJobcard.village.slug
+    else:
+      villageName=''
+    myWorkers=Worker.objects.filter(jobcard=eachJobcard)
+    for eachWorker in myWorkers:
+      nameString+=eachWorker.name
+      nameString+=" | "
+    a=[]
+    a.extend([eachPanchayat.slug,villageName,eachJobcard.jobcard,str(eachJobcard.jcNo),eachJobcard.headOfHousehold,eachJobcard.caste,nameString])
+    jr.writerow(a)
+    jrdata.append(a)
 
 
   workRecords=WorkDetail.objects.filter(worker__jobcard__panchayat=eachPanchayat,muster__finyear=finyear).order_by('zvilCode','zjcNo','creditedDate')
@@ -530,15 +556,18 @@ def createReportsJSK(logger,eachPanchayat,finyear):
       pendingdata.append(a)
       pp.writerow(a)
 
+
   fwp.seek(0)
   frp.seek(0)
   fip.seek(0)
   fpp.seek(0)
+  fjr.seek(0)
 
   savePanchayatReportJSKWrapper(logger,finyear,eachPanchayat,tableCols,"workPayment","wp",wpdata,fwp.getvalue() )
   savePanchayatReportJSKWrapper(logger,finyear,eachPanchayat,tableCols,"rejectedPayment","rp",rejecteddata,frp.getvalue() )
   savePanchayatReportJSKWrapper(logger,finyear,eachPanchayat,tableCols,"invalidPayment","ip",invaliddata,fip.getvalue() )
   savePanchayatReportJSKWrapper(logger,finyear,eachPanchayat,tableCols,"pendingPayment","pp",pendingdata,fpp.getvalue() )
+  savePanchayatReportJSKWrapper(logger,finyear,eachPanchayat,jrTableCols,"jobcardRegister","jr",jrdata,fjr.getvalue() )
 
 def createReportsJSK1(logger,eachPanchayat,finyear):
   wpcsv=''
