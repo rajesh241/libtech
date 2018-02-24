@@ -3,6 +3,15 @@ from django.http import HttpResponse
 import time
 import datetime
 import os
+from django.http import HttpResponseRedirect
+from django.conf import settings
+#from mysite.settings import AWS_ACCESS_KEY, AWS_SECRET_KEY, S3_BUCKET, REGION_NAME
+from libtech_settings import LIBTECH_AWS_ACCESS_KEY_ID,LIBTECH_AWS_SECRET_ACCESS_KEY
+from libtech.settings import AWS_STORAGE_BUCKET_NAME,AWS_S3_REGION_NAME,MEDIA_URL,S3_URL
+import boto3
+from boto3.session import Session
+from botocore.client import Config
+
 def export_as_csv_action(description="Export selected objects as CSV file",
                          fields=None, exclude=None, header=True):
     """
@@ -47,7 +56,22 @@ def download_reports_zip(modeladmin, request, queryset):
       os.system(cmd)
       s+=obj.reportFile.url
       s+="\n"
-    with open("/tmp/test.csv","w") as f:
-      f.write(s)
+    cmd="cd %s && zip -r %s.zip *" % (baseDir,baseDir)
+    os.system(cmd)
+    in_file = open("%s.zip" % baseDir, "rb") # opening for [r]eading as [b]inary
+    zipdata = in_file.read() # if you only wanted to read 512 bytes, do .read(512)
+    in_file.close()
+
+
+    cloudFilename="media/temp/%s_%s.zip" % (dateString,curTimeStamp)
+    session = boto3.session.Session(aws_access_key_id=LIBTECH_AWS_ACCESS_KEY_ID,
+                                    aws_secret_access_key=LIBTECH_AWS_SECRET_ACCESS_KEY)
+    s3 = session.resource('s3',config=Config(signature_version='s3v4'))
+    s3.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(ACL='public-read',Key=cloudFilename, Body=zipdata)
+    baseURL="https://s3.ap-south-1.amazonaws.com/libtech-nrega"
+    publicURL="%s/%s" % (baseURL,cloudFilename)
+#    with open("/tmp/test.csv","w") as f:
+#      f.write(s)
+    return HttpResponseRedirect(publicURL)
     
 download_reports_zip.short_description = "Download Selected Reports as Zip" 

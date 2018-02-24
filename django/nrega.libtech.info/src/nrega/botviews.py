@@ -1,4 +1,6 @@
 from django.shortcuts import render
+import sys
+import os
 from datetime import datetime, timedelta
 # Create your views here.
 from django.http import HttpResponse, JsonResponse
@@ -10,12 +12,13 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+sys.path.append(os.path.join(os.path.dirname(__file__), 'chatbot'))
 
 import requests
 from django.http import JsonResponse
 from django.contrib.auth.models import User
 from django.http import Http404
-
+from processRequest import processRequest
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -24,14 +27,6 @@ from nrega.serializers import PanchayatSerializer, StateSerializer, StateSeriali
 
 import json
 
-def processRequest(req):
-        textList = ["Hi there.  If you are new to the service, I recommend a tutorial.  If you have been here before, you might want to start by selecting a Panchayat."]
-        options = ["Tutorial", "Select Panchayat"]
-        contextOut = {"name":"welcome", "lifespan":2, "parameters":{}}
-
-        res = (textList, options, contextOut)
-       
-        return res
 
 class UserList(APIView):
     def get(self, request, format=None):
@@ -43,6 +38,9 @@ class UserList(APIView):
         data=request.data
         with open("/tmp/post.csv","w") as f:
           f.write(str(data))
+        res = processRequest(data)
+        res = json.dumps(res, indent=4)
+        return JsonResponse(res, safe=False)    
 #        serializer = UserSerializer(data=request.DATA)
 #       if serializer.is_valid():
 #           serializer.save()

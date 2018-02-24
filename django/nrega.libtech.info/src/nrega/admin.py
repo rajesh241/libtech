@@ -169,6 +169,8 @@ class panchayatReportModelAdmin(admin.ModelAdmin):
     qs = super(panchayatReportModelAdmin, self).get_queryset(request)
     if request.user.is_superuser:
       return qs
+    elif request.user.username == "jsk":
+     return qs.filter( Q(panchayat__block__district__state__code='34') & (Q(reportType='pendingPayment') | Q(reportType='workPayment') | Q(reportType='inValidPayment') | Q(reportType="jobcardRegisterCSV") |  Q(reportType='rejectedPayment')))
     else:
       return qs
 #    return qs.filter( Q(panchayat__block__district__state__code='34') & (Q(reportType='pendingPayment') | Q(reportType='workPayment') | Q(reportType='inValidPayment') | Q(reportType="jobcardRegisterCSV") |  Q(reportType='rejectedPayment')))
