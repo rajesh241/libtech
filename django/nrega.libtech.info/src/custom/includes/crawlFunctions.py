@@ -165,8 +165,8 @@ def crawlPanchayat(logger,qid,stage=None):
     logger.info("Step 3: Download and Process Wagelist")
     for finyear in range(int(startFinYear),int(endFinYear)+1):
       finyear=str(finyear)
-      downloadWagelist(logger,eachPanchayat,finyear)
-      processWagelist(logger,eachPanchayat,finyear)
+      #downloadWagelist(logger,eachPanchayat,finyear)
+      #processWagelist(logger,eachPanchayat,finyear)
     myQueueObject=PanchayatCrawlQueue.objects.filter(id=qid).first()
     myQueueObject.status=4
     myQueueObject.save()
