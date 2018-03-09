@@ -22,6 +22,7 @@ export class TransactionsPage {
     updated = true;
     items: AfoListObservable<any[]>;
     applicantDetails: AfoListObservable<any[]>;
+    applicantPhone: AfoListObservable<any[]>;
     //Useful to toggle buttons.  Default is off.
     show: boolean = false;
     loading: Loading;
@@ -39,13 +40,17 @@ export class TransactionsPage {
 
         this.url = '/transactions/' + this.jobcard
         this.items = afoDatabase.list(this.url);
+
+        let phonebookUrl = '/pull/phonebook/' + this.jobcard
+        console.log(phonebookUrl)
+        this.applicantPhone = afoDatabase.list(phonebookUrl)
     }
 
     update(index) {
 	this.presentSpinner('Syncing Panchayats...');
         if (this.phone) {
 	    let date = new Date().getTime()
-	    this.applicantDetails.update(String(index), { phone: this.phone, timeStamp: date });
+	    this.applicantPhone.update(String(index), { phone: this.phone, timeStamp: date });
 	}
         this.updated = true;
 	this.loading.dismiss();

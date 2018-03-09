@@ -21,8 +21,8 @@
     </ion-item>
 
     <ion-card *ngIf="show">
-      <b>Phone</b>: {{ detail.phone }} <br />
-      <b>Time Stamp</b>: {{ detail.timeStamp }} <br />
+      <b>Phone</b>: {{ applicantPhone.phone }} <br />
+      <b>Time Stamp</b>: {{ applicantPhone.timeStamp }} <br />
       <b>Age</b>: {{detail.age}} <br />
       <b>Caste</b>: {{detail.caste}} <br />
       <b>Gender</b>: {{detail.gender}} <br />
@@ -37,7 +37,7 @@
     </ion-card>
 
     <span *ngIf='true'> <!-- "!detail.phone" FIXME Vivek wanted this conditional <b>Please collect a phone number for this jobcard holder</b> -->
-      
+
       <ion-list>
 	<ion-item>
 	  <b item-left><i class="fa fa-mobile"> Mobile Number:</i></b>
@@ -46,8 +46,8 @@
 	<ion-item><button item-right default ion-button [disabled]="updated" (click)=update(detail.$key)>Update</button></ion-item>
       </ion-list>
     </span>
-    
-    <hr />    
+
+    <hr />
   </span>
 
   <h4>List of Transactions</h4>
