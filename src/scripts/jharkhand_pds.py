@@ -5,6 +5,7 @@ rootdir = os.path.dirname(dirname)
 import sys
 sys.path.insert(0, rootdir)
 
+from os import errno
 from bs4 import BeautifulSoup
 
 from wrappers.logger import loggerFetch
@@ -431,16 +432,26 @@ def fetch_via_masik_vitaran(logger):
 
     return 'SUCCESS'
 
-def pds_gaps(logger):
-    logger.info('Generating report dealer wise gaps')
+def pds_gaps(logger, district_name=None, block_name=None, month=None, year=None):
+    logger.info('Generating report dealer wise gaps for:')
 
+    if not district_name:
+        district_name = 'RANCHI'
+    if not block_name:
+        block_name = 'NAGRI'
+    if not month:
+        month = '03'
+    if not year:
+        year = '2018'
+        
+    logger.info('District[%s] Block[%s] Month[%s] Year[%s]' % (district_name, block_name, month, year))
     try:
         os.makedirs(dirname)
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise        
-
-    district_lookup = populate_district_lookup(logger, month = '02', year = '2018')
+        
+    district_lookup = populate_district_lookup(logger, month = '03', year = '2018')
 
     logger.info('Populating blocks for district[%s]' % district_name)
     block_lookup = populate_block_lookup(logger, district_lookup=district_lookup, district_param=district_lookup[district_name]) # district_param='14,01,5')
@@ -1078,7 +1089,7 @@ class TestSuite(unittest.TestCase):
         self.assertEqual('SUCCESS', result)
 
     def test_fetch_pds_transactions(self):
-        result = pds_gaps(self.logger)
+        result = pds_gaps(self.logger, district_name='RANCHI', block_name='NAGRI', month='03', year='2018')
         # result = fetch_via_masik_vitaran(self.logger)
         # result = fetch_cardholders_via_vivaran(self.logger)
         # result = fetch_via_ditigalikaran(self.logger)
