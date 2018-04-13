@@ -11,7 +11,9 @@ from bs4 import BeautifulSoup
 from wrappers.logger import loggerFetch
 import unittest
 import requests
+import time
 
+timeout=3
 dirname = './dealers/'
 filename = dirname
 district_name = 'LATEHAR'
@@ -52,7 +54,7 @@ def fetch_dealer_cmd(logger):
 
 
 # Fetch the list of all the districts for the given month and year
-def fetch_district_list(logger, month='01', year='2018'):
+def fetch_district_list(logger, cookies=None, month='01', year='2018'):
     logger.info('Fetch district list for given month[%s] and year[%s]' % (month, year))
     filename = dirname + 'district_list.html'
 
@@ -63,9 +65,10 @@ def fetch_district_list(logger, month='01', year='2018'):
     
         return district_list_html
 
-    url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
-    response = requests.post(url)
-    cookies = response.cookies
+    if not cookies:
+        url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
+        response = requests.post(url, timeout=timeout, verify=False)
+        cookies = response.cookies
 
     headers = {
         'Host': 'aahar.jharkhand.gov.in',
@@ -82,7 +85,7 @@ def fetch_district_list(logger, month='01', year='2018'):
         ('data[DistrictMonthlyReport][mnthyer]', parameters),
     ]
 
-    response =  requests.post('http://aahar.jharkhand.gov.in/district_monthly_reports', headers=headers, cookies=cookies, data=data)
+    response =  requests.post('http://aahar.jharkhand.gov.in/district_monthly_reports', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False)
 
     district_list_html = response.content
     with open(filename, 'wb') as html_file:
@@ -93,7 +96,7 @@ def fetch_district_list(logger, month='01', year='2018'):
 
 
 # Fetch the dealer list of all the blocks given the district
-def fetch_block_list(logger, district_code=None, month=None, year_code=None, district_param=None, district_lookup=None):
+def fetch_block_list(logger, cookies=None, district_code=None, month=None, year_code=None, district_param=None, district_lookup=None):
     logger.info('Fetch block list for given district[%s]' % (district_param))
     filename = dirname + 'block_list.html'
 
@@ -103,10 +106,13 @@ def fetch_block_list(logger, district_code=None, month=None, year_code=None, dis
             block_list_html = html_file.read()
     
         return block_list_html
-    
-    url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
-    response = requests.post(url)
-    cookies = response.cookies
+
+    if not cookies:
+        pass
+    else:
+        url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
+        response = requests.post(url, timeout=timeout, verify=False)
+        cookies = response.cookies
 
     headers = {
         'Host': 'aahar.jharkhand.gov.in',
@@ -127,7 +133,7 @@ def fetch_block_list(logger, district_code=None, month=None, year_code=None, dis
         ('data[BlockCityMonthlyReport][ide]', parameters),
     ]
 
-    response = requests.post('http://aahar.jharkhand.gov.in/block_city_monthly_reports', headers=headers, cookies=cookies, data=data)
+    response = requests.post('http://aahar.jharkhand.gov.in/block_city_monthly_reports', headers=headers, cookies=cookies, data=data, verify=False)
 
     block_list_html = response.content
 
@@ -139,7 +145,7 @@ def fetch_block_list(logger, district_code=None, month=None, year_code=None, dis
 
 
 # Fetch the dealer list where you can find all the dealer codes for the given block
-def fetch_dealer_list(logger, block_param=None, district_name=None, block_name=None, month='01', year=None):
+def fetch_dealer_list(logger, cookies=None, block_param=None, district_name=None, block_name=None, month='01', year=None):
     logger.info('Fetch dealer list for given block_param[%s]' % (block_param))
     filename = dirname + 'dealer_list.html'
 
@@ -150,9 +156,10 @@ def fetch_dealer_list(logger, block_param=None, district_name=None, block_name=N
     
         return dealer_list_html
 
-    url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
-    response = requests.post(url)
-    cookies = response.cookies
+    if not cookies:
+        url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
+        response = requests.post(url, timeout=timeout, verify=False)
+        cookies = response.cookies
 
     headers = {
         'Host': 'aahar.jharkhand.gov.in',
@@ -177,7 +184,7 @@ def fetch_dealer_list(logger, block_param=None, district_name=None, block_name=N
         ('data[DealerMonthlyReport][ide]', parameters),
     ]
     
-    dealer_list_html = requests.post('http://aahar.jharkhand.gov.in/dealer_monthly_reports', headers=headers, cookies=cookies, data=data).content
+    dealer_list_html = requests.post('http://aahar.jharkhand.gov.in/dealer_monthly_reports', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False).content
 
     with open(filename, 'wb') as html_file:
         logger.info('Writing [%s]' % filename)
@@ -186,7 +193,7 @@ def fetch_dealer_list(logger, block_param=None, district_name=None, block_name=N
     return dealer_list_html
 
 # Fetch the details of the dealer given the dealer code
-def fetch_dealer_detail(logger, dealer_code=None):
+def fetch_dealer_detail(logger, cookies=None, dealer_code=None):
     logger.info('Fetch dealer list for given dealer_code[%s]' % (dealer_code))
     # filename = './dealers/' + district_name + '_' + block_name + '_' + shop_name + '_' + dealer_code[0:36] + '.html'
     shop_code = dealer_code[0:36]
@@ -200,9 +207,10 @@ def fetch_dealer_detail(logger, dealer_code=None):
     
         return dealer_detail_html
 
-    url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
-    response = requests.post(url)
-    cookies = response.cookies
+    if not cookies:
+        url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
+        response = requests.post(url, timeout=timeout, verify=False)
+        cookies = response.cookies
 
     headers = {
         'Host': 'aahar.jharkhand.gov.in',
@@ -221,8 +229,16 @@ def fetch_dealer_detail(logger, dealer_code=None):
         ('data[DealerMonthlyReport][ide]', dealer_code),
     ]
 
-    logger.debug('Data [%s]' % data)
-    response = requests.post('http://aahar.jharkhand.gov.in/transactions/transaction', headers=headers, data=data,cookies=cookies)
+    logger.info('Making the request with Data [%s]' % data)
+    #time.sleep(300)
+    try:
+        response = requests.post('http://aahar.jharkhand.gov.in/transactions/transaction', headers=headers, data=data, cookies=cookies, timeout=timeout, verify=False)
+    except Exception as e:
+        logger.error('Caught Error[%s]' % e)
+        try:
+            response = requests.post('http://aahar.jharkhand.gov.in/transactions/transaction', headers=headers, data=data, cookies=cookies, timeout=timeout, verify=False)
+        except Exception as e:
+            logger.error('Repeat Caught Error[%s]' % e)
 
     bs = BeautifulSoup(response.content, 'html.parser')
     
@@ -242,9 +258,9 @@ def fetch_dealer_detail(logger, dealer_code=None):
     return response.content
 
 
-def populate_dealer_lookup(logger, block_param):
+def populate_dealer_lookup(logger, cookies=None, block_param=None):
     logger.info('Fetching Dealer List for [%s]...' % (block_param))
-    dealer_list_html = fetch_dealer_list(logger, block_param=block_param)
+    dealer_list_html = fetch_dealer_list(logger, cookies=cookies, block_param=block_param)
 
     bs = BeautifulSoup(dealer_list_html, 'html.parser')
     click_list = bs.findAll('a')
@@ -258,17 +274,17 @@ def populate_dealer_lookup(logger, block_param):
             beg = a.find("('") + 2
             end = a.find("')") 
             dealer_param = a[beg:end]
-            logger.info('Fetching the dealer[%s]...' % dealer_param)
-            fetch_dealer_detail(logger, dealer_param)
             dealer_code = dealer_param[:dealer_param.find(',')]
             dealer_lookup[dealer_code] = dealer_name
+            logger.info('Fetching the dealer[%s]...' % dealer_code)
+            fetch_dealer_detail(logger, cookies=cookies, dealer_code=dealer_code)
     logger.info('Dealer Lookup[%s]' % dealer_lookup)
     
     return 'SUCCESS'
 
-def dealer_gaps_report(logger, block_param):
+def dealer_gaps_report(logger, block_param, cookies=None):
     logger.info('Fetching Dealer List for [%s]...' % (block_param))
-    dealer_list_html = fetch_dealer_list(logger, block_param)
+    dealer_list_html = fetch_dealer_list(logger, cookies=cookies, block_param=block_param)
 
     bs = BeautifulSoup(dealer_list_html, 'html.parser')
     td_list = bs.findAll('td', { "class": "main" })
@@ -321,11 +337,11 @@ def dealer_gaps_report(logger, block_param):
             dealer_param = a[beg:end]
             dealer_code = dealer_param[:dealer_param.find(',')]
             logger.info('Fetching the dealer[%s]...' % dealer_code)
-            fetch_dealer_detail(logger, dealer_code) #  FIXME - can be enabled if need be with dealer_param
+            fetch_dealer_detail(logger, cookies=cookies, dealer_code=dealer_code) #  FIXME - can be enabled if need be with dealer_param
             dealer_lookup[dealer_code] = dealer_name
 
-            ph_allocated = fetch_entitlement_for_cardholders_by_dealer(logger, card_type='5', dealer_code=dealer_code, district_name=district_name, block_name=block_name)
-            aay_allocated = fetch_entitlement_for_cardholders_by_dealer(logger, card_type='6', dealer_code=dealer_code, district_name=district_name, block_name=block_name)
+            ph_allocated = fetch_entitlement_for_cardholders_by_dealer(logger, cookies=cookies, card_type='5', dealer_code=dealer_code, district_name=district_name, block_name=block_name)
+            aay_allocated = fetch_entitlement_for_cardholders_by_dealer(logger, cookies=cookies, card_type='6', dealer_code=dealer_code, district_name=district_name, block_name=block_name)
             ration_allocated = ph_allocated + aay_allocated
             logger.info('Allocated[%s]' % str(ration_allocated))
 
@@ -367,9 +383,9 @@ def dealer_gaps_report(logger, block_param):
     return 'SUCCESS'
 
 
-def populate_district_lookup(logger, month=None, year=None):
+def populate_district_lookup(logger, cookies=None, month=None, year=None):
     logger.info('Fetching district_list...')
-    district_list_html = fetch_district_list(logger, month = month, year = year)
+    district_list_html = fetch_district_list(logger, cookies=cookies, month = month, year = year)
 
     bs = BeautifulSoup(district_list_html, 'html.parser')
     click_list = bs.findAll('a')
@@ -394,9 +410,9 @@ def populate_district_lookup(logger, month=None, year=None):
     return district_lookup
 
 
-def populate_block_lookup(logger, district_param=None, district_lookup=None):
+def populate_block_lookup(logger, cookies=None, district_param=None, district_lookup=None):
     logger.info('Fetching block_list...')
-    block_list_html = fetch_block_list(logger, district_param=district_param, district_lookup=district_lookup)
+    block_list_html = fetch_block_list(logger, cookies=cookies, district_param=district_param, district_lookup=district_lookup)
 
     bs = BeautifulSoup(block_list_html, 'html.parser')
     click_list = bs.findAll('a')
@@ -428,7 +444,7 @@ def fetch_via_masik_vitaran(logger):
 
     block_lookup = populate_block_lookup(logger, district_lookup=district_lookup, district_param=district_lookup[district_name]) # district_param='14,01,5')
 
-    populate_dealer_lookup(logger, block_lookup[block_name]) # '151,01,5,14') # 
+    populate_dealer_lookup(logger, block_param=block_lookup[block_name]) # '151,01,5,14') # 
 
     return 'SUCCESS'
 
@@ -450,13 +466,23 @@ def pds_gaps(logger, district_name=None, block_name=None, month=None, year=None)
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise        
+
+    url='http://aahar.jharkhand.gov.in/'
+    try:
+        response = requests.post(url, timeout=timeout, verify=False)
+    except Exception as e:
+        logger.error('Caught Exception[%s]' % e)
+        response = requests.post(url, timeout=timeout, verify=False)
         
-    district_lookup = populate_district_lookup(logger, month = '03', year = '2018')
+    cookies = response.cookies
 
-    logger.info('Populating blocks for district[%s]' % district_name)
-    block_lookup = populate_block_lookup(logger, district_lookup=district_lookup, district_param=district_lookup[district_name]) # district_param='14,01,5')
+    district_lookup = populate_district_lookup(logger, cookies=cookies, month = month, year = year)
 
-    dealer_gaps_report(logger, block_lookup[block_name]) # '151,01,5,14') # 
+    district_param=district_lookup[district_name]
+    logger.info('Populating blocks for district[%s] param[%s]' % (district_name, district_param))
+    block_lookup = populate_block_lookup(logger, cookies=cookies, district_lookup=district_lookup, district_param=district_param) # district_param='14,01,5')
+
+    dealer_gaps_report(logger, cookies=cookies, block_param=block_lookup[block_name]) # '151,01,5,14') # 
 
     return 'SUCCESS'
 
@@ -666,11 +692,15 @@ def post_ration_req(logger, cookies=None, village_code=None, card_type=None, rat
             ration_list_html = html_file.read()
     
         return ration_list_html
-
+    logger.info('File not already downloaded. So fetching...')
 
     if not cookies:        
         url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
-        response = requests.post(url)
+        try:
+            response = requests.post(url, timeout=timeout, verify=False)
+        except Exception as e:
+            logger.error('Caught Error[%s]' % e)
+            response = requests.post(url, timeout=timeout, verify=False)
         cookies = response.cookies
 
     headers = {
@@ -715,9 +745,17 @@ def post_ration_req(logger, cookies=None, village_code=None, card_type=None, rat
             # ('data[SeccCardholder][captcha]', 'b8d79'),
         ]
 
-    logger.debug('Data [%s]' % data)
-    
-    response = requests.post('http://aahar.jharkhand.gov.in/secc_cardholders/searchRationResults', headers=headers, cookies=cookies, data=data)
+    logger.info('Making request with Data [%s]' % data)
+
+    #time.sleep(300)
+    try:
+        response = requests.post('http://aahar.jharkhand.gov.in/secc_cardholders/searchRationResults', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False)
+    except Exception as e:
+        logger.error('Caught Error[%s]' % e)
+        try:
+            response = requests.post('http://aahar.jharkhand.gov.in/secc_cardholders/searchRationResults', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False)
+        except Exception as e:
+            logger.error('Repeat Caught Error[%s]' % e)
 
     ration_list_html = response.content
 
@@ -809,7 +847,7 @@ def fetch_entitlement_for_cardholders_by_dealer(logger, cookies=None, card_type=
 def fetch_cardholders_via_vivaran(logger):
     logger.info('Getting the Ration Details')
     url='http://aahar.jharkhand.gov.in/secc_cardholders/searchRation'
-    response = requests.post(url)
+    response = requests.post(url, timeout=timeout, verify=False)
     cookies = response.cookies
 
     #ration_list = populate_ration_list(logger, cookies=cookies, village_code='366890', card_type='5')
@@ -837,7 +875,7 @@ def post_ration_reference(logger, cookies=None, district_code=None, block_code=N
 
     if not cookies:        
         url='http://aahar.jharkhand.gov.in/secc_districts/districts'
-        response = requests.post(url)
+        response = requests.post(url, timeout=timeout, verify=False)
         cookies = response.cookies
 
     headers = {
@@ -863,13 +901,13 @@ def post_ration_reference(logger, cookies=None, district_code=None, block_code=N
             data.append(('data[SeccBlockReport][ide]', block_code))
             logger.debug('Posting with Data[%s]' % str(data))
             logger.info('Posting with district[%s] block [%s]' % (district_code, block_code))
-            response = requests.post('http://aahar.jharkhand.gov.in/secc_village_wards/villageCardholderCount', headers=headers, cookies=cookies, data=data)
+            response = requests.post('http://aahar.jharkhand.gov.in/secc_village_wards/villageCardholderCount', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False)
             filename = district_code + '_district_' + block_code + '_block.html'
         else:
             data.append(('data[SeccDistrictReport][ide]', district_code))
             logger.info('Posting with District [%s]' % district_code)
             logger.debug('Posting with Data[%s]' % str(data))
-            response = requests.post('http://aahar.jharkhand.gov.in/secc_blocks/blockCardholderCount', headers=headers, cookies=cookies, data=data)
+            response = requests.post('http://aahar.jharkhand.gov.in/secc_blocks/blockCardholderCount', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False)
             filename = district_code + '_district.html'
     else:
         response = requests.get('http://aahar.jharkhand.gov.in/secc_districts/districts', headers=headers, cookies=cookies)
@@ -1036,7 +1074,7 @@ def ration_village_fetch(logger, cookies=None, district_name=None, block_name=No
 def fetch_via_ditigalikaran(logger):
     logger.info('Getting the Ration Summary')
     url='http://aahar.jharkhand.gov.in/secc_districts/districts'
-    response = requests.post(url)
+    response = requests.post(url, timeout=timeout, verify=False)
     cookies = response.cookies
 
     district_ration_html = post_ration_reference(logger, cookies=cookies)
@@ -1089,7 +1127,9 @@ class TestSuite(unittest.TestCase):
         self.assertEqual('SUCCESS', result)
 
     def test_fetch_pds_transactions(self):
-        result = pds_gaps(self.logger, district_name='RANCHI', block_name='NAGRI', month='03', year='2018')
+        result = pds_gaps(self.logger, district_name='LATEHAR', block_name='MANIKA', month='03', year='2018')
+        # result = pds_gaps(self.logger, district_name='RANCHI', block_name='NAGRI', month='03', year='2018')
+        # result = pds_gaps(self.logger, district_name='RANCHI', block_name='NAGRI', month='03', year='2018')
         # result = fetch_via_masik_vitaran(self.logger)
         # result = fetch_cardholders_via_vivaran(self.logger)
         # result = fetch_via_ditigalikaran(self.logger)
