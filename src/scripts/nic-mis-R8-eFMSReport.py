@@ -9,6 +9,7 @@ from os import errno
 from bs4 import BeautifulSoup
 
 from wrappers.logger import loggerFetch
+
 import unittest
 import requests
 
@@ -19,7 +20,7 @@ import requests
 
 dirname = './reports/'
 
-csv_buffer=['Dealer Name, Transaction Count By Invoice, Transaction Count, Ration Card Count, Transaction(%), Ration Disbursed, Ration Allocated, Ratio(%)\n']
+csv_buffer=['Wagelist No,Job card no,Applicant no,Applicant Name,Work Code,Work Name,MSR no,Reference No,Status,Rejection Reason,Proccess Date,Wage list FTO No.,Serial No.']
 
 
 #############
@@ -99,7 +100,7 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
     cookies = response.cookies
     reference_no_html = response.content
 
-    filename = dirname + 'z.html'
+    filename = dirname + 'rejection_details.html'
     with open(filename, 'wb') as html_file:
         logger.info('Writing [%s]' % filename)
         html_file.write(reference_no_html)
@@ -116,6 +117,7 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
     #FIXME fetch_fto_status_report(logger, cookies=cookies)
 
     ref_no = '3406004000NRG18010220180328089'
+    ref_no = '3406004000NRG18021120170259332'
     #Reference url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?panchayat_code=3406004009&panchayat_name=Badkadihblock_code=3406004&block_name=Manika&flg=W&state_code=34&ref_no=3406004000NRG18010220180328089&fin_year=2017-2018&source='
     url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?panchayat_code=%s&panchayat_name=%sblock_code=%s&block_name=%s&flg=W&state_code=%s&ref_no=%s&fin_year=%s&source=' % (panchayat_code, panchayat_name, block_code, block_name, state_code, ref_no, fin_year)
     try:
@@ -124,12 +126,77 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
     except Exception as e:
         logger.error('Caught Exception[%s]' % e)
 
-    filename = dirname + 'y.html'
+    transaction_trail_html = response.content
+    filename = dirname + '%s_%s_%s_%s_%s_%s.html' % (state_name, district_name, block_name, panchayat_name, ref_no, fin_year)
     with open(filename, 'wb') as html_file:
         logger.info('Writing [%s]' % filename)
-        html_file.write(response.content)
+        html_file.write(transaction_trail_html)
+
+    bs = BeautifulSoup(transaction_trail_html, 'html.parser')
+    table = bs.find(id="ctl00_ContentPlaceHolder1_grid_find_ref")
+    logger.debug(str(table))
+
+    tr_list = table.select('tr')
+    logger.debug(str(tr_list))
+    for tr in tr_list:
+        if len(tr.select('td')) != 13:
+            continue
+        td = table.findChild('td')
+        wagelist_no = td.text
+        logger.info('Wagelist_No[%s]' % wagelist_no)
     
+        td = td.findNext('td')
+        jobcard_no = td.text
+        logger.info('Jobcard_No[%s]' % jobcard_no)
     
+        td = td.findNext('td')
+        applicant_no = td.text
+        logger.info('Applicant_No[%s]' % applicant_no)
+    
+        td = td.findNext('td')
+        applicant_name = td.text
+        logger.info('Applicant_Name[%s]' % applicant_name)
+    
+        td = td.findNext('td')
+        work_code = td.text
+        logger.info('Work_Code[%s]' % work_code)
+    
+        td = td.findNext('td')
+        work_name = td.text
+        logger.info('Work_Name[%s]' % work_name)
+    
+        td = td.findNext('td')
+        msr_no = td.text
+        logger.info('Msr_No[%s]' % msr_no)
+    
+        td = td.findNext('td')
+        reference_no = td.text
+        logger.info('Reference_No[%s]' % reference_no)
+    
+        td = td.findNext('td')
+        status = td.text
+        logger.info('Status[%s]' % status)
+    
+        td = td.findNext('td')
+        rejection_reason = td.text
+        logger.info('Rejection_Reason[%s]' % rejection_reason)
+    
+        td = td.findNext('td')
+        process_date = td.text
+        logger.info('Process_Date[%s]' % process_date)
+    
+        td = td.findNext('td')
+        wagelist_fto_no = td.text
+        logger.info('Wagelist_Fto_No[%s]' % wagelist_fto_no)
+    
+        td = td.findNext('td')
+        serial_no = td.text
+        logger.info('Serial_No[%s]' % serial_no)
+    
+        row = '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s' % (wagelist_no, jobcard_no, applicant_no, applicant_name, work_code, work_name, msr_no, reference_no, status, rejection_reason, process_date, wagelist_fto_no, serial_no)
+        logger.info(row)
+        csv_buffer.append(row)
+        
     return 'SUCCESS'
     
 
