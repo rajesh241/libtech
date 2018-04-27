@@ -61,22 +61,30 @@ def fetch_fto_status_report(logger, cookies=None): # Cookie? FIXME
 def populate_panchayat_list(logger, state_name, state_code, district_name, district_code, block_name, block_code, fin_year):
     panchayat_list = {}
 
-    #Reference url = 'http://nregasp2.nic.in/netnrega/Progofficer/PoIndexFrame.aspx?flag_debited=D&lflag=local&District_Code=3406&district_name=LATEHAR&state_name=JHARKHAND&state_Code=34&finyear=2018-2019&check=1&block_name=Manika&Block_Code=3406004'
-    url = 'http://nregasp2.nic.in/netnrega/Progofficer/PoIndexFrame.aspx?flag_debited=D&lflag=local&District_Code=3406&district_name=LATEHAR&state_name=JHARKHAND&state_Code=34&finyear=2018-2019&check=1&block_name=Manika&Block_Code=3406004'
-
-    try:
-        logger.info('Fetching URL[%s]' % url)
-        response = requests.post(url)
-    except Exception as e:
-        logger.error('Caught Exception[%s]' % e)
-        
-    panchayat_list_html = response.content
+    prefix = dirname + '%s_%s_%s_%s_' % (fin_year, state_name, district_name, block_name)
+    filename = prefix + 'panchayat_list.html'
+    logger.info('FileName[%s]' % filename)
     
-    filename = dirname + 'panchayat_list.html'
-    with open(filename, 'wb') as html_file:
-        logger.info('Writing [%s]' % filename)
-        html_file.write(panchayat_list_html)
-
+    if os.path.exists(filename):
+        with open(filename, 'rb') as html_file:
+            logger.info('File already donwnloaded. Reading [%s]' % filename)
+            panchayat_list_html = html_file.read()
+    else:
+        #Reference url = 'http://nregasp2.nic.in/netnrega/Progofficer/PoIndexFrame.aspx?flag_debited=D&lflag=local&District_Code=3406&district_name=LATEHAR&state_name=JHARKHAND&state_Code=34&finyear=2018-2019&check=1&block_name=Manika&Block_Code=3406004'
+        url = 'http://nregasp2.nic.in/netnrega/Progofficer/PoIndexFrame.aspx?flag_debited=D&lflag=local&District_Code=3406&district_name=LATEHAR&state_name=JHARKHAND&state_Code=34&finyear=2018-2019&check=1&block_name=Manika&Block_Code=3406004'
+    
+        try:
+            logger.info('Fetching URL[%s]' % url)
+            response = requests.get(url)
+        except Exception as e:
+            logger.error('Caught Exception[%s]' % e)
+            
+        panchayat_list_html = response.content
+        
+        with open(filename, 'wb') as html_file:
+            logger.info('Writing [%s]' % filename)
+            html_file.write(panchayat_list_html)
+    
     bs = BeautifulSoup(panchayat_list_html, 'html.parser')
 
     table = bs.find(id='ctl00_ContentPlaceHolder1_gvpanch')
@@ -140,7 +148,15 @@ def parse_transaction_trail(logger, transaction_trail_html):
     table = bs.find(id='ctl00_ContentPlaceHolder1_grid_find_ref')
     logger.debug(str(table))
 
-    tr_list = table.select('tr')
+    try:
+        tr_list = table.select('tr')
+    except Exception as e:
+        if e == "'NoneType' object has no attribute 'select'":
+            logger.warning('No Data Found[%s]' % tr_list)
+            return
+        else:
+            logger.error('FIXME[%s]' % e)
+            return
     logger.debug(str(tr_list))
     is_first_row = True
     for tr in tr_list:
@@ -215,14 +231,17 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
     if not block_name:
         block_name = 'Manika'
     if not panchayat_name:
-        panchayat_name = 'Badkadih'
+        panchayat_name = 'Namudag'
     if not fin_year:
         fin_year = '2017-2018'
 
     state_code = '34'
     district_code = '3406'
     block_code = '3406004'
-    panchayat_code = '3406004009'
+    panchayat_code = None # '3406004013' # for Namudag
+
+    prefix = dirname + '%s_%s_%s_%s_' % (fin_year, state_name, district_name, block_name)
+    logger.info('PREFIX[%s]' % prefix)
 
     logger.info('Fetching report for State[%s] District[%s] Block[%s] Panachayat[%s] Financial Year[%s]' % (state_name, district_name, block_name, panchayat_name, fin_year))
 
@@ -232,60 +251,69 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
         if e.errno != errno.EEXIST:
             raise        
 
-    panchayat_list = populate_panchayat_list(logger, state_name, state_code, district_name, district_code, block_name, block_code, fin_year)
+    if panchayat_code:
+        panchayat_list = { panchayat_name: panchayat_code }
+    else:
+        panchayat_list = populate_panchayat_list(logger, state_name, state_code, district_name, district_code, block_name, block_code, fin_year)
 
-    
     for (panchayat_name, panchayat_code) in panchayat_list.items():
-        # reference_no_html = fetch_reference_numbers_html(logger, state_name, state_code, district_name, district_code, block_name, block_code, panchayat_name, panchayat_code, fin_year)
-    
-        #Reference url = 'http://nregasp2.nic.in/netnrega/FTO/ResponseDetailStatusReport.aspx?lflag=eng&flg=W&page=b&state_name=JHARKHAND&state_code=34&district_name=LATEHAR&district_code=3406&block_name=Manika&block_code=3406004&panchayat_name=Badkadih&panchayat_code=3406004009&fin_year=2017-2018&typ=R&mode=B&source=&'
-        url = 'http://nregasp2.nic.in/netnrega/FTO/ResponseDetailStatusReport.aspx?lflag=eng&flg=W&page=b&state_name=%s&state_code=%s&district_name=%s&district_code=%s&block_name=%s&block_code=%s&panchayat_name=%s&panchayat_code=%s&fin_year=%s&typ=R&mode=B&source=&' % (state_name, state_code, district_name, district_code, block_name, block_code, panchayat_name, panchayat_code, fin_year)
-            
+        filename = prefix + panchayat_name + '_' + 'rejection_details.html'
+
+        if os.path.exists(filename):
+            with open(filename, 'rb') as html_file:
+                logger.info('File already donwnloaded. Reading [%s]' % filename)
+                reference_no_html = html_file.read()
+        else:
+            # reference_no_html = fetch_reference_numbers_html(logger, state_name, state_code, district_name, district_code, block_name, block_code, panchayat_name, panchayat_code, fin_year)
         
-        try:
-            logger.info('Fetching URL[%s]' % url)
-            response = requests.post(url)
-        except Exception as e:
-            logger.error('Caught Exception[%s]' % e)
+            #Reference url = 'http://nregasp2.nic.in/netnrega/FTO/ResponseDetailStatusReport.aspx?lflag=eng&flg=W&page=b&state_name=JHARKHAND&state_code=34&district_name=LATEHAR&district_code=3406&block_name=Manika&block_code=3406004&panchayat_name=Badkadih&panchayat_code=3406004009&fin_year=2017-2018&typ=R&mode=B&source=&'
+            url = 'http://nregasp2.nic.in/netnrega/FTO/ResponseDetailStatusReport.aspx?lflag=eng&flg=W&page=b&state_name=%s&state_code=%s&district_name=%s&district_code=%s&block_name=%s&block_code=%s&panchayat_name=%s&panchayat_code=%s&fin_year=%s&typ=R&mode=B&source=&' % (state_name, state_code, district_name, district_code, block_name, block_code, panchayat_name, panchayat_code, fin_year)
+    
             
-        reference_no_html = response.content
-    
-        filename = dirname + 'rejection_details.html'
-        with open(filename, 'wb') as html_file:
-            logger.info('Writing [%s]' % filename)
-            html_file.write(reference_no_html)
-    
-        '''
-        district_lookup = populate_district_lookup(logger, cookies=cookies, month = month, year = year)
-    
-        district_param=district_lookup[district_name]
-        logger.info('Populating blocks for district[%s] param[%s]' % (district_name, district_param))
-        block_lookup = populate_block_lookup(logger, cookies=cookies, district_lookup=district_lookup, district_param=district_param) # district_param='14,01,5')
-        '''
-    
-        reference_no_list = populate_reference_no_lookup(logger, reference_no_html)
-        logger.debug(reference_no_list)
-    
-        for ref_no in reference_no_list:
-            # ref_no = '3406004000NRG18010220180328089'
-            # ref_no = '3406004000NRG18021120170259332'
-            #Reference url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?panchayat_code=3406004009&panchayat_name=Badkadihblock_code=3406004&block_name=Manika&flg=W&state_code=34&ref_no=3406004000NRG18010220180328089&fin_year=2017-2018&source='
-            url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?panchayat_code=%s&panchayat_name=%sblock_code=%s&block_name=%s&flg=W&state_code=%s&ref_no=%s&fin_year=%s&source=' % (panchayat_code, panchayat_name, block_code, block_name, state_code, ref_no, fin_year)
             try:
                 logger.info('Fetching URL[%s]' % url)
                 response = requests.get(url)
             except Exception as e:
                 logger.error('Caught Exception[%s]' % e)
+                
+            reference_no_html = response.content
         
-            transaction_trail_html = response.content
-            filename = dirname + '%s_%s_%s_%s_%s_%s.html' % (state_name, district_name, block_name, panchayat_name, ref_no, fin_year)
             with open(filename, 'wb') as html_file:
                 logger.info('Writing [%s]' % filename)
-                html_file.write(transaction_trail_html)
+                html_file.write(reference_no_html)
         
+        reference_no_list = populate_reference_no_lookup(logger, reference_no_html)
+        logger.debug(reference_no_list)
+    
+        for ref_no in reference_no_list:
+            filename = prefix + panchayat_name + '_' + ref_no + '.html'
+
+            if os.path.exists(filename):
+                with open(filename, 'rb') as html_file:
+                    logger.info('File already donwnloaded. Reading [%s]' % filename)
+                    transaction_trail_html = html_file.read()
+            else:
+                
+                # ref_no = '3406004000NRG18010220180328089'
+                # ref_no = '3406004000NRG18021120170259332'
+                #Reference url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?panchayat_code=3406004009&panchayat_name=Badkadihblock_code=3406004&block_name=Manika&flg=W&state_code=34&ref_no=3406004000NRG18010220180328089&fin_year=2017-2018&source='
+                url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?panchayat_code=%s&panchayat_name=%sblock_code=%s&block_name=%s&flg=W&state_code=%s&ref_no=%s&fin_year=%s&source=' % (panchayat_code, panchayat_name, block_code, block_name, state_code, ref_no, fin_year)
+                try:
+                    logger.info('Fetching URL[%s]' % url)
+                    response = requests.get(url)
+                except Exception as e:
+                    logger.error('Caught Exception[%s]' % e)
+            
+                transaction_trail_html = response.content
+                # filename = dirname + '%s_%s_%s_%s_%s_%s.html' % (state_name, district_name, block_name, panchayat_name, ref_no, fin_year)
+                with open(filename, 'wb') as html_file:
+                    logger.info('Writing [%s]' % filename)
+                    html_file.write(transaction_trail_html)
+            
             parse_transaction_trail(logger, transaction_trail_html)
     
-        filename = dirname + '%s_%s_%s_%s_%s.csv' % (state_name, district_name, block_name, panchayat_name, fin_year)
+        #filename = dirname + '%s_%s_%s_%s_%s.csv' % (state_name, district_name, block_name, panchayat_name, fin_year)
+        filename = prefix + panchayat_name + '_' + 'report.csv'
         with open(filename, 'w') as csv_file:
             logger.info("Writing to [%s]" % filename)
             csv_file.write(''.join(csv_buffer))
