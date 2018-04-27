@@ -18,6 +18,7 @@ import requests
 # Global Declarations
 #######################
 
+timeout = 3
 dirname = './reports/'
 
 csv_buffer=['Wagelist No,Job card no,Applicant no,Applicant Name,Work Code,Work Name,MSR no,Reference No,Status,Rejection Reason,Proccess Date,Wage list FTO No.,Serial No.\n']
@@ -58,7 +59,7 @@ def fetch_fto_status_report(logger, cookies=None): # Cookie? FIXME
         logger.info('Writing [%s]' % filename)
         html_file.write(response.content)
 
-def populate_panchayat_list(logger, state_name, state_code, district_name, district_code, block_name, block_code, fin_year):
+def populate_panchayat_list(logger, state_name, state_code, district_name, district_code, block_name, block_code, fin_year, cookies):
     panchayat_list = {}
 
     prefix = dirname + '%s_%s_%s_%s_' % (fin_year, state_name, district_name, block_name)
@@ -70,12 +71,11 @@ def populate_panchayat_list(logger, state_name, state_code, district_name, distr
             logger.info('File already donwnloaded. Reading [%s]' % filename)
             panchayat_list_html = html_file.read()
     else:
-        #Reference url = 'http://nregasp2.nic.in/netnrega/Progofficer/PoIndexFrame.aspx?flag_debited=D&lflag=local&District_Code=3406&district_name=LATEHAR&state_name=JHARKHAND&state_Code=34&finyear=2018-2019&check=1&block_name=Manika&Block_Code=3406004'
         url = 'http://nregasp2.nic.in/netnrega/Progofficer/PoIndexFrame.aspx?flag_debited=D&lflag=local&District_Code=3406&district_name=LATEHAR&state_name=JHARKHAND&state_Code=34&finyear=2018-2019&check=1&block_name=Manika&Block_Code=3406004'
     
         try:
             logger.info('Fetching URL[%s]' % url)
-            response = requests.get(url)
+            response = requests.get(url, timeout=timeout, cookies=cookies)
         except Exception as e:
             logger.error('Caught Exception[%s]' % e)
             
@@ -222,14 +222,14 @@ def parse_transaction_trail(logger, transaction_trail_html):
         csv_buffer.append(row)
     
 
-def fetch_efms_report(logger, state_name=None, district_name=None, block_name=None, panchayat_name=None, fin_year=None):
+def fetch_efms_report(logger, state_name=None, district_name=None, block_name=None, panchayat_name=None, fin_year=None, cookies=None):
     logger.info('Fetch the Rejected Payments Report')
     if not state_name:
         state_name = 'JHARKHAND'
     if not district_name:
         district_name = 'LATEHAR'
     if not block_name:
-        block_name = 'Manika'
+        block_name = 'Mahuadanr'
     if not panchayat_name:
         panchayat_name = 'Namudag'
     if not fin_year:
@@ -237,7 +237,7 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
 
     state_code = '34'
     district_code = '3406'
-    block_code = '3406004'
+    block_code = '3406007'
     panchayat_code = None # '3406004013' # for Namudag
 
     prefix = dirname + '%s_%s_%s_%s_' % (fin_year, state_name, district_name, block_name)
@@ -251,10 +251,16 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
         if e.errno != errno.EEXIST:
             raise        
 
+    if not cookies:
+        url='http://nregasp2.nic.in/netnrega/homestciti.aspx?state_code=34&state_name=%s' % state_name
+        response = requests.get(url, timeout=timeout)
+        cookies = response.cookies
+    
+        
     if panchayat_code:
         panchayat_list = { panchayat_name: panchayat_code }
     else:
-        panchayat_list = populate_panchayat_list(logger, state_name, state_code, district_name, district_code, block_name, block_code, fin_year)
+        panchayat_list = populate_panchayat_list(logger, state_name, state_code, district_name, district_code, block_name, block_code, fin_year, cookies)
 
     for (panchayat_name, panchayat_code) in panchayat_list.items():
         filename = prefix + panchayat_name + '_' + 'rejection_details.html'
@@ -264,15 +270,12 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
                 logger.info('File already donwnloaded. Reading [%s]' % filename)
                 reference_no_html = html_file.read()
         else:
-            # reference_no_html = fetch_reference_numbers_html(logger, state_name, state_code, district_name, district_code, block_name, block_code, panchayat_name, panchayat_code, fin_year)
-        
-            #Reference url = 'http://nregasp2.nic.in/netnrega/FTO/ResponseDetailStatusReport.aspx?lflag=eng&flg=W&page=b&state_name=JHARKHAND&state_code=34&district_name=LATEHAR&district_code=3406&block_name=Manika&block_code=3406004&panchayat_name=Badkadih&panchayat_code=3406004009&fin_year=2017-2018&typ=R&mode=B&source=&'
             url = 'http://nregasp2.nic.in/netnrega/FTO/ResponseDetailStatusReport.aspx?lflag=eng&flg=W&page=b&state_name=%s&state_code=%s&district_name=%s&district_code=%s&block_name=%s&block_code=%s&panchayat_name=%s&panchayat_code=%s&fin_year=%s&typ=R&mode=B&source=&' % (state_name, state_code, district_name, district_code, block_name, block_code, panchayat_name, panchayat_code, fin_year)
     
             
             try:
                 logger.info('Fetching URL[%s]' % url)
-                response = requests.get(url)
+                response = requests.get(url, timeout=timeout, cookies=cookies)
             except Exception as e:
                 logger.error('Caught Exception[%s]' % e)
                 
@@ -296,11 +299,10 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
                 
                 # ref_no = '3406004000NRG18010220180328089'
                 # ref_no = '3406004000NRG18021120170259332'
-                #Reference url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?panchayat_code=3406004009&panchayat_name=Badkadihblock_code=3406004&block_name=Manika&flg=W&state_code=34&ref_no=3406004000NRG18010220180328089&fin_year=2017-2018&source='
                 url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?panchayat_code=%s&panchayat_name=%sblock_code=%s&block_name=%s&flg=W&state_code=%s&ref_no=%s&fin_year=%s&source=' % (panchayat_code, panchayat_name, block_code, block_name, state_code, ref_no, fin_year)
                 try:
                     logger.info('Fetching URL[%s]' % url)
-                    response = requests.get(url)
+                    response = requests.get(url, timeout=timeout, cookies=cookies)
                 except Exception as e:
                     logger.error('Caught Exception[%s]' % e)
             
