@@ -71,7 +71,8 @@ def populate_panchayat_list(logger, state_name, state_code, district_name, distr
             logger.info('File already donwnloaded. Reading [%s]' % filename)
             panchayat_list_html = html_file.read()
     else:
-        url = 'http://nregasp2.nic.in/netnrega/Progofficer/PoIndexFrame.aspx?flag_debited=D&lflag=local&District_Code=3406&district_name=LATEHAR&state_name=JHARKHAND&state_Code=34&finyear=2018-2019&check=1&block_name=Manika&Block_Code=3406004'
+        #Reference url = 'http://nregasp2.nic.in/netnrega/Progofficer/PoIndexFrame.aspx?flag_debited=D&lflag=local&District_Code=3406&district_name=LATEHAR&state_name=JHARKHAND&state_Code=34&finyear=2018-2019&check=1&block_name=Manika&Block_Code=3406004'
+        url = 'http://nregasp2.nic.in/netnrega/Progofficer/PoIndexFrame.aspx?flag_debited=D&lflag=local&District_Code=%s&district_name=%s&state_name=%s&state_Code=%s&finyear=%s&check=1&block_name=%s&Block_Code=%s' % (district_code, district_name, state_name, state_code, fin_year, block_name, block_code)
     
         try:
             logger.info('Fetching URL[%s]' % url)
@@ -318,7 +319,7 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
         filename = prefix + panchayat_name + '_' + 'report.csv'
         with open(filename, 'w') as csv_file:
             logger.info("Writing to [%s]" % filename)
-            csv_file.write(''.join(csv_buffer))
+            csv_file.write(''.join(csv_buffer).encode('utf-8'))
         
     # Ends fetch_reference_no_html()
             
