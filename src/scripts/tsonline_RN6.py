@@ -25,9 +25,12 @@ from wrappers.sn import driverInitialize, driverFinalize, displayInitialize, dis
 
 timeout = 10
 
-url = 'https://bdp.tsonline.gov.in/NeFMS_TS/NeFMS/Reports/NeFMS/AccountWiseTransactionReport.aspx'
+def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=None):
+    if not state:
+        url = 'https://bdp.tsonline.gov.in/NeFMS_TS/NeFMS/Reports/NeFMS/AccountWiseTransactionReport.aspx'
+    else:
+        url = 'https://bdp.%sonline.gov.in/NeFMS_AP/NeFMS/Reports/NeFMS/AccountWiseTransactionReport.aspx' % state
 
-def fetch_rn6_report(logger, driver, district_name=None, jobcard_no=None):
     if not district_name:
         district_name = 'MAHABUBNAGAR'
 
@@ -119,7 +122,7 @@ def fetch_rn6_report(logger, driver, district_name=None, jobcard_no=None):
         # time.sleep(timeout)
     else:
         logger.error("Handlers gone wrong [" + str(driver.window_handles) + "]")
-        driver.save_screenshot('./logs/button_'+jcno+'.png')
+        driver.save_screenshot('./logs/button_'+jobcard_no+'.png')
         return 'FAILURE'
 
     try:
@@ -159,7 +162,8 @@ class TestSuite(unittest.TestCase):
         self.logger.info('...END PROCESSING')
 
     def test_rn6_report(self):
-        result = fetch_rn6_report(self.logger, self.driver)
+        result = fetch_rn6_report(self.logger, self.driver, state='ap', district_name='ANANTAPUR', jobcard_no='121673411011010257-02')
+        #result = fetch_rn6_report(self.logger, self.driver)
         self.assertEqual(result, 'SUCCESS')
 
 if __name__ == '__main__':
