@@ -18,10 +18,8 @@ import requests
 # Global Declarations
 #######################
 
-timeout = 3
+timeout = 20
 dirname = './reports/'
-
-csv_buffer=['Wagelist No,Job card no,Applicant no,Applicant Name,Work Code,Work Name,MSR no,Reference No,Status,Rejection Reason,Proccess Date,Wage list FTO No.,Serial No.\n']
 
 
 #############
@@ -76,7 +74,7 @@ def populate_panchayat_list(logger, state_name, state_code, district_name, distr
     
         try:
             logger.info('Fetching URL[%s]' % url)
-            response = requests.get(url, timeout=timeout, cookies=cookies)
+            response = requests.get(url, timeout=timeout)
         except Exception as e:
             logger.error('Caught Exception[%s]' % e)
             
@@ -144,7 +142,7 @@ def populate_reference_no_lookup(logger, reference_no_html):
     return reference_no_list
     
 
-def parse_transaction_trail(logger, transaction_trail_html):
+def parse_transaction_trail(logger, transaction_trail_html, csv_buffer):
     bs = BeautifulSoup(transaction_trail_html, 'html.parser')
     table = bs.find(id='ctl00_ContentPlaceHolder1_grid_find_ref')
     logger.debug(str(table))
@@ -223,7 +221,7 @@ def parse_transaction_trail(logger, transaction_trail_html):
         csv_buffer.append(row)
     
 
-def fetch_efms_report(logger, state_name=None, district_name=None, block_name=None, panchayat_name=None, fin_year=None, cookies=None):
+def fetch_efms_report(logger, state_name=None, district_name=None, block_name=None, block_code=None, fin_year=None, cookies=None):
     logger.info('Fetch the Rejected Payments Report')
     if not state_name:
         state_name = 'JHARKHAND'
@@ -231,20 +229,19 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
         district_name = 'LATEHAR'
     if not block_name:
         block_name = 'Mahuadanr'
-    if not panchayat_name:
-        panchayat_name = 'Namudag'
+    if not block_code:
+        block_code = '3406007'
     if not fin_year:
         fin_year = '2017-2018'
 
     state_code = '34'
     district_code = '3406'
-    block_code = '3406007'
     panchayat_code = None # '3406004013' # for Namudag
 
     prefix = dirname + '%s_%s_%s_%s_' % (fin_year, state_name, district_name, block_name)
     logger.info('PREFIX[%s]' % prefix)
 
-    logger.info('Fetching report for State[%s] District[%s] Block[%s] Panachayat[%s] Financial Year[%s]' % (state_name, district_name, block_name, panchayat_name, fin_year))
+    logger.info('Fetching report for State[%s] District[%s] Block[%s] BlockCode[%s] Financial Year[%s]' % (state_name, district_name, block_name, block_code, fin_year))
 
     try:
         os.makedirs(dirname)
@@ -264,6 +261,8 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
         panchayat_list = populate_panchayat_list(logger, state_name, state_code, district_name, district_code, block_name, block_code, fin_year, cookies)
 
     for (panchayat_name, panchayat_code) in panchayat_list.items():
+        csv_buffer = ['Wagelist No,Job card no,Applicant no,Applicant Name,Work Code,Work Name,MSR no,Reference No,Status,Rejection Reason,Proccess Date,Wage list FTO No.,Serial No.\n']
+
         filename = prefix + panchayat_name + '_' + 'rejection_details.html'
 
         if os.path.exists(filename):
@@ -276,7 +275,7 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
             
             try:
                 logger.info('Fetching URL[%s]' % url)
-                response = requests.get(url, timeout=timeout, cookies=cookies)
+                response = requests.get(url, timeout=timeout)
             except Exception as e:
                 logger.error('Caught Exception[%s]' % e)
                 
@@ -303,7 +302,7 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
                 url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?panchayat_code=%s&panchayat_name=%sblock_code=%s&block_name=%s&flg=W&state_code=%s&ref_no=%s&fin_year=%s&source=' % (panchayat_code, panchayat_name, block_code, block_name, state_code, ref_no, fin_year)
                 try:
                     logger.info('Fetching URL[%s]' % url)
-                    response = requests.get(url, timeout=timeout, cookies=cookies)
+                    response = requests.get(url, timeout=timeout)
                 except Exception as e:
                     logger.error('Caught Exception[%s]' % e)
             
@@ -313,16 +312,25 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
                     logger.info('Writing [%s]' % filename)
                     html_file.write(transaction_trail_html)
             
-            parse_transaction_trail(logger, transaction_trail_html)
+            parse_transaction_trail(logger, transaction_trail_html, csv_buffer)
+            logger.debug('The CSV buffer written [%s]' % csv_buffer)
     
         #filename = dirname + '%s_%s_%s_%s_%s.csv' % (state_name, district_name, block_name, panchayat_name, fin_year)
         filename = prefix + panchayat_name + '_' + 'report.csv'
-        with open(filename, 'w') as csv_file:
+        with open(filename, 'wb') as csv_file:
             logger.info("Writing to [%s]" % filename)
             csv_file.write(''.join(csv_buffer).encode('utf-8'))
+            #csv_file.write(''.join(csv_buffer))
         
-    # Ends fetch_reference_no_html()
-            
+        logger.info('The CSV buffer written [%s]' % csv_buffer)
+        # csv_buffer=['Wagelist No,Job card no,Applicant no,Applicant Name,Work Code,Work Name,MSR no,Reference No,Status,Rejection Reason,Proccess Date,Wage list FTO No.,Serial No.\n']
+        # logger.info('The CSV buffer reset [%s]' % csv_buffer)
+        # Ends fetch_reference_no_html()
+
+    dest = './' + prefix.strip('./reports/') + 'reports'
+    os.rename(dirname, dest)
+    logger.info('Moved to [%s]' % dest)
+
     return 'SUCCESS'
     
 
@@ -339,7 +347,10 @@ class TestSuite(unittest.TestCase):
         self.logger.info('...END PROCESSING')
 
     def test_r8_efms_report(self):
-        result = fetch_efms_report(self.logger)
+        result = fetch_efms_report(self.logger, block_name = 'Manika', block_code = '3406004', fin_year = '2016-2017')
+        result = fetch_efms_report(self.logger, block_name = 'Manika', block_code = '3406004', fin_year = '2017-2018')
+        result = fetch_efms_report(self.logger, block_name = 'Mahuadanr', block_code = '3406007', fin_year = '2016-2017')
+        result = fetch_efms_report(self.logger, block_name = 'Mahuadanr', block_code = '3406007', fin_year = '2017-2018')                
         self.assertEqual('SUCCESS', result)
 
 if __name__ == '__main__':
