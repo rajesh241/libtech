@@ -26,36 +26,22 @@ dirname = './reports/'
 # Functions
 #############
 
-def fetch_fto_status_report(logger, cookies=None): # Cookie? FIXME
-    import requests
+def generate_panchayat_reports(logger, csv_buffer, panchayat_list, prefix):
+    for (panchayat_name, panchayat_code) in panchayat_list.items():
+        panchayat_buffer = ['Wagelist No,Job card no,Applicant no,Applicant Name,Work Code,Work Name,MSR no,Reference No,Status,Rejection Reason,Proccess Date,Wage list FTO No.,Serial No.\n']
 
-    headers = {
-        'Accept-Encoding': 'gzip, deflate',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/65.0.3325.181 Chrome/65.0.3325.181 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Referer': 'http://nregasp2.nic.in/netnrega/FTO/ResponseDetailStatusReport.aspx?lflag=eng&flg=W&page=b&state_name=JHARKHAND&state_code=34&district_name=LATEHAR&district_code=3406&block_name=Manika&block_code=3406004&panchayat_name=Badkadih&panchayat_code=3406004009&fin_year=2017-2018&typ=R&mode=B&source=&Digest=svGST7WUb4z13TVhomEJOg',
-        'Connection': 'keep-alive',
-    }
+        for row in csv_buffer[1:]:
+            jobcode_str = 'JH-06-004-' + panchayat_code[-3:]
+            logger.info('Searching %s in ROW[%s]' % (jobcode_str, row))
+            if jobcode_str in row:
+                panchayat_buffer.append(row)
+                
+        filename = prefix + panchayat_name + '_' + 'report.csv'
+        with open(filename, 'wb') as csv_file:
+            logger.info("Writing to [%s]" % filename)
+            csv_file.write(''.join(panchayat_buffer).encode('utf-8'))
+            #csv_file.write(''.join(panchayat_buffer))
     
-    params = (
-        ('panchayat_code', '3406004009'),
-        ('panchayat_name', 'Badkadihblock_code=3406004'),
-        ('block_name', 'Manika'),
-        ('flg', 'W'),
-        ('state_code', '34'),
-        ('ref_no', '3406004000NRG18010220180328089'),
-        ('fin_year', '2017-2018'),
-        ('source', ''),
-    )
-    
-    response = requests.get('http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx', headers=headers, params=params)
-
-    filename = dirname + 'report.html'
-    with open(filename, 'wb') as html_file:
-        logger.info('Writing [%s]' % filename)
-        html_file.write(response.content)
 
 def populate_panchayat_list(logger, state_name, state_code, district_name, district_code, block_name, block_code, fin_year, cookies):
     panchayat_list = {}
@@ -392,7 +378,10 @@ def fetch_rejection_report(logger, state_name=None, district_name=None, block_na
         csv_file.write(''.join(csv_buffer).encode('utf-8'))
         #csv_file.write(''.join(csv_buffer))
     
-    logger.info('The CSV buffer written [%s]' % csv_buffer)
+    logger.debug('The CSV buffer written [%s]' % csv_buffer)
+
+    panchayat_list = populate_panchayat_list(logger, state_name, state_code, district_name, district_code, block_name, block_code, fin_year, cookies)
+    generate_panchayat_reports(logger, csv_buffer, panchayat_list, prefix)
  
     dest = './' + prefix.strip('./reports/') + 'reports'
     os.rename(dirname, dest)
@@ -427,8 +416,8 @@ class TestSuite(unittest.TestCase):
 
         
     def test_r8_efms_report(self):
-        result = fetch_efms_reports(self.logger)
-        #result = fetch_rejection_reports(self.logger)
+        #result = fetch_efms_reports(self.logger)
+        result = fetch_rejection_reports(self.logger)
         self.assertEqual('SUCCESS', result)
 
 if __name__ == '__main__':
