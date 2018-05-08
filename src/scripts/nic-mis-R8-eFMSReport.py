@@ -261,7 +261,7 @@ def parse_transaction_trail(logger, url=None, filename=None, csv_buffer=None):
         row = '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (wagelist_no, jobcard_no, applicant_no, applicant_name, work_code, work_name, msr_no, reference_no, status, rejection_reason, process_date, wagelist_fto_no, serial_no)
         logger.info(row)
         csv_buffer.append(row)
-    
+
 
 def fetch_efms_report(logger, state_name=None, district_name=None, block_name=None, block_code=None, fin_year=None, cookies=None):
     logger.info('Fetch the Rejected Payments Report')
@@ -291,12 +291,6 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
         if e.errno != errno.EEXIST:
             raise        
 
-    if not cookies:
-        url='http://nregasp2.nic.in/netnrega/homestciti.aspx?state_code=34&state_name=%s' % state_name
-        response = requests.get(url, timeout=timeout)
-        cookies = response.cookies
-    
-        
     if panchayat_code:
         panchayat_list = { panchayat_name: panchayat_code }
     else:
@@ -306,58 +300,20 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
         csv_buffer = ['Wagelist No,Job card no,Applicant no,Applicant Name,Work Code,Work Name,MSR no,Reference No,Status,Rejection Reason,Proccess Date,Wage list FTO No.,Serial No.\n']
 
         filename = prefix + panchayat_name + '_' + 'rejection_details.html'
-
-        if os.path.exists(filename):
-            with open(filename, 'rb') as html_file:
-                logger.info('File already donwnloaded. Reading [%s]' % filename)
-                reference_no_html = html_file.read()
-        else:
-            url = 'http://nregasp2.nic.in/netnrega/FTO/ResponseDetailStatusReport.aspx?lflag=eng&flg=W&page=b&state_name=%s&state_code=%s&district_name=%s&district_code=%s&block_name=%s&block_code=%s&panchayat_name=%s&panchayat_code=%s&fin_year=%s&typ=R&mode=B&source=&' % (state_name, state_code, district_name, district_code, block_name, block_code, panchayat_name, panchayat_code, fin_year)
-    
-            
-            try:
-                logger.info('Fetching URL[%s]' % url)
-                response = requests.get(url, timeout=timeout)
-            except Exception as e:
-                logger.error('Caught Exception[%s]' % e)
-                
-            reference_no_html = response.content
+        url = 'http://nregasp2.nic.in/netnrega/FTO/ResponseDetailStatusReport.aspx?lflag=eng&flg=W&page=b&state_name=%s&state_code=%s&district_name=%s&district_code=%s&block_name=%s&block_code=%s&panchayat_name=%s&panchayat_code=%s&fin_year=%s&typ=R&mode=B&source=&' % (state_name, state_code, district_name, district_code, block_name, block_code, panchayat_name, panchayat_code, fin_year)
         
-            with open(filename, 'wb') as html_file:
-                logger.info('Writing [%s]' % filename)
-                html_file.write(reference_no_html)
-        
-        reference_no_list = populate_reference_no_lookup(logger, reference_no_html)
+        reference_no_list = populate_reference_no_lookup(logger, url=url, filename=filename)
         logger.debug(reference_no_list)
     
         for ref_no in reference_no_list:
             filename = prefix + panchayat_name + '_' + ref_no + '.html'
-
-            if os.path.exists(filename):
-                with open(filename, 'rb') as html_file:
-                    logger.info('File already donwnloaded. Reading [%s]' % filename)
-                    transaction_trail_html = html_file.read()
-            else:
-                
-                # ref_no = '3406004000NRG18010220180328089'
-                # ref_no = '3406004000NRG18021120170259332'
-                url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?panchayat_code=%s&panchayat_name=%sblock_code=%s&block_name=%s&flg=W&state_code=%s&ref_no=%s&fin_year=%s&source=' % (panchayat_code, panchayat_name, block_code, block_name, state_code, ref_no, fin_year)
-                try:
-                    logger.info('Fetching URL[%s]' % url)
-                    response = requests.get(url, timeout=timeout)
-                except Exception as e:
-                    logger.error('Caught Exception[%s]' % e)
+            # ref_no = '3406004000NRG18010220180328089'
+            # ref_no = '3406004000NRG18021120170259332'
+            url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?panchayat_code=%s&panchayat_name=%sblock_code=%s&block_name=%s&flg=W&state_code=%s&ref_no=%s&fin_year=%s&source=' % (panchayat_code, panchayat_name, block_code, block_name, state_code, ref_no, fin_year)
             
-                transaction_trail_html = response.content
-                # filename = dirname + '%s_%s_%s_%s_%s_%s.html' % (state_name, district_name, block_name, panchayat_name, ref_no, fin_year)
-                with open(filename, 'wb') as html_file:
-                    logger.info('Writing [%s]' % filename)
-                    html_file.write(transaction_trail_html)
-            
-            parse_transaction_trail(logger, transaction_trail_html, csv_buffer)
+            parse_transaction_trail(logger, url=url, filename=filename, csv_buffer=csv_buffer)
             logger.debug('The CSV buffer written [%s]' % csv_buffer)
     
-        #filename = dirname + '%s_%s_%s_%s_%s.csv' % (state_name, district_name, block_name, panchayat_name, fin_year)
         filename = prefix + panchayat_name + '_' + 'report.csv'
         with open(filename, 'wb') as csv_file:
             logger.info("Writing to [%s]" % filename)
@@ -365,9 +321,6 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
             #csv_file.write(''.join(csv_buffer))
         
         logger.info('The CSV buffer written [%s]' % csv_buffer)
-        # csv_buffer=['Wagelist No,Job card no,Applicant no,Applicant Name,Work Code,Work Name,MSR no,Reference No,Status,Rejection Reason,Proccess Date,Wage list FTO No.,Serial No.\n']
-        # logger.info('The CSV buffer reset [%s]' % csv_buffer)
-        # Ends fetch_reference_no_html()
 
     dest = './' + prefix.strip('./reports/') + 'reports'
     os.rename(dirname, dest)
@@ -375,6 +328,17 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
 
     return 'SUCCESS'
 
+def fetch_efms_reports(logger):
+    url='http://nregasp2.nic.in/netnrega/homestciti.aspx?state_code=34&state_name=JHARKHAND'
+    response = requests.get(url, timeout=timeout)
+    cookies = response.cookies
+        
+    result = fetch_efms_report(logger, block_name = 'Manika', block_code = '3406004', fin_year = '2016-2017', cookies=cookies)
+    result = fetch_efms_report(logger, block_name = 'Manika', block_code = '3406004', fin_year = '2017-2018', cookies=cookies)
+    result = fetch_efms_report(logger, block_name = 'Mahuadanr', block_code = '3406007', fin_year = '2016-2017', cookies=cookies)
+    result = fetch_efms_report(logger, block_name = 'Mahuadanr', block_code = '3406007', fin_year = '2017-2018', cookies=cookies)
+
+    return 'SUCCESS'
     
 
 def fetch_rejection_report(logger, state_name=None, district_name=None, block_name=None, block_code=None, fin_year=None, cookies=None):
@@ -463,11 +427,8 @@ class TestSuite(unittest.TestCase):
 
         
     def test_r8_efms_report(self):
-        #result = fetch_efms_report(self.logger, block_name = 'Manika', block_code = '3406004', fin_year = '2016-2017')
-        #result = fetch_efms_report(self.logger, block_name = 'Manika', block_code = '3406004', fin_year = '2017-2018')
-        #result = fetch_efms_report(self.logger, block_name = 'Mahuadanr', block_code = '3406007', fin_year = '2016-2017')
-        #result = fetch_efms_report(self.logger, block_name = 'Mahuadanr', block_code = '3406007', fin_year = '2017-2018')
-        result = fetch_rejection_reports(self.logger)
+        result = fetch_efms_reports(self.logger)
+        #result = fetch_rejection_reports(self.logger)
         self.assertEqual('SUCCESS', result)
 
 if __name__ == '__main__':
