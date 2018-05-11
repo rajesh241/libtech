@@ -18,7 +18,7 @@ import requests
 # Global Declarations
 #######################
 
-timeout = 20
+timeout = 60
 dirname = './reports/'
 
 
@@ -60,7 +60,7 @@ def populate_panchayat_list(logger, state_name, state_code, district_name, distr
     
         try:
             logger.info('Fetching URL[%s]' % url)
-            response = requests.get(url, timeout=timeout)
+            response = requests.get(url, timeout=timeout, cookies=cookies)
         except Exception as e:
             logger.error('Caught Exception[%s]' % e)
             
@@ -106,7 +106,7 @@ def populate_reference_no_lookup(logger, url=None, filename=None):
     else:        
         try:
             logger.info('Fetching URL[%s]' % url)
-            response = requests.get(url, timeout=timeout)
+            response = requests.get(url, timeout=timeout, cookies=cookies)
         except Exception as e:
             logger.error('Caught Exception[%s]' % e)
             
@@ -150,7 +150,7 @@ def populate_reference_no_lookup(logger, url=None, filename=None):
     return reference_no_list
     
 
-def parse_transaction_trail(logger, url=None, filename=None, csv_buffer=None):
+def parse_transaction_trail(logger, url=None, filename=None, csv_buffer=None, cookies=None):
     if os.path.exists(filename):
         with open(filename, 'rb') as html_file:
             logger.info('File already donwnloaded. Reading [%s]' % filename)
@@ -161,7 +161,7 @@ def parse_transaction_trail(logger, url=None, filename=None, csv_buffer=None):
         # url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?panchayat_code=%s&panchayat_name=%sblock_code=%s&block_name=%s&flg=W&state_code=%s&ref_no=%s&fin_year=%s&source=' % (panchayat_code, panchayat_name, block_code, block_name, state_code, ref_no, fin_year)
         try:
             logger.info('Fetching URL[%s]' % url)
-            response = requests.get(url, timeout=timeout)
+            response = requests.get(url, timeout=timeout, cookies=cookies)
         except Exception as e:
             logger.error('Caught Exception[%s]' % e)
     
@@ -297,7 +297,7 @@ def fetch_efms_report(logger, state_name=None, district_name=None, block_name=No
             # ref_no = '3406004000NRG18021120170259332'
             url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?panchayat_code=%s&panchayat_name=%sblock_code=%s&block_name=%s&flg=W&state_code=%s&ref_no=%s&fin_year=%s&source=' % (panchayat_code, panchayat_name, block_code, block_name, state_code, ref_no, fin_year)
             
-            parse_transaction_trail(logger, url=url, filename=filename, csv_buffer=csv_buffer)
+            parse_transaction_trail(logger, url=url, filename=filename, csv_buffer=csv_buffer, cookies=cookies)
             logger.debug('The CSV buffer written [%s]' % csv_buffer)
     
         filename = prefix + panchayat_name + '_' + 'report.csv'
@@ -369,7 +369,7 @@ def fetch_rejection_report(logger, state_name=None, district_name=None, block_na
         #Reference url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?block_code=3406004&block_name=Manika&flg=W&state_code=34&ref_no=3406004000NRG150720160652753&fin_year=2016-2017&source='
         url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?block_code=%s&block_name=%s&flg=W&state_code=%s&ref_no=%s&fin_year=%s&source=' % (block_code, block_name, state_code, ref_no, fin_year)
 
-        parse_transaction_trail(logger, url=url, filename=filename, csv_buffer=csv_buffer)
+        parse_transaction_trail(logger, url=url, filename=filename, csv_buffer=csv_buffer, cookies=cookies)
         logger.debug('The CSV buffer written [%s]' % csv_buffer)
 
     filename = prefix + 'report.csv'
@@ -394,10 +394,10 @@ def fetch_rejection_reports(logger):
     response = requests.get(url, timeout=timeout)
     cookies = response.cookies
     
-    result = fetch_rejection_report(logger, block_name = 'Manika', block_code = '3406004', fin_year = '2016-2017', cookies=cookies)
-    # result = fetch_rejection_report(logger, block_name = 'Manika', block_code = '3406004', fin_year = '2017-2018', cookies=cookies)
-    # result = fetch_rejection_report(logger, block_name = 'Mahuadanr', block_code = '3406007', fin_year = '2016-2017', cookies=cookies)
-    # result = fetch_rejection_report(logger, block_name = 'Mahuadanr', block_code = '3406007', fin_year = '2017-2018', cookies=cookies)                
+    # result = fetch_rejection_report(logger, block_name = 'Manika', block_code = '3406004', fin_year = '2016-2017', cookies=cookies)
+    result = fetch_rejection_report(logger, block_name = 'Manika', block_code = '3406004', fin_year = '2017-2018', cookies=cookies)
+    result = fetch_rejection_report(logger, block_name = 'Mahuadanr', block_code = '3406007', fin_year = '2016-2017', cookies=cookies)
+    result = fetch_rejection_report(logger, block_name = 'Mahuadanr', block_code = '3406007', fin_year = '2017-2018', cookies=cookies)                
     
     return 'SUCCESS'
 
