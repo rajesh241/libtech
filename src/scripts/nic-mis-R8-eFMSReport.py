@@ -42,6 +42,17 @@ def generate_panchayat_reports(logger, csv_buffer, panchayat_list, prefix):
             csv_file.write(''.join(panchayat_buffer).encode('utf-8'))
             #csv_file.write(''.join(panchayat_buffer))
     
+def dump_panchayat_reports(logger, csv_buffer, panchayat_lookup, prefix, buffer):
+    for (panchayat_code, panchayat_name) in panchayat_lookup.items():
+        panchayat_buffer = ['Wagelist No,Job card no,Applicant no,Applicant Name,Work Code,Work Name,MSR no,Reference No,Status,Rejection Reason,Proccess Date,Wage list FTO No.,Serial No.\n']
+
+        panchayat_buffer += buffer[panchayat_name]
+                
+        filename = prefix + panchayat_name + '_' + 'report.csv'
+        with open(filename, 'wb') as csv_file:
+            logger.info("Writing to [%s]" % filename)
+            csv_file.write(''.join(panchayat_buffer).encode('utf-8'))
+            #csv_file.write(''.join(panchayat_buffer))
 
 def populate_panchayat_list(logger, state_name, state_code, district_name, district_code, block_name, block_code, fin_year, cookies):
     panchayat_list = {}
@@ -93,7 +104,59 @@ def populate_panchayat_list(logger, state_name, state_code, district_name, distr
 
     return panchayat_list
         
-def populate_reference_no_lookup(logger, url=None, filename=None):
+def populate_panchayat_lookup(logger, state_name, state_code, district_name, district_code, block_name, block_code, fin_year, cookies, buffer):
+    panchayat_lookup = {}
+
+    prefix = dirname + '%s_%s_%s_%s_' % (fin_year, state_name, district_name, block_name)
+    filename = prefix + 'panchayat_lookup.html'
+    logger.info('FileName[%s]' % filename)
+    
+    if os.path.exists(filename):
+        with open(filename, 'rb') as html_file:
+            logger.info('File already donwnloaded. Reading [%s]' % filename)
+            panchayat_lookup_html = html_file.read()
+    else:
+        #Reference url = 'http://nregasp2.nic.in/netnrega/Progofficer/PoIndexFrame.aspx?flag_debited=D&lflag=local&District_Code=3406&district_name=LATEHAR&state_name=JHARKHAND&state_Code=34&finyear=2018-2019&check=1&block_name=Manika&Block_Code=3406004'
+        url = 'http://nregasp2.nic.in/netnrega/Progofficer/PoIndexFrame.aspx?flag_debited=D&lflag=local&District_Code=%s&district_name=%s&state_name=%s&state_Code=%s&finyear=%s&check=1&block_name=%s&Block_Code=%s' % (district_code, district_name, state_name, state_code, fin_year, block_name, block_code)
+    
+        try:
+            logger.info('Fetching URL[%s]' % url)
+            response = requests.get(url, timeout=timeout, cookies=cookies)
+        except Exception as e:
+            logger.error('Caught Exception[%s]' % e)
+            
+        panchayat_lookup_html = response.content
+        
+        with open(filename, 'wb') as html_file:
+            logger.info('Writing [%s]' % filename)
+            html_file.write(panchayat_lookup_html)
+    
+    bs = BeautifulSoup(panchayat_lookup_html, 'html.parser')
+
+    table = bs.find(id='ctl00_ContentPlaceHolder1_gvpanch')
+    logger.debug(str(table))
+    click_list = table.findAll('a')
+    logger.debug(str(click_list))
+
+    for anchor in click_list:
+        a = str(anchor)
+        pos = a.find('Panchayat_name=')
+        logger.debug(pos)
+        if pos > 0:
+            beg = a.find('Panchayat_name=') + len('Panchayat_name=')
+            end = a.find('&amp;Panchayat_Code=') 
+            panchayat_name = a[beg:end]
+            beg = a.find('Panchayat_Code=') + len('Panchayat_Code=')
+            end = beg + 10
+            panchayat_str = a[beg:end]
+            panchayat_code = panchayat_str[-3:]
+            panchayat_lookup[panchayat_code] = panchayat_name
+            logger.info('Found [%s, %s]...' % (panchayat_code, panchayat_name))
+            buffer[panchayat_name] = []
+
+    return panchayat_lookup
+        
+def populate_reference_no_lookup(logger, url=None, filename=None, cookies=None):
     reference_no_list = []
 
     if not url:
@@ -150,7 +213,7 @@ def populate_reference_no_lookup(logger, url=None, filename=None):
     return reference_no_list
     
 
-def parse_transaction_trail(logger, url=None, filename=None, csv_buffer=None, cookies=None):
+def parse_transaction_trail(logger, url=None, filename=None, csv_buffer=None, cookies=None, panchayat_lookup=None, buffer=None):
     if os.path.exists(filename):
         with open(filename, 'rb') as html_file:
             logger.info('File already donwnloaded. Reading [%s]' % filename)
@@ -199,7 +262,10 @@ def parse_transaction_trail(logger, url=None, filename=None, csv_buffer=None, co
         td = td.findNext('td')
         jobcard_no = td.text
         logger.info('Jobcard_No[%s]' % jobcard_no)
-    
+
+        jobcard_str = jobcard_no[:13]
+        logger.info('Jobcard_Str[%s]' % jobcard_str)
+
         td = td.findNext('td')
         applicant_no = td.text
         logger.info('Applicant_No[%s]' % applicant_no)
@@ -247,6 +313,12 @@ def parse_transaction_trail(logger, url=None, filename=None, csv_buffer=None, co
         row = '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (wagelist_no, jobcard_no, applicant_no, applicant_name, work_code, work_name, msr_no, reference_no, status, rejection_reason, process_date, wagelist_fto_no, serial_no)
         logger.info(row)
         csv_buffer.append(row)
+        if buffer and jobcard_str in row:
+            panchayat_code = jobcard_str[-3:]
+            logger.info('Panchayat_Code[%s]' % panchayat_code)
+            panchayat_name = panchayat_lookup[panchayat_code] 
+            logger.info('panchayat_name[%s]' % panchayat_name)
+            buffer[panchayat_name].append(row)
 
 
 def fetch_efms_report(logger, state_name=None, district_name=None, block_name=None, block_code=None, fin_year=None, cookies=None):
@@ -356,12 +428,16 @@ def fetch_rejection_report(logger, state_name=None, district_name=None, block_na
         if e.errno != errno.EEXIST:
             raise        
 
+    buffer = {}
     csv_buffer = ['Wagelist No,Job card no,Applicant no,Applicant Name,Work Code,Work Name,MSR no,Reference No,Status,Rejection Reason,Proccess Date,Wage list FTO No.,Serial No.\n']
+    panchayat_lookup = populate_panchayat_lookup(logger, state_name, state_code, district_name, district_code, block_name, block_code, fin_year, cookies, buffer)
+    logger.info('panchayat_lookup[%s]' % panchayat_lookup)
+    logger.info('buffer[%s]' % buffer)
 
     filename = prefix + 'rejection_details.html'
     #Refernce url='http://nregasp2.nic.in/netnrega/FTO/ResponseDetailStatusReport.aspx?lflag=eng&flg=W&page=d&state_name=JHARKHAND&state_code=34&district_name=LATEHAR&district_code=3406&block_name=Manika&block_code=3406004&fin_year=2016-2017&typ=R&mode=B&source=&'
     url='http://nregasp2.nic.in/netnrega/FTO/ResponseDetailStatusReport.aspx?lflag=eng&flg=W&page=d&state_name=%s&state_code=%s&district_name=%s&district_code=%s&block_name=%s&block_code=%s&fin_year=%s&typ=R&mode=B&source=&' % (state_name, state_code, district_name, district_code, block_name, block_code, fin_year)
-    reference_no_list = populate_reference_no_lookup(logger, url=url, filename=filename)
+    reference_no_list = populate_reference_no_lookup(logger, url=url, filename=filename, cookies=cookies)
     logger.debug(reference_no_list)
 
     for ref_no in reference_no_list:
@@ -369,7 +445,7 @@ def fetch_rejection_report(logger, state_name=None, district_name=None, block_na
         #Reference url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?block_code=3406004&block_name=Manika&flg=W&state_code=34&ref_no=3406004000NRG150720160652753&fin_year=2016-2017&source='
         url = 'http://nregasp2.nic.in/netnrega/FTO/Rejected_ref_no_detail.aspx?block_code=%s&block_name=%s&flg=W&state_code=%s&ref_no=%s&fin_year=%s&source=' % (block_code, block_name, state_code, ref_no, fin_year)
 
-        parse_transaction_trail(logger, url=url, filename=filename, csv_buffer=csv_buffer, cookies=cookies)
+        parse_transaction_trail(logger, url=url, filename=filename, csv_buffer=csv_buffer, cookies=cookies, panchayat_lookup=panchayat_lookup, buffer=buffer)
         logger.debug('The CSV buffer written [%s]' % csv_buffer)
 
     filename = prefix + 'report.csv'
@@ -380,8 +456,7 @@ def fetch_rejection_report(logger, state_name=None, district_name=None, block_na
     
     logger.debug('The CSV buffer written [%s]' % csv_buffer)
 
-    panchayat_list = populate_panchayat_list(logger, state_name, state_code, district_name, district_code, block_name, block_code, fin_year, cookies)
-    generate_panchayat_reports(logger, csv_buffer, panchayat_list, prefix)
+    dump_panchayat_reports(logger, csv_buffer, panchayat_lookup, prefix, buffer)
  
     dest = './' + prefix.strip('./reports/') + 'reports'
     os.rename(dirname, dest)
@@ -394,7 +469,7 @@ def fetch_rejection_reports(logger):
     response = requests.get(url, timeout=timeout)
     cookies = response.cookies
     
-    # result = fetch_rejection_report(logger, block_name = 'Manika', block_code = '3406004', fin_year = '2016-2017', cookies=cookies)
+    result = fetch_rejection_report(logger, block_name = 'Manika', block_code = '3406004', fin_year = '2016-2017', cookies=cookies)
     result = fetch_rejection_report(logger, block_name = 'Manika', block_code = '3406004', fin_year = '2017-2018', cookies=cookies)
     result = fetch_rejection_report(logger, block_name = 'Mahuadanr', block_code = '3406007', fin_year = '2016-2017', cookies=cookies)
     result = fetch_rejection_report(logger, block_name = 'Mahuadanr', block_code = '3406007', fin_year = '2017-2018', cookies=cookies)                
