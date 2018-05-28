@@ -45,7 +45,7 @@ csv_buffer=['Dealer Name, Transaction Count By Invoice, Transaction Count, Ratio
 
 # Get the Dealer List
 def fetch_dealer_cmd(logger):
-    cmd= '''curl -L -o dealer_list.html 'http://aahar.jharkhand.gov.in/dealer_monthly_reports' -H 'Host: aahar.jharkhand.gov.in' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Referer: http://aahar.jharkhand.gov.in/block_city_monthly_reports' -H 'Cookie: CAKEPHP=2lsnclgccoaspcud6u46ector6; _ga=GA1.3.727748505.1512904756; _gid=GA1.3.1119544342.1513048166' -H 'Connection: keep-alive' --data '_method=POST&data%5BDealerMonthlyReport%5D%5Bide%5D=151%2C01%2C5%2C14' '''
+    cmd= '''curl -L -o dealer_list.html 'https://aahar.jharkhand.gov.in/dealer_monthly_reports' -H 'Host: aahar.jharkhand.gov.in' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: en-GB,en;q=0.5' --compressed -H 'Referer: https://aahar.jharkhand.gov.in/block_city_monthly_reports' -H 'Cookie: CAKEPHP=2lsnclgccoaspcud6u46ector6; _ga=GA1.3.727748505.1512904756; _gid=GA1.3.1119544342.1513048166' -H 'Connection: keep-alive' --data '_method=POST&data%5BDealerMonthlyReport%5D%5Bide%5D=151%2C01%2C5%2C14' '''
 
     os.system(cmd)
     logger.info('Executing [%s]' % cmd)
@@ -54,9 +54,9 @@ def fetch_dealer_cmd(logger):
 
 
 # Fetch the list of all the districts for the given month and year
-def fetch_district_list(logger, cookies=None, month='01', year='2018'):
+def fetch_district_list(logger, cookies=None, month='01', year='2018', district_name=None):
     logger.info('Fetch district list for given month[%s] and year[%s]' % (month, year))
-    filename = dirname + 'district_list.html'
+    filename = dirname + 'district_list_%s.html' % district_name
 
     if os.path.exists(filename):
         with open(filename, 'rb') as html_file:
@@ -66,7 +66,7 @@ def fetch_district_list(logger, cookies=None, month='01', year='2018'):
         return district_list_html
 
     if not cookies:
-        url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
+        url="https://aahar.jharkhand.gov.in/district_monthly_reports/"
         response = requests.post(url, timeout=timeout, verify=False)
         cookies = response.cookies
 
@@ -75,7 +75,7 @@ def fetch_district_list(logger, cookies=None, month='01', year='2018'):
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-GB,en;q=0.5',
-        'Referer': 'http://aahar.jharkhand.gov.in/district_monthly_reports/',
+        'Referer': 'https://aahar.jharkhand.gov.in/district_monthly_reports/',
         'Connection': 'keep-alive',
     }
 
@@ -85,7 +85,7 @@ def fetch_district_list(logger, cookies=None, month='01', year='2018'):
         ('data[DistrictMonthlyReport][mnthyer]', parameters),
     ]
 
-    response =  requests.post('http://aahar.jharkhand.gov.in/district_monthly_reports', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False)
+    response =  requests.post('https://aahar.jharkhand.gov.in/district_monthly_reports', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False)
 
     district_list_html = response.content
     with open(filename, 'wb') as html_file:
@@ -96,9 +96,9 @@ def fetch_district_list(logger, cookies=None, month='01', year='2018'):
 
 
 # Fetch the dealer list of all the blocks given the district
-def fetch_block_list(logger, cookies=None, district_code=None, month=None, year_code=None, district_param=None, district_lookup=None):
+def fetch_block_list(logger, cookies=None, district_code=None, month=None, year_code=None, district_param=None, district_lookup=None, block_name=None):
     logger.info('Fetch block list for given district[%s]' % (district_param))
-    filename = dirname + 'block_list.html'
+    filename = dirname + 'block_list_%s.html' % block_name
 
     if os.path.exists(filename):
         with open(filename, 'rb') as html_file:
@@ -110,7 +110,7 @@ def fetch_block_list(logger, cookies=None, district_code=None, month=None, year_
     if not cookies:
         pass
     else:
-        url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
+        url="https://aahar.jharkhand.gov.in/district_monthly_reports/"
         response = requests.post(url, timeout=timeout, verify=False)
         cookies = response.cookies
 
@@ -119,7 +119,7 @@ def fetch_block_list(logger, cookies=None, district_code=None, month=None, year_
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-GB,en;q=0.5',
-        'Referer': 'http://aahar.jharkhand.gov.in/district_monthly_reports',
+        'Referer': 'https://aahar.jharkhand.gov.in/district_monthly_reports',
         'Connection': 'keep-alive',
     }
 
@@ -133,7 +133,7 @@ def fetch_block_list(logger, cookies=None, district_code=None, month=None, year_
         ('data[BlockCityMonthlyReport][ide]', parameters),
     ]
 
-    response = requests.post('http://aahar.jharkhand.gov.in/block_city_monthly_reports', headers=headers, cookies=cookies, data=data, verify=False)
+    response = requests.post('https://aahar.jharkhand.gov.in/block_city_monthly_reports', headers=headers, cookies=cookies, data=data, verify=False)
 
     block_list_html = response.content
 
@@ -147,7 +147,7 @@ def fetch_block_list(logger, cookies=None, district_code=None, month=None, year_
 # Fetch the dealer list where you can find all the dealer codes for the given block
 def fetch_dealer_list(logger, cookies=None, block_param=None, district_name=None, block_name=None, month='01', year=None):
     logger.info('Fetch dealer list for given block_param[%s]' % (block_param))
-    filename = dirname + 'dealer_list.html'
+    filename = dirname + 'dealer_list_%s.html' % block_name
 
     if os.path.exists(filename):
         with open(filename, 'rb') as html_file:
@@ -157,7 +157,7 @@ def fetch_dealer_list(logger, cookies=None, block_param=None, district_name=None
         return dealer_list_html
 
     if not cookies:
-        url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
+        url="https://aahar.jharkhand.gov.in/district_monthly_reports/"
         response = requests.post(url, timeout=timeout, verify=False)
         cookies = response.cookies
 
@@ -166,7 +166,7 @@ def fetch_dealer_list(logger, cookies=None, block_param=None, district_name=None
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:45.0) Gecko/20100101 Firefox/45.0',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-GB,en;q=0.5',
-        'Referer': 'http://aahar.jharkhand.gov.in/block_city_monthly_reports',
+        'Referer': 'https://aahar.jharkhand.gov.in/block_city_monthly_reports',
         'Connection': 'keep-alive',
     }
 
@@ -184,7 +184,7 @@ def fetch_dealer_list(logger, cookies=None, block_param=None, district_name=None
         ('data[DealerMonthlyReport][ide]', parameters),
     ]
     
-    dealer_list_html = requests.post('http://aahar.jharkhand.gov.in/dealer_monthly_reports', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False).content
+    dealer_list_html = requests.post('https://aahar.jharkhand.gov.in/dealer_monthly_reports', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False).content
 
     with open(filename, 'wb') as html_file:
         logger.info('Writing [%s]' % filename)
@@ -208,7 +208,7 @@ def fetch_dealer_detail(logger, cookies=None, dealer_code=None):
         return dealer_detail_html
 
     if not cookies:
-        url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
+        url="https://aahar.jharkhand.gov.in/district_monthly_reports/"
         response = requests.post(url, timeout=timeout, verify=False)
         cookies = response.cookies
 
@@ -218,7 +218,7 @@ def fetch_dealer_detail(logger, cookies=None, dealer_code=None):
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-GB,en;q=0.5',
         'Accept-Encoding': 'gzip, deflate',
-        'Referer': 'http://aahar.jharkhand.gov.in/dealer_monthly_reports',
+        'Referer': 'https://aahar.jharkhand.gov.in/dealer_monthly_reports',
         'Connection': 'keep-alive',
         'Content-Type': 'application/x-www-form-urlencoded',
     }
@@ -232,11 +232,11 @@ def fetch_dealer_detail(logger, cookies=None, dealer_code=None):
     logger.info('Making the request with Data [%s]' % data)
     #time.sleep(300)
     try:
-        response = requests.post('http://aahar.jharkhand.gov.in/transactions/transaction', headers=headers, data=data, cookies=cookies, timeout=timeout, verify=False)
+        response = requests.post('https://aahar.jharkhand.gov.in/transactions/transaction', headers=headers, data=data, cookies=cookies, timeout=timeout, verify=False)
     except Exception as e:
         logger.error('Caught Error[%s]' % e)
         try:
-            response = requests.post('http://aahar.jharkhand.gov.in/transactions/transaction', headers=headers, data=data, cookies=cookies, timeout=timeout, verify=False)
+            response = requests.post('https://aahar.jharkhand.gov.in/transactions/transaction', headers=headers, data=data, cookies=cookies, timeout=timeout, verify=False)
         except Exception as e:
             logger.error('Repeat Caught Error[%s]' % e)
 
@@ -258,9 +258,9 @@ def fetch_dealer_detail(logger, cookies=None, dealer_code=None):
     return response.content
 
 
-def populate_dealer_lookup(logger, cookies=None, block_param=None):
+def populate_dealer_lookup(logger, cookies=None, block_param=None, block_name=None):
     logger.info('Fetching Dealer List for [%s]...' % (block_param))
-    dealer_list_html = fetch_dealer_list(logger, cookies=cookies, block_param=block_param)
+    dealer_list_html = fetch_dealer_list(logger, cookies=cookies, block_param=block_param, block_name=block_name)
 
     bs = BeautifulSoup(dealer_list_html, 'html.parser')
     click_list = bs.findAll('a')
@@ -282,9 +282,9 @@ def populate_dealer_lookup(logger, cookies=None, block_param=None):
     
     return 'SUCCESS'
 
-def dealer_gaps_report(logger, block_param, cookies=None):
+def dealer_gaps_report(logger, block_param, cookies=None, block_name=None):
     logger.info('Fetching Dealer List for [%s]...' % (block_param))
-    dealer_list_html = fetch_dealer_list(logger, cookies=cookies, block_param=block_param)
+    dealer_list_html = fetch_dealer_list(logger, cookies=cookies, block_param=block_param, block_name=block_name)
 
     bs = BeautifulSoup(dealer_list_html, 'html.parser')
     td_list = bs.findAll('td', { "class": "main" })
@@ -383,9 +383,9 @@ def dealer_gaps_report(logger, block_param, cookies=None):
     return 'SUCCESS'
 
 
-def populate_district_lookup(logger, cookies=None, month=None, year=None):
+def populate_district_lookup(logger, cookies=None, month=None, year=None, district_name=None):
     logger.info('Fetching district_list...')
-    district_list_html = fetch_district_list(logger, cookies=cookies, month = month, year = year)
+    district_list_html = fetch_district_list(logger, cookies=cookies, month = month, year = year, district_name=district_name)
 
     bs = BeautifulSoup(district_list_html, 'html.parser')
     click_list = bs.findAll('a')
@@ -410,9 +410,9 @@ def populate_district_lookup(logger, cookies=None, month=None, year=None):
     return district_lookup
 
 
-def populate_block_lookup(logger, cookies=None, district_param=None, district_lookup=None):
+def populate_block_lookup(logger, cookies=None, district_param=None, district_lookup=None, block_name=None):
     logger.info('Fetching block_list...')
-    block_list_html = fetch_block_list(logger, cookies=cookies, district_param=district_param, district_lookup=district_lookup)
+    block_list_html = fetch_block_list(logger, cookies=cookies, district_param=district_param, district_lookup=district_lookup, block_name=block_name)
 
     bs = BeautifulSoup(block_list_html, 'html.parser')
     click_list = bs.findAll('a')
@@ -448,7 +448,7 @@ def fetch_via_masik_vitaran(logger):
 
     return 'SUCCESS'
 
-def pds_gaps(logger, district_name=None, block_name=None, month=None, year=None):
+def pds_gaps(logger, district_name=None, block_name=None, month=None, year=None, cookies=None):
     logger.info('Generating report dealer wise gaps for:')
 
     if not district_name:
@@ -461,28 +461,14 @@ def pds_gaps(logger, district_name=None, block_name=None, month=None, year=None)
         year = '2018'
         
     logger.info('District[%s] Block[%s] Month[%s] Year[%s]' % (district_name, block_name, month, year))
-    try:
-        os.makedirs(dirname)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise        
 
-    url='http://aahar.jharkhand.gov.in/'
-    try:
-        response = requests.post(url, timeout=timeout, verify=False)
-    except Exception as e:
-        logger.error('Caught Exception[%s]' % e)
-        response = requests.post(url, timeout=timeout, verify=False)
-        
-    cookies = response.cookies
-
-    district_lookup = populate_district_lookup(logger, cookies=cookies, month = month, year = year)
+    district_lookup = populate_district_lookup(logger, cookies=cookies, month = month, year = year, district_name=district_name)
 
     district_param=district_lookup[district_name]
     logger.info('Populating blocks for district[%s] param[%s]' % (district_name, district_param))
-    block_lookup = populate_block_lookup(logger, cookies=cookies, district_lookup=district_lookup, district_param=district_param) # district_param='14,01,5')
+    block_lookup = populate_block_lookup(logger, cookies=cookies, district_lookup=district_lookup, district_param=district_param, block_name=block_name) # district_param='14,01,5')
 
-    dealer_gaps_report(logger, cookies=cookies, block_param=block_lookup[block_name]) # '151,01,5,14') # 
+    dealer_gaps_report(logger, cookies=cookies, block_param=block_lookup[block_name], block_name=block_name) # '151,01,5,14') # 
 
     return 'SUCCESS'
 
@@ -695,7 +681,7 @@ def post_ration_req(logger, cookies=None, village_code=None, card_type=None, rat
     logger.info('File not already downloaded. So fetching...')
 
     if not cookies:        
-        url="http://aahar.jharkhand.gov.in/district_monthly_reports/"
+        url="https://aahar.jharkhand.gov.in/district_monthly_reports/"
         try:
             response = requests.post(url, timeout=timeout, verify=False)
         except Exception as e:
@@ -704,7 +690,7 @@ def post_ration_req(logger, cookies=None, village_code=None, card_type=None, rat
         cookies = response.cookies
 
     headers = {
-        'Origin': 'http://aahar.jharkhand.gov.in',
+        'Origin': 'https://aahar.jharkhand.gov.in',
         'Accept-Encoding': 'gzip, deflate',
         'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
         'Upgrade-Insecure-Requests': '1',
@@ -712,7 +698,7 @@ def post_ration_req(logger, cookies=None, village_code=None, card_type=None, rat
         'Content-Type': 'application/x-www-form-urlencoded',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
         'Cache-Control': 'max-age=0',
-        'Referer': 'http://aahar.jharkhand.gov.in/secc_cardholders/searchRation',
+        'Referer': 'https://aahar.jharkhand.gov.in/secc_cardholders/searchRation',
         'Connection': 'keep-alive',
     }
 
@@ -749,11 +735,11 @@ def post_ration_req(logger, cookies=None, village_code=None, card_type=None, rat
 
     #time.sleep(300)
     try:
-        response = requests.post('http://aahar.jharkhand.gov.in/secc_cardholders/searchRationResults', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False)
+        response = requests.post('https://aahar.jharkhand.gov.in/secc_cardholders/searchRationResults', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False)
     except Exception as e:
         logger.error('Caught Error[%s]' % e)
         try:
-            response = requests.post('http://aahar.jharkhand.gov.in/secc_cardholders/searchRationResults', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False)
+            response = requests.post('https://aahar.jharkhand.gov.in/secc_cardholders/searchRationResults', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False)
         except Exception as e:
             logger.error('Repeat Caught Error[%s]' % e)
 
@@ -846,7 +832,7 @@ def fetch_entitlement_for_cardholders_by_dealer(logger, cookies=None, card_type=
 
 def fetch_cardholders_via_vivaran(logger):
     logger.info('Getting the Ration Details')
-    url='http://aahar.jharkhand.gov.in/secc_cardholders/searchRation'
+    url='https://aahar.jharkhand.gov.in/secc_cardholders/searchRation'
     response = requests.post(url, timeout=timeout, verify=False)
     cookies = response.cookies
 
@@ -874,7 +860,7 @@ def post_ration_reference(logger, cookies=None, district_code=None, block_code=N
     logger.info('Fetch the Ration Summary Cookies[%s]' % cookies)
 
     if not cookies:        
-        url='http://aahar.jharkhand.gov.in/secc_districts/districts'
+        url='https://aahar.jharkhand.gov.in/secc_districts/districts'
         response = requests.post(url, timeout=timeout, verify=False)
         cookies = response.cookies
 
@@ -883,7 +869,7 @@ def post_ration_reference(logger, cookies=None, district_code=None, block_code=N
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:57.0) Gecko/20100101 Firefox/57.0',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
-        'Referer': 'http://aahar.jharkhand.gov.in/secc_blocks/blockCardholderCount',
+        'Referer': 'https://aahar.jharkhand.gov.in/secc_blocks/blockCardholderCount',
         'Content-Type': 'application/x-www-form-urlencoded',
         'Connection': 'keep-alive',
         'Upgrade-Insecure-Requests': '1',
@@ -901,16 +887,16 @@ def post_ration_reference(logger, cookies=None, district_code=None, block_code=N
             data.append(('data[SeccBlockReport][ide]', block_code))
             logger.debug('Posting with Data[%s]' % str(data))
             logger.info('Posting with district[%s] block [%s]' % (district_code, block_code))
-            response = requests.post('http://aahar.jharkhand.gov.in/secc_village_wards/villageCardholderCount', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False)
+            response = requests.post('https://aahar.jharkhand.gov.in/secc_village_wards/villageCardholderCount', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False)
             filename = district_code + '_district_' + block_code + '_block.html'
         else:
             data.append(('data[SeccDistrictReport][ide]', district_code))
             logger.info('Posting with District [%s]' % district_code)
             logger.debug('Posting with Data[%s]' % str(data))
-            response = requests.post('http://aahar.jharkhand.gov.in/secc_blocks/blockCardholderCount', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False)
+            response = requests.post('https://aahar.jharkhand.gov.in/secc_blocks/blockCardholderCount', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False)
             filename = district_code + '_district.html'
     else:
-        response = requests.get('http://aahar.jharkhand.gov.in/secc_districts/districts', headers=headers, cookies=cookies)
+        response = requests.get('https://aahar.jharkhand.gov.in/secc_districts/districts', headers=headers, cookies=cookies)
         filename = 'blocks_reference.html'
         
     with open(filename, 'wb') as html_file:
@@ -925,7 +911,7 @@ def post_ration_districts(logger, cookies=None):
     logger.info('Fetch the Ration Summary Cookies[%s]' % cookies)
 
     if not cookies:        
-        url='http://aahar.jharkhand.gov.in/secc_districts/districts'
+        url='https://aahar.jharkhand.gov.in/secc_districts/districts'
         response = requests.post(url)
         cookies = response.cookies
 
@@ -938,7 +924,7 @@ def post_ration_districts(logger, cookies=None):
         'Upgrade-Insecure-Requests': '1',
     }
 
-    response = requests.get('http://aahar.jharkhand.gov.in/secc_districts/districts', headers=headers, cookies=cookies)
+    response = requests.get('https://aahar.jharkhand.gov.in/secc_districts/districts', headers=headers, cookies=cookies)
 
     filename = 'district_reference.html'
     with open(filename, 'wb') as html_file:
@@ -1073,7 +1059,7 @@ def ration_village_fetch(logger, cookies=None, district_name=None, block_name=No
 
 def fetch_via_ditigalikaran(logger):
     logger.info('Getting the Ration Summary')
-    url='http://aahar.jharkhand.gov.in/secc_districts/districts'
+    url='https://aahar.jharkhand.gov.in/secc_districts/districts'
     response = requests.post(url, timeout=timeout, verify=False)
     cookies = response.cookies
 
@@ -1108,6 +1094,28 @@ def fetch_via_ditigalikaran(logger):
     
     return 'SUCCESS'
 
+def fetch_gap_reports(logger):
+    logger.info('Fetching Gap Reports:')
+    try:
+        os.makedirs(dirname)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise        
+
+    url='https://aahar.jharkhand.gov.in/'
+    try:
+        response = requests.post(url, timeout=timeout, verify=False)
+    except Exception as e:
+        logger.error('Caught Exception[%s]' % e)
+        response = requests.post(url, timeout=timeout, verify=False)
+        
+    cookies = response.cookies
+    
+    result = pds_gaps(logger, district_name='LATEHAR', block_name='MANIKA', month='03', year='2018', cookies=cookies)
+    result = pds_gaps(logger, district_name='RANCHI', block_name='NAGRI', month='03', year='2018', cookies=cookies)
+
+    return result
+
 
 ##########
 # Tests
@@ -1127,8 +1135,7 @@ class TestSuite(unittest.TestCase):
         self.assertEqual('SUCCESS', result)
 
     def test_fetch_pds_transactions(self):
-        result = pds_gaps(self.logger, district_name='LATEHAR', block_name='MANIKA', month='03', year='2018')
-        # result = pds_gaps(self.logger, district_name='RANCHI', block_name='NAGRI', month='03', year='2018')
+        result = fetch_gap_reports(self.logger)
         # result = pds_gaps(self.logger, district_name='RANCHI', block_name='NAGRI', month='03', year='2018')
         # result = fetch_via_masik_vitaran(self.logger)
         # result = fetch_cardholders_via_vivaran(self.logger)
