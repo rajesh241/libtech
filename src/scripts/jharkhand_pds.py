@@ -13,7 +13,7 @@ import unittest
 import requests
 import time
 
-timeout=3
+timeout=10
 dirname = './dealers/'
 filename = dirname
 district_name = 'LATEHAR'
@@ -282,8 +282,12 @@ def populate_dealer_lookup(logger, cookies=None, block_param=None, block_name=No
     
     return 'SUCCESS'
 
-def dealer_gaps_report(logger, block_param, cookies=None, block_name=None):
+def dealer_gaps_report(logger, block_param, cookies=None, block_name=None, month=None):
     logger.info('Fetching Dealer List for [%s]...' % (block_param))
+
+    if not month:
+        month = 'month'
+    
     dealer_list_html = fetch_dealer_list(logger, cookies=cookies, block_param=block_param, block_name=block_name)
 
     bs = BeautifulSoup(dealer_list_html, 'html.parser')
@@ -375,7 +379,7 @@ def dealer_gaps_report(logger, block_param, cookies=None, block_name=None):
 
     logger.info('Gaps Report[%s]' % csv_buffer)
 
-    filename = './dealers/%s_dealer_wise_comparison.csv' % (block_name)
+    filename = '%s%s_%s_dealer_wise_comparison.csv' % (dirname, block_name, month)
     with open(filename, 'w') as csv_file:
         logger.info("Writing to [%s]" % filename)
         csv_file.write(''.join(csv_buffer))
@@ -468,7 +472,7 @@ def pds_gaps(logger, district_name=None, block_name=None, month=None, year=None,
     logger.info('Populating blocks for district[%s] param[%s]' % (district_name, district_param))
     block_lookup = populate_block_lookup(logger, cookies=cookies, district_lookup=district_lookup, district_param=district_param, block_name=block_name) # district_param='14,01,5')
 
-    dealer_gaps_report(logger, cookies=cookies, block_param=block_lookup[block_name], block_name=block_name) # '151,01,5,14') # 
+    dealer_gaps_report(logger, cookies=cookies, block_param=block_lookup[block_name], block_name=block_name, month=month) # '151,01,5,14') # 
 
     return 'SUCCESS'
 
@@ -568,7 +572,7 @@ village_codes = {
     '366851':'Siwacharan Tola',
     '366897':'Sonsdohar',
     '366916':'Uraontoli',
-
+    '374356': 'Bero',
     }
 
 village_list = {
@@ -733,7 +737,6 @@ def post_ration_req(logger, cookies=None, village_code=None, card_type=None, rat
 
     logger.info('Making request with Data [%s]' % data)
 
-    #time.sleep(300)
     try:
         response = requests.post('https://aahar.jharkhand.gov.in/secc_cardholders/searchRationResults', headers=headers, cookies=cookies, data=data, timeout=timeout, verify=False)
     except Exception as e:
@@ -1094,26 +1097,104 @@ def fetch_via_ditigalikaran(logger):
     
     return 'SUCCESS'
 
-def fetch_gap_reports(logger):
-    logger.info('Fetching Gap Reports:')
+def dump_ration_report(logger, cookies):
+    ration_list_html = post_ration_req(logger, cookies=cookies, district_code='364', block_code='02695', village_code='374356', card_type='5')
+    bs = BeautifulSoup(ration_list_html, 'html.parser')
+
+    table = bs.find(id='maintable')
+    logger.debug(table)
+
+    try:
+        th_list = table.select('th')
+    except Exception as e:
+        logger.error('No Data Found[%s]' % e)
+    logger.info(th_list)
+
+    csv_buffer = []
+    header_row = []
+    for th in th_list:
+        colname = th.text.strip()
+        logger.info(colname)
+        header_row.append(colname)
+
+    logger.info(header_row)
+
+    csv_buffer.append(','.join(header_row) + '\n')
+    logger.info(csv_buffer)
+
+    tr = th.findNext('tr')
+    logger.debug(tr)
+
+    while(tr):
+        try:
+            td_list = tr.select('td')
+        except Exception as e:
+            logger.error('No Data Found[%s]' % e)
+        logger.debug(td_list)
+        
+        row = []
+        for td in td_list:
+            value = td.text.strip()
+            logger.info(value)
+            row.append(value)
+        
+        logger.info(row)
+        
+        csv_buffer.append(','.join(row) + '\n')
+        logger.debug(csv_buffer)
+        
+        tr = tr.findNext('tr')
+        logger.debug(tr)
+
+    filename = dirname + 'report.csv'
+    with open(filename, 'wb') as csv_file:
+        logger.info("Writing to [%s]" % filename)
+        csv_file.write(''.join(csv_buffer).encode('utf-8'))
+        #csv_file.write(''.join(csv_buffer))
+    
+    logger.info('The CSV buffer written [%s]' % csv_buffer)
+
+    return 'SUCCESS'
+
+def create_dir(dirname):
     try:
         os.makedirs(dirname)
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise        
 
-    url='https://aahar.jharkhand.gov.in/'
+def get_cookies(logger, url=None):
+    if not url:
+        url='https://aahar.jharkhand.gov.in/'
     try:
         response = requests.post(url, timeout=timeout, verify=False)
     except Exception as e:
         logger.error('Caught Exception[%s]' % e)
         response = requests.post(url, timeout=timeout, verify=False)
-        
-    cookies = response.cookies
-    
-    result = pds_gaps(logger, district_name='LATEHAR', block_name='MANIKA', month='03', year='2018', cookies=cookies)
-    result = pds_gaps(logger, district_name='RANCHI', block_name='NAGRI', month='03', year='2018', cookies=cookies)
 
+    return response.cookies
+
+def fetch_gap_reports(logger):
+    logger.info('Fetching Gap Reports:')
+
+    create_dir(dirname)
+    
+    cookies = get_cookies(logger)
+    
+    result = pds_gaps(logger, district_name='LATEHAR', block_name='MANIKA', month='04', year='2018', cookies=cookies)
+    result = pds_gaps(logger, district_name='RANCHI', block_name='NAGRI', month='04', year='2018', cookies=cookies)
+
+    return result
+
+def fetch_ration_reports(logger):
+    logger.info('Fetching Gap Reports:')
+
+    create_dir(dirname)
+    
+    cookies = get_cookies(logger)
+    
+    result = dump_ration_report(logger, cookies)
+        
     return result
 
 
@@ -1136,6 +1217,7 @@ class TestSuite(unittest.TestCase):
 
     def test_fetch_pds_transactions(self):
         result = fetch_gap_reports(self.logger)
+        # result = fetch_ration_reports(self.logger)
         # result = pds_gaps(self.logger, district_name='RANCHI', block_name='NAGRI', month='03', year='2018')
         # result = fetch_via_masik_vitaran(self.logger)
         # result = fetch_cardholders_via_vivaran(self.logger)
