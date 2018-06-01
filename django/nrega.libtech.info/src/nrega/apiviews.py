@@ -10,8 +10,9 @@ from django.db.models.expressions import RawSQL
 from django.db import connection # To execute raw queries and get results
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
-from nrega.models import Panchayat, State, Block, Jobcard, Applicant, WorkDetail, Muster, PaymentDetail, PendingPostalPayment, PanchayatStat, PanchayatCrawlQueue
-from nrega.serializers import PanchayatSerializer, StateSerializer, StateSerializer1, SelectBlockSerializer, JobcardSerializer2, JobcardSerializer, PtAvgSerializer, getInfoByJcSerializer, getWorkDetailsByJcSerializer, MusterSerializer, WorkSerializer, WorkCreditStatusPtSerializer, JcsByMusterStatus, EmploymentStatusSerializer, PaymentDetailSerializer, PostalPaymentSerializer, PostalPaymentPtSerializer, PaymentDetailTransactionsSerializer, PanchayatStatSerializer, BlAvgSerializer, EmploymentStatusByPtSerializer, CrawlStatusSerializer
+from nrega.models import Panchayat, State, Block, Jobcard, Applicant, WorkDetail, Muster, PaymentDetail, PendingPostalPayment, PanchayatStat, PanchayatCrawlQueue, PanchayatReport, PaymentInfo
+
+from nrega.serializers import PanchayatSerializer, StateSerializer, StateSerializer1, SelectBlockSerializer, JobcardSerializer2, JobcardSerializer, PtAvgSerializer, getInfoByJcSerializer, getWorkDetailsByJcSerializer, MusterSerializer, WorkSerializer, WorkCreditStatusPtSerializer, JcsByMusterStatus, EmploymentStatusSerializer, PaymentDetailSerializer, PostalPaymentSerializer, PostalPaymentPtSerializer, PaymentDetailTransactionsSerializer, PanchayatStatSerializer, BlAvgSerializer, EmploymentStatusByPtSerializer, CrawlStatusSerializer, PaymentInfoSerializer
 
 import json
 
@@ -30,6 +31,13 @@ def crawlDataForPt(request):
         pass
     output = {"Response": "Added to queue"}
     return JsonResponse(output, safe=False)    
+
+@csrf_exempt
+def PanchayatReport(request):
+    ptid = request.GET.get('ptid', '')
+    report = PanchayatReport.objects.filter(panchayat == ptid)
+    output = {'output': report}
+    JsonResponse(output, safe=False)
 
 @csrf_exempt
 def crawlDataRequest(request):
@@ -83,6 +91,7 @@ def getPanchayatsAccurateData(request):
           limit=500
         else:
           limit=int(limit)
+        #PTID we need to make it exact. Finyaer make it current finyear
         panchayats = PanchayatStat.objects.filter(panchayat__name__icontains = panchayat, panchayat__id__icontains = ptid, panchayat__block__id__icontains = bid, panchayat__block__name__icontains=block, panchayat__block__district__name__icontains = district, panchayat__block__district__state__name__icontains = state, workDaysAccuracyIndex__gte = 90, finyear = '17')
 
 
@@ -107,9 +116,11 @@ def getPanchayats(request):
           limit=50
         else:
           limit=int(limit)
-
         if ptid == '':
-            panchayats=Panchayat.objects.filter(name__icontains=inName, block__name__icontains=blockName, block__id__icontains=bid, block__district__name__icontains = districtName, block__district__state__name__icontains = stateName)
+            if bid != '':
+              panchayats=Panchayat.objects.filter(name__icontains=inName, block__id=bid)
+            else:
+              panchayats=Panchayat.objects.filter(name__icontains=inName, block__name__icontains=blockName, block__id__icontains=bid, block__district__name__icontains = districtName, block__district__state__name__icontains = stateName)
         else:
             panchayats=Panchayat.objects.filter(id = ptid)
             
@@ -127,7 +138,8 @@ def getStates(request):
     """
     if request.method == 'GET':
         state = request.GET.get('state', '')
-        totalTransactions=PaymentDetail.objects.filter(applicant__panchayat__block__district__state__name = state).values('applicant__panchayat__block__district__state__name', 'applicant__panchayat__block__name').annotate(state = F('applicant__panchayat__block__district__state__name'), block = F('applicant__panchayat__block__name'), transactions = Count('id'))
+        curfinyear='18'
+        totalTransactions=PanchayatStat.objects.filter(panchayat__block__district__state__name=state,finyear=curfinyear,workDaysAccuracyIndex__gte = 90).values ('panchayat__block__district__state__name', 'panchayat__block__name').annotate(state = F('panchayat__block__district__state__name'), block = F('panchayat__block__name'), transactions = Count('id'))
         serializer = StateSerializer1(totalTransactions, many=True)
         return JsonResponse(serializer.data, safe=False)
 
@@ -147,8 +159,10 @@ def getBlocks(request):
           limit=50
         else:
           limit=int(limit)
-
-        blocks = Block.objects.filter(name=blockName, id__icontains = bid, district__name__icontains = districtName, district__state__name__icontains=stateName)
+        if bid=='':
+          blocks = Block.objects.filter(name__icontains=blockName, district__name__icontains = districtName, district__state__name__icontains=stateName)
+        else:
+          blocks = Block.objects.filter(id = bid)
 
         blocks = blocks[:limit]
         serializer = SelectBlockSerializer(blocks, many=True)
@@ -187,6 +201,7 @@ def getJobcardsAll(request):
 
     From api.ai, I might get two numbers for the jobcard intent. One will correspond to the last numbers of a jobcard and the other is likely to be a village code.  There are challenges in putting them together.  Right now, I am going to give one query for ends with and the village code to just say that is contained.  Given that I am searching within a Panchayat, this is likely to be quite accurate.
     """
+    #GOLITODO add the extra field in models for the village and use it here for filtring
     if request.method == 'GET':
         jcEnd=request.GET.get('jobend', '')
         jcContains=request.GET.get('vcode', '')
@@ -226,6 +241,13 @@ def getNumberJobcards(request):
 
         return JsonResponse(noJobcards, safe=False)
 
+@csrf_exempt
+def paymentInfo(request):
+    jobcard = request.GET.get('jobcard', '')
+    ptid = request.GET.get('ptid', '')
+    payments = PaymentInfo.objects.filter(workDetail__worker__jobcard__panchayat = ptid, status = 'Rejected')
+    serializer = PaymentInfoSerializer(payments, many=True)
+    return JsonResponse(serializer.data, safe=False)
 
 @csrf_exempt
 def totalTransactionsForBlock(request):
@@ -239,7 +261,7 @@ TODO: When the accurate Panchayats index is made in the database, I should uncom
 
         accuratePts = PanchayatStat.objects.filter(panchayat__block__id = bid, workDaysAccuracyIndex__gte = 90)
         serializer = PanchayatStatSerializer(accuratePts, many=True)
-        return JsonResponse(serializer.data, safe=False)            
+        return JsonResponse(serializer.data, safe=False)       
 #        totalTransactions=PaymentDetail.objects.filter(applicant__panchayat__block__id=bid).count()
 #        return JsonResponse(totalTransactions, safe=False)    
 
@@ -261,17 +283,32 @@ def musterStatusBlLevel(musterstatus, bid):
 
 # See getInfoByMusterStatus for description
 def musterStatusPtJcLevel(musterstatus, ptid, jobcard):
-    if musterstatus == '':
-        paymentStatusByFy = WorkDetail.objects.filter(muster__panchayat__id = ptid,  zjobcard__icontains = jobcard).values('muster__finyear').annotate(fy = F('muster__finyear'), totalWage = Sum('totalWage'), jcs = Count('zjobcard', distinct = True)).order_by('fy')
-            
-    elif musterstatus == 'uncredited':
-        paymentStatusByFy = WorkDetail.objects.filter(muster__panchayat__id = ptid, zjobcard__icontains = jobcard).exclude(musterStatus = 'credited').values('muster__finyear').annotate(fy = F('muster__finyear'), totalWage = Sum('totalWage'), jcs = Count('zjobcard', distinct = True)).order_by('fy')
-            
-    elif musterstatus == 'nofto':
-        paymentStatusByFy = WorkDetail.objects.filter(muster__panchayat__id = ptid, musterStatus = '', zjobcard__icontains = jobcard).values('muster__finyear').annotate(fy = F('muster__finyear'), totalWage = Sum('totalWage'), jcs = Count('zjobcard', distinct = True)).order_by('fy')
-            
-    else:
+    if jobcard== '':
+      if musterstatus == '':
+          paymentStatusByFy = WorkDetail.objects.filter(muster__panchayat__id = ptid,  zjobcard__icontains = jobcard).values('muster__finyear').annotate(fy = F('muster__finyear'), totalWage = Sum('totalWage'), jcs = Count('zjobcard', distinct = True)).order_by('fy')
+              
+      elif musterstatus == 'uncredited':
+          paymentStatusByFy = WorkDetail.objects.filter(muster__panchayat__id = ptid, zjobcard__icontains = jobcard).exclude(musterStatus = 'credited').values('muster__finyear').annotate(fy = F('muster__finyear'), totalWage = Sum('totalWage'), jcs = Count('zjobcard', distinct = True)).order_by('fy')
+              
+      elif musterstatus == 'nofto':
+          paymentStatusByFy = WorkDetail.objects.filter(muster__panchayat__id = ptid, musterStatus = '', zjobcard__icontains = jobcard).values('muster__finyear').annotate(fy = F('muster__finyear'), totalWage = Sum('totalWage'), jcs = Count('zjobcard', distinct = True)).order_by('fy')
+              
+      else:
         paymentStatusByFy = WorkDetail.objects.filter(muster__panchayat__id = ptid, musterStatus = musterstatus, zjobcard__icontains = jobcard).values('muster__finyear').annotate(fy = F('muster__finyear'), totalWage = Sum('totalWage'), jcs = Count('zjobcard', distinct = True)).order_by('fy')
+
+
+    else: 
+      if musterstatus == '':
+          paymentStatusByFy = WorkDetail.objects.filter(muster__panchayat__id = ptid,  worker__jobcard__jobcard = jobcard).values('muster__finyear').annotate(fy = F('muster__finyear'), totalWage = Sum('totalWage'), jcs = Count('zjobcard', distinct = True)).order_by('fy')
+              
+      elif musterstatus == 'uncredited':
+          paymentStatusByFy = WorkDetail.objects.filter(muster__panchayat__id = ptid, worker__jobcard__jobcard = jobcard).exclude(musterStatus = 'credited').values('muster__finyear').annotate(fy = F('muster__finyear'), totalWage = Sum('totalWage'), jcs = Count('zjobcard', distinct = True)).order_by('fy')
+              
+      elif musterstatus == 'nofto':
+          paymentStatusByFy = WorkDetail.objects.filter(muster__panchayat__id = ptid, musterStatus = '', worker__jobcard__jobcard = jobcard).values('muster__finyear').annotate(fy = F('muster__finyear'), totalWage = Sum('totalWage'), jcs = Count('zjobcard', distinct = True)).order_by('fy')
+              
+      else:
+        paymentStatusByFy = WorkDetail.objects.filter(muster__panchayat__id = ptid, musterStatus = musterstatus, worker__jobcard__jobcard = jobcard).values('muster__finyear').annotate(fy = F('muster__finyear'), totalWage = Sum('totalWage'), jcs = Count('zjobcard', distinct = True)).order_by('fy')
 
     return paymentStatusByFy
 
@@ -313,33 +350,33 @@ def getInfoByMusterStatus_paymentDetail(request):
         if jobcard == '':
             
             if musterstatus == '':
-                paymentDetail = PaymentDetail.objects.filter(applicant__panchayat__id = ptid).values('fto__finyear').annotate(paymentDetailAmount = Sum('creditedAmount'), workDetailAmount = Sum('workDetail__totalWage'), jcs = Count('applicant__jobcard1', distinct = True), fy = F('fto__finyear'))
+                paymentDetail = PaymentDetail.objects.filter(applicant__panchayat__id = ptid).values('fto__finyear').annotate(paymentDetailAmount = Sum('creditedAmount'), workDetailAmount = Sum('workDetail__totalWage'), jcs = Count('worker__jobcard__jobcard', distinct = True), fy = F('fto__finyear'))
             
             elif musterstatus == 'nofto':
-                paymentDetail = PaymentDetail.objects.filter(applicant__panchayat__id = ptid, status = '').values('fto__finyear').annotate(paymentDetailAmount = Sum('creditedAmount'), workDetailAmount = Sum('workDetail__totalWage'), jcs = Count('applicant__jobcard1', distinct = True), fy = F('fto__finyear'))
+                paymentDetail = PaymentDetail.objects.filter(applicant__panchayat__id = ptid, status = '').values('fto__finyear').annotate(paymentDetailAmount = Sum('creditedAmount'), workDetailAmount = Sum('workDetail__totalWage'), jcs = Count('worker__jobcard__jobcard', distinct = True), fy = F('fto__finyear'))
             
             elif musterstatus == 'uncredited':
-                paymentDetail = PaymentDetail.objects.filter(applicant__panchayat__id = ptid).exclude(status = 'credited').values('fto__finyear').annotate(paymentDetailAmount = Sum('creditedAmount'), workDetailAmount = Sum('workDetail__totalWage'), jcs = Count('applicant__jobcard1', distinct = True), fy = F('fto__finyear'))
+                paymentDetail = PaymentDetail.objects.filter(applicant__panchayat__id = ptid).exclude(status = 'credited').values('fto__finyear').annotate(paymentDetailAmount = Sum('creditedAmount'), workDetailAmount = Sum('workDetail__totalWage'), jcs = Count('worker__jobcard__jobcard', distinct = True), fy = F('fto__finyear'))
 
 
             else:
-                paymentDetail = PaymentDetail.objects.filter(applicant__panchayat__id = ptid, status__icontains = musterstatus).values('fto__finyear').annotate(paymentDetailAmount = Sum('creditedAmount'), workDetailAmount = Sum('workDetail__totalWage'), jcs = Count('applicant__jobcard1', distinct = True), fy = F('fto__finyear'))    
+                paymentDetail = PaymentDetail.objects.filter(applicant__panchayat__id = ptid, status__icontains = musterstatus).values('fto__finyear').annotate(paymentDetailAmount = Sum('creditedAmount'), workDetailAmount = Sum('workDetail__totalWage'), jcs = Count('worker__jobcard__jobcard', distinct = True), fy = F('fto__finyear'))    
 
         # If jobcard number is given, get info for jobcard
         else:
 
             if musterstatus == '':
-                paymentDetail = PaymentDetail.objects.filter(applicant__jobcard1 = jobcard).values('fto__finyear').annotate(paymentDetailAmount = Sum('creditedAmount'), workDetailAmount = Sum('workDetail__totalWage'), jcs = Count('applicant__jobcard1', distinct = True), fy = F('fto__finyear'))
+                paymentDetail = PaymentDetail.objects.filter(worker__jobcard__jobcard = jobcard).values('fto__finyear').annotate(paymentDetailAmount = Sum('creditedAmount'), workDetailAmount = Sum('workDetail__totalWage'), jcs = Count('worker__jobcard__jobcard', distinct = True), fy = F('fto__finyear'))
             
             elif musterstatus == 'nofto':
-                paymentDetail = PaymentDetail.objects.filter(applicant__jobcard1 = jobcard, status = '').values('fto__finyear').annotate(paymentDetailAmount = Sum('creditedAmount'), workDetailAmount = Sum('workDetail__totalWage'), jcs = Count('applicant__jobcard1', distinct = True), fy = F('fto__finyear'))
+                paymentDetail = PaymentDetail.objects.filter(worker__jobcard__jobcard = jobcard, status = '').values('fto__finyear').annotate(paymentDetailAmount = Sum('creditedAmount'), workDetailAmount = Sum('workDetail__totalWage'), jcs = Count('worker__jobcard__jobcard', distinct = True), fy = F('fto__finyear'))
             
             elif musterstatus == 'uncredited':
-                paymentDetail = PaymentDetail.objects.filter(applicant__jobcard1 = jobcard).exclude(status = 'credited').values('fto__finyear').annotate(paymentDetailAmount = Sum('creditedAmount'), workDetailAmount = Sum('workDetail__totalWage'), jcs = Count('applicant__jobcard1', distinct = True), fy = F('fto__finyear'))
+                paymentDetail = PaymentDetail.objects.filter(worker__jobcard__jobcard = jobcard).exclude(status = 'credited').values('fto__finyear').annotate(paymentDetailAmount = Sum('creditedAmount'), workDetailAmount = Sum('workDetail__totalWage'), jcs = Count('worker__jobcard__jobcard', distinct = True), fy = F('fto__finyear'))
 
 
             else:
-                paymentDetail = PaymentDetail.objects.filter(applicant__jobcard1 = jobcard, status__icontains = musterstatus).values('fto__finyear').annotate(paymentDetailAmount = Sum('creditedAmount'), workDetailAmount = Sum('workDetail__totalWage'), jcs = Count('applicant__jobcard1', distinct = True), fy = F('fto__finyear'))    
+                paymentDetail = PaymentDetail.objects.filter(worker__jobcard__jobcard = jobcard, status__icontains = musterstatus).values('fto__finyear').annotate(paymentDetailAmount = Sum('creditedAmount'), workDetailAmount = Sum('workDetail__totalWage'), jcs = Count('worker__jobcard__jobcard', distinct = True), fy = F('fto__finyear'))    
 
             
             
@@ -387,7 +424,7 @@ def employmentStatus(request):
                 serializer = EmploymentStatusSerializer(employmentStatusByFy, many=True)
 
             else:
-                employmentStatusByFy = WorkDetail.objects.filter(applicant__jobcard1 = jobcard).values('muster__finyear').annotate(fy = F('muster__finyear'), days = Sum('daysWorked'), dayWage = Avg('dayWage'), jcs = Count('zjobcard', distinct = True)).order_by('fy')
+                employmentStatusByFy = WorkDetail.objects.filter(worker__jobcard__jobcard = jobcard).values('muster__finyear').annotate(fy = F('muster__finyear'), days = Sum('daysWorked'), dayWage = Avg('dayWage'), jcs = Count('zjobcard', distinct = True)).order_by('fy')
 
                 serializer = EmploymentStatusSerializer(employmentStatusByFy, many=True)
 
@@ -410,15 +447,14 @@ def getInfoByJc(request):
         jcno = request.GET.get('jobcard', '')
         mStatus = request.GET.get('musterstatus', '')
         if mStatus == '':
-            paymentStatusByFy = WorkDetail.objects.filter(applicant__jobcard1 = jcno).values('muster__finyear').annotate(fy = F('muster__finyear'), amount = Sum('totalWage'), jcs = Count('applicant__jobcard1', distinct = True)).order_by('fy')
+            paymentStatusByFy = WorkDetail.objects.filter(worker__jobcard__jobcard = jcno).values('muster__finyear').annotate(fy = F('muster__finyear'), amount = Sum('totalWage'), jcs = Count('worker__jobcard__jobcard', distinct = True)).order_by('fy')
 
         else:
-            paymentStatusByFy = WorkDetail.objects.filter(applicant__jobcard1 = jcno, musterStatus = mStatus).values('muster__finyear').annotate(fy = F('muster__finyear'), amount = Sum('totalWage'), jcs = Count('applicant__jobcard1', distinct = True)).order_by('fy')
+            paymentStatusByFy = WorkDetail.objects.filter(worker__jobcard__jobcard = jcno, musterStatus = mStatus).values('muster__finyear').annotate(fy = F('muster__finyear'), amount = Sum('totalWage'), jcs = Count('worker__jobcard__jobcard', distinct = True)).order_by('fy')
 
         
         serializer = getInfoByJcSerializer(paymentStatusByFy, many=True)
         return JsonResponse(serializer.data, safe=False)
-
 @csrf_exempt
 def getWorkDetailsByJc(request):
     if request.method == 'GET':
@@ -426,11 +462,11 @@ def getWorkDetailsByJc(request):
         workcode = request.GET.get('workcode', '')
         jcno = request.GET.get('jobcard', '')
         if musterstatus == '':
-            transactions = WorkDetail.objects.filter(applicant__jobcard1 = jcno).order_by('-muster__dateTo')
+            transactions = WorkDetail.objects.filter(worker__jobcard__jobcard = jcno).order_by('-muster__dateTo')
         elif musterstatus == 'uncredited':
-            transactions = WorkDetail.objects.filter(applicant__jobcard1 = jcno).exclude(musterStatus = 'credited').order_by('-muster__dateTo')
+            transactions = WorkDetail.objects.filter(worker__jobcard__jobcard = jcno).exclude(musterStatus = 'credited').order_by('-muster__dateTo')
         else:
-            transactions = WorkDetail.objects.filter(applicant__jobcard1 = jcno, musterStatus = musterstatus).order_by('-muster__dateTo')
+            transactions = WorkDetail.objects.filter(worker__jobcard__jobcard = jcno, musterStatus = musterstatus).order_by('-muster__dateTo')
         
         serializer = getWorkDetailsByJcSerializer(transactions, many=True)
         return JsonResponse(serializer.data, safe=False)
@@ -442,9 +478,9 @@ def getTransactionByWorkCode(request):
         workcode = request.GET.get('workcode', '')
         jcno = request.GET.get('jobcard', '')
         if workcode == '':
-            transactions = WorkDetail.objects.filter(applicant__jobcard1 = jcno).order_by('-muster__dateTo')
+            transactions = WorkDetail.objects.filter(worker__jobcard__jobcard = jcno).order_by('-muster__dateTo')
         else:
-            transactions = WorkDetail.objects.filter(applicant__jobcard1 = jcno, muster__workCode = workcode).order_by('-muster__dateTo')
+            transactions = WorkDetail.objects.filter(worker__jobcard__jobcard = jcno, muster__workCode = workcode).order_by('-muster__dateTo')
         
         serializer = getWorkDetailsByJcSerializer(transactions, many=True)
         return JsonResponse(serializer.data, safe=False)
@@ -527,7 +563,7 @@ Currently, payment information is joined with the Applicant table but may have t
 def getPaymentDetail(request):
     if request.method == 'GET':
         jobcard = request.GET.get('jobcard', '')
-        transactions = PaymentDetail.objects.filter(applicant__jobcard1 = jobcard).order_by('-processDate')
+        transactions = PaymentDetail.objects.filter(worker__jobcard__jobcard = jobcard).order_by('-processDate')
         serializer = PaymentDetailTransactionsSerializer(transactions, many=True)
             
         return JsonResponse(serializer.data, safe=False)

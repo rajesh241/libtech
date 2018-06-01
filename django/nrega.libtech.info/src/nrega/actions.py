@@ -43,7 +43,31 @@ def export_as_csv_action(description="Export selected objects as CSV file",
     export_as_csv.short_description = description
     return export_as_csv
 
+def get_panchayat_dump(modeladmin,request,queryset):
+    curTimeStamp=str(int(time.time()))
+    dateString=datetime.date.today().strftime("%B_%d_%Y_%I_%M")
+    baseDir="/tmp/genericReports/"
+    filename="/tmp/genericReports/panchayatDump.csv"
+    s=''
+    s+="panchayatID,panchayatCode,panchayatName,blockID,blockCode,blockName,districtID,districtCode,districtName,stateID,stateCode,stateName\n"
+    for obj in queryset:
+      eachLine="%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (str(obj.id),obj.code,obj.name,str(obj.block.id),obj.block.code,obj.block.name,str(obj.block.district.id),obj.block.district.code,obj.block.district.name,str(obj.block.district.state.id),obj.block.district.state.code,obj.block.district.state.name)
+      s+=eachLine 
+    with open(filename,"w") as f:
+      f.write(s)
+    cloudFilename="media/temp/panchayatDump.csv"
+    session = boto3.session.Session(aws_access_key_id=LIBTECH_AWS_ACCESS_KEY_ID,
+                                    aws_secret_access_key=LIBTECH_AWS_SECRET_ACCESS_KEY)
+    s3 = session.resource('s3',config=Config(signature_version='s3v4'))
+    s3.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(ACL='public-read',Key=cloudFilename, Body=s)
+    baseURL="https://s3.ap-south-1.amazonaws.com/libtech-nrega"
+    publicURL="%s/%s" % (baseURL,cloudFilename)
+#    with open("/tmp/test.csv","w") as f:
+#      f.write(s)
+    return HttpResponseRedirect(publicURL)
+ 
 
+ 
 def download_reports_zip(modeladmin, request, queryset):
     curTimeStamp=str(int(time.time()))
     dateString=datetime.date.today().strftime("%B_%d_%Y_%I_%M")
@@ -75,3 +99,4 @@ def download_reports_zip(modeladmin, request, queryset):
     return HttpResponseRedirect(publicURL)
     
 download_reports_zip.short_description = "Download Selected Reports as Zip" 
+get_panchayat_dump.short_description="Get PanchayatDump"

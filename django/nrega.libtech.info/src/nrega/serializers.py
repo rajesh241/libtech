@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers
-from nrega.models import State,District,Block,Panchayat, Jobcard, WorkDetail, Muster, PaymentDetail, PendingPostalPayment, Applicant, PanchayatStat, PanchayatCrawlQueue, Worker
+from nrega.models import State,District,Block,Panchayat, Jobcard, WorkDetail, Muster, PaymentDetail, PendingPostalPayment, Applicant, PanchayatStat, PanchayatCrawlQueue, Worker, PaymentInfo
 
 #----------------RECORDS TO HELP SELECT THE RIGHT PANCHAYAT AND JOBCARD-----------
 # The following functions provide data to help the chatbot user select the right Panchayat and the right jobcard for which they want data.
@@ -8,7 +8,7 @@ from nrega.models import State,District,Block,Panchayat, Jobcard, WorkDetail, Mu
 class CrawlStatusSerializer(serializers.ModelSerializer):
   class Meta:
     model = PanchayatCrawlQueue
-    fields = ('panchayat', 'isComplete', 'isError', 'status')
+    fields = ('panchayat', 'isComplete', 'isError', 'status', 'crawlStartDate', 'crawlAttemptDate')
     
 class StateSerializer1(serializers.ModelSerializer):
   state = serializers.CharField()
@@ -196,7 +196,7 @@ class PostalPaymentSerializer(serializers.ModelSerializer):
   worker = WorkerSerializer()
   class Meta:
     model = PendingPostalPayment
-    fields = ('id', 'balance', 'worker')
+    fields = ('id', 'balance', 'worker', 'statusDate', 'lastTransactionDate')
 
 
 class PostalPaymentPtSerializer(serializers.ModelSerializer):
@@ -216,9 +216,9 @@ class JcsByMusterStatus(serializers.ModelSerializer):
 #---------ADMIN RECORDS-----------------------    
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = User
-        fields = ('url', 'username', 'email', 'groups')
+  class Meta:
+    model = User
+    fields = ('url', 'username', 'email', 'groups')
 
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
@@ -227,6 +227,21 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url', 'name')
 
 class UserSerializer1(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('id', 'username', 'first_name', 'last_name', 'email')
+  class Meta:
+    model = User
+    fields = ('id', 'username', 'first_name', 'last_name', 'email')
+
+class WorkDetailSerializer_new(serializers.ModelSerializer):
+  class Meta:
+    model = WorkDetail
+    fields = ('worker', 'zname', 'zjobcard')
+
+class PaymentInfoSerializer(serializers.ModelSerializer):
+  status = serializers.CharField()
+  rejectionReason = serializers.CharField()
+  creditedAmount = serializers.CharField()
+  accountNo = serializers.CharField()
+  workDetail = WorkDetailSerializer_new()
+  class Meta:
+    model = PaymentInfo
+    fields = ('status', 'rejectionReason', 'creditedAmount', 'accountNo', 'workDetail')

@@ -59,9 +59,9 @@ def argsFetch():
 
 def getResponse(logger,url,oldResponse,districtCode,blockCode,panchayatCode,eventTarget,isSubmit=None):
   html_source = oldResponse.content
+
   bs = BeautifulSoup(html_source, "html.parser")
   state = bs.find(id='__VIEWSTATE').get('value')
-  validation = bs.find(id='__EVENTVALIDATION').get('value')
   stateGenerator = bs.find(id='__VIEWSTATEGENERATOR').get('value')
   cookies = oldResponse.cookies
   #logger.info(cookies)
@@ -83,7 +83,6 @@ def getResponse(logger,url,oldResponse,districtCode,blockCode,panchayatCode,even
     ('__LASTFOCUS', ''),
     ('__VIEWSTATE', state),
     ('__VIEWSTATEGENERATOR', stateGenerator),
-    ('__EVENTVALIDATION', validation),
     ('ctl00$MainContent$btnDisplayReport',''),
     ('ctl00$MainContent$ddldistrictname', districtCode),
     ('ctl00$MainContent$ddlMandalName', blockCode),
@@ -96,7 +95,6 @@ def getResponse(logger,url,oldResponse,districtCode,blockCode,panchayatCode,even
     ('__LASTFOCUS', ''),
     ('__VIEWSTATE', state),
     ('__VIEWSTATEGENERATOR', stateGenerator),
-    ('__EVENTVALIDATION', validation),
     ('ctl00$MainContent$ddldistrictname', districtCode),
     ('ctl00$MainContent$ddlMandalName', blockCode),
     ('ctl00$MainContent$ddlGPName', panchayatCode),
@@ -228,8 +226,13 @@ def downloadPage(logger,eachPanchayat):
   outhtml=''
   title="Postal Payment Details: state:%s District:%s block:%s panchayat: %s " % (eachPanchayat.block.district.state.name,eachPanchayat.block.district.name,eachPanchayat.block.name,eachPanchayat.name)
   url=postalWebsite
+  logger.info('Fetch %s[%s]' % (url,title))
   response = requests.get(url)
-  
+  filename = 'z.html'
+  with open(filename, 'wb') as html_file:
+    logger.info('Writing [%s]' % filename)
+    html_file.write(response.content)
+                            
   eventTarget='ctl00$MainContent$ddlGPName'
   response=getResponse(logger,url,response,districtCode,"-1","-1",eventTarget,1)
   response=getResponse(logger,url,response,districtCode,blockCode,"-1",eventTarget,1)

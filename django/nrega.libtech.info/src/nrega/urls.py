@@ -26,5 +26,7 @@ urlpatterns = [
     url(r'^api/crawldatarequest/$', apiviews.crawlDataRequest),
     url(r'^api/crawlstatuspt/$', apiviews.crawlStatusPt),
     url(r'^api/bot/$', botviews.UserList.as_view()),
+    url(r'^api/ptreport/$', apiviews.PanchayatReport),
+    url(r'^api/paymentinfo/$', apiviews.paymentInfo),
 ]
 

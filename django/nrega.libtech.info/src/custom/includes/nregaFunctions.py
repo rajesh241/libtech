@@ -17,7 +17,15 @@ from django.utils import timezone
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
 django.setup()
 
-from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,PanchayatReport,VillageReport
+from nrega.models import State,District,Block,Panchayat,Muster,WorkDetail,PanchayatReport,VillageReport,BlockReport
+def dateStringToDateObject(dateString):
+  datetimeObject=None
+  if "-" in dateString:
+    try:
+      datetimeObject=datetime.datetime.strptime(dateString, '%d-%m-%Y')
+    except:
+      datetimeObject=None
+  return datetimeObject
 
 def getEncodedData(s):
   try:
@@ -46,8 +54,14 @@ def getTelanganaDate(myDateString,dateType):
 
 def correctDateFormat(myDateString):
   if myDateString != '':
-    myDate = time.strptime(myDateString, '%d/%m/%Y')
-    myDate = time.strftime('%Y-%m-%d', myDate)
+    try:
+      if "/" in myDateString:
+        myDate = time.strptime(myDateString, '%d/%m/%Y')
+      else:
+        myDate = time.strptime(myDateString, '%d-%m-%Y')
+      myDate = time.strftime('%Y-%m-%d', myDate)
+    except:
+      myDate=None
   else:
     myDate=None
   return myDate
@@ -56,6 +70,17 @@ def getFullFinYear(shortFinYear):
   shortFinYear_1 = int(shortFinYear) -1
   fullFinYear="20%s-20%s" % (str(shortFinYear_1), str(shortFinYear))
   return fullFinYear
+
+def saveBlockReport(logger,eachBlock,finyear,reportType,filename,filecontent):
+  myReport=BlockReport.objects.filter(block=eachBlock,finyear=finyear,reportType=reportType).first()
+  if myReport is None:
+    BlockReport.objects.create(block=eachBlock,finyear=finyear,reportType=reportType)   
+    logger.info("Report Created")
+  else:
+    logger.info("Report Already Exists")
+  myReport=BlockReport.objects.filter(block=eachBlock,finyear=finyear,reportType=reportType).first()
+  myReport.reportFile.save(filename, ContentFile(filecontent))
+  myReport.save()
 
 def savePanchayatReport(logger,eachPanchayat,finyear,reportType,filename,filecontent):
   myReport=PanchayatReport.objects.filter(panchayat=eachPanchayat,finyear=finyear,reportType=reportType).first()

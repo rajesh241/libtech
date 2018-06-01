@@ -253,19 +253,19 @@ class Panchayat(models.Model):
   def __str__(self):
     return "%s-%s-%s-%s" % (self.block.district.state.name,self.block.district.name,self.block.name,self.name)
 
-class PanchayatCrawlQueue(models.Model):
-  CRAWL_STAGES = (
+class BlockCrawlQueue(models.Model):
+  BLOCK_CRAWL_STAGES = (
         ('0', 'No Data'),
-        ('1', 'STATSDownloaded'),
-        ('2', 'JobcardRegisterCrawledProcessed'),
-        ('3', 'MustersDownloadedProcessed'),
+        ('1', 'EnumeratedPanchayats'),
+        ('2', 'Panchayats Crawled'),
+        ('3', 'Panchayats Crawled'),
         ('4', 'WagelistDownloadedProcessed'),
         ('5', 'FTODownloadedProcessed'),
         ('6', 'StatsComputed'),
         ('7', 'ReportsGenerated'),
     )
  
-  panchayat=models.ForeignKey('panchayat',on_delete=models.CASCADE)
+  block=models.ForeignKey('block',on_delete=models.CASCADE)
   priority=models.PositiveSmallIntegerField(default=0)
   startFinYear=models.CharField(max_length=2,default='16')
   progress=models.PositiveSmallIntegerField(default=0)
@@ -276,10 +276,100 @@ class PanchayatCrawlQueue(models.Model):
   modified=models.DateTimeField(null=True,blank=True,auto_now=True)
   isComplete=models.BooleanField(default=False)
   isError=models.BooleanField(default=False)
-  status=models.CharField(max_length=4,choices=CRAWL_STAGES,default='0')
+  status=models.CharField(max_length=4,choices=BLOCK_CRAWL_STAGES,default='0')
   error=models.CharField(max_length=1024,blank=True,null=True)
   def __str__(self):
     return "%s-%s-%s-%s" % (self.panchayat.block.district.state.name,self.panchayat.block.district.name,self.panchayat.block.name,self.panchayat.name)
+ 
+class CrawlQueue(models.Model):
+  CRAWL_STATUS_OPTIONS = (
+        ('STARTCRAWL', 'STARTCRAWL'),
+        ('NICStats', 'NICStats'),
+        ('JobcardRegister', 'JobcardRegister'),
+        ('APJobcardDownload', 'APJobcardDownload'),
+        ('APJobcardProcess', 'APJobcardProcess'),
+        ('MusterCrawl', 'MusterCrawl'),
+        ('MusterDownload', 'MusterDownload'),
+        ('MusterProcess', 'MusterProcess'),
+        ('WagelistDownload', 'WagelistDownload'),
+        ('WagelistProcess', 'WagelistProcess'),
+        ('FTODownload', 'FTODownload'),
+        ('FTOProcess', 'FTOProcess'),
+        ('ComputeStats', 'ComputeStats'),
+        ('PanchayatReport', 'PanchayatReport'),
+        ('DetailPanchayatReport', 'DetailPanchayatReport'),
+        ('APReport', 'APReport'),
+        ('Complete', 'Complete'),
+    )
+ 
+
+  panchayat=models.ForeignKey('panchayat',null=True,blank=True)
+  block=models.ForeignKey('block',null=True,blank=True)
+  priority=models.PositiveSmallIntegerField(default=0)
+  startFinYear=models.CharField(max_length=2,default='16')
+  crawlStatus=models.CharField(max_length=256,default='NoData')
+  progress=models.PositiveSmallIntegerField(default=0)
+  downloadAttemptCount=models.PositiveSmallIntegerField(default=0)
+  crawlStartDate=models.DateTimeField(null=True,blank=True)
+  crawlAttemptDate=models.DateTimeField(null=True,blank=True)
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
+  modified=models.DateTimeField(null=True,blank=True,auto_now=True)
+  isComplete=models.BooleanField(default=False)
+  isError=models.BooleanField(default=False)
+  stepError=models.BooleanField(default=False)
+  status=models.CharField(max_length=256,choices=CRAWL_STATUS_OPTIONS,default='STARTCRAWL')
+  error=models.CharField(max_length=4086,blank=True,null=True)
+  def __str__(self):
+    if self.panchayat is not  None:
+      return "%s-%s-%s-%s" % (self.panchayat.block.district.state.name,self.panchayat.block.district.name,self.panchayat.block.name,self.panchayat.name)
+    elif self.block is not  None:
+      return "%s-%s-%s" % (self.block.district.state.name,self.block.district.name,self.block.name)
+    else:
+      return self.id
+   
+ 
+class PanchayatCrawlQueue(models.Model):
+  CRAWL_STAGES = (
+        ('0', 'NoData'),
+        ('10', 'STATSDownloaded'),
+        ('20', 'JobcardRegisterCrawledProcessed'),
+        ('30', 'MustersCrawled'),
+        ('31', 'MusterDownloaded'),
+        ('32', 'MusterProcessed'),
+        ('50', 'WagelistDownloaded'),
+        ('51', 'WagelistProcessed'),
+        ('60', 'FTODownloaded'),
+        ('61', 'FTOProcessed'),
+        ('70', 'StatsComputed'),
+        ('80', 'PanchayatReportsGenerated'),
+        ('81', 'BlockReportsGenerated'),
+        ('100', 'Completed'),
+    )
+ 
+  panchayat=models.ForeignKey('panchayat',null=True,blank=True)
+  block=models.ForeignKey('block',null=True,blank=True)
+  blockQueue=models.ForeignKey('BlockCrawlQueue',on_delete=models.CASCADE,null=True,blank=True)
+  priority=models.PositiveSmallIntegerField(default=0)
+  startFinYear=models.CharField(max_length=2,default='16')
+  crawlStatus=models.CharField(max_length=256,default='NO Data')
+  progress=models.PositiveSmallIntegerField(default=0)
+  downloadAttemptCount=models.PositiveSmallIntegerField(default=0)
+  crawlStartDate=models.DateTimeField(null=True,blank=True)
+  crawlAttemptDate=models.DateTimeField(null=True,blank=True)
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
+  modified=models.DateTimeField(null=True,blank=True,auto_now=True)
+  isComplete=models.BooleanField(default=False)
+  isError=models.BooleanField(default=False)
+  stepError=models.BooleanField(default=False)
+  status=models.CharField(max_length=4,choices=CRAWL_STAGES,default='0')
+  error=models.CharField(max_length=1024,blank=True,null=True)
+  def __str__(self):
+    if self.panchayat is not  None:
+      return "%s-%s-%s-%s" % (self.panchayat.block.district.state.name,self.panchayat.block.district.name,self.panchayat.block.name,self.panchayat.name)
+    elif self.block is not  None:
+      return "%s-%s-%s" % (self.panchayat.block.district.state.name,self.panchayat.block.district.name,self.panchayat.block.name)
+    else:
+      return self.id
    
    
 class LibtechTag(models.Model):
@@ -452,9 +542,10 @@ class Applicant(models.Model):
   #     [accountFrozen,uid] = cols[26:28]
 
 class FTO(models.Model):
-  block=models.ForeignKey('block',on_delete=models.CASCADE)
-  ftoNo=models.CharField(max_length=256)
-  finyear=models.CharField(max_length=2)
+  block=models.ForeignKey('block',on_delete=models.CASCADE,db_index=True)
+  ftoNo=models.CharField(max_length=256,db_index=True)
+  paymentMode=models.CharField(max_length=64,blank=True,null=True)
+  finyear=models.CharField(max_length=2,db_index=True)
   firstSignatoryDate=models.DateField(null=True,blank=True)
   secondSignatoryDate=models.DateField(null=True,blank=True)
   ftofinyear=models.CharField(max_length=2,blank=True,null=True)
@@ -473,9 +564,9 @@ class FTO(models.Model):
     return self.ftoNo
 
 class Wagelist(models.Model):
-  block=models.ForeignKey('block',on_delete=models.CASCADE)
+  block=models.ForeignKey('block',on_delete=models.CASCADE,db_index=True)
   wagelistNo=models.CharField(max_length=256)
-  finyear=models.CharField(max_length=2)
+  finyear=models.CharField(max_length=2,db_index=True)
   wagelistFile=models.FileField(null=True, blank=True,upload_to=get_wagelist_upload_path,max_length=512)
   isDownloaded=models.BooleanField(default=False)
   isProcessed=models.BooleanField(default=False)
@@ -488,9 +579,9 @@ class Wagelist(models.Model):
     return self.wagelistNo
     
 class Muster(models.Model):
-  panchayat=models.ForeignKey('Panchayat',on_delete=models.CASCADE,blank=True,null=True)
+  panchayat=models.ForeignKey('Panchayat',on_delete=models.CASCADE,db_index=True,blank=True,null=True)
   block=models.ForeignKey('block',on_delete=models.CASCADE)
-  musterNo=models.CharField(max_length=64)
+  musterNo=models.CharField(max_length=64,db_index=True)
   finyear=models.CharField(max_length=2)
   musterType=models.CharField(max_length=4)
   workCode=models.CharField(max_length=128)
@@ -522,7 +613,7 @@ class Muster(models.Model):
 class WorkDetail(models.Model):  
   applicant=models.ForeignKey('Applicant',on_delete=models.CASCADE,null=True,blank=True)  #OutDaed please do not use this field
   worker=models.ForeignKey('Worker',on_delete=models.CASCADE,db_index=True,null=True,blank=True)
-  muster=models.ForeignKey('Muster',on_delete=models.CASCADE)
+  muster=models.ForeignKey('Muster',on_delete=models.CASCADE,db_index=True)
 #  wagelist=models.ForeignKey('Wagelist',on_delete=models.CASCADE,null=True,blank=True)
   wagelist=models.ManyToManyField('Wagelist',related_name="wdWagelist",blank=True)
   musterIndex=models.PositiveSmallIntegerField()
@@ -544,8 +635,8 @@ class WorkDetail(models.Model):
     return self.muster.musterNo+" "+str(self.musterIndex)
  
 class PaymentInfo(models.Model):
-  workDetail=models.ForeignKey('WorkDetail',on_delete=models.CASCADE)
-  wagelist=models.ForeignKey('Wagelist',on_delete=models.CASCADE)
+  workDetail=models.ForeignKey('WorkDetail',on_delete=models.CASCADE,db_index=True)
+  wagelist=models.ForeignKey('Wagelist',on_delete=models.CASCADE,db_index=True)
   fto=models.ForeignKey('FTO',on_delete=models.CASCADE,null=True,blank=True)
   payorderNo=models.CharField(max_length=256,null=True,blank=True)
   epayorderNo=models.CharField(max_length=256,null=True,blank=True)
@@ -556,6 +647,8 @@ class PaymentInfo(models.Model):
   rejectionReason=models.CharField(max_length=256,null=True,blank=True)
   creditedAmount=models.DecimalField(max_digits=10,decimal_places=4,null=True,blank=True)
   daysWorked=models.DecimalField(null=True,blank=True,max_digits=21,decimal_places=2)
+  accountNo=models.CharField(max_length=256,blank=True,null=True)
+  primaryAccountHolder=models.CharField(max_length=512,blank=True,null=True)
   disbursedAmount=models.DecimalField(max_digits=10,decimal_places=4,null=True,blank=True)
   disbursedDate=models.DateField(null=True,blank=True)
   created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
@@ -565,7 +658,7 @@ class PaymentInfo(models.Model):
   def __str__(self):
     return str(self.workDetail.id)
 
-
+ 
 class PaymentDetail(models.Model):
   applicant=models.ForeignKey('Applicant',on_delete=models.CASCADE,null=True,blank=True) #OutDated please do no use this field
   worker=models.ForeignKey('Worker',on_delete=models.CASCADE,db_index=True,null=True,blank=True)
@@ -671,7 +764,34 @@ class CallLog(models.Model):
   duration=models.IntegerField(default=5000)
   vendor=models.CharField(max_length=64)
    
+class APWorkPayment(models.Model):
+  jobcard=models.ForeignKey('Jobcard',db_index=True,on_delete=models.CASCADE,blank=True,null=True)
+  name=models.CharField(max_length=512,null=True,blank=True)
+  applicantNo=models.PositiveSmallIntegerField(db_index=True,null=True,blank=True)
+  musterNo=models.CharField(max_length=64,db_index=True,null=True,blank=True)
+  finyear=models.CharField(max_length=2,null=True,blank=True)
+  workCode=models.CharField(max_length=128,null=True,blank=True)
+  workName=models.CharField(max_length=2046,null=True,blank=True)
+  dateTo=models.DateField(null=True,blank=True)
+  daysWorked=models.PositiveSmallIntegerField(null=True,blank=True)
+  accountNo=models.CharField(max_length=256,blank=True,null=True)
+  modeOfPayment=models.CharField(max_length=256,blank=True,null=True)
+  payorderAmount=models.DecimalField(max_digits=10,decimal_places=4,null=True,blank=True)
+  payorderNo=models.CharField(max_length=256,null=True,blank=True)
+  payorderDate=models.DateField(null=True,blank=True)
+  epayorderNo=models.CharField(db_index=True,max_length=256,null=True,blank=True)
+  epayorderDate=models.DateField(null=True,blank=True)
+  payingAgencyDate=models.DateField(null=True,blank=True)
+  creditedDate=models.DateField(null=True,blank=True)
+  disbursedAmount=models.DecimalField(max_digits=10,decimal_places=4,null=True,blank=True)
+  disbursedDate=models.DateField(null=True,blank=True)
+  created=models.DateTimeField(null=True,blank=True,auto_now_add=True)
+  modified=models.DateTimeField(null=True,blank=True,auto_now=True)
+  class Meta:
+        unique_together = ('jobcard', 'applicantNo','epayorderNo')  
  
+  def __str__(self):
+    return self.epayorderNo
 
    
 def createslug(instance):
