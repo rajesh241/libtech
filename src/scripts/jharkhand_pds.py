@@ -488,6 +488,7 @@ card_types = {
 
 
 village_codes = {
+    '365651':'Lalgara',
     '366879':'Agardih Mandhania',
     '366847':'Ambatikar',
     '366846':'Antikheta',
@@ -1097,8 +1098,7 @@ def fetch_via_ditigalikaran(logger):
     
     return 'SUCCESS'
 
-def dump_ration_report(logger, cookies):
-    ration_list_html = post_ration_req(logger, cookies=cookies, district_code='364', block_code='02695', village_code='374356', card_type='5')
+def parse_ration_list_html(logger, ration_list_html, csv_buffer):
     bs = BeautifulSoup(ration_list_html, 'html.parser')
 
     table = bs.find(id='maintable')
@@ -1110,22 +1110,34 @@ def dump_ration_report(logger, cookies):
         logger.error('No Data Found[%s]' % e)
     logger.info(th_list)
 
-    csv_buffer = []
+    desired_columns =  [1, 2, 3, 4, 5]
+
     header_row = []
+    count = 0
     for th in th_list:
-        colname = th.text.strip()
-        logger.info(colname)
-        header_row.append(colname)
+        if csv_buffer != []:
+            break
+        if count in desired_columns:
+            colname = th.text.strip()
+            logger.info(colname)
+            header_row.append(colname)
+        if count == 8:
+            colname = th.text.strip()
+            logger.info(colname)
+            header_row.insert(0, colname)
+            break
+        count += 1
 
-    logger.info(header_row)
+    if csv_buffer == []:
+        logger.info(header_row)
 
-    csv_buffer.append(','.join(header_row) + '\n')
-    logger.info(csv_buffer)
+        csv_buffer.append(','.join(header_row) + '\n')
+        logger.info(csv_buffer)
 
     tr = th.findNext('tr')
     logger.debug(tr)
 
-    while(tr):
+    while(tr.findNext('tr')):
         try:
             td_list = tr.select('td')
         except Exception as e:
@@ -1133,10 +1145,18 @@ def dump_ration_report(logger, cookies):
         logger.debug(td_list)
         
         row = []
+        count = 0
         for td in td_list:
-            value = td.text.strip()
-            logger.info(value)
-            row.append(value)
+            if count in desired_columns:
+                value = td.text.strip()
+                logger.info(value)
+                row.append(value)
+            if count == 8:
+                value = td.text.strip()
+                logger.info(value)
+                row.insert(0, value)
+                break
+            count += 1
         
         logger.info(row)
         
@@ -1146,6 +1166,17 @@ def dump_ration_report(logger, cookies):
         tr = tr.findNext('tr')
         logger.debug(tr)
 
+    return 'SUCCESS'
+    
+
+def dump_ration_report(logger, cookies):
+    csv_buffer = []
+    ration_list_html = post_ration_req(logger, cookies=cookies, district_code='358', block_code='02621', village_code='365651', card_type='5')
+    parse_ration_list_html(logger, ration_list_html, csv_buffer)
+
+    ration_list_html = post_ration_req(logger, cookies=cookies, district_code='358', block_code='02621', village_code='365651', card_type='6')
+    parse_ration_list_html(logger, ration_list_html, csv_buffer)
+
     filename = dirname + 'report.csv'
     with open(filename, 'wb') as csv_file:
         logger.info("Writing to [%s]" % filename)
@@ -1153,7 +1184,7 @@ def dump_ration_report(logger, cookies):
         #csv_file.write(''.join(csv_buffer))
     
     logger.info('The CSV buffer written [%s]' % csv_buffer)
-
+    
     return 'SUCCESS'
 
 def create_dir(dirname):
@@ -1187,7 +1218,7 @@ def fetch_gap_reports(logger):
     return result
 
 def fetch_ration_reports(logger):
-    logger.info('Fetching Gap Reports:')
+    logger.info('Fetching Ration Reports:')
 
     create_dir(dirname)
     
@@ -1216,8 +1247,8 @@ class TestSuite(unittest.TestCase):
         self.assertEqual('SUCCESS', result)
 
     def test_fetch_pds_transactions(self):
-        result = fetch_gap_reports(self.logger)
-        # result = fetch_ration_reports(self.logger)
+        # result = fetch_gap_reports(self.logger)
+        result = fetch_ration_reports(self.logger)
         # result = pds_gaps(self.logger, district_name='RANCHI', block_name='NAGRI', month='03', year='2018')
         # result = fetch_via_masik_vitaran(self.logger)
         # result = fetch_cardholders_via_vivaran(self.logger)
