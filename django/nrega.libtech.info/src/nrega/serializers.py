@@ -111,6 +111,12 @@ class WorkDetailSerializer(serializers.ModelSerializer):
     model = WorkDetail
     fields = ('daysWorked', 'totalWage', 'muster')
 
+
+class PaymentDetailsTemp(serializers.ModelSerializer):
+  class Meta:
+    model = PaymentDetail
+    fields = ('status', 'creditedAmount')
+
 class PaymentDetailTransactionsSerializer(serializers.ModelSerializer):
   applicant = ApplicantSerializer()
   workDetail = WorkDetailSerializer()

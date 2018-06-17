@@ -129,7 +129,7 @@ class panchayatModelAdmin(admin.ModelAdmin):
     model=Panchayat
 
 class panchayatStatModelAdmin(admin.ModelAdmin):
-  actions = [export_as_csv_action("CSV Export", fields=['__str__','finyear','nicWorkDays','nicJobcardsTotal','nicWorkersTotal','libtechWorkDays','libtechWorkDaysPanchayatwise','jobcardsTotal','workersTotal','mustersTotal','mustersPendingDownload','mustersPendingProcessing','mustersInComplete','musterMissingApplicants','mustersDownloaded','mustersProcessed'])]
+  actions = [export_as_csv_action("CSV Export", fields=['__str__','finyear','nicWorkDays','nicJobcardsTotal','nicWorkersTotal','libtechWorkDays','libtechWorkDaysPanchayatwise','jobcardsTotal','workersTotal','mustersTotal','mustersPendingDownload','mustersPendingProcessing','mustersInComplete','musterMissingApplicants','mustersDownloaded','mustersProcessed','totalPending','totalRejected','totalInvalid'])]
   list_display=["get_panchayat","get_block","get_district","workDaysAccuracyIndex","finyear","nicWorkDays","libtechWorkDays"]
   search_fields=["panchayat__code","panchayat__name","panchayat__block__name","panchayat__block__code"]
   list_filter=["finyear","panchayat__crawlRequirement","panchayat__block__district__state__name"]
@@ -247,7 +247,7 @@ class paymentDetailModelAdmin(admin.ModelAdmin):
   search_fields=["referenceNo","fto__ftoNo","applicant__jobcard__jobcard","applicant__jobcard__tjobcard","worker__jobcard__panchayat__code"]
   list_filter=["applicant__panchayat__block__district__state__name"]
 class workDetailModelAdmin(admin.ModelAdmin):
-  list_display=["id","muster","musterIndex","applicant","zjobcard","zname","zaccountNo","creditedDate","musterStatus"]
+  list_display=["id","muster","musterIndex","applicant","creditedDate","musterStatus"]
   readonly_fields=["muster","applicant","wagelist"]
   search_fields=["id","zjobcard","muster__id"]
 
@@ -315,7 +315,7 @@ admin.site.register(Stat,statModelAdmin)
 admin.site.register(PaymentDetail,paymentDetailModelAdmin)
 admin.site.register(PaymentInfo,paymentInfoModelAdmin)
 admin.site.register(Worker,workerModelAdmin)
-admin.site.register(PanchayatCrawlQueue,panchayatCrawlQueueModelAdmin)
+#admin.site.register(PanchayatCrawlQueue,panchayatCrawlQueueModelAdmin)
 admin.site.register(PendingPostalPayment,pendingPostalPaymentModelAdmin)
 admin.site.register(APWorkPayment,APWorkPaymentModelAdmin)
 admin.site.register(CrawlQueue,crawlQueueModelAdmin)

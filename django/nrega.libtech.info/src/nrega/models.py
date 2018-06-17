@@ -418,6 +418,11 @@ class PanchayatStat(models.Model):
   mustersDownloaded=models.IntegerField(blank=True,null=True)
   mustersProcessed=models.IntegerField(blank=True,null=True)
   workDaysAccuracyIndex=models.IntegerField(blank=True,null=True)
+  modified=models.DateTimeField(null=True,blank=True,auto_now=True)
+  totalTransactions=models.IntegerField(blank=True,null=True)
+  totalRejected=models.IntegerField(blank=True,null=True)
+  totalInvalid=models.IntegerField(blank=True,null=True)
+  totalPending=models.IntegerField(blank=True,null=True)
 
   def __str__(self):
     return self.panchayat.name+"-"+self.panchayat.block.name
@@ -632,7 +637,7 @@ class WorkDetail(models.Model):
   class Meta:
         unique_together = ('muster', 'musterIndex')  
   def __str__(self):
-    return self.muster.musterNo+" "+str(self.musterIndex)
+    return str(self.id)+" "+self.muster.musterNo+" "+str(self.musterIndex)
  
 class PaymentInfo(models.Model):
   workDetail=models.ForeignKey('WorkDetail',on_delete=models.CASCADE,db_index=True)

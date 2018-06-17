@@ -86,9 +86,6 @@ def savePanchayatReport(logger,eachPanchayat,finyear,reportType,filename,filecon
   myReport=PanchayatReport.objects.filter(panchayat=eachPanchayat,finyear=finyear,reportType=reportType).first()
   if myReport is None:
     PanchayatReport.objects.create(panchayat=eachPanchayat,finyear=finyear,reportType=reportType)   
-    logger.info("Report Created")
-  else:
-    logger.info("Report Already Exists")
   myReport=PanchayatReport.objects.filter(panchayat=eachPanchayat,finyear=finyear,reportType=reportType).first()
   myReport.reportFile.save(filename, ContentFile(filecontent))
   myReport.save()

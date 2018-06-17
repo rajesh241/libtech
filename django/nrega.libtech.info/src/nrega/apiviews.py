@@ -12,7 +12,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 from nrega.models import Panchayat, State, Block, Jobcard, Applicant, WorkDetail, Muster, PaymentDetail, PendingPostalPayment, PanchayatStat, PanchayatCrawlQueue, PanchayatReport, PaymentInfo
 
-from nrega.serializers import PanchayatSerializer, StateSerializer, StateSerializer1, SelectBlockSerializer, JobcardSerializer2, JobcardSerializer, PtAvgSerializer, getInfoByJcSerializer, getWorkDetailsByJcSerializer, MusterSerializer, WorkSerializer, WorkCreditStatusPtSerializer, JcsByMusterStatus, EmploymentStatusSerializer, PaymentDetailSerializer, PostalPaymentSerializer, PostalPaymentPtSerializer, PaymentDetailTransactionsSerializer, PanchayatStatSerializer, BlAvgSerializer, EmploymentStatusByPtSerializer, CrawlStatusSerializer, PaymentInfoSerializer
+from nrega.serializers import PanchayatSerializer, StateSerializer, StateSerializer1, SelectBlockSerializer, JobcardSerializer2, JobcardSerializer, PtAvgSerializer, getInfoByJcSerializer, getWorkDetailsByJcSerializer, MusterSerializer, WorkSerializer, WorkCreditStatusPtSerializer, JcsByMusterStatus, EmploymentStatusSerializer, PaymentDetailSerializer, PostalPaymentSerializer, PostalPaymentPtSerializer, PaymentDetailTransactionsSerializer, PanchayatStatSerializer, BlAvgSerializer, EmploymentStatusByPtSerializer, CrawlStatusSerializer, PaymentInfoSerializer, PaymentDetailsTemp
 
 import json
 
@@ -563,8 +563,10 @@ Currently, payment information is joined with the Applicant table but may have t
 def getPaymentDetail(request):
     if request.method == 'GET':
         jobcard = request.GET.get('jobcard', '')
-        transactions = PaymentDetail.objects.filter(worker__jobcard__jobcard = jobcard).order_by('-processDate')
-        serializer = PaymentDetailTransactionsSerializer(transactions, many=True)
+        transactions = PaymentInfo.objects.filter(workDetail__worker__jobcard__jobcard = jobcard).order_by('-processDate')
+        serializer = PaymentInfoSerializer(transactions, many=True)
+#        serializer = PaymentDetailTransactionsSerializer(transactions, many=True)
+
             
         return JsonResponse(serializer.data, safe=False)
 
