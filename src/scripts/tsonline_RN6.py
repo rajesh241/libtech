@@ -13,6 +13,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 
+from os import errno
+
+import requests
 import time
 import unittest
 
@@ -24,8 +27,9 @@ from wrappers.sn import driverInitialize, driverFinalize, displayInitialize, dis
 #######################
 
 timeout = 10
+dirname = 'jobcards'
 
-def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=None):
+def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=None, block_name=None, panchayat_name=None):
     if not state:
         url = 'https://bdp.tsonline.gov.in/NeFMS_TS/NeFMS/Reports/NeFMS/AccountWiseTransactionReport.aspx'
     else:
@@ -36,18 +40,18 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
 
     if not jobcard_no:
         jobcard_no = '142000520007010154-02'
-    
+
+    filename = '%s/%s_%s_%s_ledger_details.html' % (dirname, block_name, panchayat_name, jobcard_no)
+    if os.path.exists(filename):
+        logger.info('File already donwnloaded. Skipping [%s]' % filename)
+        return 'SUCCESS'
+
     driver.get(url)
     logger.info("Fetching...[%s]" % url)
-  
+
     html_source = driver.page_source.replace('<head>',
-                                             '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+                                         '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
     logger.debug("HTML Fetched [%s]" % html_source)
-    
-    filename = 'rn6.html'
-    with open(filename, 'w') as html_file:
-        logger.info('Writing [%s]' % filename)
-        html_file.write(html_source)
 
     bs = BeautifulSoup(html_source, 'html.parser')
 
@@ -94,7 +98,8 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         elem.click()
         logger.info('Clicking Submit')
     except Exception as e:
-        logger.error('Ouch! Caught Exception[%s]' % e)
+        logger.error('Ouch! Caught Exception[%s, err[%d]]' % (e, e.errno))
+        return e.errno
     #time.sleep(timeout)
 
 
@@ -112,14 +117,14 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         logger.info('Clicked View Ledger')
     except Exception as e:
         logger.error('Ouch! Caught Exception[%s]' % e)
-    # time.sleep(timeout)
+    #time.sleep(2)
 
     parent_handle = driver.current_window_handle
     print("Handles : ", driver.window_handles, "Number : ", len(driver.window_handles))
 
     if len(driver.window_handles) == 2:
         driver.switch_to.window(driver.window_handles[-1])
-        # time.sleep(timeout)
+        #time.sleep(2)
     else:
         logger.error("Handlers gone wrong [" + str(driver.window_handles) + "]")
         driver.save_screenshot('./logs/button_'+jobcard_no+'.png')
@@ -139,7 +144,7 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
     html_source = driver.page_source.replace('<head>',
                                              '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
     logger.debug("HTML Fetched [%s]" % html_source)
-    filename = '%s_ledger_details.html' % jobcard_no
+    filename = '%s/%s_%s_%s_ledger_details.html' % (dirname, block_name, panchayat_name, jobcard_no)
     with open(filename, 'w') as html_file:
         logger.info('Writing [%s]' % filename)
         html_file.write(html_source)
@@ -149,11 +154,62 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         
     return 'SUCCESS'
 
+def fetch_rn6_reports(logger, driver):
+    logger.info('Fetch the jobcards')
+
+    if False:
+        result = fetch_rn6_report(logger, driver, state='ap', district_name='ANANTAPUR', jobcard_no='121673411011010257-02')
+        result = fetch_rn6_report(logger, driver, district_name='MAHABUBNAGAR', jobcard_no='142000520007010015-03')
+        return 'SUCCESS'
+
+    district_name = 'MAHABUBNAGAR'
+    block_name = 'Damaragidda'
+    # block_id = block_lookup[block_name]
+    block_id = '4378'
+
+    url = 'http://b.libtech.info:8000/api/panchayats/?bid=%s' % block_id
+    
+    try:
+        os.makedirs(dirname)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise        
+    
+    try:
+        logger.info('Fetching URL[%s]' % url)
+        response = requests.get(url, timeout=timeout) # , cookies=cookies)
+    except Exception as e:
+        logger.error('Caught Exception[%s]' % e) 
+
+    panchayats_json = response.json()
+    logger.debug('Panchayats JSON[%s]' % panchayats_json)
+
+    
+    for panchayat_object in panchayats_json:
+        panchayat_name = panchayat_object['name'].strip()
+        panchayat_code = panchayat_object['code'].strip()
+        logger.info('Fetch jobcards for Panchayat[%s, %s]' % (panchayat_name, panchayat_code))
+        
+        url = 'http://b.libtech.info:8000/api/getworkers/?pcode=%s' % panchayat_code
+        try:
+            logger.info('Fetching URL[%s]' % url)
+            response = requests.get(url, timeout=timeout)
+        except Exception as e:
+            logger.error('Caught Exception[%s]' % e)
+        jobcards_json = response.json()
+        logger.debug('JobCards JSON[%s]' % jobcards_json)
+        for jobcard_object in jobcards_json:
+            jobcard = '%s-0%s' % (jobcard_object['jobcard']['tjobcard'], jobcard_object['applicantNo'])
+            logger.info('Fetch details for jobcard[%s]' % jobcard)
+            fetch_rn6_report(logger, driver, district_name=district_name, jobcard_no=jobcard, block_name=block_name, panchayat_name=panchayat_name)
+    
+    return 'SUCCESS'
+
 class TestSuite(unittest.TestCase):
     def setUp(self):
         self.logger = loggerFetch('info')
         self.logger.info('BEGIN PROCESSING...')
-        self.display = displayInitialize(1)
+        self.display = displayInitialize(0)
         self.driver = driverInitialize(path='/opt/firefox/')
 
     def tearDown(self):
@@ -162,7 +218,7 @@ class TestSuite(unittest.TestCase):
         self.logger.info('...END PROCESSING')
 
     def test_rn6_report(self):
-        result = fetch_rn6_report(self.logger, self.driver, state='ap', district_name='ANANTAPUR', jobcard_no='121673411011010257-02')
+        result = fetch_rn6_reports(self.logger, self.driver)
         #result = fetch_rn6_report(self.logger, self.driver)
         self.assertEqual(result, 'SUCCESS')
 
