@@ -10,9 +10,9 @@ from django.db.models.expressions import RawSQL
 from django.db import connection # To execute raw queries and get results
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
-from nrega.models import Panchayat, State, Block, Jobcard, Applicant, WorkDetail, Muster, PaymentDetail, PendingPostalPayment, PanchayatStat, PanchayatCrawlQueue, PanchayatReport, PaymentInfo
+from nrega.models import Panchayat, State, Block, Jobcard, Applicant, WorkDetail, Muster, PaymentDetail, PendingPostalPayment, PanchayatStat, PanchayatCrawlQueue, PanchayatReport, PaymentInfo,Worker
 
-from nrega.serializers import PanchayatSerializer, StateSerializer, StateSerializer1, SelectBlockSerializer, JobcardSerializer2, JobcardSerializer, PtAvgSerializer, getInfoByJcSerializer, getWorkDetailsByJcSerializer, MusterSerializer, WorkSerializer, WorkCreditStatusPtSerializer, JcsByMusterStatus, EmploymentStatusSerializer, PaymentDetailSerializer, PostalPaymentSerializer, PostalPaymentPtSerializer, PaymentDetailTransactionsSerializer, PanchayatStatSerializer, BlAvgSerializer, EmploymentStatusByPtSerializer, CrawlStatusSerializer, PaymentInfoSerializer, PaymentDetailsTemp
+from nrega.serializers import PanchayatSerializer, StateSerializer, StateSerializer1, SelectBlockSerializer, JobcardSerializer2, JobcardSerializer, PtAvgSerializer, getInfoByJcSerializer, getWorkDetailsByJcSerializer, MusterSerializer, WorkSerializer, WorkCreditStatusPtSerializer, JcsByMusterStatus, EmploymentStatusSerializer, PaymentDetailSerializer, PostalPaymentSerializer, PostalPaymentPtSerializer, PaymentDetailTransactionsSerializer, PanchayatStatSerializer, BlAvgSerializer, EmploymentStatusByPtSerializer, CrawlStatusSerializer, PaymentInfoSerializer, PaymentDetailsTemp,WorkerSerializer,WorkerSerializer1
 
 import json
 
@@ -44,6 +44,7 @@ def crawlDataRequest(request):
     """
     This is the api to initiate a crawl 
     """
+    print("in the crawlQueue")
     code=request.GET.get('code', '')
     if len(code) == 7:
       myPanchayats=Panchayat.objects.filter(block__code=code)
@@ -52,9 +53,13 @@ def crawlDataRequest(request):
     else:
       myPanchayats=None
     for eachPanchayat in myPanchayats:
-      inQueueCount=len(PanchayatCrawlQueue.objects.filter(panchayat=eachPanchayat,isComplete=False))
+#      inQueueCount=len(PanchayatCrawlQueue.objects.filter(panchayat=eachPanchayat,isComplete=False))
+      inQueueCount=0
       if inQueueCount == 0:
           PanchayatCrawlQueue.objects.create(panchayat=eachPanchayat,priority=5000)
+          CrawlQueue.objects.create(panchayat=eachPanchayat)
+         # CrawlQueue.objects.create(panchayat=eachPanchayat,priority=5000)
+          print("I am in crawlQueue")
       else:
           pass
     output = {"Response": "Added to queue"}
@@ -167,6 +172,22 @@ def getBlocks(request):
         blocks = blocks[:limit]
         serializer = SelectBlockSerializer(blocks, many=True)
         return JsonResponse(serializer.data, safe=False)
+
+@csrf_exempt
+def getWorkers(request):
+    if request.method == 'GET':
+      pcode=request.GET.get('pcode', '')
+      limit=request.GET.get('limit', '')
+    if limit == '':
+      limit=1000
+    else:
+      limit=int(limit)
+    if pcode == '':
+      workers=Worker.objects.all()[:limit]
+    else:
+      workers=Worker.objects.filter(jobcard__panchayat__code=pcode)[:limit]
+    serializer = WorkerSerializer1(workers, many=True)
+    return JsonResponse(serializer.data, safe=False)
 
 @csrf_exempt
 def getJobcards(request):

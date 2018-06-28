@@ -42,7 +42,7 @@ class PanchayatSerializer(serializers.ModelSerializer):
     block = BlockSerializer()
     class Meta:
         model = Panchayat
-        fields = ('id', 'name', 'block')
+        fields = ('id', 'code','name', 'block')
 
     
 class PanchayatStatSerializer(serializers.ModelSerializer):
@@ -191,11 +191,18 @@ class getWorkDetailsByJcSerializer(serializers.ModelSerializer):
     model = WorkDetail
     fields = ('daysWorked', 'totalWage', 'musterStatus', 'creditedDate', 'muster')
 
+
+class WorkerSerializer1(serializers.ModelSerializer):
+  jobcard = JobcardSerializer()
+  class Meta:
+    model = Worker
+    fields = ('id', 'name', 'applicantNo','fatherHusbandName', 'jobcard')
+
 class WorkerSerializer(serializers.ModelSerializer):
   jobcard = JobcardSerializer()
   class Meta:
     model = Worker
-    fields = ('id', 'name', 'fatherHusbandName', 'jobcard')
+    fields = ('id', 'name', 'applicantNo','fatherHusbandName', 'jobcard')
 
 
 class PostalPaymentSerializer(serializers.ModelSerializer):

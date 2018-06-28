@@ -3076,10 +3076,10 @@ def libtechCrawler(logger,status,finyear=None,qid=None,limit=None):
       nextStatus="PanchayatReport"
 
     elif status == "PanchayatReport":
-      if isBlockCrawl == True:
-        nextStatus="WagelistDownload"
-      else:
-        nextStatus="Complete"
+    #  if isBlockCrawl == True:
+      nextStatus="WagelistDownload"
+    #  else:
+    #    nextStatus="Complete"
 
     elif status == "WagelistDownload":
       nextStatus="WagelistProcess"
