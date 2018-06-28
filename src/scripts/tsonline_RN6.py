@@ -98,8 +98,8 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         elem.click()
         logger.info('Clicking Submit')
     except Exception as e:
-        logger.error('Ouch! Caught Exception[%s, err[%d]]' % (e, e.errno))
-        return e.errno
+        logger.error('Ouch! Caught Exception[%s] for jobcard[%s]' % (e, jobcard_no))
+        return 'FAILURE'
     #time.sleep(timeout)
 
 
@@ -108,7 +108,8 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         elem.click()
         logger.info('Clicked Select radio button')
     except Exception as e:
-        logger.error('Ouch! Caught Exception[%s]' % e)
+        logger.error('Ouch! Caught Exception[%s] for jobcard[%s]' % (e, jobcard_no))
+        return 'FAILURE'
     #time.sleep(timeout)
     
     try:
@@ -117,16 +118,17 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         logger.info('Clicked View Ledger')
     except Exception as e:
         logger.error('Ouch! Caught Exception[%s]' % e)
+        return 'FAILURE'
     #time.sleep(2)
 
     parent_handle = driver.current_window_handle
-    print("Handles : ", driver.window_handles, "Number : ", len(driver.window_handles))
+    logger.info("Handles : %s" % driver.window_handles + "Number : %d" % len(driver.window_handles))
 
     if len(driver.window_handles) == 2:
         driver.switch_to.window(driver.window_handles[-1])
         #time.sleep(2)
     else:
-        logger.error("Handlers gone wrong [" + str(driver.window_handles) + "]")
+        logger.error("Handlers gone wrong [" + str(driver.window_handles) + 'jobcard %s' % jobcard_no + "]")
         driver.save_screenshot('./logs/button_'+jobcard_no+'.png')
         return 'FAILURE'
 
@@ -198,8 +200,13 @@ def fetch_rn6_reports(logger, driver):
             logger.error('Caught Exception[%s]' % e)
         jobcards_json = response.json()
         logger.debug('JobCards JSON[%s]' % jobcards_json)
+        flag = True
         for jobcard_object in jobcards_json:
             jobcard = '%s-0%s' % (jobcard_object['jobcard']['tjobcard'], jobcard_object['applicantNo'])
+            if panchayat_name == 'ANNASAGAR' and flag and (jobcard != '142000520007010299-01'):
+                logger.info('Skipping[%s]' % jobcard)
+                continue            
+            flag = False
             logger.info('Fetch details for jobcard[%s]' % jobcard)
             fetch_rn6_report(logger, driver, district_name=district_name, jobcard_no=jobcard, block_name=block_name, panchayat_name=panchayat_name)
     
@@ -210,7 +217,7 @@ class TestSuite(unittest.TestCase):
         self.logger = loggerFetch('info')
         self.logger.info('BEGIN PROCESSING...')
         self.display = displayInitialize(0)
-        self.driver = driverInitialize(path='/opt/firefox/')
+        self.driver = driverInitialize(path='/opt/firefox/', timeout=3)
 
     def tearDown(self):
         #FIXME driverFinalize(self.driver) 
