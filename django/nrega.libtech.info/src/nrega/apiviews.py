@@ -10,7 +10,7 @@ from django.db.models.expressions import RawSQL
 from django.db import connection # To execute raw queries and get results
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
-from nrega.models import Panchayat, State, Block, Jobcard, Applicant, WorkDetail, Muster, PaymentDetail, PendingPostalPayment, PanchayatStat, PanchayatCrawlQueue, PanchayatReport, PaymentInfo,Worker
+from nrega.models import Panchayat, State, Block, Jobcard, Applicant, WorkDetail, Muster, PaymentDetail, PendingPostalPayment, PanchayatStat, PanchayatCrawlQueue, PanchayatReport, PaymentInfo,Worker,CrawlQueue
 
 from nrega.serializers import PanchayatSerializer, StateSerializer, StateSerializer1, SelectBlockSerializer, JobcardSerializer2, JobcardSerializer, PtAvgSerializer, getInfoByJcSerializer, getWorkDetailsByJcSerializer, MusterSerializer, WorkSerializer, WorkCreditStatusPtSerializer, JcsByMusterStatus, EmploymentStatusSerializer, PaymentDetailSerializer, PostalPaymentSerializer, PostalPaymentPtSerializer, PaymentDetailTransactionsSerializer, PanchayatStatSerializer, BlAvgSerializer, EmploymentStatusByPtSerializer, CrawlStatusSerializer, PaymentInfoSerializer, PaymentDetailsTemp,WorkerSerializer,WorkerSerializer1
 
