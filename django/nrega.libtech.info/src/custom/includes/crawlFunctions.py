@@ -380,10 +380,13 @@ def genericDownload(logger,eachPanchayat,finyear,modelName,eachBlock=None):
 
   elif modelName=="FTOProcess":
     myobjs=FTO.objects.filter(Q(block=eachBlock,finyear=finyear) & Q( Q(allApplicantFound=False) | Q(allWDFound=False) | Q(isComplete=False))) 
+    myobjs=FTO.objects.filter(Q(block=eachBlock,finyear=finyear)) # & Q( Q(allApplicantFound=False) | Q(allWDFound=False) | Q(isComplete=False))) 
 
   elif modelName=="MusterProcess":
     if blockLevelCrawl==True:
+      logger.info("I am here")
       myobjs=Muster.objects.filter( isDownloaded=True,panchayat__block=eachBlock,finyear=finyear,isProcessed=False)
+      logger.info("Length of myobjects is %s " % str(len(myobjs)))
     else:
       myobjs=Muster.objects.filter( isDownloaded=True,panchayat=eachPanchayat,finyear=finyear,isProcessed=False)
 
@@ -873,7 +876,7 @@ def createDetailWorkPaymentReport(logger,eachPanchayat,finyear):
         ftofinyear=pr.fto.ftofinyear
         paymentMode=pr.fto.paymentMode
       a=[]
-      a.extend([village,jcNo,caste,headOfHousehold,wd.worker.jobcard.jobcard,applicantName,wd.muster.musterNo,wd.muster.workCode,workName,str(wd.muster.dateFrom),str(wd.muster.dateTo),str(wd.daysWorked),str(wd.totalWage),wd.musterStatus,str(wd.creditedDate),str(paymentAttempts),str(i),paymentStatus,wagelist,ftoNo,str(firstSignatoryDate),str(secondSignatoryDate),str(paymentMode),str(pr.referenceNo),str(pr.transactionDate),str(pr.processDate),pr.status,pr.rejectionReason,str(pr.creditedAmount),pr.primaryAccountHolder,pr.accountNo,str(wd.id),str(pr.id)])
+      a.extend([village,jcNo,caste,headOfHousehold,wd.worker.jobcard.jobcard,applicantName,wd.muster.musterNo,wd.muster.workCode,workName,str(wd.muster.dateFrom),str(wd.muster.dateTo),str(wd.daysWorked),str(wd.totalWage),wd.musterStatus,str(wd.creditedDate),str(paymentAttempts),str(i),paymentStatus,wagelist,ftoNo,str(firstSignatoryDate),str(secondSignatoryDate),str(paymentMode),str(pr.referenceNo),str(pr.transactionDate),str(pr.processDate),pr.status,pr.rejectionReason,str(pr.creditedAmount),pr.primaryAccountHolder,pr.accountNo,str(wd.id),str(pr.id),str(pr.wagelist.id),str(wd.muster.id),str(wd.musterIndex)])
       w.writerow(a)
   f.seek(0)
 #  with open("/tmp/a.csv","wb") as f1:
@@ -1239,6 +1242,9 @@ def computePanchayatStat(logger,eachPanchayat,finyear):
   if libtechWorkDaysPanchayatwise is None:
     libtechWorkDaysPanchayatwise = 0
   logger.debug(libtechWorkDaysPanchayatwise)
+  totalPending=len(WorkDetail.objects.filter(muster__finyear=finyear,worker__jobcard__panchayat=eachPanchayat,musterStatus=''))
+  totalRejected=len(WorkDetail.objects.filter(muster__finyear=finyear,worker__jobcard__panchayat=eachPanchayat,musterStatus='Rejected'))
+  totalInvalid=len(WorkDetail.objects.filter(muster__finyear=finyear,worker__jobcard__panchayat=eachPanchayat,musterStatus='Invalid Account'))
   mustersPendingDownload=mustersTotal-mustersDownloaded
   mustersPendingProcessing=mustersDownloaded-mustersProcessed
   mustersMissingApplicant=mustersProcessed-mustersAllApplicantsFound
@@ -1263,6 +1269,9 @@ def computePanchayatStat(logger,eachPanchayat,finyear):
   myPanchayatStat.workersTotal=workersTotal
   myPanchayatStat.libtechWorkDays=libtechWorkDays
   myPanchayatStat.libtechWorkDaysPanchayatwise=libtechWorkDaysPanchayatwise
+  myPanchayatStat.totalPending=totalPending
+  myPanchayatStat.totalRejected=totalRejected
+  myPanchayatStat.totalInvalid=totalInvalid
   if (nicWorkDays is None) or (nicWorkDays == 0):
     workDaysAccuracyIndex =0
   else:
@@ -1441,7 +1450,7 @@ def parseMuster(logger,objID):
     totalPending=0
     reMatchString="%s-" % (stateShortCode)
     #logger.debug("Account No Presnet: %s " % str(acnoPresent))
-    #logger.debug("Sharpening Index is %s " % str(sharpeningIndex))
+    logger.debug("Sharpening Index is %s " % str(sharpeningIndex))
     for i in range(len(tr_list)):
       cols=tr_list[i].findAll("td")
       if len(cols) > 7:
@@ -1482,7 +1491,7 @@ def parseMuster(logger,objID):
             creditedDate=None
         myWDRecord=WorkDetail.objects.filter(muster=eachMuster,musterIndex=musterIndex).first()
         if myWDRecord is None:
-          #logger.debug("New Record Created")
+          logger.debug("New Record Created")
           WorkDetail.objects.create(muster=eachMuster,musterIndex=musterIndex)
         myWDRecord=WorkDetail.objects.filter(muster=eachMuster,musterIndex=musterIndex).first()
         
@@ -1524,7 +1533,7 @@ def parseMuster(logger,objID):
     eachMuster.allApplicantFound=allApplicantFound
     eachMuster.allWorkerFound=allWorkerFound
     eachMuster.save()
-    #logger.debug("Processed Muster: MusterID: %s MusterNo: %s, blockCode: %s, finyear: %s workName:%s all ApplicantFound: %s " % (eachMuster.id,eachMuster.musterNo,eachMuster.block.code,eachMuster.finyear,eachMuster.workName,str(allApplicantFound)))
+    logger.debug("Processed Muster: MusterID: %s MusterNo: %s, blockCode: %s, finyear: %s workName:%s all ApplicantFound: %s " % (eachMuster.id,eachMuster.musterNo,eachMuster.block.code,eachMuster.finyear,eachMuster.workName,str(allApplicantFound)))
   
   return error
 
@@ -2991,151 +3000,15 @@ def getCrawlQueueIsNIC(logger,eachCrawlQueue):
 
 
 
-def libtechCrawler1(logger,status,finyear=None,qid=None,limit=None):
-  if limit is None:
-    limit=1
-
-  if status=="STARTCRAWL":
-    myQueueObjects=CrawlQueue.objects.filter(status=status)
-    for eachCrawlQueue in myQueueObjects:
-      stateCode=getCrawlQueueStateCode(logger,eachCrawlQueue)
-      isNIC=getCrawlQueueIsNIC(logger,eachCrawlQueue)
-      if stateCode == apStateCode:
-        nextStage="JobcardRegister"
-      elif isNIC == True:
-        nextStage="NICStats"
-      else:
-        nextStage="STARTCRAWL"
-      logger.info("next state is %s " % (nextStage))
-      eachCrawlQueue.status=nextStage
-      eachCrawlQueue.crawlAttemptDate=timezone.now()
-      eachCrawlQueue.save()
-
-  if status == 'NICStats':
-    if qid is None:
-      myQueueObjects=CrawlQueue.objects.filter(Q ( Q(status=status) & Q( Q(stepError=True,crawlAttemptDate__lt=crawlRetryThreshold) | Q(stepError=False) )) ).order_by("-priority","crawlAttemptDate","created")[:limit]
-    else:
-      myQueueObjects=CrawlQueue.objects.filter(id=qid)
-    for eachCrawlQueue in myQueueObjects:
-      eachCrawlQueue.stepError=True
-      eachCrawlQueue.save()
-      if eachCrawlQueue.block is not None:
-        myPanchayats=Panchayat.objects.filter(block=eachCrawlQueue.block)
-      else:
-        myPanchayats=Panchayat.objects.filter(code=eachCrawlQueue.panchayat.code)
-      for eachPanchayat in myPanchayats:
-        logger.debug("Downloading Panchayat stat for %s %s " % (eachPanchayat.code,eachPanchayat.name)) 
-        error=downloadPanchayatStat(logger,eachPanchayat)
-        if error is None:
-          processPanchayatStat(logger,eachPanchayat)
-          eachCrawlQueue.stepError=False
-          eachCrawlQueue.status="JobcardRegister"
-          eachCrawlQueue.save()
-    
-  else:
-    if qid is None:
-      myQueueObjects=CrawlQueue.objects.filter(Q ( Q(status=status) & Q( Q(stepError=True,crawlAttemptDate__lt=crawlRetryThreshold) | Q(stepError=False) ))).order_by("-priority","crawlAttemptDate","created")[:limit]
-    else:
-      myQueueObjects=CrawlQueue.objects.filter(id=qid)
-    for eachCrawlQueue in myQueueObjects:
-      startFinYear=eachCrawlQueue.startFinYear
-      eachBlock=eachCrawlQueue.block
-      endFinYear=getCurrentFinYear()
-      eachCrawlQueue.stepError=True
-      eachCrawlQueue.save()
-      stateCode=getCrawlQueueStateCode(logger,eachCrawlQueue)
-
-      if eachCrawlQueue.block is not None:
-        myPanchayats=Panchayat.objects.filter(block=eachCrawlQueue.block)
-        blockLevelCrawl=True
-      else:
-        myPanchayats=Panchayat.objects.filter(panchayat=eachCrawlQueue.panchayat)
-        blockLevelCrawl=False
-
-      if status == 'JobcardRegister':
-        for eachPanchayat in myPanchayats: 
-          if stateCode == apStateCode:
-            downloadAPJobcardRegister(logger,eachPanchayat)
-            processAPJobcardRegister(logger,eachPanchayat)
-            eachCrawlQueue.stepError=False
-            eachCrawlQueue.status="APJobcardDownload"
-            eachCrawlQueue.save()
-          else:  
-            error=saveJobcardRegister(logger,eachPanchayat)
-            if error is None:
-              logger.debug("Jobcard Register Crawl Successful")
-              logger.debug("Step 2: Processing Jobcard Register")
-              processJobcardRegister(logger,eachPanchayat)
-          eachCrawlQueue.stepError=False
-          eachCrawlQueue.status="MusterCrawl"
-          eachCrawlQueue.save()
-
-      elif status == 'MusterCrawl':
-        for eachPanchayat in myPanchayats: 
-          for finyear in range(int(startFinYear),int(endFinYear)+1):
-            finyear=str(finyear)
-            logger.debug(finyear)
-            crawlMusters(logger,eachPanchayat,finyear)
-        eachCrawlQueue.stepError=False
-        eachCrawlQueue.status="MusterDownload"
-        eachCrawlQueue.save()
-
-
-      elif status == 'MusterDownload':
-        for finyear in range(int(startFinYear),int(endFinYear)+1):
-          if blockLevelCrawl==True:
-            genericDownload(logger,None,finyear,"MusterDownload",eachBlock=eachBlock)
-          else:  
-            genericDownload(logger,eachCrawlQueue.panchayat,finyear,"MusterDownload")
-        eachCrawlQueue.stepError=False
-        eachCrawlQueue.status="MusterProcess"
-        eachCrawlQueue.save()
-
-      elif status == 'MusterProcess':
-        for finyear in range(int(startFinYear),int(endFinYear)+1):
-          if blockLevelCrawl==True:
-            genericDownload(logger,None,finyear,"MusterProcess",eachBlock=eachBlock)
-          else:  
-            genericDownload(logger,eachCrawlQueue.panchayat,finyear,"MusterProcess")
-        eachCrawlQueue.stepError=False
-        eachCrawlQueue.status="WagelistDownload"
-        eachCrawlQueue.save()
-        
-      elif status == 'WagelistDownload':
-        for finyear in range(int(startFinYear),int(endFinYear)+1):
-          if blockLevelCrawl==True:
-            genericDownload(logger,None,finyear,"Wagelist",eachBlock=eachBlock)
-          else:  
-            genericDownload(logger,eachCrawlQueue.panchayat,finyear,"Wagelist")
-        eachCrawlQueue.stepError=False
-        eachCrawlQueue.status="FTODownload"
-        eachCrawlQueue.save()
-
-      elif status == 'FTODownload':
-        for finyear in range(int(startFinYear),int(endFinYear)+1):
-          if blockLevelCrawl==True:
-            genericDownload(logger,None,finyear,"FTODownload",eachBlock=eachBlock)
-          else:  
-            genericDownload(logger,eachCrawlQueue.panchayat,finyear,"FTODownload")
-        eachCrawlQueue.stepError=False
-        eachCrawlQueue.status="FTOProcess"
-        eachCrawlQueue.save()
-
-      elif status == 'FTOProcess':
-        for finyear in range(int(startFinYear),int(endFinYear)+1):
-          if blockLevelCrawl==True:
-            genericDownload(logger,None,finyear,"FTOProcess",eachBlock=eachBlock)
-          else:  
-            genericDownload(logger,eachCrawlQueue.panchayat,finyear,"FTOProcess")
-        eachCrawlQueue.stepError=False
-        eachCrawlQueue.status="PanchayatReport"
-        eachCrawlQueue.save()
-
 
 def libtechCrawler(logger,status,finyear=None,qid=None,limit=None):
   if limit is None:
     limit=1
-  myQueueObjects=CrawlQueue.objects.filter(Q ( Q(status=status) & Q( Q(stepError=True,crawlAttemptDate__lt=crawlRetryThreshold) | Q(stepError=False) )) ).order_by("-priority","crawlAttemptDate","created")[:limit]
+  if qid is  None:
+    myQueueObjects=CrawlQueue.objects.filter(Q ( Q(status=status) & Q( Q(stepError=True,crawlAttemptDate__lt=crawlRetryThreshold) | Q(stepError=False) )) ).order_by("-priority","crawlAttemptDate","created")[:limit]
+  else:
+    myQueueObjects=CrawlQueue.objects.filter(id=qid)
+
   for eachCrawlQueue in myQueueObjects:
     #First we need to set up the variables which affect the states of the crawl Queue
     startFinYear=eachCrawlQueue.startFinYear
@@ -3148,7 +3021,7 @@ def libtechCrawler(logger,status,finyear=None,qid=None,limit=None):
     isAP=False
     if stateCode==apStateCode:
       isAP=True
-    if ifBlockCrawl==True:
+    if isBlockCrawl==True:
       myPanchayats=Panchayat.objects.filter(block=eachCrawlQueue.block)
     else:
       myPanchayats=Panchayat.objects.filter(code=eachCrawlQueue.panchayat.code)
@@ -3156,8 +3029,12 @@ def libtechCrawler(logger,status,finyear=None,qid=None,limit=None):
     eachCrawlQueue.stepError=True
     eachCrawlQueue.crawlAttemptDate=timezone.now()
     eachCrawlQueue.save()
+
     #Now we need to write the stateMachine for nexxt status
-    if status == "STARTCRAWL":
+    if qid is not None:  #if QID is not none, that means we want to run it in debug mode and the status will not change. 
+      nextStatus = eachCrawlQueue.status
+
+    elif status == "STARTCRAWL":
       if stateCode == apStateCode:
         nextStatus="JobcardRegister"
       elif isNIC == True:
@@ -3192,11 +3069,17 @@ def libtechCrawler(logger,status,finyear=None,qid=None,limit=None):
     elif status == "MusterDownload":
       nextStatus="MusterProcess"
 
-    elif status == "MusterProces":
-      if isBlockCrawl == True:
-        nextStatus="WagelistDownload"
-      else:
-        nextStatus="PanchayatReport"
+    elif status == "MusterProcess":
+      nextStatus="ComputeStats"
+
+    elif status == "ComputeStats":
+      nextStatus="PanchayatReport"
+
+    elif status == "PanchayatReport":
+    #  if isBlockCrawl == True:
+      nextStatus="WagelistDownload"
+    #  else:
+    #    nextStatus="Complete"
 
     elif status == "WagelistDownload":
       nextStatus="WagelistProcess"
@@ -3208,15 +3091,9 @@ def libtechCrawler(logger,status,finyear=None,qid=None,limit=None):
       nextStatus="FTOProcess"
 
     elif status == "FTOProcess":
-      nextStatus="PanchayatReport"
+      nextStatus="DetailPanchayatReport"
 
-    elif status == "PanchayatReport":
-      if isBlockCrawl==True:
-        nextStatus="DetailPanchayatReport"
-      else:
-        nextStatus="Complete"
-
-    elif status == "PanchayatReport":
+    elif status == "DetailPanchayatReport":
       nextStatus="Complete"
 
     else:
@@ -3255,6 +3132,7 @@ def libtechCrawler(logger,status,finyear=None,qid=None,limit=None):
     elif status == 'MusterCrawl':
       for eachPanchayat in myPanchayats: 
         for finyear in range(int(startFinYear),int(endFinYear)+1):
+          logger.info("Running %s for Panchayat %s PanchayatCode %s finyear %s" % (status,eachPanchayat.name,eachPanchayat.code,finyear))
           finyear=str(finyear)
           logger.debug(finyear)
           crawlMusters(logger,eachPanchayat,finyear)
@@ -3273,19 +3151,42 @@ def libtechCrawler(logger,status,finyear=None,qid=None,limit=None):
     elif status == 'PanchayatReport':
       for eachPanchayat in myPanchayats: 
         for finyear in range(int(startFinYear),int(endFinYear)+1):
+          logger.info("Running %s for Panchayat %s PanchayatCode %s finyear %s" % (status,eachPanchayat.name,eachPanchayat.code,finyear))
           createReportsJSK(logger,eachPanchayat,finyear)
       stepError=False
 
-    elif status == 'DetailPanchayatReport':
+    elif status == 'ComputeStats':
       for eachPanchayat in myPanchayats: 
+        accuracyIndexSum=0
+        i=0
         for finyear in range(int(startFinYear),int(endFinYear)+1):
-          createDetailWorkPaymentReport(logger,eachPanchayat,finyear)
-          createExtendedRPReport(logger,eachPanchayat,finyear)
+          logger.info("Running %s for Panchayat %s PanchayatCode %s finyear %s" % (status,eachPanchayat.name,eachPanchayat.code,finyear))
+          i=i+1
+          curAccuracyIndex=computePanchayatStat(logger,eachPanchayat,str(finyear))
+          accuracyIndexSum+=curAccuracyIndex
+          if str(finyear) == str(endFinYear):
+            accuracyIndex = curAccuracyIndex
+        accuracyIndexAverage=int(accuracyIndexSum/i)
+        eachPanchayat.accuracyIndexAverage=accuracyIndexAverage
+        eachPanchayat.accuracyIndex=accuracyIndex
+        eachPanchayat.save()
+
+      stepError=False
+
+    elif status == 'DetailPanchayatReport':
+      for finyear in range(int(startFinYear),int(endFinYear)+1):
+        if isBlockCrawl == True:
+          createExtendedRPReport(logger,None,str(finyear),eachCrawlQueue.block)
+        for eachPanchayat in myPanchayats: 
+          logger.info("Running %s for Panchayat %s PanchayatCode %s finyear %s" % (status,eachPanchayat.name,eachPanchayat.code,finyear))
+          createDetailWorkPaymentReport(logger,eachPanchayat,str(finyear))
+          createExtendedRPReport(logger,eachPanchayat,str(finyear))
       stepError=False
 
     elif status == 'APReport':
       for eachPanchayat in myPanchayats: 
         for finyear in range(int(startFinYear),int(endFinYear)+1):
+          logger.info("Running %s for Panchayat %s PanchayatCode %s finyear %s" % (status,eachPanchayat.name,eachPanchayat.code,finyear))
           createWorkPaymentReportAP(logger,eachPanchayat,finyear)
       stepError=False
 

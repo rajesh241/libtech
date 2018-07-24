@@ -72,6 +72,86 @@ def createWorkPaymentReportAP(logger,eachPanchayat,finyear,eachBlock=None):
   else:
     csvfilename=eachPanchayat.slug+"_"+str(finyear)+"_wpAP.csv"
     savePanchayatReport(logger,eachPanchayat,finyear,reportType,csvfilename,outcsv)
+
+def createFieldRPReport(logger,eachPanchayat,finyear,eachBlock=None):
+  f = BytesIO()
+  f.write(u'\ufeff'.encode('utf8'))
+  w = csv.writer(f, encoding='utf-8-sig',delimiter=',')
+  reportType="fieldRPReport"
+  a=[]
+  if eachBlock is not None:
+    a.extend(["panchayat","village","jobcard","name","father/husname","musterNo","workName","dateFrom","dateTo","daysWorked","totalWage","currentStatus","rejectionReason","totalAttempts","primaryAccountHolder","ftoaccountNo","firstRejectionDate","lastRejectionDate","wagelist","ftoNo"])
+    w.writerow(a)
+    workRecords=WorkDetail.objects.filter( Q ( Q(worker__jobcard__panchayat__block=eachBlock,muster__finyear=finyear) & Q ( Q(musterStatus='Rejected') | Q (musterStatus="Invalid Account") )     ) ).order_by("worker__jobcard__panchayat__name","worker__jobcard__village__name","worker__jobcard__jcNo")
+  else:
+    a.extend(["village","jobcard","name","father/husname","musterNo","workName","dateFrom","dateTo","daysWorked","totalWage","currentStatus","rejectionReason","totalAttempts","primaryAccountHolder","ftoaccountNo","firstRejectionDate","lastRejectionDate","wagelist","ftoNo"])
+    w.writerow(a)
+    workRecords=WorkDetail.objects.filter( Q ( Q(worker__jobcard__panchayat=eachPanchayat,muster__finyear=finyear) & Q ( Q(musterStatus='Rejected') | Q (musterStatus="Invalid Account") )     ) ).order_by("worker__jobcard__village__name","worker__jobcard__jcNo")
+  logger.info("Total Work Records: %s " %str(len(workRecords)))
+  for wd in workRecords:
+    workName=wd.muster.workName
+    applicantName=wd.worker.name
+    village=wd.worker.jobcard.village.name
+    caste=wd.worker.jobcard.caste
+    headOfHousehold=wd.worker.jobcard.headOfHousehold
+    jcNo=wd.worker.jobcard.jcNo
+    wagelistArray=wd.wagelist.all()
+    if len(wagelistArray) > 0:
+      wagelist=wagelistArray[len(wagelistArray) -1 ]
+    else:
+      wagelist=''
+    fatherHusbandName=wd.worker.fatherHusbandName
+    paymentRecords=PaymentInfo.objects.filter(workDetail=wd.id).order_by("transactionDate")
+    paymentAttempts=len(paymentRecords)
+    i=0
+    firstRejectionDate=None
+    lastRejectionDate=None
+    currentStatus="Rejected"
+    for pr in paymentRecords:
+      i=i+1
+      if i == 1:
+        firstRejectionDate=pr.processDate
+      if pr.processDate is not None:
+        lastRejectionDate=pr.processDate
+      if i == paymentAttempts:
+        paymentStatus="current"
+      else:
+        paymentStatus="archive"
+      wagelist=pr.wagelist.wagelistNo
+      ftoNo=''
+      firstSignatoryDate=''
+      secondSignatoryDate=''
+      ftofinyear=''
+      paymentMode=''
+      if pr.fto is  None:
+        currentStatus="FTONotGenerated"
+      else:
+        if pr.processDate is None:
+          currenStatus="FTONotProcessed"
+
+      if pr.fto is not None:
+        ftoNo=pr.fto.ftoNo
+        firstSignatoryDate=pr.fto.firstSignatoryDate
+        secondSignatoryDate=pr.fto.secondSignatoryDate
+        ftofinyear=pr.fto.ftofinyear
+        paymentMode=pr.fto.paymentMode
+      a=[]
+    currentStatus="Rejected"
+    if eachBlock is not None:
+      a.extend([wd.worker.jobcard.panchayat.name,village,wd.worker.jobcard.jobcard,applicantName,wd.worker.fatherHusbandName,wd.muster.musterNo,workName,str(wd.muster.dateFrom),str(wd.muster.dateTo),str(wd.daysWorked),str(wd.totalWage),currentStatus,pr.rejectionReason,str(paymentAttempts),pr.primaryAccountHolder,pr.accountNo,str(firstRejectionDate),str(lastRejectionDate),wagelist,ftoNo])
+    else:
+      a.extend([village,wd.worker.jobcard.jobcard,applicantName,wd.worker.fatherHusbandName,wd.muster.musterNo,workName,str(wd.muster.dateFrom),str(wd.muster.dateTo),str(wd.daysWorked),str(wd.totalWage),currentStatus,pr.rejectionReason,str(paymentAttempts),pr.primaryAccountHolder,pr.accountNo,str(firstRejectionDate),str(lastRejectionDate),wagelist,ftoNo])
+    w.writerow(a)
+  f.seek(0)
+#  with open("/tmp/a.csv","wb") as f1:
+#    shutil.copyfileobj(f, f1)
+  outcsv=f.getvalue()
+  if eachBlock is not None:
+    csvfilename=eachBlock.slug+"_"+finyear+"_fieldRejPayment.csv"
+    saveBlockReport(logger,eachBlock,finyear,reportType,csvfilename,outcsv)
+  else:
+    csvfilename=eachPanchayat.slug+"_"+finyear+"_fieldRejPayment.csv"
+    savePanchayatReport(logger,eachPanchayat,finyear,reportType,csvfilename,outcsv)
  
 def createExtendedRPReport(logger,eachPanchayat,finyear,eachBlock=None):
   f = BytesIO()

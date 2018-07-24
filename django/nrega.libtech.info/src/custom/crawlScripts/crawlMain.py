@@ -38,6 +38,7 @@ def argsFetch():
   parser.add_argument('-sf', '--startFinYear', help='From which financial year data needs to be crawled default is 2015-2016', required=False)
   parser.add_argument('-step', '--step', help='Step for which the script needs to run', required=False)
   parser.add_argument('-pc', '--panchayatCode', help='Panchayat for which the delayed payment report needs to be crawld', required=False)
+  parser.add_argument('-qid', '--qid', help='Queue Id for which this needs to be run', required=False)
   parser.add_argument('-bc', '--blockCode', help='Panchayat for which the delayed payment report needs to be crawld', required=False)
   parser.add_argument('-m', '--manage', help='Manage Panchayat Crawl Queue', required=False,action='store_const', const=1)
   parser.add_argument('-e', '--execute', help='Manage Panchayat Crawl Queue', required=False,action='store_const', const=1)
@@ -65,7 +66,12 @@ def main():
 
   if args['execute']:
     stage=args['step']
-    libtechCrawler(logger,stage)
+    limit=args['limit']
+    qid=args['qid']
+    if qid is not None:
+      libtechCrawler(logger,stage,qid=qid)
+    else:
+      libtechCrawler(logger,stage)
 
   logger.info("...END PROCESSING") 
   exit(0)

@@ -7,6 +7,7 @@ urlpatterns = [
     url(r'^api/states/$', apiviews.getStates),
     url(r'^api/blocks/$', apiviews.getBlocks),
     url(r'^api/jobcardnumber/$', apiviews.getJobcards),
+    url(r'^api/getworkers/$', apiviews.getWorkers),
     url(r'^api/jobcardsall/$', apiviews.getJobcardsAll),    
     url(r'^api/numberofjobcards/$', apiviews.getNumberJobcards),
     url(r'^api/jobcard/$', apiviews.getInfoByJc),
