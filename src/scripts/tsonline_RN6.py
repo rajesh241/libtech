@@ -175,9 +175,10 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
 def fetch_rn6_reports(logger, driver):
     logger.info('Fetch the jobcards')
 
-    if False:
+    if True:
         # result = fetch_rn6_report(logger, driver, state='ap', district_name='ANANTAPUR', jobcard_no='121673411011010257-02')
-        result = fetch_rn6_report(logger, driver, district_name='MAHABUBNAGAR', jobcard_no='141990515024010071-08')
+        # result = fetch_rn6_report(logger, driver, district_name='MAHABUBNAGAR', jobcard_no='141990515024010071-08')
+        result = fetch_rn6_report(logger, driver, state='ap', district_name='VISAKHAPATNAM', jobcard_no='030300927050030026-02')
         return 'SUCCESS'
 
     district_name = 'MAHABUBNAGAR'
