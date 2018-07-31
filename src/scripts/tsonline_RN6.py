@@ -29,6 +29,11 @@ from wrappers.sn import driverInitialize, driverFinalize, displayInitialize, dis
 timeout = 10
 dirname = 'jobcards'
 
+
+#############
+# Functions
+#############
+
 def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=None, block_name=None, panchayat_name=None):
     if not state:
         url = 'https://bdp.tsonline.gov.in/NeFMS_TS/NeFMS/Reports/NeFMS/AccountWiseTransactionReport.aspx'
@@ -175,24 +180,31 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
 def fetch_rn6_reports(logger, driver):
     logger.info('Fetch the jobcards')
 
-    if True:
-        # result = fetch_rn6_report(logger, driver, state='ap', district_name='ANANTAPUR', jobcard_no='121673411011010257-02')
-        # result = fetch_rn6_report(logger, driver, district_name='MAHABUBNAGAR', jobcard_no='141990515024010071-08')
-        result = fetch_rn6_report(logger, driver, state='ap', district_name='VISAKHAPATNAM', jobcard_no='030300927050030026-02')
-        return 'SUCCESS'
-
-    district_name = 'MAHABUBNAGAR'
-    block_name = 'Damaragidda'
-    # block_id = block_lookup[block_name]
-    block_id = '4378'
-
-    url = 'http://b.libtech.info:8000/api/panchayats/?bid=%s' % block_id
-    
     try:
         os.makedirs(dirname)
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise        
+    
+    if False:
+        # result = fetch_rn6_report(logger, driver, state='ap', district_name='ANANTAPUR', jobcard_no='121673411011010257-02')
+        # result = fetch_rn6_report(logger, driver, district_name='MAHABUBNAGAR', jobcard_no='141990515024010071-08')
+        result = fetch_rn6_report(logger, driver, state='ap', district_name='VISAKHAPATNAM', jobcard_no='030300927050030026-02')
+        return 'SUCCESS'
+
+    if True:
+        state = None
+        district_name = 'MAHABUBNAGAR'
+        block_name = 'Damaragidda'
+        # block_id = block_lookup[block_name]
+        block_id = '4378'
+    else:
+        state = 'ap'
+        district_name = 'VISAKHAPATNAM'
+        block_name = 'Gangaraju Madugula'
+        block_id = '0203011'
+
+    url = 'http://b.libtech.info:8000/api/panchayats/?bid=%s' % block_id
     
     try:
         logger.info('Requesting URL[%s]' % url)
@@ -209,11 +221,12 @@ def fetch_rn6_reports(logger, driver):
         panchayat_name = panchayat_object['name'].strip()
         panchayat_code = panchayat_object['code'].strip()
         logger.info('Fetch jobcards for Panchayat[%s, %s]' % (panchayat_name, panchayat_code))
-        
+        '''
         if is_panchayat and panchayat_name != 'VITHALAPUR':
             logger.debug('Already downloaded. Skipping[%s]' % panchayat_name)
             continue
         is_panchayat = False
+        '''
         url = 'http://b.libtech.info:8000/api/getworkers/?pcode=%s' % panchayat_code
         try:
             logger.info('Requesting URL[%s]' % url)
@@ -222,13 +235,15 @@ def fetch_rn6_reports(logger, driver):
             logger.error('Caught Exception[%s]' % e)
         jobcards_json = response.json()
         logger.debug('JobCards JSON[%s]' % jobcards_json)
-        flag = True
+        is_downloaded = True
         for jobcard_object in jobcards_json:
             jobcard = '%s-0%s' % (jobcard_object['jobcard']['tjobcard'], jobcard_object['applicantNo'])
-            if (panchayat_name == 'VITHALAPUR' and flag and (jobcard != '142000501002010385-01')): 
+            '''
+            if (panchayat_name == 'VITHALAPUR' and is_downloaded and (jobcard != '142000501002010385-01')): 
                 logger.debug('Skipping[%s]' % jobcard)
                 continue            
-            flag = False
+            is_downloaded = False
+            '''
             logger.info('Fetch details for jobcard[%s]' % jobcard)
             result = fetch_rn6_report(logger, driver, district_name=district_name, jobcard_no=jobcard, block_name=block_name, panchayat_name=panchayat_name)
             if result != 'SUCCESS':
