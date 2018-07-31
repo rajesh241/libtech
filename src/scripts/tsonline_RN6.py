@@ -6,6 +6,10 @@ rootdir = os.path.dirname(dirname)
 
 import sys
 sys.path.insert(0, rootdir)
+#FIXME
+#sys.path.append(os.path.dirname(rootdir) + '/django/n.libtech.info/src/custom/includes')
+#print(os.path.dirname(rootdir) + '/django/n.libtech.info/src/custom/includes')
+#exit(0)
 
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
@@ -21,6 +25,25 @@ import unittest
 
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize, driverFinalize, displayInitialize, displayFinalize
+
+includePath='/home/libtech/repo/django/n.libtech.info/src/custom/includes'
+sys.path.append(includePath) # os.path.join(os.path.dirname(__file__), '..', 'includes') #FIXME
+
+from customSettings import repoDir, djangoDir, djangoSettings
+from crawlFunctions import getAPJobcardData, computeWorkPaymentStatus, crawlWagelists, parseMuster, getAPJobcardData, processAPJobcardData
+#from nregaFunctions import is_ascii
+
+sys.path.append(djangoDir)
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
+
+import django
+
+# This is so Django knows where to find stuff.
+# This is so my local_settings.py gets loaded.
+django.setup()
+
+from nrega.models import State,District,Block,Panchayat,PaymentInfo,LibtechTag,CrawlQueue,Worker
+
 
 #######################
 # Global Declarations
@@ -189,10 +212,11 @@ def fetch_rn6_reports(logger, driver):
     if False:
         # result = fetch_rn6_report(logger, driver, state='ap', district_name='ANANTAPUR', jobcard_no='121673411011010257-02')
         # result = fetch_rn6_report(logger, driver, district_name='MAHABUBNAGAR', jobcard_no='141990515024010071-08')
-        result = fetch_rn6_report(logger, driver, state='ap', district_name='VISAKHAPATNAM', jobcard_no='030300927050030026-02')
+        # result = fetch_rn6_report(logger, driver, state='ap', district_name='VISAKHAPATNAM', jobcard_no='030300927050030026-02')
+        result = fetch_rn6_report(logger, driver, state='ap', district_name='VISAKHAPATNAM', jobcard_no='030291107055010027-01')
         return 'SUCCESS'
 
-    if True:
+    if False:
         state = None
         district_name = 'MAHABUBNAGAR'
         block_name = 'Damaragidda'
@@ -202,19 +226,36 @@ def fetch_rn6_reports(logger, driver):
         state = 'ap'
         district_name = 'VISAKHAPATNAM'
         block_name = 'Gangaraju Madugula'
-        block_id = '0203011'
+        block_id = None
 
+    if not block_id:
+        panchayats = Panchayat.objects.filter(block__name=block_name)
+        
+        for panchayat in panchayats:
+            panchayat_name = panchayat.name
+            logger.info('Panchayat[%s]' % panchayat_name)
+            workers = Worker.objects.filter(jobcard__panchayat=panchayat)
+            for worker in workers:
+                jobcard = (worker.jobcard.tjobcard + '-0' + str(worker.applicantNo))
+                logger.info('Woker[%s]' % jobcard)
+                logger.info('Fetch details for jobcard[%s]' % jobcard)
+                result = fetch_rn6_report(logger, driver, state=state, district_name=district_name, jobcard_no=jobcard, block_name=block_name, panchayat_name=panchayat_name)
+                if result != 'SUCCESS':
+                    logger.error('Failure returned [%s]' % result)
+                    #time.sleep(3)
+                    continue  # FIXME why is this even needed. Why is it not working?
+        return 'SUCCESS'
+    
     url = 'http://b.libtech.info:8000/api/panchayats/?bid=%s' % block_id
     
     try:
         logger.info('Requesting URL[%s]' % url)
         response = requests.get(url, timeout=timeout) # , cookies=cookies)
     except Exception as e:
-        logger.error('Caught Exception[%s]' % e) 
-
-    panchayats_json = response.json()
+        logger.error('Caught Exception[%s]' % e)
+        
+    panchayats_json = response.json()                
     logger.debug('Panchayats JSON[%s]' % panchayats_json)
-
     
     is_panchayat = True
     for panchayat_object in panchayats_json:
@@ -245,7 +286,7 @@ def fetch_rn6_reports(logger, driver):
             is_downloaded = False
             '''
             logger.info('Fetch details for jobcard[%s]' % jobcard)
-            result = fetch_rn6_report(logger, driver, district_name=district_name, jobcard_no=jobcard, block_name=block_name, panchayat_name=panchayat_name)
+            result = fetch_rn6_report(logger, driver, state=state, district_name=district_name, jobcard_no=jobcard, block_name=block_name, panchayat_name=panchayat_name)
             if result != 'SUCCESS':
                 logger.error('Failure returned [%s]' % result)
                 #time.sleep(3)
