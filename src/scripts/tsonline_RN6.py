@@ -80,9 +80,10 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
     except Exception as e:
         logger.error('Exception when fetching url [%s] - EXCEPT[%s]' % (url, e))
         # time.sleep(timeout)
-        driver = driverInitialize(timeout=3)  # FIXME
-        driver.get(url)
-        # return 'FAILURE'
+        # driver = driverInitialize(timeout=3)  # FIXME
+        # driver.get(url)
+        logger.critical('Aborting the current attempt')
+        return 'ABORT'
 
     try:
         html_source = driver.page_source.replace('<head>',
@@ -200,14 +201,17 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         
     return 'SUCCESS'
 
-def fetch_rn6_reports(logger, driver):
+def fetch_rn6_reports(logger):
     logger.info('Fetch the jobcards')
 
+    display = displayInitialize(0)
+    driver = driverInitialize(timeout=3, options='--headless') # driverInitialize(path='/opt/firefox/', timeout=3)
+    
     try:
         os.makedirs(dirname)
     except OSError as e:
         if e.errno != errno.EEXIST:
-            raise        
+            raise    
     
     if False:
         # result = fetch_rn6_report(logger, driver, state='ap', district_name='ANANTAPUR', jobcard_no='121673411011010257-02')
@@ -228,23 +232,54 @@ def fetch_rn6_reports(logger, driver):
         block_name = 'Gangaraju Madugula'
         block_id = None
 
+    current_panchayat = None
+    current_jobcard = None
+    filename = dirname + '/status.dat'
+    if os.path.exists(filename):
+        with open(filename, 'r') as status_file:
+            logger.info('Reading [%s]' % filename)
+            status = status_file.read()
+        (current_panchayat, current_jobcard) = status.split(',')
+
     if not block_id:
         panchayats = Panchayat.objects.filter(block__name=block_name)
         
+        is_panchayat = True
         for panchayat in panchayats:
             panchayat_name = panchayat.name
             logger.info('Panchayat[%s]' % panchayat_name)
+            if current_panchayat and is_panchayat and panchayat_name != current_panchayat:
+                logger.debug('Already downloaded. Skipping[%s]' % panchayat_name)
+                continue
+            is_panchayat = False
             workers = Worker.objects.filter(jobcard__panchayat=panchayat)
+            is_downloaded = True
             for worker in workers:
                 jobcard = (worker.jobcard.tjobcard + '-0' + str(worker.applicantNo))
-                logger.info('Woker[%s]' % jobcard)
+                if current_panchayat and (panchayat_name == current_panchayat and is_downloaded and (jobcard != current_jobcard)): 
+                    logger.debug('Skipping[%s]' % jobcard)
+                    continue            
+                is_downloaded = False
                 logger.info('Fetch details for jobcard[%s]' % jobcard)
                 result = fetch_rn6_report(logger, driver, state=state, district_name=district_name, jobcard_no=jobcard, block_name=block_name, panchayat_name=panchayat_name)
                 if result != 'SUCCESS':
                     logger.error('Failure returned [%s]' % result)
-                    #time.sleep(3)
-                    continue  # FIXME why is this even needed. Why is it not working?
+                    if result == 'ABORT':
+                        #driverFinalize(driver) 
+                        displayFinalize(display)                        
+                        return 'FAILURE'
+                    else:
+                        continue  # FIXME why is this even needed. Why is it not working?
+                with open(filename, 'w') as status_file:
+                    logger.info('Updating status file [%s]' % filename)
+                    status = panchayat_name + ',' + jobcard
+                    logger.info('Status[%s]' % status)
+                    status_file.write(status)
+                    
         return 'SUCCESS'
+
+
+    # This part can go eventual - FIXME  ---vvv
     
     url = 'http://b.libtech.info:8000/api/panchayats/?bid=%s' % block_id
     
@@ -252,9 +287,9 @@ def fetch_rn6_reports(logger, driver):
         logger.info('Requesting URL[%s]' % url)
         response = requests.get(url, timeout=timeout) # , cookies=cookies)
     except Exception as e:
-        logger.error('Caught Exception[%s]' % e)
-        
-    panchayats_json = response.json()                
+        logger.error('Caught Exception[%s]' % e) 
+
+    panchayats_json = response.json()
     logger.debug('Panchayats JSON[%s]' % panchayats_json)
     
     is_panchayat = True
@@ -292,24 +327,38 @@ def fetch_rn6_reports(logger, driver):
                 #time.sleep(3)
                 continue  # FIXME why is this even needed. Why is it not working?
 
+    #driverFinalize(driver) 
+    displayFinalize(display)
+    return 'SUCCESS'
+
+def parse_rn6_reports(logger):
+    logger.info('Parse the RN6 HTMLs')
+
+    with open(filename, 'r') as html_file:
+        logger.info('Reading [%s]' % filename)
+        html_source = html_file.read()
+
     return 'SUCCESS'
 
 class TestSuite(unittest.TestCase):
     def setUp(self):
         self.logger = loggerFetch('info')
         self.logger.info('BEGIN PROCESSING...')
-        self.display = displayInitialize(0)
-        self.driver = driverInitialize(timeout=3, options='--headless') # driverInitialize(path='/opt/firefox/', timeout=3)
 
     def tearDown(self):
-        #driverFinalize(self.driver) 
-        displayFinalize(self.display)
         self.logger.info('...END PROCESSING')
 
-    def test_rn6_report(self):
-        result = fetch_rn6_reports(self.logger, self.driver)
-        #result = fetch_rn6_report(self.logger, self.driver)
+    def test_fetch_rn6_report(self):
+        while True:
+            result = fetch_rn6_reports(self.logger)
+            if result == 'SUCCESS':
+                break
         self.assertEqual(result, 'SUCCESS')
 
+    @unittest.skip('Skipping the parse')
+    def test_parse_rn6_report(self):
+        result = parse_rn6_reports(self.logger)
+        self.assertEqual(result, 'SUCCESS')
+        
 if __name__ == '__main__':
     unittest.main()
