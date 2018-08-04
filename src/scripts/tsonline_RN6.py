@@ -26,6 +26,10 @@ import unittest
 from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize, driverFinalize, displayInitialize, displayFinalize
 
+import psutil
+
+###
+
 includePath='/home/libtech/repo/django/n.libtech.info/src/custom/includes'
 sys.path.append(includePath) # os.path.join(os.path.dirname(__file__), '..', 'includes') #FIXME
 
@@ -57,6 +61,33 @@ dirname = 'jobcards'
 # Functions
 #############
 
+def on_terminate(proc):
+    print("process {} terminated with exit code {}".format(proc, proc.returncode))
+
+def process_cleanup(logger):
+    logger.info('Process Cleanup Begins')
+    children = psutil.Process().children(recursive=True)
+    for p in children:
+        logger.info('Terminating the subproces[%s]' % p.pid)
+        try:
+            p.terminate()
+            p.wait()
+        except Exception as e:
+            logger.error('Kill failed with Exception[%s]' % e)
+    gone, alive = psutil.wait_procs(children, timeout=10, callback=on_terminate)
+
+    logger.info('Processes still alive [%s]' % alive)
+    for p in children: # alive:
+        logger.info('Killing the subproces[%s]' % p.pid)
+        try:
+            p.kill()
+            p.wait()
+        except Exception as e:
+            logger.error('Kill failed with Exception[%s]' % e)
+    logger.info('Cleaning up /tmp')
+    os.system('cd /tmp; pkill firefox; pkill Xvfb; rm -rf rust_mozprofile.* tmp*')
+    logger.info('Process Cleanup Ends')
+    
 def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=None, block_name=None, panchayat_name=None):
     if not state:
         url = 'https://bdp.tsonline.gov.in/NeFMS_TS/NeFMS/Reports/NeFMS/AccountWiseTransactionReport.aspx'
@@ -83,14 +114,14 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         # driver = driverInitialize(timeout=3)  # FIXME
         # driver.get(url)
         logger.critical('Aborting the current attempt')
-        return 'ABORT'
+        return 'FAILURE'
 
     try:
         html_source = driver.page_source.replace('<head>',
                                                  '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
     except Exception as e:
         logger.error('Exception getting HTML source - EXCEPT[%s]' % e)
-        return 'FAILURE'
+        return 'ABORT'
     logger.debug("HTML Fetched [%s]" % html_source)
     
 
@@ -134,7 +165,7 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         logger.info('Entering Jobcard[%s]' % jobcard_no)
     except Exception as e:
         logger.error('Exception Entering Jobcard[%s] - EXCEPT[%s]' % (jobcard_no,e))
-        # return 'FAILURE'
+        #return 'FAILURE'
     #time.sleep(timeout)
 
     try:
@@ -143,7 +174,7 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         elem.click()
     except Exception as e:
         logger.error('Exception Clicking Submit for jobcard[%s] - EXCEPT[%s]' % (jobcard_no,e))
-        return 'FAILURE'
+        return 'ABORT'
     #time.sleep(timeout)
 
 
@@ -165,7 +196,12 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         return 'FAILURE'
     #time.sleep(2)
 
-    parent_handle = driver.current_window_handle
+    try:
+        parent_handle = driver.current_window_handle
+    except Exception as e:
+        logger.error('Exception when assining window handle[%s] - EXCEPT[%s]' % (jobcard_no,e))
+        return 'ABORT'
+        
     logger.info("Handles : %s" % driver.window_handles + "Number : %d" % len(driver.window_handles))
 
     if len(driver.window_handles) == 2:
@@ -186,7 +222,7 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         driver.save_screenshot('./button_'+jobcard_no+'.png')
         driver.close()
         driver.switch_to.window(parent_handle)
-        return 'FAILURE'
+        return 'ABORT'
         
     html_source = driver.page_source.replace('<head>',
                                              '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
@@ -213,12 +249,14 @@ def fetch_rn6_reports(logger):
         if e.errno != errno.EEXIST:
             raise    
     
-    if False:
-        # result = fetch_rn6_report(logger, driver, state='ap', district_name='ANANTAPUR', jobcard_no='121673411011010257-02')
-        # result = fetch_rn6_report(logger, driver, district_name='MAHABUBNAGAR', jobcard_no='141990515024010071-08')
-        # result = fetch_rn6_report(logger, driver, state='ap', district_name='VISAKHAPATNAM', jobcard_no='030300927050030026-02')
-        result = fetch_rn6_report(logger, driver, state='ap', district_name='VISAKHAPATNAM', jobcard_no='030291107055010027-01')
-        return 'SUCCESS'
+    current_panchayat = None
+    current_jobcard = None
+    filename = dirname + '/status.dat'
+    if os.path.exists(filename):
+        with open(filename, 'r') as status_file:
+            logger.info('Reading [%s]' % filename)
+            status = status_file.read().strip()
+        (current_panchayat, current_jobcard) = status.split(',')
 
     if False:
         state = None
@@ -232,14 +270,15 @@ def fetch_rn6_reports(logger):
         block_name = 'Gangaraju Madugula'
         block_id = None
 
-    current_panchayat = None
-    current_jobcard = None
-    filename = dirname + '/status.dat'
-    if os.path.exists(filename):
-        with open(filename, 'r') as status_file:
-            logger.info('Reading [%s]' % filename)
-            status = status_file.read()
-        (current_panchayat, current_jobcard) = status.split(',')
+    if False:
+        # result = fetch_rn6_report(logger, driver, state='ap', district_name='ANANTAPUR', jobcard_no='121673411011010257-02')
+        # result = fetch_rn6_report(logger, driver, district_name='MAHABUBNAGAR', jobcard_no='141990515024010071-08')
+        # result = fetch_rn6_report(logger, driver, state='ap', district_name='VISAKHAPATNAM', jobcard_no='030300927050030026-02')
+        result = fetch_rn6_report(logger, driver, state=state, district_name=district_name, jobcard_no=current_jobcard, block_name=block_name, panchayat_name=current_panchayat)
+        driverFinalize(driver)
+        displayFinalize(display)
+        #process_cleanup(logger)
+        return 'SUCCESS'
 
     if not block_id:
         panchayats = Panchayat.objects.filter(block__name=block_name)
@@ -265,8 +304,15 @@ def fetch_rn6_reports(logger):
                 if result != 'SUCCESS':
                     logger.error('Failure returned [%s]' % result)
                     if result == 'ABORT':
-                        #driverFinalize(driver) 
-                        displayFinalize(display)                        
+                        logger.info('Finalizing Driver')
+                        try:
+                            driverFinalize(driver)
+                        except:
+                            pass  # FIXME should not suppress!
+                        logger.info('Finalizing Display')
+                        displayFinalize(display)
+                        process_cleanup(logger)
+                        time.sleep(10)
                         return 'FAILURE'
                     else:
                         continue  # FIXME why is this even needed. Why is it not working?
@@ -327,17 +373,121 @@ def fetch_rn6_reports(logger):
                 #time.sleep(3)
                 continue  # FIXME why is this even needed. Why is it not working?
 
-    #driverFinalize(driver) 
+    driverFinalize(driver) 
     displayFinalize(display)
     return 'SUCCESS'
 
 def parse_rn6_reports(logger):
     logger.info('Parse the RN6 HTMLs')
 
+    # filename = 'jobcards/Gangaraju Madugula_G.Madugula_030291104271010017-01_ledger_details.html'
+    filename = 'jobcards/Gangaraju Madugula_Gaduthuru_030291116195010015-04_ledger_details.html'
+    
     with open(filename, 'r') as html_file:
         logger.info('Reading [%s]' % filename)
         html_source = html_file.read()
 
+    bs = BeautifulSoup(html_source, 'html.parser')
+
+    # tabletop = bs.find(id='ctl00_MainContent_PrintContent')
+    # logger.info(tabletop)
+    table = bs.find(id='tblDetails')
+    logger.debug(table)
+
+    account_no = table.find(id='ctl00_MainContent_lblAccountNo').text.strip()
+    logger.info('account_no [%s]' % account_no)
+
+    bo_name = table.find(id='ctl00_MainContent_lblBOName').text.strip()
+    logger.info('bo_name [%s]' % bo_name)
+
+    jobcard_id = table.find(id='ctl00_MainContent_lblJobcardPensionID').text.strip()
+    logger.info('jobcard_id [%s]' % jobcard_id)
+
+    so_name = table.find(id='ctl00_MainContent_lblSOName').text.strip()
+    logger.info('so_name [%s]' % so_name)
+
+    account_holder_name = table.find(id='ctl00_MainContent_lblName').text.strip()
+    logger.info('account_holder_name [%s]' % account_holder_name)
+
+    mandal_name = table.find(id='ctl00_MainContent_lblMandalName').text.strip()
+    logger.info('mandal_name [%s]' % mandal_name)
+
+    table = bs.find(id='ctl00_MainContent_dgLedgerReport')
+    logger.debug(table)
+    try:
+        tr_list = table.findAll('tr')
+    except:
+        logger.info('No Transactions')
+        return 'SUCCESS'
+    logger.debug(tr_list)
+
+    # desired_columns =  [1, ]
+    for tr in tr_list:
+        logger.debug(tr)
+        td_list = tr.findAll('td')
+
+        transaction_date = td_list[1].text.strip()
+        logger.info('transaction_date[%s]' % transaction_date)
+
+        transaction_ref = td_list[2].text.strip()
+        logger.info('transaction_ref[%s]' % transaction_ref)
+
+        withdrawn_at = td_list[3].text.strip()
+        logger.info('withdrawn_at[%s]' % withdrawn_at)
+
+        deposit_inr = td_list[4].text.strip()
+        logger.info('deposit_inr[%s]' % deposit_inr)
+
+        withdrawal_inr = td_list[5].text.strip()
+        logger.info('withdrawal_inr[%s]' % withdrawal_inr)
+
+        availalbe_balance = td_list[6].text.strip()
+        logger.info('availalbe_balance[%s]' % availalbe_balance)
+
+
+    '''    
+    tr = tr_list[0]
+    td = tr.find('td')
+    td = td.findNext()
+    account_no = td.text.strip()
+    logger.info('account_no [%s]' % account_no)
+    
+    td = td.findNext()
+    td = td.findNext()
+    td = td.findNext()
+    bo_name = td.text.strip()
+    logger.info('bo_name [%s]' % bo_name)
+
+    ###
+    
+    tr = tr_list[1]
+    logger.info(tr)
+    td = tr.find('td')
+    td = td.findNext()
+    td = td.findNext()
+    jobcard_id = td.text.strip()
+    logger.info('jobcard_id [%s]' % jobcard_id)
+    
+    td = td.findNext()
+    td = td.findNext()
+    td = td.findNext()
+    td = td.findNext()
+    so_name = td.text.strip()
+    logger.info('so_name [%s]' % so_name)
+
+    ###
+    
+    tr = tr_list[2]
+    logger.info(tr)
+    td = tr.find('td')
+    td = td.findNext()
+    account_holder_name = td.text.strip()
+    logger.info('account_holder_name [%s]' % account_holder_name)
+    
+    td = td.findNext()
+    mandal_name = td.text.strip()
+    logger.info('mandal_name [%s]' % mandal_name)
+    '''
     return 'SUCCESS'
 
 class TestSuite(unittest.TestCase):
@@ -349,9 +499,11 @@ class TestSuite(unittest.TestCase):
         self.logger.info('...END PROCESSING')
 
     def test_fetch_rn6_report(self):
+        count = 0
         while True:
+            count += 1
             result = fetch_rn6_reports(self.logger)
-            if result == 'SUCCESS':
+            if result == 'SUCCESS' or count == 10:
                 break
         self.assertEqual(result, 'SUCCESS')
 
