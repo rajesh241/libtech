@@ -12,10 +12,11 @@ sys.path.insert(0, rootdir)
 #exit(0)
 
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, SessionNotCreatedException, TimeoutException, WebDriverException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
+
 
 from os import errno
 
@@ -108,19 +109,24 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
     try:
         logger.info("Fetching...[%s]" % url)
         driver.get(url)
-    except Exception as e:
-        logger.error('Exception when fetching url [%s] - EXCEPT[%s]' % (url, e))
-        # time.sleep(timeout)
-        # driver = driverInitialize(timeout=3)  # FIXME
-        # driver.get(url)
+    except WebDriverException:
         logger.critical('Aborting the current attempt')
+        return 'ABORT'
+    except SessionNotCreatedException:
+        logger.critical('Aborting the current attempt')
+        return 'ABORT'
+    except BrokenPipeError as e:
+        logger.error('Broken Pipe when fetching url - EXCEPT[%s:%s]' % (type(e), e))
+        return 'FAILURE'
+    except Exception as e:
+        logger.error('Exception when fetching url - EXCEPT[%s:%s]' % (type(e), e))
         return 'FAILURE'
 
     try:
         html_source = driver.page_source.replace('<head>',
                                                  '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
     except Exception as e:
-        logger.error('Exception getting HTML source - EXCEPT[%s]' % e)
+        logger.error('Exception getting HTML source - EXCEPT[%s:%s]' % (type(e),e))
         return 'ABORT'
     logger.debug("HTML Fetched [%s]" % html_source)
     
@@ -138,8 +144,8 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         # elem.click()
         # elem = driver.find_element_by_xpath("//select[@name='ctl00$MainContent$ddlDistrict']/option[text()=district_name]").click()
     except Exception as e:
-        logger.error('Exception during Select() - EXCEPT[%s]' % e)
-        # return 'FAILURE'
+        logger.error('Exception during Select() - EXCEPT[%s:%s]' % (type(e),e))
+        return 'FAILURE'
     # time.sleep(timeout)
 
     try:
@@ -147,7 +153,7 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         select.select_by_visible_text('MGNREGA')
         logger.info('MGNREGA selected')
     except Exception as e:
-        logger.error('Exception during Select() - EXCEPT[%s]' % e)
+        logger.error('Exception during Select() - EXCEPT[%s:%s]' % (type(e), e))
 
     try:
         # elem = driver.find_element_by_id('ctl00_MainContent_txtSSPPEN')
@@ -155,8 +161,8 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         elem.click()
         logger.info('Clicked Jobcard radio button')
     except Exception as e:
-        logger.error('Exception Jobcard radio button - EXCEPT[%s]' % e)
-        # return 'FAILURE'
+        logger.error('Exception Jobcard radio button - EXCEPT[%s:%s]' % (type(e), e))
+        return 'FAILURE'
 
     try:
         elem = driver.find_element_by_id('ctl00_MainContent_txtSSPPEN')
@@ -165,7 +171,7 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         logger.info('Entering Jobcard[%s]' % jobcard_no)
     except Exception as e:
         logger.error('Exception Entering Jobcard[%s] - EXCEPT[%s]' % (jobcard_no,e))
-        #return 'FAILURE'
+        return 'FAILURE'
     #time.sleep(timeout)
 
     try:
@@ -173,7 +179,7 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         elem = driver.find_element_by_id('ctl00_MainContent_btnMakePayment')
         elem.click()
     except Exception as e:
-        logger.error('Exception Clicking Submit for jobcard[%s] - EXCEPT[%s]' % (jobcard_no,e))
+        logger.error('Exception Clicking Submit for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
         return 'ABORT'
     #time.sleep(timeout)
 
@@ -183,7 +189,7 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         elem = driver.find_element_by_css_selector("input[type='radio'][value='rbSelect']")
         elem.click()
     except Exception as e:
-        logger.error('Exception selecting radio button for jobcard[%s] - EXCEPT[%s]' % (jobcard_no,e))
+        logger.error('Exception selecting radio button for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
         return 'FAILURE'
     #time.sleep(timeout)
     
@@ -192,14 +198,14 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         elem = driver.find_element_by_id('ctl00_MainContent_btnTxDetails')
         elem.click()
     except Exception as e:
-        logger.error('Exception clicking view ledger for jobcard[%s] - EXCEPT[%s]' % (jobcard_no,e))
+        logger.error('Exception clicking view ledger for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
         return 'FAILURE'
     #time.sleep(2)
 
     try:
         parent_handle = driver.current_window_handle
     except Exception as e:
-        logger.error('Exception when assining window handle[%s] - EXCEPT[%s]' % (jobcard_no,e))
+        logger.error('Exception when assining window handle - EXCEPT[%s:%s]' % (tpe(e),e))
         return 'ABORT'
         
     logger.info("Handles : %s" % driver.window_handles + "Number : %d" % len(driver.window_handles))
@@ -217,8 +223,13 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         elem = WebDriverWait(driver, timeout).until(
           EC.presence_of_element_located((By.CLASS_NAME, "btn"))
         )
+    except TimeoutException as e:
+        logger.error('Timeout waiting for dialog box - EXCEPT[%s:%s]' % (type(e), e))
+        driver.close()
+        driver.switch_to.window(parent_handle)
+        return 'ABORT'
     except Exception as e:
-        logger.error('Exception on WebDriverWait(10) - EXCEPT[%s]' % e)
+        logger.error('Exception on WebDriverWait(10) - EXCEPT[%s:%s]' % (type(e), e))
         driver.save_screenshot('./button_'+jobcard_no+'.png')
         driver.close()
         driver.switch_to.window(parent_handle)
@@ -382,7 +393,7 @@ def parse_rn6_reports(logger):
 
     # filename = 'jobcards/Gangaraju Madugula_G.Madugula_030291104271010017-01_ledger_details.html'
     filename = 'jobcards/Gangaraju Madugula_Gaduthuru_030291116195010015-04_ledger_details.html'
-    
+    csv_buffer = ['S.No,Mandal Name,Gram Panchayat,Village,Job card number/worker ID,Name of the wageseeker,Credited Date,Deposit (INR),Debited Date,Withdrawal (INR),Available Balance (INR),Diff. time credit and debit\n']
     with open(filename, 'r') as html_file:
         logger.info('Reading [%s]' % filename)
         html_source = html_file.read()
@@ -422,9 +433,12 @@ def parse_rn6_reports(logger):
     logger.debug(tr_list)
 
     # desired_columns =  [1, ]
-    for tr in tr_list:
+    for i, tr in enumerate(tr_list, start=1):
         logger.debug(tr)
         td_list = tr.findAll('td')
+
+        serial_no = td_list[0].text.strip()
+        logger.info('serial_no[%s]' % serial_no)
 
         transaction_date = td_list[1].text.strip()
         logger.info('transaction_date[%s]' % transaction_date)
@@ -503,11 +517,10 @@ class TestSuite(unittest.TestCase):
         while True:
             count += 1
             result = fetch_rn6_reports(self.logger)
-            if result == 'SUCCESS' or count == 10:
+            if result == 'SUCCESS' or count == 25:
                 break
         self.assertEqual(result, 'SUCCESS')
 
-    @unittest.skip('Skipping the parse')
     def test_parse_rn6_report(self):
         result = parse_rn6_reports(self.logger)
         self.assertEqual(result, 'SUCCESS')
