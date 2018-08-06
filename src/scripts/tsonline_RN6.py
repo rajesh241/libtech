@@ -109,6 +109,55 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
     try:
         logger.info("Fetching...[%s]" % url)
         driver.get(url)
+
+        html_source = driver.page_source.replace('<head>',
+                                                 '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+        logger.debug("HTML Fetched [%s]" % html_source)
+    
+
+        bs = BeautifulSoup(html_source, 'html.parser')
+
+        # elem = driver.find_element_by_id('ctl00_MainContent_ddlDistrict')
+        # elem = driver.find_element_by_name('ctl00$MainContent$ddlDistrict')
+        # elem.send_keys(district_name)
+
+        select = Select(driver.find_element_by_id('ctl00_MainContent_ddlDistrict'))
+        select.select_by_visible_text(district_name)
+        # elem.click()
+        # elem = driver.find_element_by_xpath("//select[@name='ctl00$MainContent$ddlDistrict']/option[text()=district_name]").click()
+
+        logger.info('Clicking Jobcard radio button')
+        # elem = driver.find_element_by_id('ctl00_MainContent_txtSSPPEN') FIXME
+        elem = driver.find_element_by_css_selector("input[type='radio'][value='rbnSSPPEN']")
+        elem.click()
+
+        logger.info('Entering Jobcard[%s]' % jobcard_no)
+        elem = driver.find_element_by_id('ctl00_MainContent_txtSSPPEN')
+        elem.send_keys(jobcard_no)
+        elem.click()
+
+        logger.info('Clicking Submit')
+        elem = driver.find_element_by_id('ctl00_MainContent_btnMakePayment')
+        elem.click()
+
+        logger.info('Clicking Select radio button')
+        elem = driver.find_element_by_css_selector("input[type='radio'][value='rbSelect']")
+        elem.click()
+    
+        logger.info('Clicking View Ledger')
+        elem = driver.find_element_by_id('ctl00_MainContent_btnTxDetails')
+        elem.click()
+        
+        parent_handle = driver.current_window_handle
+        logger.info("Handles : %s" % driver.window_handles + "Number : %d" % len(driver.window_handles))
+        
+        if len(driver.window_handles) == 2:
+            driver.switch_to.window(driver.window_handles[-1])
+            #time.sleep(2)
+        else:
+            logger.error("Handlers gone wrong [" + str(driver.window_handles) + 'jobcard %s' % jobcard_no + "]")
+            driver.save_screenshot('./logs/button_'+jobcard_no+'.png')
+            return 'FAILURE'
     except WebDriverException:
         logger.critical('Aborting the current attempt')
         return 'ABORT'
@@ -120,102 +169,6 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         return 'FAILURE'
     except Exception as e:
         logger.error('Exception when fetching url - EXCEPT[%s:%s]' % (type(e), e))
-        return 'FAILURE'
-
-    try:
-        html_source = driver.page_source.replace('<head>',
-                                                 '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
-    except Exception as e:
-        logger.error('Exception getting HTML source - EXCEPT[%s:%s]' % (type(e),e))
-        return 'ABORT'
-    logger.debug("HTML Fetched [%s]" % html_source)
-    
-
-    bs = BeautifulSoup(html_source, 'html.parser')
-
-    # time.sleep(timeout)
-    try:
-        # elem = driver.find_element_by_id('ctl00_MainContent_ddlDistrict')
-        # elem = driver.find_element_by_name('ctl00$MainContent$ddlDistrict')
-        # elem.send_keys(district_name)
-
-        select = Select(driver.find_element_by_id('ctl00_MainContent_ddlDistrict'))
-        select.select_by_visible_text(district_name)
-        # elem.click()
-        # elem = driver.find_element_by_xpath("//select[@name='ctl00$MainContent$ddlDistrict']/option[text()=district_name]").click()
-    except Exception as e:
-        logger.error('Exception during Select() - EXCEPT[%s:%s]' % (type(e),e))
-        return 'FAILURE'
-    # time.sleep(timeout)
-
-    try:
-        select = Select(driver.find_element_by_id('ctl00_MainContent_ddlService'))
-        select.select_by_visible_text('MGNREGA')
-        logger.info('MGNREGA selected')
-    except Exception as e:
-        logger.error('Exception during Select() - EXCEPT[%s:%s]' % (type(e), e))
-
-    try:
-        # elem = driver.find_element_by_id('ctl00_MainContent_txtSSPPEN')
-        elem = driver.find_element_by_css_selector("input[type='radio'][value='rbnSSPPEN']")
-        elem.click()
-        logger.info('Clicked Jobcard radio button')
-    except Exception as e:
-        logger.error('Exception Jobcard radio button - EXCEPT[%s:%s]' % (type(e), e))
-        return 'FAILURE'
-
-    try:
-        elem = driver.find_element_by_id('ctl00_MainContent_txtSSPPEN')
-        elem.send_keys(jobcard_no)
-        elem.click()
-        logger.info('Entering Jobcard[%s]' % jobcard_no)
-    except Exception as e:
-        logger.error('Exception Entering Jobcard[%s] - EXCEPT[%s]' % (jobcard_no,e))
-        return 'FAILURE'
-    #time.sleep(timeout)
-
-    try:
-        logger.info('Clicking Submit')
-        elem = driver.find_element_by_id('ctl00_MainContent_btnMakePayment')
-        elem.click()
-    except Exception as e:
-        logger.error('Exception Clicking Submit for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
-        return 'ABORT'
-    #time.sleep(timeout)
-
-
-    try:
-        logger.info('Clicking Select radio button')
-        elem = driver.find_element_by_css_selector("input[type='radio'][value='rbSelect']")
-        elem.click()
-    except Exception as e:
-        logger.error('Exception selecting radio button for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
-        return 'FAILURE'
-    #time.sleep(timeout)
-    
-    try:
-        logger.info('Clicking View Ledger')
-        elem = driver.find_element_by_id('ctl00_MainContent_btnTxDetails')
-        elem.click()
-    except Exception as e:
-        logger.error('Exception clicking view ledger for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
-        return 'FAILURE'
-    #time.sleep(2)
-
-    try:
-        parent_handle = driver.current_window_handle
-    except Exception as e:
-        logger.error('Exception when assining window handle - EXCEPT[%s:%s]' % (tpe(e),e))
-        return 'ABORT'
-        
-    logger.info("Handles : %s" % driver.window_handles + "Number : %d" % len(driver.window_handles))
-
-    if len(driver.window_handles) == 2:
-        driver.switch_to.window(driver.window_handles[-1])
-        #time.sleep(2)
-    else:
-        logger.error("Handlers gone wrong [" + str(driver.window_handles) + 'jobcard %s' % jobcard_no + "]")
-        driver.save_screenshot('./logs/button_'+jobcard_no+'.png')
         return 'FAILURE'
 
     try:
@@ -234,17 +187,28 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         driver.close()
         driver.switch_to.window(parent_handle)
         return 'ABORT'
-        
-    html_source = driver.page_source.replace('<head>',
-                                             '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
-    logger.debug("HTML Fetched [%s]" % html_source)
-    filename = '%s/%s_%s_%s_ledger_details.html' % (dirname, block_name, panchayat_name, jobcard_no)
-    with open(filename, 'w') as html_file:
-        logger.info('Writing [%s]' % filename)
-        html_file.write(html_source)
-        
-    driver.close()
-    driver.switch_to.window(parent_handle)        
+
+    try:
+        html_source = driver.page_source.replace('<head>',
+                                                 '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+        logger.debug("HTML Fetched [%s]" % html_source)
+        filename = '%s/%s_%s_%s_ledger_details.html' % (dirname, block_name, panchayat_name, jobcard_no)
+        with open(filename, 'w') as html_file:
+            logger.info('Writing [%s]' % filename)
+            html_file.write(html_source)
+            
+        driver.close()
+        driver.switch_to.window(parent_handle)
+    except WebDriverException:
+        logger.critical('Aborting the current attempt')
+        return 'ABORT'
+    except SessionNotCreatedException:
+        logger.critical('Aborting the current attempt')
+        return 'ABORT'
+    except Exception as e:
+        logger.error('Exception for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
+        return 'FAILURE'
+
         
     return 'SUCCESS'
 
