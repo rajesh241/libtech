@@ -158,17 +158,17 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
             logger.error("Handlers gone wrong [" + str(driver.window_handles) + 'jobcard %s' % jobcard_no + "]")
             driver.save_screenshot('./logs/button_'+jobcard_no+'.png')
             return 'FAILURE'
-    except WebDriverException:
-        logger.critical('Aborting the current attempt')
-        return 'ABORT'
-    except SessionNotCreatedException:
-        logger.critical('Aborting the current attempt')
+    except NoSuchElementException as e:
+        logger.error('Exception for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
+        return 'FAILURE'
+    except (WebDriverException, SessionNotCreatedException) as e:
+        logger.critical('Not found for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
         return 'ABORT'
     except BrokenPipeError as e:
-        logger.error('Broken Pipe when fetching url - EXCEPT[%s:%s]' % (type(e), e))
+        logger.error('Broken Pipe for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
         return 'FAILURE'
     except Exception as e:
-        logger.error('Exception when fetching url - EXCEPT[%s:%s]' % (type(e), e))
+        logger.error('Exception for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
         return 'FAILURE'
 
     try:
@@ -353,15 +353,24 @@ def fetch_rn6_reports(logger):
     return 'SUCCESS'
 
 def parse_rn6_reports(logger):
+    import pandas as pd
+    from datetime import datetime
+    
     logger.info('Parse the RN6 HTMLs')
 
     # filename = 'jobcards/Gangaraju Madugula_G.Madugula_030291104271010017-01_ledger_details.html'
     filename = 'jobcards/Gangaraju Madugula_Gaduthuru_030291116195010015-04_ledger_details.html'
     csv_buffer = ['S.No,Mandal Name,Gram Panchayat,Village,Job card number/worker ID,Name of the wageseeker,Credited Date,Deposit (INR),Debited Date,Withdrawal (INR),Available Balance (INR),Diff. time credit and debit\n']
+    
     with open(filename, 'r') as html_file:
         logger.info('Reading [%s]' % filename)
         html_source = html_file.read()
 
+    df = pd.read_html(filename, attrs = {'id': 'ctl00_MainContent_dgLedgerReport'}, index_col='S.No.', header=0)[0]
+    print(df)
+    print(df.index)
+    data = pd.DataFrame([], columns=['S.No', 'Mandal Name', 'Gram Panchayat', 'Village', 'Job card number/worker ID', 'Name of the wageseeker', 'Credited Date', 'Deposit (INR)', 'Debited Date', 'Withdrawal (INR)', 'Available Balance (INR)', 'Diff. time credit and debit'])
+    
     bs = BeautifulSoup(html_source, 'html.parser')
 
     # tabletop = bs.find(id='ctl00_MainContent_PrintContent')
@@ -397,7 +406,9 @@ def parse_rn6_reports(logger):
     logger.debug(tr_list)
 
     # desired_columns =  [1, ]
-    for i, tr in enumerate(tr_list, start=1):
+    for i, tr in enumerate(tr_list):
+        if i == 0:
+            continue
         logger.debug(tr)
         td_list = tr.findAll('td')
 
@@ -416,56 +427,33 @@ def parse_rn6_reports(logger):
         deposit_inr = td_list[4].text.strip()
         logger.info('deposit_inr[%s]' % deposit_inr)
 
+        if deposit_inr != '0':
+            (credited_date, debited_date, diff_time) = (transaction_date, 0, datetime.strptime(transaction_date, "%d/%m/%Y").timestamp())
+        else:
+            (credited_date, debited_date, diff_time) = (0, transaction_date, datetime.strptime(transaction_date, "%d/%m/%Y").timestamp())
+        logger.info('credited_date[%s]' % credited_date)
+        logger.info('debited_date[%s]' % debited_date)
+        logger.info('diff_time[%s]' % diff_time)
+
         withdrawal_inr = td_list[5].text.strip()
         logger.info('withdrawal_inr[%s]' % withdrawal_inr)
 
         availalbe_balance = td_list[6].text.strip()
         logger.info('availalbe_balance[%s]' % availalbe_balance)
 
+        #csv_buffer.append('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' %(serial_no, mandal_name, bo_name, so_name, jobcard_id, account_holder_name, credited_date, debited_date, withdrawal_inr, availalbe_balance, diff_time))
+        data = data.append({'S.No': serial_no, 'Mandal Name': mandal_name, 'Gram Panchayat': bo_name, 'Village': so_name, 'Job card number/worker ID': jobcard_id, 'Name of the wageseeker': account_holder_name, 'Credited Date': credited_date, 'Deposit (INR)': deposit_inr, 'Debited Date': debited_date, 'Withdrawal (INR)': withdrawal_inr, 'Available Balance (INR)': availalbe_balance, 'Diff. time credit and debit': diff_time}, ignore_index=True)
 
-    '''    
-    tr = tr_list[0]
-    td = tr.find('td')
-    td = td.findNext()
-    account_no = td.text.strip()
-    logger.info('account_no [%s]' % account_no)
-    
-    td = td.findNext()
-    td = td.findNext()
-    td = td.findNext()
-    bo_name = td.text.strip()
-    logger.info('bo_name [%s]' % bo_name)
+    data = data.set_index('S.No')
+    csv_buffer = data.to_html()
+    with open('z.html', 'w') as csv_file:
+        logger.info('Writing to CSV [%s]' % csv_buffer)
+        csv_file.write(csv_buffer)
+    logger.info('******')
+    print(data)
+    print(df.dtypes)
+    logger.info('******')
 
-    ###
-    
-    tr = tr_list[1]
-    logger.info(tr)
-    td = tr.find('td')
-    td = td.findNext()
-    td = td.findNext()
-    jobcard_id = td.text.strip()
-    logger.info('jobcard_id [%s]' % jobcard_id)
-    
-    td = td.findNext()
-    td = td.findNext()
-    td = td.findNext()
-    td = td.findNext()
-    so_name = td.text.strip()
-    logger.info('so_name [%s]' % so_name)
-
-    ###
-    
-    tr = tr_list[2]
-    logger.info(tr)
-    td = tr.find('td')
-    td = td.findNext()
-    account_holder_name = td.text.strip()
-    logger.info('account_holder_name [%s]' % account_holder_name)
-    
-    td = td.findNext()
-    mandal_name = td.text.strip()
-    logger.info('mandal_name [%s]' % mandal_name)
-    '''
     return 'SUCCESS'
 
 class TestSuite(unittest.TestCase):
@@ -481,7 +469,7 @@ class TestSuite(unittest.TestCase):
         while True:
             count += 1
             result = fetch_rn6_reports(self.logger)
-            if result == 'SUCCESS' or count == 25:
+            if result == 'SUCCESS' or count == 50:
                 break
         self.assertEqual(result, 'SUCCESS')
 
