@@ -367,6 +367,7 @@ def parse_rn6_reports(logger):
         html_source = html_file.read()
 
     df = pd.read_html(filename, attrs = {'id': 'ctl00_MainContent_dgLedgerReport'}, index_col='S.No.', header=0)[0]
+    # df = pd.read_html(filename, attrs = {'id': 'ctl00_MainContent_dgLedgerReport'})[0]
     print(df)
     print(df.index)
     data = pd.DataFrame([], columns=['S.No', 'Mandal Name', 'Gram Panchayat', 'Village', 'Job card number/worker ID', 'Name of the wageseeker', 'Credited Date', 'Deposit (INR)', 'Debited Date', 'Withdrawal (INR)', 'Available Balance (INR)', 'Diff. time credit and debit'])
@@ -406,28 +407,26 @@ def parse_rn6_reports(logger):
     logger.debug(tr_list)
 
     # desired_columns =  [1, ]
-    for i, tr in enumerate(tr_list):
-        if i == 0:
-            continue
-        logger.debug(tr)
-        td_list = tr.findAll('td')
+    # for row in df.itertuples(index=True, name='Pandas'):
+    for index, row in df.iterrows():
+        logger.info('%d: %s' % (index, row))
 
-        serial_no = td_list[0].text.strip()
+        serial_no = index
         logger.info('serial_no[%s]' % serial_no)
 
-        transaction_date = td_list[1].text.strip()
+        transaction_date = row[0]
         logger.info('transaction_date[%s]' % transaction_date)
 
-        transaction_ref = td_list[2].text.strip()
+        transaction_ref = row[1]
         logger.info('transaction_ref[%s]' % transaction_ref)
 
-        withdrawn_at = td_list[3].text.strip()
+        withdrawn_at = row[2]
         logger.info('withdrawn_at[%s]' % withdrawn_at)
 
-        deposit_inr = td_list[4].text.strip()
+        deposit_inr = row[3]
         logger.info('deposit_inr[%s]' % deposit_inr)
 
-        if deposit_inr != '0':
+        if deposit_inr != 0:
             (credited_date, debited_date, diff_time) = (transaction_date, 0, datetime.strptime(transaction_date, "%d/%m/%Y").timestamp())
         else:
             (credited_date, debited_date, diff_time) = (0, transaction_date, datetime.strptime(transaction_date, "%d/%m/%Y").timestamp())
@@ -435,10 +434,10 @@ def parse_rn6_reports(logger):
         logger.info('debited_date[%s]' % debited_date)
         logger.info('diff_time[%s]' % diff_time)
 
-        withdrawal_inr = td_list[5].text.strip()
+        withdrawal_inr = row[4]
         logger.info('withdrawal_inr[%s]' % withdrawal_inr)
 
-        availalbe_balance = td_list[6].text.strip()
+        availalbe_balance = row[5]
         logger.info('availalbe_balance[%s]' % availalbe_balance)
 
         #csv_buffer.append('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' %(serial_no, mandal_name, bo_name, so_name, jobcard_id, account_holder_name, credited_date, debited_date, withdrawal_inr, availalbe_balance, diff_time))
