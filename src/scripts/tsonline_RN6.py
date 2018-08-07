@@ -414,16 +414,16 @@ def parse_rn6_reports(logger):
         serial_no = index
         logger.info('serial_no[%s]' % serial_no)
 
-        transaction_date = row[0]
+        transaction_date = row['Transaction Date']
         logger.info('transaction_date[%s]' % transaction_date)
 
-        transaction_ref = row[1]
+        transaction_ref = row['Transaction Reference']
         logger.info('transaction_ref[%s]' % transaction_ref)
 
-        withdrawn_at = row[2]
+        withdrawn_at = row['Withdrawn at']
         logger.info('withdrawn_at[%s]' % withdrawn_at)
 
-        deposit_inr = row[3]
+        deposit_inr = row['Deposit (INR)']
         logger.info('deposit_inr[%s]' % deposit_inr)
 
         if deposit_inr != 0:
@@ -434,10 +434,10 @@ def parse_rn6_reports(logger):
         logger.info('debited_date[%s]' % debited_date)
         logger.info('diff_time[%s]' % diff_time)
 
-        withdrawal_inr = row[4]
+        withdrawal_inr = row['Withdrawal (INR)']
         logger.info('withdrawal_inr[%s]' % withdrawal_inr)
 
-        availalbe_balance = row[5]
+        availalbe_balance = row['Available Balance (INR)']
         logger.info('availalbe_balance[%s]' % availalbe_balance)
 
         #csv_buffer.append('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' %(serial_no, mandal_name, bo_name, so_name, jobcard_id, account_holder_name, credited_date, debited_date, withdrawal_inr, availalbe_balance, diff_time))
