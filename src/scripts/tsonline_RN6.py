@@ -28,6 +28,7 @@ from wrappers.logger import loggerFetch
 from wrappers.sn import driverInitialize, driverFinalize, displayInitialize, displayFinalize
 
 import psutil
+import pandas as pd
 
 ###
 
@@ -352,24 +353,9 @@ def fetch_rn6_reports(logger):
     displayFinalize(display)
     return 'SUCCESS'
 
-def parse_rn6_reports(logger):
-    import pandas as pd
-    #from datetime import datetime
-
-    from secure.libtech_settings import LIBTECH_AWS_ACCESS_KEY_ID,LIBTECH_AWS_SECRET_ACCESS_KEY
-    from libtech.settings import AWS_STORAGE_BUCKET_NAME,AWS_S3_REGION_NAME,MEDIA_URL,S3_URL
-    
-    import boto3
-    from boto3.session import Session
-    from botocore.client import Config
-    
-    logger.info('Parse the RN6 HTMLs')
-
-    # filename = 'jobcards/Gangaraju Madugula_G.Madugula_030291104271010017-01_ledger_details.html'
-    filename = 'jobcards/Gangaraju Madugula_Gaduthuru_030291116195010015-04_ledger_details.html'
-    #csv_buffer = ['S.No,Mandal Name,Gram Panchayat,Village,Job card number/worker ID,Name of the wageseeker,Credited Date,Deposit (INR),Debited Date,Withdrawal (INR),Available Balance (INR),Diff. time credit and debit\n']
-
+def parse_rn6_reports(logger, filename=None):
     (dirname, block_name, panchayat_name, jobcard_no, ledger, details) = filename.replace('/', '_').split('_')
+
     with open(filename, 'r') as html_file:
         logger.info('Reading [%s]' % filename)
         html_source = html_file.read()
@@ -464,11 +450,31 @@ def parse_rn6_reports(logger):
         
     print(data)
 
-    cloud_filename='media/temp/rn6/%s' % csv_filename
+    return data
+
+def dump_rn6_reports(logger):
+    #from datetime import datetime
+
+    from secure.libtech_settings import LIBTECH_AWS_ACCESS_KEY_ID,LIBTECH_AWS_SECRET_ACCESS_KEY
+    from libtech.settings import AWS_STORAGE_BUCKET_NAME,AWS_S3_REGION_NAME,MEDIA_URL,S3_URL
+    
+    import boto3
+    from boto3.session import Session
+    from botocore.client import Config
+    
+    logger.info('Parse the RN6 HTMLs')
+
+    # filename = 'jobcards/Gangaraju Madugula_G.Madugula_030291104271010017-01_ledger_details.html'
+    filename = 'jobcards/Gangaraju Madugula_Gaduthuru_030291116195010015-04_ledger_details.html'
+    #csv_buffer = ['S.No,Mandal Name,Gram Panchayat,Village,Job card number/worker ID,Name of the wageseeker,Credited Date,Deposit (INR),Debited Date,Withdrawal (INR),Available Balance (INR),Diff. time credit and debit\n']
+
+    data = parse_rn6_reports(logger, filename=filename)
+    
+    cloud_filename='media/temp/rn6/%s' % filename.replace('.html', '.csv')
     session = Session(aws_access_key_id=LIBTECH_AWS_ACCESS_KEY_ID,
                                     aws_secret_access_key=LIBTECH_AWS_SECRET_ACCESS_KEY)
     s3 = session.resource('s3',config=Config(signature_version='s3v4'))
-    s3.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(ACL='public-read',Key=cloud_filename, Body=csv_buffer)
+    s3.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(ACL='public-read',Key=cloud_filename, Body=data.to_csv())
     public_url='https://s3.ap-south-1.amazonaws.com/libtech-nrega1/%s' % cloud_filename
     logger.info('CSV File written on AWS[%s]' % public_url)
         
@@ -492,8 +498,8 @@ class TestSuite(unittest.TestCase):
                 break
         self.assertEqual(result, 'SUCCESS')
 
-    def test_parse_rn6_report(self):
-        result = parse_rn6_reports(self.logger)
+    def test_dump_rn6_report(self):
+        result = dump_rn6_reports(self.logger)
         self.assertEqual(result, 'SUCCESS')
         
 if __name__ == '__main__':
