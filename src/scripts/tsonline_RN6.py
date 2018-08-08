@@ -354,14 +354,22 @@ def fetch_rn6_reports(logger):
 
 def parse_rn6_reports(logger):
     import pandas as pd
-    from datetime import datetime
+    #from datetime import datetime
+
+    from secure.libtech_settings import LIBTECH_AWS_ACCESS_KEY_ID,LIBTECH_AWS_SECRET_ACCESS_KEY
+    from libtech.settings import AWS_STORAGE_BUCKET_NAME,AWS_S3_REGION_NAME,MEDIA_URL,S3_URL
+    
+    import boto3
+    from boto3.session import Session
+    from botocore.client import Config
     
     logger.info('Parse the RN6 HTMLs')
 
     # filename = 'jobcards/Gangaraju Madugula_G.Madugula_030291104271010017-01_ledger_details.html'
     filename = 'jobcards/Gangaraju Madugula_Gaduthuru_030291116195010015-04_ledger_details.html'
-    csv_buffer = ['S.No,Mandal Name,Gram Panchayat,Village,Job card number/worker ID,Name of the wageseeker,Credited Date,Deposit (INR),Debited Date,Withdrawal (INR),Available Balance (INR),Diff. time credit and debit\n']
-    
+    #csv_buffer = ['S.No,Mandal Name,Gram Panchayat,Village,Job card number/worker ID,Name of the wageseeker,Credited Date,Deposit (INR),Debited Date,Withdrawal (INR),Available Balance (INR),Diff. time credit and debit\n']
+
+    (dirname, block_name, panchayat_name, jobcard_no, ledger, details) = filename.replace('/', '_').split('_')
     with open(filename, 'r') as html_file:
         logger.info('Reading [%s]' % filename)
         html_source = html_file.read()
@@ -444,7 +452,7 @@ def parse_rn6_reports(logger):
         logger.info('diff_time[%s]' % diff_time)
         
         #csv_buffer.append('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' %(serial_no, mandal_name, bo_name, so_name, jobcard_id, account_holder_name, credited_date, debited_date, withdrawal_inr, availalbe_balance, diff_time))
-        data = data.append({'S.No': serial_no, 'Mandal Name': mandal_name, 'Gram Panchayat': bo_name, 'Village': so_name, 'Job card number/worker ID': jobcard_id, 'Name of the wageseeker': account_holder_name, 'Credited Date': credited_date, 'Deposit (INR)': deposit_inr, 'Debited Date': debited_date, 'Withdrawal (INR)': withdrawal_inr, 'Available Balance (INR)': availalbe_balance, 'Diff. time credit and debit': diff_time}, ignore_index=True)
+        data = data.append({'S.No': serial_no, 'Mandal Name': mandal_name, 'Gram Panchayat': panchayat_name, 'Village': so_name, 'Job card number/worker ID': jobcard_id, 'Name of the wageseeker': account_holder_name, 'Credited Date': credited_date, 'Deposit (INR)': deposit_inr, 'Debited Date': debited_date, 'Withdrawal (INR)': withdrawal_inr, 'Available Balance (INR)': availalbe_balance, 'Diff. time credit and debit': diff_time}, ignore_index=True)
 
     data = data.set_index('S.No')
     data = data.iloc[::-1]  # Reverse the order back to normal
@@ -452,8 +460,18 @@ def parse_rn6_reports(logger):
     csv_filename = filename.replace('.html','.csv')
     with open(csv_filename, 'w') as csv_file:
         logger.info('Writing to CSV [%s]' % csv_filename)
-        print(data)
         csv_file.write(csv_buffer)
+        
+    print(data)
+
+    cloud_filename='media/temp/rn6/%s' % csv_filename
+    session = Session(aws_access_key_id=LIBTECH_AWS_ACCESS_KEY_ID,
+                                    aws_secret_access_key=LIBTECH_AWS_SECRET_ACCESS_KEY)
+    s3 = session.resource('s3',config=Config(signature_version='s3v4'))
+    s3.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(ACL='public-read',Key=cloud_filename, Body=csv_buffer)
+    public_url='https://s3.ap-south-1.amazonaws.com/libtech-nrega1/%s' % cloud_filename
+    logger.info('CSV File written on AWS[%s]' % public_url)
+        
 
     return 'SUCCESS'
 
