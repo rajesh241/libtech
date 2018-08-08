@@ -408,8 +408,11 @@ def parse_rn6_reports(logger):
 
     # desired_columns =  [1, ]
     # for row in df.itertuples(index=True, name='Pandas'):
+    debit_timestamp = pd.to_datetime(0)
+
+    df = df.iloc[::-1] # Reverse the order for calculating diff time Debit dates are easier to record in this order
     for index, row in df.iterrows():
-        logger.info('%d: %s' % (index, row))
+        logger.debug('%d: %s' % (index, row))
 
         serial_no = index
         logger.info('serial_no[%s]' % serial_no)
@@ -426,32 +429,31 @@ def parse_rn6_reports(logger):
         deposit_inr = row['Deposit (INR)']
         logger.info('deposit_inr[%s]' % deposit_inr)
 
-        if deposit_inr != 0:
-            (credited_date, debited_date, diff_time) = (transaction_date, 0, datetime.strptime(transaction_date, "%d/%m/%Y").timestamp())
-        else:
-            (credited_date, debited_date, diff_time) = (0, transaction_date, datetime.strptime(transaction_date, "%d/%m/%Y").timestamp())
-        logger.info('credited_date[%s]' % credited_date)
-        logger.info('debited_date[%s]' % debited_date)
-        logger.info('diff_time[%s]' % diff_time)
-
         withdrawal_inr = row['Withdrawal (INR)']
         logger.info('withdrawal_inr[%s]' % withdrawal_inr)
 
         availalbe_balance = row['Available Balance (INR)']
         logger.info('availalbe_balance[%s]' % availalbe_balance)
 
+        if deposit_inr == 0:
+            (credited_date, debited_date, diff_time, debit_timestamp) = (transaction_date, 0, 0, pd.to_datetime(transaction_date, dayfirst=True)) #  datetime.strptime(transaction_date, "%d/%m/%Y").timestamp())
+        else:
+            (credited_date, debited_date, diff_time) = (0, transaction_date, debit_timestamp - pd.to_datetime(transaction_date, dayfirst=True)) # datetime.strptime(transaction_date, "%d/%m/%Y").timestamp())
+        logger.info('credited_date[%s]' % credited_date)
+        logger.info('debited_date[%s]' % debited_date)
+        logger.info('diff_time[%s]' % diff_time)
+        
         #csv_buffer.append('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' %(serial_no, mandal_name, bo_name, so_name, jobcard_id, account_holder_name, credited_date, debited_date, withdrawal_inr, availalbe_balance, diff_time))
         data = data.append({'S.No': serial_no, 'Mandal Name': mandal_name, 'Gram Panchayat': bo_name, 'Village': so_name, 'Job card number/worker ID': jobcard_id, 'Name of the wageseeker': account_holder_name, 'Credited Date': credited_date, 'Deposit (INR)': deposit_inr, 'Debited Date': debited_date, 'Withdrawal (INR)': withdrawal_inr, 'Available Balance (INR)': availalbe_balance, 'Diff. time credit and debit': diff_time}, ignore_index=True)
 
     data = data.set_index('S.No')
-    csv_buffer = data.to_html()
-    with open('z.html', 'w') as csv_file:
-        logger.info('Writing to CSV [%s]' % csv_buffer)
+    data = data.iloc[::-1]  # Reverse the order back to normal
+    csv_buffer = data.to_csv()
+    csv_filename = filename.replace('.html','.csv')
+    with open(csv_filename, 'w') as csv_file:
+        logger.info('Writing to CSV [%s]' % csv_filename)
+        print(data)
         csv_file.write(csv_buffer)
-    logger.info('******')
-    print(data)
-    print(df.dtypes)
-    logger.info('******')
 
     return 'SUCCESS'
 
