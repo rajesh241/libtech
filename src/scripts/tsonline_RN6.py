@@ -270,13 +270,13 @@ def fetch_rn6_reports(logger):
             workers = Worker.objects.filter(jobcard__panchayat=panchayat)
             is_downloaded = True
             for worker in workers:
-                jobcard = (worker.jobcard.tjobcard + '-0' + str(worker.applicantNo))
+                jobcard_no = (worker.jobcard.tjobcard + '-0' + str(worker.applicantNo))
                 if current_panchayat and (panchayat_name == current_panchayat and is_downloaded and (jobcard != current_jobcard)): 
-                    logger.debug('Skipping[%s]' % jobcard)
+                    logger.debug('Skipping[%s]' % jobcard_no)
                     continue            
                 is_downloaded = False
-                logger.info('Fetch details for jobcard[%s]' % jobcard)
-                result = fetch_rn6_report(logger, driver, state=state, district_name=district_name, jobcard_no=jobcard, block_name=block_name, panchayat_name=panchayat_name)
+                logger.info('Fetch details for jobcard_no[%s]' % jobcard_no)
+                result = fetch_rn6_report(logger, driver, state=state, district_name=district_name, jobcard_no=jobcard_no, block_name=block_name, panchayat_name=panchayat_name)
                 if result != 'SUCCESS':
                     logger.error('Failure returned [%s]' % result)
                     if result == 'ABORT':
@@ -353,18 +353,25 @@ def fetch_rn6_reports(logger):
     displayFinalize(display)
     return 'SUCCESS'
 
-def parse_rn6_reports(logger, filename=None):
-    (dirname, block_name, panchayat_name, jobcard_no, ledger, details) = filename.replace('/', '_').split('_')
+def parse_rn6_report(logger, filename=None, panchayat_name=None, village_name=None, jobcard_no=None):
+    logger.info('Parse the RN6 HTML file')
 
-    with open(filename, 'r') as html_file:
-        logger.info('Reading [%s]' % filename)
-        html_source = html_file.read()
-
-    df = pd.read_html(filename, attrs = {'id': 'ctl00_MainContent_dgLedgerReport'}, index_col='S.No.', header=0)[0]
-    # df = pd.read_html(filename, attrs = {'id': 'ctl00_MainContent_dgLedgerReport'})[0]
-    print(df)
-    print(df.index)
+    try:
+        with open(filename, 'r') as html_file:
+            logger.info('Reading [%s]' % filename)
+            html_source = html_file.read()
+    except Exception as e:
+        logger.error('Exception when opening file for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
+        raise e
+        
     data = pd.DataFrame([], columns=['S.No', 'Mandal Name', 'Gram Panchayat', 'Village', 'Job card number/worker ID', 'Name of the wageseeker', 'Credited Date', 'Deposit (INR)', 'Debited Date', 'Withdrawal (INR)', 'Available Balance (INR)', 'Diff. time credit and debit'])
+    try:
+        df = pd.read_html(filename, attrs = {'id': 'ctl00_MainContent_dgLedgerReport'}, index_col='S.No.', header=0)[0]
+        # df = pd.read_html(filename, attrs = {'id': 'ctl00_MainContent_dgLedgerReport'})[0]
+    except Exception as e:
+        logger.error('Exception when reading transaction table for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
+        return data
+    logger.info('The transactions table read:\n%s' % df)
     
     bs = BeautifulSoup(html_source, 'html.parser')
 
@@ -374,22 +381,25 @@ def parse_rn6_reports(logger, filename=None):
     logger.debug(table)
 
     account_no = table.find(id='ctl00_MainContent_lblAccountNo').text.strip()
-    logger.info('account_no [%s]' % account_no)
+    logger.debug('account_no [%s]' % account_no)
 
     bo_name = table.find(id='ctl00_MainContent_lblBOName').text.strip()
-    logger.info('bo_name [%s]' % bo_name)
+    logger.debug('bo_name [%s]' % bo_name)
 
     jobcard_id = table.find(id='ctl00_MainContent_lblJobcardPensionID').text.strip()
-    logger.info('jobcard_id [%s]' % jobcard_id)
+    logger.debug('jobcard_id [%s]' % jobcard_id)
+
+    if jobcard_id != jobcard_no:
+        logger.critical('Something went terribly wrong with [%s != %s]!' % (jobcard_id, jobcard_no))
 
     so_name = table.find(id='ctl00_MainContent_lblSOName').text.strip()
-    logger.info('so_name [%s]' % so_name)
+    logger.debug('so_name [%s]' % so_name)
 
     account_holder_name = table.find(id='ctl00_MainContent_lblName').text.strip()
-    logger.info('account_holder_name [%s]' % account_holder_name)
+    logger.debug('account_holder_name [%s]' % account_holder_name)
 
     mandal_name = table.find(id='ctl00_MainContent_lblMandalName').text.strip()
-    logger.info('mandal_name [%s]' % mandal_name)
+    logger.debug('mandal_name [%s]' % mandal_name)
 
     table = bs.find(id='ctl00_MainContent_dgLedgerReport')
     logger.debug(table)
@@ -409,46 +419,40 @@ def parse_rn6_reports(logger, filename=None):
         logger.debug('%d: %s' % (index, row))
 
         serial_no = index
-        logger.info('serial_no[%s]' % serial_no)
+        logger.debug('serial_no[%s]' % serial_no)
 
         transaction_date = row['Transaction Date']
-        logger.info('transaction_date[%s]' % transaction_date)
+        logger.debug('transaction_date[%s]' % transaction_date)
 
         transaction_ref = row['Transaction Reference']
-        logger.info('transaction_ref[%s]' % transaction_ref)
+        logger.debug('transaction_ref[%s]' % transaction_ref)
 
         withdrawn_at = row['Withdrawn at']
-        logger.info('withdrawn_at[%s]' % withdrawn_at)
+        logger.debug('withdrawn_at[%s]' % withdrawn_at)
 
         deposit_inr = row['Deposit (INR)']
-        logger.info('deposit_inr[%s]' % deposit_inr)
+        logger.debug('deposit_inr[%s]' % deposit_inr)
 
         withdrawal_inr = row['Withdrawal (INR)']
-        logger.info('withdrawal_inr[%s]' % withdrawal_inr)
+        logger.debug('withdrawal_inr[%s]' % withdrawal_inr)
 
         availalbe_balance = row['Available Balance (INR)']
-        logger.info('availalbe_balance[%s]' % availalbe_balance)
+        logger.debug('availalbe_balance[%s]' % availalbe_balance)
 
         if deposit_inr == 0:
             (credited_date, debited_date, diff_time, debit_timestamp) = (transaction_date, 0, 0, pd.to_datetime(transaction_date, dayfirst=True)) #  datetime.strptime(transaction_date, "%d/%m/%Y").timestamp())
         else:
             (credited_date, debited_date, diff_time) = (0, transaction_date, debit_timestamp - pd.to_datetime(transaction_date, dayfirst=True)) # datetime.strptime(transaction_date, "%d/%m/%Y").timestamp())
-        logger.info('credited_date[%s]' % credited_date)
-        logger.info('debited_date[%s]' % debited_date)
-        logger.info('diff_time[%s]' % diff_time)
+        logger.debug('credited_date[%s]' % credited_date)
+        logger.debug('debited_date[%s]' % debited_date)
+        logger.debug('diff_time[%s]' % diff_time)
         
         #csv_buffer.append('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' %(serial_no, mandal_name, bo_name, so_name, jobcard_id, account_holder_name, credited_date, debited_date, withdrawal_inr, availalbe_balance, diff_time))
-        data = data.append({'S.No': serial_no, 'Mandal Name': mandal_name, 'Gram Panchayat': panchayat_name, 'Village': so_name, 'Job card number/worker ID': jobcard_id, 'Name of the wageseeker': account_holder_name, 'Credited Date': credited_date, 'Deposit (INR)': deposit_inr, 'Debited Date': debited_date, 'Withdrawal (INR)': withdrawal_inr, 'Available Balance (INR)': availalbe_balance, 'Diff. time credit and debit': diff_time}, ignore_index=True)
+        data = data.append({'S.No': serial_no, 'Mandal Name': mandal_name, 'Gram Panchayat': panchayat_name, 'Village': village_name, 'Job card number/worker ID': jobcard_id, 'Name of the wageseeker': account_holder_name, 'Credited Date': credited_date, 'Deposit (INR)': deposit_inr, 'Debited Date': debited_date, 'Withdrawal (INR)': withdrawal_inr, 'Available Balance (INR)': availalbe_balance, 'Diff. time credit and debit': diff_time}, ignore_index=True)
 
     data = data.set_index('S.No')
-    data = data.iloc[::-1]  # Reverse the order back to normal
-    csv_buffer = data.to_csv()
-    csv_filename = filename.replace('.html','.csv')
-    with open(csv_filename, 'w') as csv_file:
-        logger.info('Writing to CSV [%s]' % csv_filename)
-        csv_file.write(csv_buffer)
-        
-    print(data)
+    data = data.iloc[::-1]  # Reverse the order back to normal        
+    logger.info('The final table:\n%s' % data)
 
     return data
 
@@ -462,22 +466,67 @@ def dump_rn6_reports(logger):
     from boto3.session import Session
     from botocore.client import Config
     
-    logger.info('Parse the RN6 HTMLs')
+    logger.info('Dump the RN6 HTMLs')
 
-    # filename = 'jobcards/Gangaraju Madugula_G.Madugula_030291104271010017-01_ledger_details.html'
-    filename = 'jobcards/Gangaraju Madugula_Gaduthuru_030291116195010015-04_ledger_details.html'
-    #csv_buffer = ['S.No,Mandal Name,Gram Panchayat,Village,Job card number/worker ID,Name of the wageseeker,Credited Date,Deposit (INR),Debited Date,Withdrawal (INR),Available Balance (INR),Diff. time credit and debit\n']
+    if False:
+        state = None
+        district_name = 'MAHABUBNAGAR'
+        block_name = 'Damaragidda'
+        # block_id = block_lookup[block_name]
+        block_id = '4378'
+    else:
+        state = 'ap'
+        district_name = 'VISAKHAPATNAM'
+        block_name = 'Gangaraju Madugula'
+        block_id = None
 
-    data = parse_rn6_reports(logger, filename=filename)
-    
-    cloud_filename='media/temp/rn6/%s' % filename.replace('.html', '.csv')
+    if False:
+        # filename = 'jobcards/Gangaraju Madugula_G.Madugula_030291104271010017-01_ledger_details.html'
+        filename = 'jobcards/Gangaraju Madugula_Gaduthuru_030291116195010015-04_ledger_details.html'
+        #csv_buffer = ['S.No,Mandal Name,Gram Panchayat,Village,Job card number/worker ID,Name of the wageseeker,Credited Date,Deposit (INR),Debited Date,Withdrawal (INR),Available Balance (INR),Diff. time credit and debit\n']
+        return 'SUCCESS'
+
+    panchayats = Panchayat.objects.filter(block__name=block_name)        
+    for panchayat in panchayats:
+        panchayat_name = panchayat.name
+        logger.info('Panchayat[%s]' % panchayat_name)
+        workers = Worker.objects.filter(jobcard__panchayat=panchayat)
+        for worker in workers:
+            jobcard_no = (worker.jobcard.tjobcard + '-0' + str(worker.applicantNo))
+            logger.debug('Parse HTML for jobcard_no[%s]' % jobcard_no)
+            
+            filename = '%s/%s_%s_%s_ledger_details.html' % (dirname, block_name, panchayat_name, jobcard_no)
+            village_name = worker.jobcard.village.name
+            logger.debug('Village Name[%s]' % village_name)
+            try:
+                data = parse_rn6_report(logger, filename=filename, panchayat_name=panchayat_name, village_name=village_name, jobcard_no=jobcard_no)
+            except:
+                csv_filename = filename.replace('.html','.XXX')
+                open(csv_filename, 'a').close()
+                logger.info('Marking the file [%s]' % csv_filename)
+                break # continue
+                
+            csv_filename = filename.replace('.html','.csv')
+            with open(csv_filename, 'w') as csv_file:
+                logger.info('Writing to CSV [%s]' % csv_filename)
+                csv_file.write(data.to_csv())
+
+            break
+
+    tarball_filename = '%s_%s.bz2' % (block_name, pd.Timestamp.now())
+    tarball_filename = tarball_filename.replace(' ','-').replace(':','-')
+    cmd = 'tar cjf %s %s/*.csv' % (tarball_filename, dirname)
+    logger.info('Running cmd[%s]' % cmd)
+    os.system(cmd)
+    with open(tarball_filename, 'rb') as tarball_file:
+        tarball_content = tarball_file.read()
+    cloud_filename='media/temp/rn6/%s' % tarball_filename
     session = Session(aws_access_key_id=LIBTECH_AWS_ACCESS_KEY_ID,
                                     aws_secret_access_key=LIBTECH_AWS_SECRET_ACCESS_KEY)
     s3 = session.resource('s3',config=Config(signature_version='s3v4'))
-    s3.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(ACL='public-read',Key=cloud_filename, Body=data.to_csv())
+    s3.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(ACL='public-read',Key=cloud_filename, Body=tarball_content)
     public_url='https://s3.ap-south-1.amazonaws.com/libtech-nrega1/%s' % cloud_filename
     logger.info('CSV File written on AWS[%s]' % public_url)
-        
 
     return 'SUCCESS'
 
