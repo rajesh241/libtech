@@ -87,7 +87,7 @@ def xDisplayInitialize(isVisible=0):
 def xDisplayFinalize(display):
   display.stop()
 
-def driverInitialize(browser=None, path=None, timeout=None):
+def driverInitialize(browser=None, path=None, timeout=None, options=None):
   if not browser:
     browser="Firefox"
   if not timeout:
@@ -121,8 +121,14 @@ def driverInitialize(browser=None, path=None, timeout=None):
     # Got this working by fixing the size in xulstore.json search 'main-window' (src - https://support.mozilla.org/t5/Firefox/How-to-open-maximized/td-p/1327140)
     fp.set_preference('browser.window.width', width)
     fp.set_preference('browser.window.height', height)
+
+    if options:
+      opts = webdriver.FirefoxOptions()
+      opts.add_argument(options)
+      driver = webdriver.Firefox(firefox_profile=fp, options=opts)
+    else:
+      driver = webdriver.Firefox(firefox_profile=fp)
       
-    driver = webdriver.Firefox(firefox_profile=fp)
   elif browser == "PhantomJS":
     driver = webdriver.PhantomJS()
     driver.set_window_size(1120, 550)
