@@ -26,7 +26,7 @@ import django
 from django.core.wsgi import get_wsgi_application
 from django.core.files.base import ContentFile
 from django.utils import timezone
-from django.db.models import F,Q,Sum
+from django.db.models import F,Q,Sum,Count
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
 django.setup()
 
@@ -35,6 +35,53 @@ from nregaFunctions import stripTableAttributes,htmlWrapperLocal,getFullFinYear,
 
 musterregex=re.compile(r'<input+.*?"\s*/>+',re.DOTALL)
 statsURL="http://mnregaweb4.nic.in/netnrega/all_lvl_details_new.aspx"
+
+
+def createWorkDaysReport(logger,eachPanchayat):
+  f = BytesIO()
+  f.write(u'\ufeff'.encode('utf8'))
+  w = csv.writer(f, encoding='utf-8-sig',delimiter=',')
+  a=[]
+  a.extend(["panchayat","village","jobcard","name","totalTransaction","daysWorked"])
+  w.writerow(a)
+ #workers=Worker.objects.filter(jobcard__panchayat=eachPanchayat).order_by("jobcard__jcNo","applicantNo")
+ #for eachWorker in workers:
+ #  if eachWorker.jobcard.tjobcard is not None:
+ #    jobcard="~%s" %(eachWorker.jobcard.tjobcard)
+ #  else:
+ #    jobcard=eachWorker.jobcard
+ #  applicantNo=eachWorker.applicantNo
+ #  name=eachWorker.name
+ #  caste=eachWorker.jobcard.caste
+ #  headOfFamily=eachWorker.jobcard.headOfHousehold
+ #  if eachWorker.jobcard.village is not None:
+ #    village=eachWorker.jobcard.village.name
+ #  else:
+ #    village=''
+  wds=WorkDetail.objects.filter(worker__jobcard__panchayat=eachPanchayat).values('worker').annotate(tcount=Count('pk'),dcount=Sum('daysWorked'))
+  for wd in wds:
+    eachWorker=Worker.objects.filter(id=wd['worker']).first()
+    jobcard=eachWorker.jobcard
+    applicantNo=eachWorker.applicantNo
+    name=eachWorker.name
+    caste=eachWorker.jobcard.caste
+    headOfFamily=eachWorker.jobcard.headOfHousehold
+    if eachWorker.jobcard.village is not None:
+      village=eachWorker.jobcard.village.name
+    else:
+      village=''
+    totalTransactions=str(wd['tcount'])
+    daysWorked=str(wd['dcount'])
+    logger.info(wd)
+    a=[]
+    a.extend([eachPanchayat.name,village,jobcard,name,totalTransactions,daysWorked])
+    w.writerow(a)
+   
+  f.seek(0)
+  outcsv=f.getvalue()
+  filename="%s.csv" % (eachPanchayat.name)
+  with open("/tmp/bhim/%s" % filename,"wb") as w:
+    w.write(outcsv)
 
 def createWorkPaymentReportAP(logger,eachPanchayat,finyear,eachBlock=None):
   finyear=str(finyear)
