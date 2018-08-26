@@ -38,6 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'storages',
+    'nrega',
 ]
 
 MIDDLEWARE = [
@@ -122,6 +125,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 #STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+            os.path.join(BASE_DIR, "static"),
+            ]
+
 
 AWS_ACCESS_KEY_ID = LIBTECH_AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY = LIBTECH_AWS_SECRET_ACCESS_KEY
@@ -164,24 +171,25 @@ REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': (
         'rest_framework.parsers.JSONParser',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 10
 }
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR + '/debug.log',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-    },
-}
+            'version': 1,
+            'disable_existing_loggers': False,
+            'handlers': {
+                'console': {
+                    'class': 'logging.StreamHandler',
+                   },
+               },
+             'loggers': {
+                 'django': {
+                      'handlers': ['console'],
+                        'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+                        },
+                    },
+        }
+
+
+serverName="n.libtech.info:8000"
