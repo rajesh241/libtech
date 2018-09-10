@@ -93,7 +93,14 @@ def fetch_pharmacies(logger, driver):
         if e.errno != errno.EEXIST:
             raise        
 
-    state_list = ['Alabama', ]  # or hard code here    
+    # state_list = ['Alabama', ]  # or hard code here
+
+    states = 'New Mexico, West Virginia, Iowa, New York, Wisconsin, Kansas, North Carolina, Wyoming, Indiana'
+    finished_states = 'Alabama, Kentucky, North-Dakota, Alaska, Louisiana, Ohio, Arizona, Maine, Oklahoma, Arkansas, Maryland, Oregon, California, Massachusetts, Pennsylvania, Colorado, Michigan, Rhode-Island, Connecticut, Minnesota, South-Carolina, Delaware, Mississippi, South-Dakota, District-of-Columbia, Missouri, Tennessee, Florida, Montana, Texas, Georgia, Nebraska, Utah, Hawaii, Nevada, Vermont, Idaho, New-Hampshire, Virginia, Illinois, New-Jersey, Washington, Indiana, New-Mexico, West-Virginia, Iowa, New-York, Wisconsin, Kansas, North-Carolina, Wyoming'
+    states = 'Indiana'
+
+    state_list = states.split(', ')
+    logger.info(state_list)
     
     for state in state_list:
         '''
@@ -130,11 +137,12 @@ class TestSuite(unittest.TestCase):
     def setUp(self):
         self.logger = loggerFetch('info')
         self.logger.info('BEGIN PROCESSING...')
-        self.display = displayInitialize(1)
-        self.driver = driverInitialize(path='/opt/firefox/', timeout=3)
+        self.display = displayInitialize(0)
+        # self.driver = driverInitialize(timeout=3)
+        self.driver = driverInitialize(timeout=3, options='--headless') # driverInitialize(path='/opt/firefox/', timeout=3)
 
     def tearDown(self):
-        #FIXME driverFinalize(self.driver) 
+        driverFinalize(self.driver) 
         displayFinalize(self.display)
         self.logger.info('...END PROCESSING')
 

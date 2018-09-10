@@ -28,6 +28,9 @@ district_lookup = {}
 block_lookup = {}
 year_code = 0
 
+district_name = 'LATEHAR'
+block_name = 'MANIKA'
+
 dealer_lookup = {}
 
 rgi_district_code = {
@@ -1212,8 +1215,8 @@ def fetch_gap_reports(logger):
     
     cookies = get_cookies(logger)
     
-    result = pds_gaps(logger, district_name='LATEHAR', block_name='MANIKA', month='04', year='2018', cookies=cookies)
-    result = pds_gaps(logger, district_name='RANCHI', block_name='NAGRI', month='04', year='2018', cookies=cookies)
+    result = pds_gaps(logger, district_name='LATEHAR', block_name='MANIKA', month='07', year='2018', cookies=cookies)
+    #result = pds_gaps(logger, district_name='RANCHI', block_name='NAGRI', month='04', year='2018', cookies=cookies)
 
     return result
 
@@ -1246,13 +1249,32 @@ class TestSuite(unittest.TestCase):
         result = fetch_dealer_cmd(logger)
         self.assertEqual('SUCCESS', result)
 
-    def test_fetch_pds_transactions(self):
-        # result = fetch_gap_reports(self.logger)
-        result = fetch_ration_reports(self.logger)
-        # result = pds_gaps(self.logger, district_name='RANCHI', block_name='NAGRI', month='03', year='2018')
-        # result = fetch_via_masik_vitaran(self.logger)
+    @unittest.skip('Skipping pds_gaps')
+    def test_pds_gaps(self):
+        result = pds_gaps(self.logger, district_name='RANCHI', block_name='NAGRI', month='03', year='2018')
+        self.assertEqual('SUCCESS', result)
+
+    @unittest.skip('Skipping fetch_via_masik_vitaran')
+    def test_fetch_via_masik_vitaran(self):
+        result = fetch_via_masik_vitaran(self.logger)
+        self.assertEqual('SUCCESS', result)
+
+    @unittest.skip('Skipping fetch_cardholders_via_vivaran')
+    def test_fetch_cardholders_via_vivaran(self):
         # result = fetch_cardholders_via_vivaran(self.logger)
-        # result = fetch_via_ditigalikaran(self.logger)
+        self.assertEqual('SUCCESS', result)
+
+    @unittest.skip('Skipping fetch_via_ditigalikaran')
+    def test_fetch_via_ditigalikaran(self):
+        result = fetch_via_ditigalikaran(self.logger)
+        self.assertEqual('SUCCESS', result)
+
+    def test_fetch_gap_reports(self):
+        result = fetch_gap_reports(self.logger)
+        self.assertEqual('SUCCESS', result)
+
+    def test_fetch_ration_reports(self):
+        result = fetch_ration_reports(self.logger)
         self.assertEqual('SUCCESS', result)
 
 if __name__ == '__main__':

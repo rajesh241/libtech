@@ -15,7 +15,8 @@ from nrega.models import Panchayat, State, Block, Jobcard, Applicant, WorkDetail
 from nrega.serializers import PanchayatSerializer, StateSerializer, StateSerializer1, SelectBlockSerializer, JobcardSerializer2, JobcardSerializer, PtAvgSerializer, getInfoByJcSerializer, getWorkDetailsByJcSerializer, MusterSerializer, WorkSerializer, WorkCreditStatusPtSerializer, JcsByMusterStatus, EmploymentStatusSerializer, PaymentDetailSerializer, PostalPaymentSerializer, PostalPaymentPtSerializer, PaymentDetailTransactionsSerializer, PanchayatStatSerializer, BlAvgSerializer, EmploymentStatusByPtSerializer, CrawlStatusSerializer, PaymentInfoSerializer, PaymentDetailsTemp,WorkerSerializer,WorkerSerializer1
 
 import json
-
+#Change ID to Code
+#Crawl Status vivek to change
 @csrf_exempt
 def crawlDataForPt(request):
     """
@@ -32,12 +33,6 @@ def crawlDataForPt(request):
     output = {"Response": "Added to queue"}
     return JsonResponse(output, safe=False)    
 
-@csrf_exempt
-def PanchayatReport(request):
-    ptid = request.GET.get('ptid', '')
-    report = PanchayatReport.objects.filter(panchayat == ptid)
-    output = {'output': report}
-    JsonResponse(output, safe=False)
 
 @csrf_exempt
 def crawlDataRequest(request):
@@ -78,7 +73,7 @@ def crawlStatusPt(request):
     crawlStatus = crawlStatus[:50]
     serializer = CrawlStatusSerializer(crawlStatus, many=True)
     return JsonResponse(serializer.data, safe=False)    
-
+#This API vivek is going to work on and is going to be removed
 @csrf_exempt
 def getPanchayatsAccurateData(request):
     """
@@ -173,6 +168,7 @@ def getBlocks(request):
         serializer = SelectBlockSerializer(blocks, many=True)
         return JsonResponse(serializer.data, safe=False)
 
+#not getting used in bot
 @csrf_exempt
 def getWorkers(request):
     if request.method == 'GET':
@@ -189,6 +185,7 @@ def getWorkers(request):
     serializer = WorkerSerializer1(workers, many=True)
     return JsonResponse(serializer.data, safe=False)
 
+#Currently not used by bot
 @csrf_exempt
 def getJobcards(request):
     """
