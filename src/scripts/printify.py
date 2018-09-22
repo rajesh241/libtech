@@ -17,32 +17,13 @@ from wrappers.logger import loggerFetch
 
 ###
 
-'''
-includePath='/home/libtech/repo/django/n.libtech.info/src/custom/includes'
-sys.path.append(includePath) # os.path.join(os.path.dirname(__file__), '..', 'includes') #FIXME
-'''
 
-from customSettings import repoDir, djangoDir, djangoSettings
-from crawlFunctions import getAPJobcardData, computeWorkPaymentStatus, crawlWagelists, parseMuster, getAPJobcardData, processAPJobcardData
-#from nregaFunctions import is_ascii
-
-sys.path.append(djangoDir)
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
-
-import django
-
-# This is so Django knows where to find stuff.
-# This is so my local_settings.py gets loaded.
-django.setup()
-
-from nrega.models import State,District,Block,Panchayat,PaymentInfo,LibtechTag,CrawlQueue,Worker
-
-# Global Declarations
 #######################
+# Global Declarations
 #######################
 
 timeout = 10
-dirname = 'BasiaSamples'
+#dirname = 'BasiaSamples'
 
 
 #############
@@ -66,13 +47,28 @@ def printify(logger, filename=None, max_width=None):
     if not max_width:
         max_width = 25
 
-    fields = ['गांव', '\ufeff'+'WorkerID']
-    df = pd.read_csv(filename, index_col='\ufeff'+'WorkerID', header=0) # , index_col=fields)
+    fields = ['गांव', 'WorkerID']
+    df = pd.read_csv(filename, index_col='WorkerID', header=0, encoding = 'utf-8-sig') # , index_col=fields)
+
     #logger.info(df)
     print(df.head())
-    df = df.sort_values(by=['गांव', 'Category', df.columns[0]], ascending=[True, False, True])
+    if 'sample' in filename:
+        df = df.sort_values(by=['गांव', 'Category', 'WorkerID'], ascending=[True, False, True])
+    else:
+        #df = df.sort_values(by=['गांव', df.columns[6], df.columns[0]], ascending=[True, False, True])
+        df = df.sort_values(by=['गांव', 'पेमेंट की स्तिथि', 'WorkerID'], ascending=[True, False, True])
+
+    '''
+    df.columns[0] = 'Sl No.'
+    df['Sl No.'] = df.index
+    '''
+    df = df.reset_index()
+    df.insert(0, 'Sl No.', range(1, len(df)+1))
+    df.set_index('Sl No.', inplace=True)
+    #df.reset_index(drop = True, inplace = True)
+
     print(df.head())
-    
+
     #df.style.set_table_styles([dict(selector="th",props=[('max-width', '50px')])])
     #s.str.wrap(12)
     #print(df.style)
@@ -97,8 +93,8 @@ def printify(logger, filename=None, max_width=None):
     worksheet.set_landscape()
     worksheet.set_paper(9)  # A4
     # worksheet.set_zoom(66)
-    #worksheet.center_horizontally()
-    #worksheet.center_vertically()
+    # worksheet.center_horizontally()
+    # worksheet.center_vertically()
 
     # Set Margins - worksheet.set_margins([left=0.7,] right=0.7,] top=0.75,] bottom=0.75]]])
     # worksheet.set_margins(0.7, 0.7, 0.75, 0.75)
@@ -106,8 +102,9 @@ def printify(logger, filename=None, max_width=None):
 
     # Header - set_header([header='',] options]])
     # e.g worksheet.set_header('&C%s' % filename)
-    worksheet.set_header(filename)  # Default Center Justified
-
+    # worksheet.set_header(filename)  # Default Center Justified
+    worksheet.set_header('&C%s' % os.path.basename(filename))
+    
     # worksheet.set_header('&CPage &P of &N') # Page 1 of 6
     # worksheet.set_header('&CUpdated at &T') # Updated at 12:30 PM
 
@@ -200,6 +197,9 @@ def printify(logger, filename=None, max_width=None):
         worksheet.set_column(i, i, width)
     # worksheet.set_default_row(20)
     # workbook.close()
+
+    worksheet.set_row(0, None, cell_format)
+
     
     # Close the Pandas Excel writer and output the Excel file.
     writer.save()
@@ -279,7 +279,10 @@ class TestSuite(unittest.TestCase):
         self.logger.info('...END PROCESSING')
 
     def test_printify(self):
-        result = printify(self.logger)
+        dirname = 'Jawaja'
+        dirname = 'Dewata'
+        for filename in os.listdir(dirname):
+            result = printify(self.logger, filename=os.path.join(dirname,filename), max_width=30)
         self.assertEqual(result, 'SUCCESS')
         
 if __name__ == '__main__':
