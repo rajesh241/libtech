@@ -346,6 +346,18 @@ where daysWorked > 75
     return 'SUCCESS'
     
 
+def pull_patch(logger):
+    pulldata = {
+        'phonebook': '',
+        'complaint': '',
+        'remarks': '',
+    }
+
+    result = firebase.patch('https://libtech-app.firebaseio.com/pull/', pulldata)
+    logger.info(result)
+
+    return 'SUCCESS'
+
 def panchayats_patch(logger, db):
     cur = db.cursor()
 
@@ -873,7 +885,8 @@ class TestSuite(unittest.TestCase):
     # result = musters_patch(self.logger, self.db)  
     # result = panchayats_patch(self.logger, self.db)
     # result = firebase_patch(self.logger, self.db)
-    result = jobcards_patch(self.logger, self.db)
+    # result = jobcards_patch(self.logger, self.db)
+    result = pull_patch(self.logger)
     self.assertEqual('SUCCESS', result)
 
   def test_load_panchayats(self):
