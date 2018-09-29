@@ -228,8 +228,8 @@ def fetch_dealer_detail(logger, cookies=None, dealer_code=None):
 
     data = [
         ('_method', 'POST'),
-        #('data[DealerMonthlyReport][ide]', '4f265f6d-9d04-4dbe-99c5-0bf4c0a80102,01,5'),
-        ('data[DealerMonthlyReport][ide]', dealer_code),
+        ('data[DealerMonthlyReport][ide]', '4f265f6d-9d04-4dbe-99c5-0bf4c0a80102,7,5'),
+        #('data[DealerMonthlyReport][ide]', dealer_code),
     ]
 
     logger.info('Making the request with Data [%s]' % data)
@@ -447,7 +447,7 @@ def populate_block_lookup(logger, cookies=None, district_param=None, district_lo
 def fetch_via_masik_vitaran(logger):
     logger.info('Fetching PDS related info...')
 
-    district_lookup = populate_district_lookup(logger, month = '02', year = '2018')
+    district_lookup = populate_district_lookup(logger, month = '07', year = '2018')
 
     block_lookup = populate_block_lookup(logger, district_lookup=district_lookup, district_param=district_lookup[district_name]) # district_param='14,01,5')
 
@@ -1254,7 +1254,7 @@ class TestSuite(unittest.TestCase):
         result = pds_gaps(self.logger, district_name='RANCHI', block_name='NAGRI', month='03', year='2018')
         self.assertEqual('SUCCESS', result)
 
-    @unittest.skip('Skipping fetch_via_masik_vitaran')
+    #@unittest.skip('Skipping fetch_via_masik_vitaran')
     def test_fetch_via_masik_vitaran(self):
         result = fetch_via_masik_vitaran(self.logger)
         self.assertEqual('SUCCESS', result)
