@@ -36,7 +36,6 @@ includePath='/home/libtech/repo/django/n.libtech.info/src/custom/includes'
 sys.path.append(includePath) # os.path.join(os.path.dirname(__file__), '..', 'includes') #FIXME
 
 from customSettings import repoDir, djangoDir, djangoSettings
-from crawlFunctions import getAPJobcardData, computeWorkPaymentStatus, crawlWagelists, parseMuster, getAPJobcardData, processAPJobcardData
 #from nregaFunctions import is_ascii
 
 sys.path.append(djangoDir)
@@ -56,8 +55,14 @@ from nrega.models import State,District,Block,Panchayat,PaymentInfo,LibtechTag,C
 #######################
 
 timeout = 10
-dirname = 'jobcards'
-
+#dirname = 'jcs'
+#dirname = 'jobcards'
+#dirname = 'mjc'
+isGM = False
+needed = ['MOMINAPUR', 'APPAIREDDI PALLE', 'DOREPALLE', 'JADAVARAO PALLE', 'NAGIREDDI PALLE', 'DAMAGANPURAM', 'KAJIPURAM',]
+needed = None
+#neeeded = ['CHENREDDI PALLE', 'DAMAGANPURAM', 'DOREPALLE', 'DUPPATGHAT', 'GOKULNAGAR', 'JADAVARAO PALLE', 'KAJIPURAM', 'KOMMUR', 'LINGALCHED', 'MADDUR', 'MOMINAPUR', 'NAGIREDDI PALLE', 'NANDIGAM', 'NIDJINTA', 'PEDRIPAHAD', 'RENVATLA', 'THIMMAREDDIPALLE', 'VEERAARAM', ]
+skip = ['LINGALCHED', 'VEERAARAM', 'KRISHNANAGAR', 'NIDJINTA', 'NANDIPAHAD', 'MANNAPUR', 'PALLERLA',]
 
 #############
 # Functions
@@ -90,7 +95,7 @@ def process_cleanup(logger):
     os.system('cd /tmp; pkill firefox; pkill Xvfb; rm -rf rust_mozprofile.* tmp*')
     logger.info('Process Cleanup Ends')
     
-def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=None, block_name=None, panchayat_name=None):
+def fetch_rn6_report(logger, driver, dirname=None, state=None, district_name=None, jobcard_no=None, block_name=None, panchayat_name=None):
     if not state:
         url = 'https://bdp.tsonline.gov.in/NeFMS_TS/NeFMS/Reports/NeFMS/AccountWiseTransactionReport.aspx'
     else:
@@ -168,6 +173,10 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
     except BrokenPipeError as e:
         logger.error('Broken Pipe for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
         return 'FAILURE'
+    except ConnectionRefusedError as e:
+        logger.error('Connection refused for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
+        exit(1)
+        return 'ABORT'
     except Exception as e:
         logger.error('Exception for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
         return 'FAILURE'
@@ -177,6 +186,9 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         elem = WebDriverWait(driver, timeout).until(
           EC.presence_of_element_located((By.CLASS_NAME, "btn"))
         )
+    except (WebDriverException) as e:
+        logger.critical('Not found for jobcard[%s] - EXCEPT[%s:%s]' % (jobcard_no, type(e), e))
+        return 'ABORT'
     except TimeoutException as e:
         logger.error('Timeout waiting for dialog box - EXCEPT[%s:%s]' % (type(e), e))
         driver.close()
@@ -213,8 +225,8 @@ def fetch_rn6_report(logger, driver, state=None, district_name=None, jobcard_no=
         
     return 'SUCCESS'
 
-def fetch_rn6_reports(logger):
-    logger.info('Fetch the jobcards')
+def fetch_rn6_reports(logger, dirname=None):
+    logger.info('Fetch the jobcards into dir[%s]' % dirname)
 
     display = displayInitialize(0)
     driver = driverInitialize(timeout=3, options='--headless') # driverInitialize(path='/opt/firefox/', timeout=3)
@@ -234,12 +246,15 @@ def fetch_rn6_reports(logger):
             status = status_file.read().strip()
         (current_panchayat, current_jobcard) = status.split(',')
 
-    if False:
+    if not isGM:
         state = None
         district_name = 'MAHABUBNAGAR'
         block_name = 'Damaragidda'
         # block_id = block_lookup[block_name]
         block_id = '4378'
+
+        block_name = 'Maddur'
+        block_code = '3614006'
     else:
         state = 'ap'
         district_name = 'VISAKHAPATNAM'
@@ -250,33 +265,40 @@ def fetch_rn6_reports(logger):
         # result = fetch_rn6_report(logger, driver, state='ap', district_name='ANANTAPUR', jobcard_no='121673411011010257-02')
         # result = fetch_rn6_report(logger, driver, district_name='MAHABUBNAGAR', jobcard_no='141990515024010071-08')
         # result = fetch_rn6_report(logger, driver, state='ap', district_name='VISAKHAPATNAM', jobcard_no='030300927050030026-02')
-        result = fetch_rn6_report(logger, driver, state=state, district_name=district_name, jobcard_no=current_jobcard, block_name=block_name, panchayat_name=current_panchayat)
+        result = fetch_rn6_report(logger, driver, dirname=dirname, state=state, district_name=district_name, jobcard_no=current_jobcard, block_name=block_name, panchayat_name=current_panchayat)
         driverFinalize(driver)
         displayFinalize(display)
         #process_cleanup(logger)
         return 'SUCCESS'
 
-    if not block_id:
-        panchayats = Panchayat.objects.filter(block__name=block_name)
+    if block_code or not block_id:
+        panchayats = Panchayat.objects.filter(block__code=block_code)
         
         is_panchayat = True
         for panchayat in panchayats:
             panchayat_name = panchayat.name
             logger.info('Panchayat[%s]' % panchayat_name)
+            if needed and (panchayat_name not in needed):
+                logger.info('Not interested in [%s]' % panchayat_name)
+                continue
             if current_panchayat and is_panchayat and panchayat_name != current_panchayat:
-                logger.debug('Already downloaded. Skipping[%s]' % panchayat_name)
+                logger.info('Already downloaded. Skipping[%s]' % panchayat_name)
                 continue
             is_panchayat = False
-            workers = Worker.objects.filter(jobcard__panchayat=panchayat)
+            if skip and (panchayat_name in skip):
+                logger.info('To skip [%s]' % panchayat_name)
+                continue        
+
+            workers = Worker.objects.filter(jobcard__panchayat=panchayat)  # [:5]
             is_downloaded = True
             for worker in workers:
                 jobcard_no = (worker.jobcard.tjobcard + '-0' + str(worker.applicantNo))
-                if current_panchayat and (panchayat_name == current_panchayat and is_downloaded and (jobcard != current_jobcard)): 
+                if current_panchayat and (panchayat_name == current_panchayat and is_downloaded and (jobcard_no != current_jobcard)): 
                     logger.debug('Skipping[%s]' % jobcard_no)
                     continue            
                 is_downloaded = False
                 logger.info('Fetch details for jobcard_no[%s]' % jobcard_no)
-                result = fetch_rn6_report(logger, driver, state=state, district_name=district_name, jobcard_no=jobcard_no, block_name=block_name, panchayat_name=panchayat_name)
+                result = fetch_rn6_report(logger, driver, dirname=dirname, state=state, district_name=district_name, jobcard_no=jobcard_no, block_name=block_name, panchayat_name=panchayat_name)
                 if result != 'SUCCESS':
                     logger.error('Failure returned [%s]' % result)
                     if result == 'ABORT':
@@ -292,18 +314,27 @@ def fetch_rn6_reports(logger):
                         return 'FAILURE'
                     else:
                         continue  # FIXME why is this even needed. Why is it not working?
-                with open(filename, 'w') as status_file:
-                    logger.info('Updating status file [%s]' % filename)
-                    status = panchayat_name + ',' + jobcard
-                    logger.info('Status[%s]' % status)
-                    status_file.write(status)
+                else: # If result == 'SUCCESS'
+                    with open(filename, 'w') as status_file:
+                        logger.info('Updating status file [%s]' % filename)
+                        status = panchayat_name + ',' + jobcard_no
+                        logger.info('Status[%s]' % status)
+                        status_file.write(status)
                     
+        logger.info('Finalizing Driver')
+        try:
+            driverFinalize(driver)
+        except:
+            pass  # FIXME should not suppress!
+        logger.info('Finalizing Display')
+        displayFinalize(display)
+        #    process_cleanup(logger)
         return 'SUCCESS'
 
 
     # This part can go eventual - FIXME  ---vvv
     
-    url = 'http://b.libtech.info:8000/api/panchayats/?bid=%s' % block_id
+    url = 'http://n.libtech.info:8000/api/panchayats/?bid=%s' % block_id
     
     try:
         logger.info('Requesting URL[%s]' % url)
@@ -325,7 +356,7 @@ def fetch_rn6_reports(logger):
             continue
         is_panchayat = False
         '''
-        url = 'http://b.libtech.info:8000/api/getworkers/?pcode=%s' % panchayat_code
+        url = 'http://n.libtech.info:8000/api/getworkers/?pcode=%s' % panchayat_code
         try:
             logger.info('Requesting URL[%s]' % url)
             response = requests.get(url, timeout=timeout)
@@ -343,7 +374,7 @@ def fetch_rn6_reports(logger):
             is_downloaded = False
             '''
             logger.info('Fetch details for jobcard[%s]' % jobcard)
-            result = fetch_rn6_report(logger, driver, state=state, district_name=district_name, jobcard_no=jobcard, block_name=block_name, panchayat_name=panchayat_name)
+            result = fetch_rn6_report(logger, driver, dirname=dirname, state=state, district_name=district_name, jobcard_no=jobcard, block_name=block_name, panchayat_name=panchayat_name)
             if result != 'SUCCESS':
                 logger.error('Failure returned [%s]' % result)
                 #time.sleep(3)
@@ -440,15 +471,20 @@ def parse_rn6_report(logger, filename=None, panchayat_name=None, village_name=No
         logger.debug('availalbe_balance[%s]' % availalbe_balance)
 
         if deposit_inr == 0:
-            (credited_date, debited_date, diff_time, debit_timestamp) = (transaction_date, 0, 0, pd.to_datetime(transaction_date, dayfirst=True)) #  datetime.strptime(transaction_date, "%d/%m/%Y").timestamp())
+            (credited_date, debited_date, diff_days, debit_timestamp) = (0, transaction_date, 0, pd.to_datetime(transaction_date, dayfirst=True)) #  datetime.strptime(transaction_date, "%d/%m/%Y").timestamp())
         else:
-            (credited_date, debited_date, diff_time) = (0, transaction_date, debit_timestamp - pd.to_datetime(transaction_date, dayfirst=True)) # datetime.strptime(transaction_date, "%d/%m/%Y").timestamp())
-        logger.debug('credited_date[%s]' % credited_date)
-        logger.debug('debited_date[%s]' % debited_date)
-        logger.debug('diff_time[%s]' % diff_time)
+            (credited_date, debited_date, diff_days) = (transaction_date, 0, (debit_timestamp - pd.to_datetime(transaction_date, dayfirst=True)).days) # datetime.strptime(transaction_date, "%d/%m/%Y").timestamp())
+        logger.info('credited_date[%s]' % credited_date)
+        logger.info('debited_date[%s]' % debited_date)
+        logger.info('diff_days[%s]' % diff_days)
+
+        if diff_days < 0:
+            diff_days = 0
+            continue
+        logger.info('After Reset diff_days[%s]' % diff_days)
         
         #csv_buffer.append('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' %(serial_no, mandal_name, bo_name, so_name, jobcard_id, account_holder_name, credited_date, debited_date, withdrawal_inr, availalbe_balance, diff_time))
-        data = data.append({'S.No': serial_no, 'Mandal Name': mandal_name, 'Gram Panchayat': panchayat_name, 'Village': village_name, 'Job card number/worker ID': jobcard_id, 'Name of the wageseeker': account_holder_name, 'Credited Date': credited_date, 'Deposit (INR)': deposit_inr, 'Debited Date': debited_date, 'Withdrawal (INR)': withdrawal_inr, 'Available Balance (INR)': availalbe_balance, 'Diff. time credit and debit': diff_time}, ignore_index=True)
+        data = data.append({'S.No': serial_no, 'Mandal Name': mandal_name, 'Gram Panchayat': panchayat_name, 'Village': village_name, 'Job card number/worker ID': jobcard_id, 'Name of the wageseeker': account_holder_name, 'Credited Date': credited_date, 'Deposit (INR)': deposit_inr, 'Debited Date': debited_date, 'Withdrawal (INR)': withdrawal_inr, 'Available Balance (INR)': availalbe_balance, 'Diff. time credit and debit': diff_days}, ignore_index=True)
 
     data = data.set_index('S.No')
     data = data.iloc[::-1]  # Reverse the order back to normal        
@@ -456,7 +492,7 @@ def parse_rn6_report(logger, filename=None, panchayat_name=None, village_name=No
 
     return data
 
-def dump_rn6_reports(logger):
+def dump_rn6_reports(logger, dirname=None):
     #from datetime import datetime
 
     from secure.libtech_settings import LIBTECH_AWS_ACCESS_KEY_ID,LIBTECH_AWS_SECRET_ACCESS_KEY
@@ -466,53 +502,131 @@ def dump_rn6_reports(logger):
     from boto3.session import Session
     from botocore.client import Config
     
-    logger.info('Dump the RN6 HTMLs')
+    logger.info('Dump the RN6 HTMLs into [%s]' % dirname)
 
-    if False:
+    if not isGM:
         state = None
         district_name = 'MAHABUBNAGAR'
         block_name = 'Damaragidda'
         # block_id = block_lookup[block_name]
         block_id = '4378'
+
+        block_name = 'Maddur'
+        block_code = '3614006'
     else:
         state = 'ap'
         district_name = 'VISAKHAPATNAM'
         block_name = 'Gangaraju Madugula'
         block_id = None
 
+    #dirname = block_name
     if False:
         # filename = 'jobcards/Gangaraju Madugula_G.Madugula_030291104271010017-01_ledger_details.html'
         filename = 'jobcards/Gangaraju Madugula_Gaduthuru_030291116195010015-04_ledger_details.html'
         #csv_buffer = ['S.No,Mandal Name,Gram Panchayat,Village,Job card number/worker ID,Name of the wageseeker,Credited Date,Deposit (INR),Debited Date,Withdrawal (INR),Available Balance (INR),Diff. time credit and debit\n']
         return 'SUCCESS'
 
-    panchayats = Panchayat.objects.filter(block__name=block_name)        
+    if block_code:
+        panchayats = Panchayat.objects.filter(block__code=block_code)
+    else:
+        panchayats = Panchayat.objects.filter(block__name=block_name)
+    logger.info(panchayats)
     for panchayat in panchayats:
         panchayat_name = panchayat.name
         logger.info('Panchayat[%s]' % panchayat_name)
+        if needed and (panchayat_name not in needed):
+            logger.info('Not interested in [%s]' % panchayat_name)
+            continue
+        if skip and (panchayat_name in skip):
+            logger.info('To skip [%s]' % panchayat_name)
+            continue        
         workers = Worker.objects.filter(jobcard__panchayat=panchayat)
+        logger.info(workers)
         for worker in workers:
-            jobcard_no = (worker.jobcard.tjobcard + '-0' + str(worker.applicantNo))
+            logger.debug('WorkerID[%s]' % worker.id)
+            tjobcard = worker.jobcard.tjobcard
+            if tjobcard:
+                jobcard_no = (tjobcard + '-0' + str(worker.applicantNo))
+            else:
+                logger.error('tjobcard is NULL for [%s]' % worker)
+                continue
             logger.debug('Parse HTML for jobcard_no[%s]' % jobcard_no)
             
             filename = '%s/%s_%s_%s_ledger_details.html' % (dirname, block_name, panchayat_name, jobcard_no)
             village_name = worker.jobcard.village.name
-            logger.debug('Village Name[%s]' % village_name)
             try:
                 data = parse_rn6_report(logger, filename=filename, panchayat_name=panchayat_name, village_name=village_name, jobcard_no=jobcard_no)
-            except:
+            except Exception as e:
+                logger.error('Caught Exception[%s]' % e) 
                 csv_filename = filename.replace('.html','.XXX')
                 open(csv_filename, 'a').close()
                 logger.info('Marking the file [%s]' % csv_filename)
-                break # continue
+                continue # break 
+                
+            csv_filename = filename.replace('.html','.csv')
+            logger.info('Writing to CSV [%s]' % csv_filename)
+            data.to_csv(csv_filename)
+            '''
+            with open(csv_filename, 'w') as csv_file:
+                logger.info('Writing to CSV [%s]' % csv_filename)
+                csv_file.write(data.to_csv())
+            '''
+            # break
+        # break
+    
+    '''
+
+    url = 'http://b.libtech.info:8000/api/panchayats/?bid=%s' % block_id
+    
+    try:
+        logger.info('Requesting URL[%s]' % url)
+        response = requests.get(url, timeout=timeout) # , cookies=cookies)
+    except Exception as e:
+        logger.error('Caught Exception[%s]' % e) 
+
+    panchayats_json = response.json()
+    logger.debug('Panchayats JSON[%s]' % panchayats_json)
+    
+    is_panchayat = True
+    for panchayat_object in panchayats_json:
+        panchayat_name = panchayat_object['name'].strip()
+        panchayat_code = panchayat_object['code'].strip()
+        logger.info('Fetch jobcards for Panchayat[%s, %s]' % (panchayat_name, panchayat_code))
+        url = 'http://b.libtech.info:8000/api/getworkers/?pcode=%s' % panchayat_code
+        try:
+            logger.info('Requesting URL[%s]' % url)
+            response = requests.get(url, timeout=timeout)
+        except Exception as e:
+            logger.error('Caught Exception[%s]' % e)
+        jobcards_json = response.json()
+        logger.debug('JobCards JSON[%s]' % jobcards_json)
+        is_downloaded = True
+        for jobcard_object in jobcards_json:
+            #logger.info(jobcard_object)
+            jobcard_no = '%s-0%s' % (jobcard_object['jobcard']['tjobcard'], jobcard_object['applicantNo'])
+            if False and (panchayat_name == 'VITHALAPUR' and is_downloaded and (jobcard != '142000501002010385-01')): 
+                logger.debug('Skipping[%s]' % jobcard)
+                continue            
+            is_downloaded = False
+            logger.debug('Parse HTML for jobcard_no[%s]' % jobcard_no)
+            
+            filename = '%s/%s_%s_%s_ledger_details.html' % (dirname, block_name, panchayat_name, jobcard_no)
+            # village_name = jobcard_object['village']['name']
+            # logger.debug('Village Name[%s]' % village_name)
+            try:
+                data = parse_rn6_report(logger, filename=filename, panchayat_name=panchayat_name, jobcard_no=jobcard_no) # Village Name
+            except Exception as e:
+                logger.error('Exception when reading transaction table for jobcard - EXCEPT[%s:%s]' % (type(e), e))
+                csv_filename = filename.replace('.html','.XXX')
+                open(csv_filename, 'a').close()
+                logger.info('Marking the file [%s]' % csv_filename)
+                continue
                 
             csv_filename = filename.replace('.html','.csv')
             with open(csv_filename, 'w') as csv_file:
                 logger.info('Writing to CSV [%s]' % csv_filename)
                 csv_file.write(data.to_csv())
-
-            break
-
+    '''
     tarball_filename = '%s_%s.bz2' % (block_name, pd.Timestamp.now())
     tarball_filename = tarball_filename.replace(' ','-').replace(':','-')
     cmd = 'tar cjf %s %s/*.csv' % (tarball_filename, dirname)
@@ -542,13 +656,13 @@ class TestSuite(unittest.TestCase):
         count = 0
         while True:
             count += 1
-            result = fetch_rn6_reports(self.logger)
-            if result == 'SUCCESS' or count == 50:
+            result = fetch_rn6_reports(self.logger, dirname='mjc')
+            if result == 'SUCCESS' or count == 200:
                 break
         self.assertEqual(result, 'SUCCESS')
 
     def test_dump_rn6_report(self):
-        result = dump_rn6_reports(self.logger)
+        result = dump_rn6_reports(self.logger, dirname='mjc')
         self.assertEqual(result, 'SUCCESS')
         
 if __name__ == '__main__':
