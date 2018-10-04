@@ -8,31 +8,8 @@ sys.path.insert(0, rootdir)
 import unittest
 
 from wrappers.logger import loggerFetch
-from wrappers.sn import driverInitialize, driverFinalize, displayInitialize, displayFinalize
 
-###
-
-includePath='/home/libtech/repo/django/n.libtech.info/src/custom/includes'
-sys.path.append(includePath) # os.path.join(os.path.dirname(__file__), '..', 'includes') #FIXME
-
-from customSettings import repoDir, djangoDir, djangoSettings
-
-sys.path.append(djangoDir)
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
-
-import django
-
-# This is so Django knows where to find stuff.
-# This is so my local_settings.py gets loaded.
-django.setup()
-
-from nrega.models import State,District,Block,Panchayat,PaymentInfo,LibtechTag,CrawlQueue,Worker
-
-###
-
-from secure.libtech_settings import LIBTECH_AWS_ACCESS_KEY_ID,LIBTECH_AWS_SECRET_ACCESS_KEY
-from libtech.settings import AWS_STORAGE_BUCKET_NAME,AWS_S3_REGION_NAME,MEDIA_URL,S3_URL
-    
+from includes.settings import LIBTECH_AWS_ACCESS_KEY_ID,LIBTECH_AWS_SECRET_ACCESS_KEY,AWS_STORAGE_BUCKET_NAME
 import boto3
 from boto3.session import Session
 from botocore.client import Config
@@ -69,7 +46,8 @@ def push2aws(logger, filename=None):
     session = Session(aws_access_key_id=LIBTECH_AWS_ACCESS_KEY_ID,
                                     aws_secret_access_key=LIBTECH_AWS_SECRET_ACCESS_KEY)
     s3 = session.resource('s3',config=Config(signature_version='s3v4'))
-    s3.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(ACL='public-read',Key=cloud_filename, Body=content)
+    s3.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(ACL='public-read',Key=cloud_filename, Body=content, ContentType='application/json')
+    
     public_url='https://s3.ap-south-1.amazonaws.com/libtech-nrega1/%s' % cloud_filename
     logger.info('File written on AWS[%s]' % public_url)
 
