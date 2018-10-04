@@ -43,7 +43,7 @@ from botocore.client import Config
 #######################
 
 csvfile = 'trial_data.csv'
-jsonfile = 'trial_data.json'
+jsonfile = 'customers.json'
 
 
 #############
@@ -65,7 +65,7 @@ def push2aws(logger, filename=None):
         
     with open(filename, 'rb') as filehandle:
         content = filehandle.read()
-    cloud_filename='media/temp/rn6/%s' % filename
+    cloud_filename='media/temp/customerJSON/%s' % filename
     session = Session(aws_access_key_id=LIBTECH_AWS_ACCESS_KEY_ID,
                                     aws_secret_access_key=LIBTECH_AWS_SECRET_ACCESS_KEY)
     s3 = session.resource('s3',config=Config(signature_version='s3v4'))
