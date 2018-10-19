@@ -20,7 +20,7 @@ from botocore.client import Config
 #######################
 
 csvfile = 'trial_data.csv'
-jsonfile = 'customers.json'
+jsonfile = 'trial_data.json'
 
 
 #############
