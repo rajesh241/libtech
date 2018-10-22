@@ -101,13 +101,39 @@ def fetchBlockData(logger, dirname, block_name=None, url=None):
             logger.info('Exporting [%s]' % filename)
             df.to_csv(filename, index=False)
 
+def getVillages(df):
+    villages_df = df.loc[df[df.columns[0]].str.contains('Villages')]
+    #print(villages_df.head())
+    villages_df.to_csv('/tmp/Villages.csv', index=False)
+    villages = ['X','X']
+    for index, row in villages_df.iterrows():
+        #print('Row[%s]: [%s]' % (index, row))
+        village = row[0].strip('Villages : ')
+        times = row[1].strip('No. of Registrants: ')
+        for i in range(0, int(times)+1):  # Add once to the row containing village name itself
+            villages.append(village)
+
+    villages.append('X')
+    villages.append('X')
+    villages.append('X')
+    print('Length of arrays [%s %s]' % (len(villages), len(df[df.columns[0]])))
+    '''
+    for index, row in df.iterrows():
+        print('Row[%s]: [%s]' % (index, row))
+        print('Village[%s][%s]' % (index, villages[index]))
+    '''
+    return villages
+
 def getJobcard(row):
     #print('Row[%s]' % row)
     #print(row[9])
     jobcard = row[9].replace(row[8], '')
-    print(jobcard)
-    tjobcard = jobcard.replace('AP-03-011-0', '0302911').replace('/', '').replace('-', '')
-    print(tjobcard)
+    #print(jobcard)
+    if 'AP-03-011-0' in jobcard:
+        tjobcard = jobcard.replace('AP-03-011-0', '~0302911').replace('/', '').replace('-', '')
+    if 'AP-03-034-0' in jobcard:
+        tjobcard = jobcard.replace('AP-03-034-0', '~0303234').replace('/', '').replace('-', '')
+    #print(tjobcard)
     jobcard = Jobcard.objects.filter(jobcard=jobcard)
     if jobcard:
         print('Yippie!')
@@ -146,7 +172,7 @@ def parseAppRegister(logger, dirname=None, block_code=None):
 
     files = os.listdir(dirname)
     logger.info('Files[%s]' % files)
-    '''
+
     #count = 0
     for basename in os.listdir(dirname):
         filename=os.path.join(dirname,basename)
@@ -155,11 +181,7 @@ def parseAppRegister(logger, dirname=None, block_code=None):
             logger.info('Skipping [%s]' % filename)
             continue
 
-        if filename.replace('.csv', '') not in panchayats:
-            logger.info('Oops [%s]' % filename)
-            continue
-    '''
-
+        '''
     for panchayat in panchayats:
         panchayat_name = panchayat.name
         logger.info('Panchayat[%s]' % panchayat_name)
@@ -169,20 +191,31 @@ def parseAppRegister(logger, dirname=None, block_code=None):
 
         filename = dirname + panchayat_name + '.csv'
         logger.info('Filename[%s]' % filename)
-
+        '''
         try:
             df = pd.read_csv(filename, encoding='utf-8-sig', header = None, names = column_names)
         except Exception as e:
             logger.error('Exception when reading filename[%s] - EXCEPT[%s:%s]' % (filename, type(e), e))
 
-        print(df.head())
+        logger.info(df.head())
 
         df.fillna('', inplace=True)
-        print(df.head())
+        logger.info(df.head())
 
-        print('Columns[%s]' % df.columns)
+        #getVillages(df)
+        df.insert(len(df.columns), 'Village', getVillages(df))
+        #df.insert(len(df.columns), 'Village', getVillages(df))
+        #df[surrender_reason] = df.apply(lambda row: stripReason(row), axis=1)
+        #df['tjobcard'] = df.apply(lambda row: getJobcard(row), axis=1)        
+        logger.info(df.head())
+        logger.info(df.tail())
+        
+        logger.info('Columns[%s]' % df.columns)
         df = df.loc[df[df.columns[10]].str.contains(surrender_reason)]
-        print('DF[%s]' % df.head())
+        if df.empty:
+            logger.warning('DataFrame Empty')
+            continue
+        logger.info('DF[%s]' % df.head())
 
         if False:
             logger.info('Panchayat ID[%s]' % panchayat.id)
@@ -193,7 +226,7 @@ def parseAppRegister(logger, dirname=None, block_code=None):
             logger.info('Jobcard[%s] tjobcard[%s] village[%s]' % (jobcard, jobcard.tjobcard, jobcard.village.name))
         df[surrender_reason] = df.apply(lambda row: stripReason(row), axis=1)
         df['tjobcard'] = df.apply(lambda row: getJobcard(row), axis=1)
-        print(df.head())
+        logger.info(df.head())
 
         if False:
             df.drop([df.columns[2]], axis = 1, inplace = True)
@@ -203,10 +236,9 @@ def parseAppRegister(logger, dirname=None, block_code=None):
             df.drop([df.columns[7]], axis = 1, inplace = True)
             df.drop([df.columns[7]], axis = 1, inplace = True)
         else:
-            df.drop(skip_columns, axis = 1, inplace = True)
-        
+            df.drop(skip_columns, axis = 1, inplace = True)        
                 
-        print(df.head())
+        logger.info(df.head())
         if False:
             df.reset_index()
             df.columns[0] = serial_no
@@ -214,10 +246,10 @@ def parseAppRegister(logger, dirname=None, block_code=None):
         else:
             df.insert(0, serial_no, range(1, len(df)+1))
 
-        print(df.head())
-        exit(0)
+        logger.info(df.head())
         logger.info('Writing to [%s]' % filename)
         df.to_csv(filename, index=False)
+        #exit(0)
         continue
         for worker in workers:
             jobcard_no = (worker.jobcard.tjobcard + '-0' + str(worker.applicantNo))
@@ -271,7 +303,8 @@ class TestSuite(unittest.TestCase):
         
     def test_parseAppRegister(self):
         dirname = './Data/'
-        result = parseAppRegister(self.logger, dirname=dirname, block_code='0203011')
+        #result = parseAppRegister(self.logger, dirname=dirname, block_code='0203011')
+        result = parseAppRegister(self.logger, dirname=dirname, block_code='0203034')
         self.assertEqual(result, 'SUCCESS')
         
 if __name__ == '__main__':
