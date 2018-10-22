@@ -1,7 +1,6 @@
 import os
 dirname = os.path.dirname(os.path.realpath(__file__))
 rootdir = os.path.dirname(dirname)
-print('RootDir[%s]' % rootdir)
 
 import sys
 sys.path.insert(0, rootdir)
@@ -9,7 +8,6 @@ sys.path.insert(0, rootdir)
 repodir = os.path.dirname(rootdir)
 
 djangodir = repodir + '/django/n.libtech.info/src'
-print(djangodir)
 sys.path.append(djangodir)
 
 import requests
@@ -37,11 +35,9 @@ from nrega.models import State,District,Block,Panchayat,PaymentInfo,LibtechTag,C
 # Global Declarations
 #######################
 
-#timeout = 10
 column_names = ['S.No.', 'Head of HouseHold', 'Caste', 'IAY/LR Beneficiary', 'Name of Applicant', 'Father/Husband Name', 'Gender', 'Age', 'Date of receipt of application/<br>Request for Registration', 'No.).Append(Date of Job Card issued', 'Reasons, if Job Card NOT issued<br>&amp; any other remarks', 'Disabled', 'Minority', 'Job Card Verified on Date']
 
 skip_columns = ['S.No.', 'Caste', 'IAY/LR Beneficiary', 'Age', 'Date of receipt of application/<br>Request for Registration', 'Reasons, if Job Card NOT issued<br>&amp; any other remarks', 'Disabled', 'Minority']
-#column_names = ['S.No.', 'Head of HouseHold', 'Caste', 'IAY/LR Beneficiary', 'Name of Applicant', 'Father/Husband Name', 'Gender', 'Age', 'Date of receipt of application/<br>Request for Registration', 'No.).Append(Date of Job Card issued', 'Reason: Wants to surrender the Job-Card', 'Disabled', 'Minority', 'Job Card Verified on Date']
 
 surrender_reason = 'Reason: Wants to surrender the Job-Card'
 serial_no = 'S.No.'
@@ -101,13 +97,13 @@ def fetchBlockData(logger, dirname, block_name=None, url=None):
             logger.info('Exporting [%s]' % filename)
             df.to_csv(filename, index=False)
 
-def getVillages(df):
+def getVillages(logger, df):
     villages_df = df.loc[df[df.columns[0]].str.contains('Villages')]
-    #print(villages_df.head())
+    logger.debug(villages_df.head())
     villages_df.to_csv('/tmp/Villages.csv', index=False)
     villages = ['X','X']
     for index, row in villages_df.iterrows():
-        #print('Row[%s]: [%s]' % (index, row))
+        logger.debug('Row[%s]: [%s]' % (index, row))
         village = row[0].strip('Villages : ')
         times = row[1].strip('No. of Registrants: ')
         for i in range(0, int(times)+1):  # Add once to the row containing village name itself
@@ -116,37 +112,31 @@ def getVillages(df):
     villages.append('X')
     villages.append('X')
     villages.append('X')
-    print('Length of arrays [%s %s]' % (len(villages), len(df[df.columns[0]])))
-    '''
-    for index, row in df.iterrows():
-        print('Row[%s]: [%s]' % (index, row))
-        print('Village[%s][%s]' % (index, villages[index]))
-    '''
+    logger.debug('Length of arrays [%s %s]' % (len(villages), len(df[df.columns[0]])))
+    
     return villages
 
-def getJobcard(row):
-    #print('Row[%s]' % row)
-    #print(row[9])
+def getJobcard(logger, row):
+    logger.debug('Row[%s]' % row)
+    logger.debug(row[9])
     jobcard = row[9].replace(row[8], '')
-    #print(jobcard)
+    logger.debug(jobcard)
     if 'AP-03-011-0' in jobcard:
         tjobcard = jobcard.replace('AP-03-011-0', '~0302911').replace('/', '').replace('-', '')
     if 'AP-03-034-0' in jobcard:
         tjobcard = jobcard.replace('AP-03-034-0', '~0303234').replace('/', '').replace('-', '')
-    #print(tjobcard)
+    logger.debug(tjobcard)
     jobcard = Jobcard.objects.filter(jobcard=jobcard)
     if jobcard:
-        print('Yippie!')
-        print('query[%s]' % str(jobcard))
-        print('Jobcard[%s] tjobcard[%s] village[%s]' % (jobcard, jobcard.tjobcard, jobcard.village.name))
+        logger.error('Yippie!')
+        logger.error('query[%s]' % str(jobcard))
+        logger.error('Jobcard[%s] tjobcard[%s] village[%s]' % (jobcard, jobcard.tjobcard, jobcard.village.name))
         return (jobcard.tjobcard) # , jobcard.village.name)
     else:
         return tjobcard
             
 def stripReason(row):
-    #print('Row[%s]' % row)
     reason = row[10].strip(surrender_reason)
-    #print(reason)
     return reason
 
 def fetchAppRegister(logger, dirname=None):
@@ -173,7 +163,6 @@ def parseAppRegister(logger, dirname=None, block_code=None):
     files = os.listdir(dirname)
     logger.info('Files[%s]' % files)
 
-    #count = 0
     for basename in os.listdir(dirname):
         filename=os.path.join(dirname,basename)
         logger.info('Reading [%s]' % filename)
@@ -202,11 +191,7 @@ def parseAppRegister(logger, dirname=None, block_code=None):
         df.fillna('', inplace=True)
         logger.info(df.head())
 
-        #getVillages(df)
-        df.insert(len(df.columns), 'Village', getVillages(df))
-        #df.insert(len(df.columns), 'Village', getVillages(df))
-        #df[surrender_reason] = df.apply(lambda row: stripReason(row), axis=1)
-        #df['tjobcard'] = df.apply(lambda row: getJobcard(row), axis=1)        
+        df.insert(len(df.columns), 'Village', getVillages(logger, df))
         logger.info(df.head())
         logger.info(df.tail())
         
@@ -225,7 +210,7 @@ def parseAppRegister(logger, dirname=None, block_code=None):
             logger.info('query[%s]' % str(jobcard))
             logger.info('Jobcard[%s] tjobcard[%s] village[%s]' % (jobcard, jobcard.tjobcard, jobcard.village.name))
         df[surrender_reason] = df.apply(lambda row: stripReason(row), axis=1)
-        df['tjobcard'] = df.apply(lambda row: getJobcard(row), axis=1)
+        df['tjobcard'] = df.apply(lambda row: getJobcard(logger, row), axis=1)
         logger.info(df.head())
 
         if False:
@@ -249,8 +234,9 @@ def parseAppRegister(logger, dirname=None, block_code=None):
         logger.info(df.head())
         logger.info('Writing to [%s]' % filename)
         df.to_csv(filename, index=False)
-        #exit(0)
         continue
+    
+    '''
         for worker in workers:
             jobcard_no = (worker.jobcard.tjobcard + '-0' + str(worker.applicantNo))
             if current_panchayat and (panchayat_name == current_panchayat and is_downloaded and (jobcard_no != current_jobcard)): 
@@ -262,28 +248,7 @@ def parseAppRegister(logger, dirname=None, block_code=None):
             exit(0)
 
         exit(0)
-
-        try:
-            df = pd.read_csv(filename, encoding='utf-8-sig')
-        except Exception as e:
-            logger.error('Exception when reading filename[%s] - EXCEPT[%s:%s]' % (filename, type(e), e))
-
-        df_array = []
-        sorted = df.sort_values(by='WorkerID')
-        sorted['WorkerID'].to_csv(filename.replace('list', 'workers'), index=False)
-        df_array.append(sorted['WorkerID'])
-        
-        sorted = df.sort_values(by='जॉब कार्ड')
-        sorted['जॉब कार्ड'].drop_duplicates().to_csv(filename.replace('list', 'jobcards'), index=False)
-        df_array.append(sorted['जॉब कार्ड'].drop_duplicates())
-
-        sorted = df.sort_values(by='गांव')                               
-        sorted['गांव'].drop_duplicates().to_csv(filename.replace('list', 'villages'), index=False)
-        df_array.append(sorted['गांव'].drop_duplicates())
-        
-        concat = pd.concat(df_array)
-        logger.info('Concatenated: \n%s' % concat.head())
-        concat.to_csv(filename.replace('list', 'all'), index=False)
+    '''
     
     return 'SUCCESS'
 
