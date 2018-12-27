@@ -5,6 +5,7 @@ rootdir = os.path.dirname(dirname)
 import sys
 sys.path.insert(0, rootdir)
 
+from bs4 import BeautifulSoup
 
 from wrappers.logger import loggerFetch
 import unittest
@@ -47,6 +48,7 @@ def fetch_reports(logger, cookies=None, month='01', year='2018', district_name=N
     if not cookies:
         # url = 'http://nregasp2.nic.in/netnrega/state_html/empspecifydays.aspx?page=P&lflag=eng&state_name=BIHAR&state_code=05&district_name=VAISHALI&district_code=0516&block_name=VAISHALI&fin_year=2017-2018&Block_code=0516005&'
         url = 'http://mnregaweb2.nic.in/netnrega/state_html/empspecifydays.aspx?page=P&lflag=eng&state_name=ODISHA&state_code=24&district_name=NAYAGARH&district_code=2422&block_name=Nuagaon&fin_year=2017-2018&Block_code=2422004&'
+        url = 'http://mnregaweb2.nic.in/netnrega/state_html/empspecifydays.aspx?page=P&lflag=eng&state_name=ODISHA&state_code=24&district_name=GAJAPATI&district_code=2424&block_name=MOHONA&fin_year=2017-2018&Block_code=2424004&'
 
         '''
         import urllib.request
@@ -80,6 +82,7 @@ def fetch_reports(logger, cookies=None, month='01', year='2018', district_name=N
             'ASP.NET_SessionId': 'tzjumqmozpmbajiuq4hyy555',
         }
 
+    '''
     headers = {
         'Host': 'mnregaweb2.nic.in',
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:60.0) Gecko/20100101 Firefox/60.0',
@@ -108,18 +111,27 @@ def fetch_reports(logger, cookies=None, month='01', year='2018', district_name=N
     cookies = session.cookies
     logger.info(str(cookies))
     logger.info('Policy ' + str(response.history))
-    
+    '''
+    myhtml=response.content
+    htmlsoup=BeautifulSoup(myhtml,"lxml")
+    validation = htmlsoup.find(id='__EVENTVALIDATION').get('value')
+    logger.info(validation)
+    viewState = htmlsoup.find(id='__VIEWSTATE').get('value')
+    logger.info(viewState)
+    cookies=session.cookies
+    logger.info('No Cookies: ' + str(cookies)) #  + '==' + r.text)
+
     #######    
 
     headers = {
-        'Host': 'mnregaweb2.nic.in',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:60.0) Gecko/20100101 Firefox/60.0',
+        'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:64.0) Gecko/20100101 Firefox/64.0',
         'Accept': '*/*',
         'Accept-Language': 'en-US,en;q=0.5',
-        'Referer': 'http://mnregaweb2.nic.in/netnrega/state_html/empspecifydays.aspx?page=P&lflag=eng&state_name=ODISHA&state_code=24&district_name=NAYAGARH&district_code=2422&block_name=Nuagaon&fin_year=2017-2018&Block_code=2422004&',
+        'Referer': 'http://mnregaweb2.nic.in/netnrega/state_html/empspecifydays.aspx?page=P&lflag=eng&state_name=ODISHA&state_code=24&district_name=GAJAPATI&district_code=2424&block_name=MOHONA&fin_year=2017-2018&Block_code=2424004&',
         'X-MicrosoftAjax': 'Delta=true',
         'Cache-Control': 'no-cache',
         'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
+        'DNT': '1',
         'Connection': 'keep-alive',
     }
 
@@ -128,24 +140,75 @@ def fetch_reports(logger, cookies=None, month='01', year='2018', district_name=N
         ('lflag', 'eng'),
         ('state_name', 'ODISHA'),
         ('state_code', '24'),
-        ('district_name', 'NAYAGARH'),
-        ('district_code', '2422'),
-        ('block_name', 'Nuagaon'),
+        ('district_name', 'GAJAPATI'),
+        ('district_code', '2424'),
+        ('block_name', 'MOHONA'),
         ('fin_year', '2017-2018'),
-        ('Block_code', '2422004'),
+        ('Block_code', '2424004'),
         ('', ''),
     )
 
-    response = session.post('http://mnregaweb2.nic.in/netnrega/state_html/empspecifydays.aspx', headers=headers, params=params, cookies=cookies)
-        
+    data = {
+        'ctl00$ContentPlaceHolder1$ScriptManager1': 'ctl00$ContentPlaceHolder1$UpdatePanel1|ctl00$ContentPlaceHolder1$btn_pro',
+        'ctl00$ContentPlaceHolder1$ddr_panch': '2424004002',
+        'ctl00$ContentPlaceHolder1$ddr_cond': 'gt',
+        'ctl00$ContentPlaceHolder1$lbl_days': '0',
+        'ctl00$ContentPlaceHolder1$rblRegWorker': 'Y',
+        '__EVENTTARGET': 'ctl00$ContentPlaceHolder1$btn_pro',
+        '__EVENTARGUMENT': '',
+        '__LASTFOCUS': '',
+        '__VIEWSTATE': viewState,
+        '__EVENTVALIDATION': validation,
+        '__VIEWSTATEENCRYPTED': '',
+        '__ASYNCPOST': 'true',
+        '': ''
+    }
+
+    response = session.post('http://mnregaweb2.nic.in/netnrega/state_html/empspecifydays.aspx', headers=headers, params=params, data=data, allow_redirects=False)
+    res = response
+    logger.info('status code [%s]' % res.status_code)
+    if res.status_code == 302: # expected here
+        jar = res.cookies
+        logger.info('Jar ' + str(jar))
+        redirect_URL2 = res.headers['Location']
+        logger.error('URL = ' + redirect_URL2)
+        url = res.history[0].url
+        logger.error('histor url = ' + url)            
+        res = session.get(redirect_URL2, cookies=jar)
+        # res2 is made with cookies collected during res' 302 redirect                
+        # logger.info('XPATH[%s]' % response.xpath("//*[@id='__VIEWSTATE']/@value").extract())
+    cookies = session.cookies
+    logger.info('Yippie = ' + str(cookies))
+    cookies = requests.cookies.RequestsCookieJar()
+    logger.info('Cookies = ' + str(res.cookies))
+
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:64.0) Gecko/20100101 Firefox/64.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Referer': 'http://mnregaweb2.nic.in/netnrega/state_html/empspecifydays.aspx?page=P&lflag=eng&state_name=ODISHA&state_code=24&district_name=GAJAPATI&district_code=2424&block_name=MOHONA&fin_year=2017-2018&Block_code=2424004&',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+    }
+
+    params = (
+        ('lflag', 'eng'),
+        ('fin_year', '2017-2018'),
+        ('RegWorker', 'Y'),
+    )
+
+    response = requests.get('http://mnregaweb2.nic.in/netnrega/state_html/empprovdays.aspx', headers=headers, params=params, cookies=cookies)
     district_list_html = response.content
     with open(filename, 'wb') as html_file:
         logger.info('Writing [%s]' % filename)
         html_file.write(district_list_html)
-    
+
+    '''
     cookies = session.cookies
     logger.info(str(cookies))
     logger.info('History ' + str(response.history))
+    '''
 
     session.keep_alive = False  # session.quit()
     
