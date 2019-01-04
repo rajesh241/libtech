@@ -1,24 +1,18 @@
 from bs4 import BeautifulSoup
 
 import os
-dirname = os.path.dirname(os.path.realpath(__file__))
-rootdir = os.path.dirname(dirname)
+CUR_DIR = os.path.dirname(os.path.realpath(__file__))
+ROOT_DIR = os.path.dirname(CUR_DIR)
+REPO_DIR = os.path.dirname(ROOT_DIR)
 
 import sys
-sys.path.insert(0, rootdir)
-#FIXME
-#sys.path.append(os.path.dirname(rootdir) + '/django/n.libtech.info/src/custom/includes')
-#print(os.path.dirname(rootdir) + '/django/n.libtech.info/src/custom/includes')
-#exit(0)
+sys.path.insert(0, ROOT_DIR)
 
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, SessionNotCreatedException, TimeoutException, WebDriverException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
-
-
-from os import errno
 
 import requests
 import time
@@ -31,15 +25,26 @@ import psutil
 import pandas as pd
 
 ###
+# Django Settings for future
+###
 
-includePath='/home/libtech/repo/django/n.libtech.info/src/custom/includes'
-sys.path.append(includePath) # os.path.join(os.path.dirname(__file__), '..', 'includes') #FIXME
+'''
+INCLUDE_PATH='/home/nrega/libtech/src/config/'
+sys.path.append(INCLUDE_PATH) # os.path.join(os.path.dirname(__file__), '..', 'includes') #FIXME
 
-from customSettings import repoDir, djangoDir, djangoSettings
+from defines import djangoDir, djangoSettings
 #from nregaFunctions import is_ascii
 
-sys.path.append(djangoDir)
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", djangoSettings)
+'''
+###
+
+#from includes.settings import SITE_URL
+#DJANGO_DIR = REPO_DIR + '/django/{site_url}/src'.format(site_url=SITE_URL)
+
+from includes.settings import DJANGO_DIR, DJANGO_SETTINGS
+sys.path.append(DJANGO_DIR)
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', DJANGO_SETTINGS)
 
 import django
 
@@ -57,12 +62,14 @@ from nrega.models import State,District,Block,Panchayat,PaymentInfo,LibtechTag,C
 timeout = 10
 #dirname = 'jcs'
 #dirname = 'jobcards'
-#dirname = 'mjc'
+directory = 'Koilkonda'
+directory = 'Hanwada'
 isGM = False
-needed = ['MOMINAPUR', 'APPAIREDDI PALLE', 'DOREPALLE', 'JADAVARAO PALLE', 'NAGIREDDI PALLE', 'DAMAGANPURAM', 'KAJIPURAM',]
+#needed = ['MOMINAPUR', 'APPAIREDDI PALLE', 'DOREPALLE', 'JADAVARAO PALLE', 'NAGIREDDI PALLE', 'DAMAGANPURAM', 'KAJIPURAM',]
 needed = None
 #neeeded = ['CHENREDDI PALLE', 'DAMAGANPURAM', 'DOREPALLE', 'DUPPATGHAT', 'GOKULNAGAR', 'JADAVARAO PALLE', 'KAJIPURAM', 'KOMMUR', 'LINGALCHED', 'MADDUR', 'MOMINAPUR', 'NAGIREDDI PALLE', 'NANDIGAM', 'NIDJINTA', 'PEDRIPAHAD', 'RENVATLA', 'THIMMAREDDIPALLE', 'VEERAARAM', ]
-skip = ['LINGALCHED', 'VEERAARAM', 'KRISHNANAGAR', 'NIDJINTA', 'NANDIPAHAD', 'MANNAPUR', 'PALLERLA',]
+#skip = ['LINGALCHED', 'VEERAARAM', 'KRISHNANAGAR', 'NIDJINTA', 'NANDIPAHAD', 'MANNAPUR', 'PALLERLA',]
+skip = None
 
 #############
 # Functions
@@ -234,7 +241,7 @@ def fetch_rn6_reports(logger, dirname=None):
     try:
         os.makedirs(dirname)
     except OSError as e:
-        if e.errno != errno.EEXIST:
+        if e.errno != os.errno.EEXIST:
             raise    
     
     current_panchayat = None
@@ -255,6 +262,10 @@ def fetch_rn6_reports(logger, dirname=None):
 
         block_name = 'Maddur'
         block_code = '3614006'
+        block_name = 'Koilkonda'
+        block_code = '3614007'
+        block_name = 'Hanwada'
+        block_code = '3614008'        
     else:
         state = 'ap'
         district_name = 'VISAKHAPATNAM'
@@ -290,6 +301,7 @@ def fetch_rn6_reports(logger, dirname=None):
                 continue        
 
             workers = Worker.objects.filter(jobcard__panchayat=panchayat)  # [:5]
+            logger.info(str(workers))
             is_downloaded = True
             for worker in workers:
                 jobcard_no = (worker.jobcard.tjobcard + '-0' + str(worker.applicantNo))
@@ -329,6 +341,8 @@ def fetch_rn6_reports(logger, dirname=None):
         logger.info('Finalizing Display')
         displayFinalize(display)
         #    process_cleanup(logger)
+        logger.info('Removing status file [%s]' % filename)
+        os.system('rm -v %s' % filename)
         return 'SUCCESS'
 
 
@@ -495,13 +509,13 @@ def parse_rn6_report(logger, filename=None, panchayat_name=None, village_name=No
 def dump_rn6_reports(logger, dirname=None):
     #from datetime import datetime
 
-    from secure.libtech_settings import LIBTECH_AWS_ACCESS_KEY_ID,LIBTECH_AWS_SECRET_ACCESS_KEY
-    from libtech.settings import AWS_STORAGE_BUCKET_NAME,AWS_S3_REGION_NAME,MEDIA_URL,S3_URL
+    from includes.settings import LIBTECH_AWS_ACCESS_KEY_ID,LIBTECH_AWS_SECRET_ACCESS_KEY
+    from includes.settings import AWS_STORAGE_BUCKET_NAME,AWS_S3_REGION_NAME,MEDIA_URL,S3_URL
     
     import boto3
     from boto3.session import Session
     from botocore.client import Config
-    
+
     logger.info('Dump the RN6 HTMLs into [%s]' % dirname)
 
     if not isGM:
@@ -513,6 +527,10 @@ def dump_rn6_reports(logger, dirname=None):
 
         block_name = 'Maddur'
         block_code = '3614006'
+        block_name = 'Koilkonda'
+        block_code = '3614007'
+        block_name = 'Hanwada'
+        block_code = '3614008'
     else:
         state = 'ap'
         district_name = 'VISAKHAPATNAM'
@@ -632,6 +650,7 @@ def dump_rn6_reports(logger, dirname=None):
     cmd = 'tar cjf %s %s/*.csv' % (tarball_filename, dirname)
     logger.info('Running cmd[%s]' % cmd)
     os.system(cmd)
+
     with open(tarball_filename, 'rb') as tarball_file:
         tarball_content = tarball_file.read()
     cloud_filename='media/temp/rn6/%s' % tarball_filename
@@ -656,13 +675,13 @@ class TestSuite(unittest.TestCase):
         count = 0
         while True:
             count += 1
-            result = fetch_rn6_reports(self.logger, dirname='mjc')
+            result = fetch_rn6_reports(self.logger, dirname=directory)
             if result == 'SUCCESS' or count == 200:
                 break
         self.assertEqual(result, 'SUCCESS')
 
     def test_dump_rn6_report(self):
-        result = dump_rn6_reports(self.logger, dirname='mjc')
+        result = dump_rn6_reports(self.logger, dirname=directory)
         self.assertEqual(result, 'SUCCESS')
         
 if __name__ == '__main__':
