@@ -1,14 +1,13 @@
+import re
+import unittest
+from wrappers.logger import loggerFetch
+import sys
 import os
 CUR_DIR = os.path.dirname(os.path.realpath(__file__))
 ROOT_DIR = os.path.dirname(CUR_DIR)
 REPO_DIR = os.path.dirname(ROOT_DIR)
 
-import sys
 sys.path.insert(0, ROOT_DIR)
-
-from wrappers.logger import loggerFetch
-import unittest
-import re
 
 
 #######################
@@ -84,20 +83,21 @@ def fetch_reports_cmd(logger):
     os.system(cmd)
     logger.info('File [%s] written' % filename)
     '''
-    
+
     for state in states:
-        state_cmd = re.sub('ddl_States=[A-Z0-9]{6}', 'ddl_States=30STRY', curl_cmd)
+        state_cmd = re.sub(
+            'ddl_States=[A-Z0-9]{6}', 'ddl_States=30STRY', curl_cmd)
 
         for finyear in finyears:
             filename = '%s/%s_%s.html' % (dirname, state, finyear)
             filename = filename.replace(' ', '_')
-            cmd = re.sub('ddlfinyr=[^&]{9}', finyear, state_cmd) + ' | gunzip > %s' % filename            
+            cmd = re.sub('ddlfinyr=[^&]{9}', finyear,
+                         state_cmd) + ' | gunzip > %s' % filename
             logger.info('Executing [%s]' % cmd)
             os.system(cmd)
             logger.info('File [%s] written' % filename)
-        
-    return 'SUCCESS'
 
+    return 'SUCCESS'
 
 
 ##########
@@ -121,6 +121,6 @@ class TestSuite(unittest.TestCase):
         result = fetch_reports(self.logger)
         self.assertEqual('SUCCESS', result)
 
+
 if __name__ == '__main__':
     unittest.main()
-
