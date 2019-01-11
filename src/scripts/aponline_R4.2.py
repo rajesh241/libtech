@@ -1,3 +1,11 @@
+import pandas as pd
+import psutil
+from wrappers.sn import driverInitialize, driverFinalize, displayInitialize, displayFinalize
+from wrappers.logger import loggerFetch
+import unittest
+import time
+import requests
+import sys
 from bs4 import BeautifulSoup
 
 import os
@@ -5,19 +13,7 @@ CUR_DIR = os.path.dirname(os.path.realpath(__file__))
 ROOT_DIR = os.path.dirname(CUR_DIR)
 REPO_DIR = os.path.dirname(ROOT_DIR)
 
-import sys
 sys.path.insert(0, ROOT_DIR)
-
-import requests
-import time
-import unittest
-
-from wrappers.logger import loggerFetch
-from wrappers.sn import driverInitialize, driverFinalize, displayInitialize, displayFinalize
-
-import psutil
-import pandas as pd
-
 
 
 #######################
@@ -38,7 +34,7 @@ def fetch_muster_rolls(logger, dirname=None, state=None, district=None, block=No
     logger.info('Fetching URL[%s] for cookies' % url)
     with requests.Session() as session:
         response = session.get(url)
-    
+
         cookies = session.cookies
 
         if not cookies:
@@ -47,7 +43,7 @@ def fetch_muster_rolls(logger, dirname=None, state=None, district=None, block=No
                 '_ga': 'GA1.3.1634808397.1540151653',
                 'S_MODE': '2',
             }
-            
+
         headers = {
             'Accept-Encoding': 'gzip, deflate',
             'Accept-Language': 'en-US,en;q=0.9',
@@ -56,7 +52,7 @@ def fetch_muster_rolls(logger, dirname=None, state=None, district=None, block=No
             'Referer': 'http://www.nrega.ap.gov.in/Nregs/FrontServlet?requestType=NewReportsRH&actionVal=R1Display&page=Newreportcenter_ajax_eng',
             'Connection': 'keep-alive',
         }
-        
+
         params = (
             ('requestType', 'NewReportsRH'),
             ('actionVal', 'AjaxDisplay'),
@@ -70,10 +66,11 @@ def fetch_muster_rolls(logger, dirname=None, state=None, district=None, block=No
             ('id', 'Village'),
             ('page', 'Newreportcenter_ajax_eng'),
         )
-        response = session.get('http://www.nrega.ap.gov.in/Nregs/FrontServlet', headers=headers, params=params, cookies=cookies)
-        #NB. Original query string below. It seems impossible to parse and
-        #reproduce query strings 100% accurately so the one below is given
-        #in case the reproduced version is not "correct".
+        response = session.get('http://www.nrega.ap.gov.in/Nregs/FrontServlet',
+                               headers=headers, params=params, cookies=cookies)
+        # NB. Original query string below. It seems impossible to parse and
+        # reproduce query strings 100% accurately so the one below is given
+        # in case the reproduced version is not "correct".
         # response = requests.get('http://www.nrega.ap.gov.in/Nregs/FrontServlet?requestType=NewReportsRH&actionVal=AjaxDisplay&State=-1&District=03&Mandal=11&GP=03&vill=014&Financial=2018&Month=01&id=Village&page=Newreportcenter_ajax_eng', headers=headers, cookies=cookies)
 
         url = 'http://www.nrega.ap.gov.in/Nregs/FrontServlet?requestType=Common_engRH&actionVal=musterinfo&page=MusterRolls_eng'
@@ -94,32 +91,33 @@ def fetch_muster_rolls(logger, dirname=None, state=None, district=None, block=No
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
         }
-        
+
         params = (
             ('requestType', 'Common_engRH'),
             ('actionVal', 'musterinfo'),
             ('page', 'MusterRolls_eng'),
         )
-        
+
         data = {
-          'State': '-1',
-          'District': '03',
-          'Mandal': '11',
-          'Panchayat': '03',
-          'FromDate': '01/12/2018',
-          'ToDate': '31/12/2018',
-          'Go': '',
-          'spl': 'Select',
-          'input2': '',
-          'userCaptcha': ''
+            'State': '-1',
+            'District': '03',
+            'Mandal': '11',
+            'Panchayat': '03',
+            'FromDate': '01/12/2018',
+            'ToDate': '31/12/2018',
+            'Go': '',
+            'spl': 'Select',
+            'input2': '',
+            'userCaptcha': ''
         }
-        
+
         logger.info('Fetching URL[%s] for cookies' % url)
-        response = session.post('http://www.nrega.ap.gov.in/Nregs/FrontServlet', headers=headers, params=params, cookies=cookies, data=data)
-        
-        #NB. Original query string below. It seems impossible to parse and
-        #reproduce query strings 100% accurately so the one below is given
-        #in case the reproduced version is not "correct".
+        response = session.post('http://www.nrega.ap.gov.in/Nregs/FrontServlet',
+                                headers=headers, params=params, cookies=cookies, data=data)
+
+        # NB. Original query string below. It seems impossible to parse and
+        # reproduce query strings 100% accurately so the one below is given
+        # in case the reproduced version is not "correct".
         # response = requests.post('http://www.nrega.ap.gov.in/Nregs/FrontServlet?requestType=Common_engRH&actionVal=musterinfo&page=MusterRolls_eng', headers=headers, cookies=cookies, data=data)
 
         '''
@@ -170,15 +168,15 @@ def fetch_muster_rolls(logger, dirname=None, state=None, district=None, block=No
         }
 
         logger.info('Cookies[%s]' % session.cookies)
-        
+
         logger.info('Dowloading the muster from the URL[%s]' % url)
-        response = session.post('http://www.nrega.ap.gov.in/Nregs/FrontServlet', headers=headers, params=params, cookies=cookies, data=data)
+        response = session.post('http://www.nrega.ap.gov.in/Nregs/FrontServlet',
+                                headers=headers, params=params, cookies=cookies, data=data)
 
         filename = '/tmp/z.xlsx'
         with open(filename, 'wb') as html_file:
             logger.info('Writing [%s]' % filename)
             html_file.write(response.content)
-
 
     return 'SUCCESS'
 
@@ -194,6 +192,7 @@ class TestSuite(unittest.TestCase):
     def test_fetch_muster_rolls(self):
         result = fetch_muster_rolls(self.logger, dirname=directory)
         self.assertEqual(result, 'SUCCESS')
-        
+
+
 if __name__ == '__main__':
     unittest.main()
