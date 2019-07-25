@@ -116,6 +116,7 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
   query="use libtech"
   cur.execute(query)
   query="select bid,type,minhour,maxhour,tfileid,fileid,groups,vendor,district,blocks,panchayats,priority,fileid2,template,inQuery,region from broadcasts where bid=%s" %(bid)
+  print query
   cur.execute(query)
   row = cur.fetchone()
   tringoaudio=gettringoaudio(row[4])
@@ -183,6 +184,7 @@ def scheduleGeneralBroadcastCall(cur,bid,phone=None,requestedVendor=None,isTest=
   for r in results1:
     phone=r[0]
     query="select exophone from regions where region='%s' " % region
+    print region
     cur.execute(query)
     rowdnd=cur.fetchone()
     exophone=rowdnd[0]

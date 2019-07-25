@@ -20,7 +20,7 @@ def main():
   db = dbInitialize(db="libtech")
   cur = db.cursor()
   form = cgi.FieldStorage()
-  with open('/tmp/y.txt', 'w') as outfile:
+  with open('/tmp/yyy.txt', 'w') as outfile:
     outfile.write(str(form))
   exophone=form['To'].value
   query="select region from regions where exophone='%s' " % exophone
@@ -32,7 +32,7 @@ def main():
   elif region == 'jjss':
     audioFile="spss_confirm_recording.wav"
   else:
-    audioFile="grakoos_initiate_recording.wav"
+    audioFile="spss_confirm_recording.wav"
   print "http://callmgr.libtech.info/open/audio/prompts/%s" % audioFile
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
  

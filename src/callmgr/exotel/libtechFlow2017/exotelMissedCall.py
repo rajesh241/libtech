@@ -5,7 +5,7 @@ import cgitb; cgitb.enable() # Optional; for debugging only
 
 import os
 dirname = os.path.dirname(os.path.realpath(__file__))
-rootdir = os.path.dirname(os.path.dirname(dirname))
+rootdir = os.path.dirname(os.path.dirname(os.path.dirname(dirname)))
 
 import sys
 sys.path.insert(0, rootdir)
@@ -18,22 +18,14 @@ def main():
   db = dbInitialize(db="libtech")
   cur = db.cursor()
   form = cgi.FieldStorage()
-  with open('/tmp/y.txt', 'w') as outfile:
+  with open('/tmp/m.txt', 'w') as outfile:
     outfile.write(str(form))
  
   phone1 = form['From'].value
   phone=phone1[-10:]
-  
-  direction = form['Direction'].value
-  isAdmin=0
-  if str(direction) =='incoming': #Only for Incoming calls we need to check if the phone number is incoming or no
-    #Get admin status
-    query="select * from addressbook where isAdmin=1 and phone='%s' " % phone
-    with open('/tmp/yyy.txt', 'w') as outfile:
-      outfile.write(query)
-    cur.execute(query)
-    if cur.rowcount == 1:
-      isAdmin=1
+  exophone = form['To'].value
+  query="insert into missedCalls (phone,exophone) values ('%s','%s');" % (phone,exophone)
+  cur.execute(query) 
   isAdmin=1
   if isAdmin == 1:
     print 'Status: 200 OK'

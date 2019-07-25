@@ -32,6 +32,8 @@ def argsFetch():
   parser.add_argument('-b', '--browser', help='Specify the browser to test with', required=False)
   parser.add_argument('-v', '--visible', help='Make the browser visible', required=False, action='store_const', const=1)
   parser.add_argument('-wr', '--webReport', help='Generate Web Report', required=False, action='store_const', const=1)
+  parser.add_argument('-caf', '--createAllAudioFiles', help='Check if AudioFiles are present', required=False, action='store_const', const=1)
+  parser.add_argument('-peb', '--processErrorBroadcast', help='Process Error Broadcast', required=False, action='store_const', const=1)
   parser.add_argument('-cf', '--checkAudioFiles', help='Check if AudioFiles are present', required=False, action='store_const', const=1)
   parser.add_argument('-cb', '--createBroadcast', help='Create Broadcast', required=False, action='store_const', const=1)
   parser.add_argument('-f', '--fpsCode', help='FPS shop for which data needs to be donwloaded', required=False)
@@ -46,6 +48,10 @@ def checkAudioFiles(logger):
   db.autocommit(True)
   #Query to set up Database to read Hindi Characters
   query="SET NAMES utf8"
+  cur.execute(query)
+  query="update fpsShops set audioPresent=0"
+  cur.execute(query)
+  query="update fpsStatus set audioPresent=0"
   cur.execute(query)
   query="select id,fpsCode from fpsShops where cRequired=1 order by id desc "
   cur.execute(query)
@@ -89,7 +95,7 @@ def genWebReport(logger):
 
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
 
-def getPDSAudioList(fpsCode,month):
+def getPDSAudioList(logger,fpsCode,month):
   db = dbInitialize(db=pdsDB,host=pdsDBHost, charset="utf8")  # The rest is updated automatically in the function
   cur=db.cursor()
   db.autocommit(True)
@@ -120,7 +126,6 @@ def getPDSAudioList(fpsCode,month):
   else:
     audioLanguage='maithili'
     error=1
-
   if month < 10:
     monthString='bihar0'+str(month)
   elif month > 12:
@@ -135,6 +140,7 @@ def getPDSAudioList(fpsCode,month):
   for audioFile in audioList:
     query="select id,filename from audioLibrary where name='%s' and filename like '%s' " % (audioFile,likeString)
     cur.execute(query)
+    logger.info(audioFile)
     if cur.rowcount > 0:
       row=cur.fetchone()
       audioIDs+=str(row[0])
@@ -151,7 +157,76 @@ def getPDSAudioList(fpsCode,month):
     audioFilePaths=None
   
   return audioIDs,audioFilePaths
+def createAllAudioFiles(logger,fpsCode):
+  logger.info("Creating PDS Broadcast")
+  nregadb = dbInitialize(host=pdsDBHost,db=pdsDB, charset="utf8")  # The rest is updated automatically in the function
+  nregacur=nregadb.cursor()
+  nregadb.autocommit(True)
+  #Query to set up Database to read Hindi Characters
+  query="SET NAMES utf8"
+  nregacur.execute(query)
+  monthLabels=['0','JAN','FEB','MAR','APR','MAY','JUNE','JULY','AUG','SEP','OCT','NOV','DEC']
+  additionalFilter=''
+  if fpsCode is not None:
+    additionalFilter+=" and fpsCode='%s' " % fpsCode
+  query="select id,fpsName,fpsCode from fpsShops where cRequired=1 and audioPresent=1 %s " % (additionalFilter)
+  nregacur.execute(query)
+  results=nregacur.fetchall()
+  db = dbInitialize(db='libtech', charset="utf8")  # The rest is updated automatically in the function
+  cur=db.cursor()
+  db.autocommit(True)
+  #Query to set up Database to read Hindi Characters
+  query="SET NAMES utf8"
+  cur.execute(query)
+  for row in results:
+    [rowid,fpsName,fpsCode] = row
+    logger.info("fpsName: %s, fpsCode: %s " % (fpsName,fpsCode))
+    month=(rowid%12) + 1
+    logger.info("Month %s " %str(month))
+    audioIDs,audioFilePaths=getPDSAudioList(logger,fpsCode,month)
+    if audioFilePaths is not None:
+      audioFilePathList=audioFilePaths.split(",")
+      basepath="/var/www/html/webroot/callmgr.libtech.info/open/audio/"
+      fp=open("/tmp/pdsAudioListTest.txt","w")
+      for audioFilePath in audioFilePathList:
+        fp.write("file '%s' " % (basepath+audioFilePath))
+        fp.write("\n")
+      fp.close()
+      combinedAudioName=fpsCode+"_"+fpsName.replace(" ","_")
+      combinedAudioName=re.sub("[^a-zA-Z0-9_]+", "",combinedAudioName)
+      if len(combinedAudioName) > 60:
+        combinedAudioName=combinedAudioName[0:59]
+      outputfilename="biharPDS/testAudio/%s_%s.wav" % (str(rowid),combinedAudioName)
+      outputfilepath=basepath+outputfilename
+      cmd="ffmpeg -f concat -safe 0 -i /tmp/pdsAudioListTest.txt -c copy %s -y" %(outputfilepath)
+      logger.info(cmd)
+      os.system(cmd)
+    else:
+      with open("/tmp/fpsError.txt", "a") as myfile:
+        myfile.write(fpsCode+"\n")
 
+
+def processErrorBroadcast(logger):
+  nregadb = dbInitialize(host=pdsDBHost,db=pdsDB, charset="utf8")  # The rest is updated automatically in the function
+  nregacur=nregadb.cursor()
+  nregadb.autocommit(True)
+  #Query to set up Database to read Hindi Characters
+  query="SET NAMES utf8"
+  nregacur.execute(query)
+  db = dbInitialize(db='libtech', charset="utf8")  # The rest is updated automatically in the function
+  cur=db.cursor()
+  db.autocommit(True)
+  #Query to set up Database to read Hindi Characters
+  query="SET NAMES utf8"
+  cur.execute(query)
+  query="select bid from broadcasts where region='adri' and error=1"
+  cur.execute(query)
+  results=cur.fetchall()
+  for row in results:
+    bid=row[0]
+    query="update fpsStatus set bid=NULL where bid=%s " % (str(bid))
+    nregacur.execute(query)
+  
 def createPDSBroadcast(logger):
   logger.info("Creating PDS Broadcast")
   nregadb = dbInitialize(host=pdsDBHost,db=pdsDB, charset="utf8")  # The rest is updated automatically in the function
@@ -179,7 +254,7 @@ def createPDSBroadcast(logger):
     vendor='any'
     todayPlus3=datetime.date.fromordinal(datetime.date.today().toordinal()+3)
     endDate=todayPlus3.strftime("%Y-%m-%d")
-    audioIDs,audioFilePaths=getPDSAudioList(fpsCode,month)
+    audioIDs,audioFilePaths=getPDSAudioList(logger,fpsCode,month)
     audioFilePathList=audioFilePaths.split(",")
     basepath="/var/www/html/webroot/callmgr.libtech.info/open/audio/"
     fp=open("/tmp/pdsAudioList.txt","w")
@@ -207,7 +282,7 @@ def createPDSBroadcast(logger):
     region='adri'
     template='general'
     inQuery='select phone from pdsPhoneBook where fpsCode="%s" ' % fpsCode
-    query="insert into broadcasts (tfileid,fileid2,name,type,vendor,startDate,endDate,fileid,region,template,inQuery) values ('','','%s','%s','%s',NOW(),'%s','%s','%s','%s','%s')" % (broadcastName,broadcastType,vendor,endDate,audioFiles,region,template,inQuery) 
+    query="insert into broadcasts (backoff,tfileid,fileid2,name,type,vendor,startDate,endDate,fileid,region,template,inQuery) values (120,'','','%s','%s','%s',NOW(),'%s','%s','%s','%s','%s')" % (broadcastName,broadcastType,vendor,endDate,audioFiles,region,template,inQuery) 
     logger.info(query)
     cur.execute(query)
     bid=cur.lastrowid
@@ -228,7 +303,10 @@ def main():
     checkAudioFiles(logger)
   if args['createBroadcast']:
     createPDSBroadcast(logger)
-
+  if args['createAllAudioFiles']:
+    createAllAudioFiles(logger,args['fpsCode'])
+  if args['processErrorBroadcast']:
+    processErrorBroadcast(logger)
   logger.info("...END PROCESSING")     
   exit(0)
 if __name__ == '__main__':

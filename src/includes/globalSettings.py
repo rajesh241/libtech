@@ -21,5 +21,5 @@ chaupalDataSummaryReportDir="/home/libtech/webroot/chaupalDataDashboard/reports/
 chaupalDashboardLink='http://chaupal.libtech.info/' 
 chaupalDataDashboardLink='http://chaupal.libtech.info/data/Summary/'
 chaupalDataDashboardLimit=20 
-maxExotelCallQueue=100 #This is the maximum number of calls that can be queued with exotel
+maxExotelCallQueue=200 #This is the maximum number of calls that can be queued with exotel
 maxTringoCallQueue=0 #This is the maximum number of calls that can be queued with exotel

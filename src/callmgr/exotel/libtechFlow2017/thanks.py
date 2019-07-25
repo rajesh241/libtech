@@ -32,7 +32,7 @@ def main():
   elif region == 'jjss':
     audioFile="spss_thankyou.wav"
   else:
-    audioFile="grakoos_initiate_recording.wav"
+    audioFile="spss_thankyou.wav"
   print "http://callmgr.libtech.info/open/audio/prompts/%s" % audioFile
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
  

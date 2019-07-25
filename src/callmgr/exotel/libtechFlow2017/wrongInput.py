@@ -30,7 +30,7 @@ def main():
   if region == 'spss':
     audioFile="spss_wrong_input.wav"
   else:
-    audioFile="grakoos_initiate_recording.wav"
+    audioFile="spss_wrong_input.wav"
   print "http://callmgr.libtech.info/open/audio/prompts/%s" % audioFile
   audioFile="spss_try_again.wav"
   print "http://callmgr.libtech.info/open/audio/prompts/%s" % audioFile

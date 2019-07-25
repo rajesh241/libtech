@@ -58,28 +58,31 @@ def main():
   cur.execute(query)
   query="use libtech"
   cur.execute(query)
-  query="select bid,completed,name from broadcasts where bid>1000 and error=0 and approved=1 and processed=1 and completed=0 order by bid DESC "
+  query="select bid,completed,name,fileid,startDate from broadcasts where bid>1000 order by startDate,bid DESC "
   print query
+  s=''
   cur.execute(query)
   results = cur.fetchall()
   for row in results:
     bid=str(row[0])
-    completed=str(row[1])
-    name=row[2]
-    mpa = dict.fromkeys(range(32))
-    name=name.translate(mpa)
-    print bid+"  "+name+"  "+completed
-    query="select a.district,a.block,a.panchayat,c.phone,DATE_FORMAT(c.callStartTime,'%d-%M-%Y') callTime,c.status,c.attempts,c.duration,c.durationPercentage,f.feedback,c.sid from addressbook a,callSummary c left join callFeedback f on c.sid=f.sid where c.phone=a.phone and bid="+str(bid)
-    if(completed == '0' or completed=='1'):
-      csvname=broadcastReportFilePath+str(bid)+"_"+name.replace(' ',"")+".csv"
-      print csvname
-      writecsv(cur,query,csvname)
-      updateBroadcastTable(cur,bid)
-    query="select bid,vendor,phone,callStartTime,duration,vendorCallStatus,cost from callLogs where bid=%s order by phone" % str(bid) 
-    if(completed == '0' or completed=='1'):
-      csvname=broadcastReportFilePath+str(bid)+"_"+name.replace(' ',"")+"_detailed.csv"
-      print csvname
-      writecsv(cur,query,csvname)
+    fileids=str(row[3])
+    startDate=str(row[4])
+    fileArray=fileids.split(",")
+    if len(fileArray) == 1:
+      fileid=fileArray[0]
+      if fileid.isdigit():
+        query="select filename from audioLibrary where id=%s " % str(fileid)
+        print(query)
+        cur.execute(query)
+        row1=cur.fetchone()
+        if row1 is not None:
+          filename=row1[0]
+          filepath="http://139.162.38.6/open/audio/"+filename
+          print(filepath)
+          print(filename)
+          s+="%s,%s,%s\n" % (bid,startDate,filepath)
+  with open("/tmp/master.csv","wb") as f:
+    f.write(s)
   dbFinalize(db) # Make sure you put this if there are other exit paths or errors
   exit(0)
       #updateBroadcastTable(cur,bid)

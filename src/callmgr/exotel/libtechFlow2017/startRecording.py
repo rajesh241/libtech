@@ -29,6 +29,8 @@ def main():
   region=row[0]
   if region == 'spss':
     audioFile="spss_initiate_recording.wav"
+#  elif region == 'jsk':
+#    audioFile='initiate_recording.wav'
   else:
     audioFile="spss_initiate_recording.wav"
   print "http://callmgr.libtech.info/open/audio/prompts/%s" % audioFile
