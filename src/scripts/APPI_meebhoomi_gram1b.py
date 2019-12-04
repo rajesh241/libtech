@@ -173,6 +173,8 @@ def fetch_appi_gram1b_report(logger, driver, bs=None, cookies=None, dirname=None
         else:
             logger.error("Handlers gone wrong [" + str(driver.window_handles) + 'captcha_id %s' % captcha_text + "]")
             driver.save_screenshot('./button_'+captcha_text+'.png')
+            alert = driver.switch_to_alert()
+            alert.accept()
             return 'FAILURE'
     except Exception as e:
         logger.error('Exception for Captcha[%s] - EXCEPT[%s:%s]' % (captcha_text, type(e), e))
@@ -264,21 +266,29 @@ def fetch_appi_reports(logger, dirname=None, url=None):
     logger.info('Cookies[%s]' % cookies)
     logger.info('Cookie -> Session ID[%s]' % cookies[0]['value'])
     
-    if True:
+    url = base_url
+
+    '''
+    try:
+        logger.info('Requesting URL[%s]' % url)
+        response = requests.get(url, timeout=timeout, cookies=cookies)
+    except Exception as e:
+        logger.error('Caught Exception[%s]' % e) 
+    '''
+
+    if False:
         result = fetch_appi_gram1b_report(logger, driver, bs=bs, cookies=cookies, dirname=dirname, url=url)
         driverFinalize(driver)
         displayFinalize(display)
         #process_cleanup(logger)
         return 'SUCCESS'
 
-    url = 'http://n.libtech.info:8000/api/panchayats/?bid=%s' % block_id
-    
-    try:
-        logger.info('Requesting URL[%s]' % url)
-        response = requests.get(url, timeout=timeout) # , cookies=cookies)
-    except Exception as e:
-        logger.error('Caught Exception[%s]' % e) 
-
+    retries = 3
+    while True and retries:
+        result = fetch_appi_gram1b_report(logger, driver, bs=bs, cookies=cookies, dirname=dirname, url=url)
+        retries -= 1
+        if result == 'SUCCESS':
+            break
 
     driverFinalize(driver) 
     displayFinalize(display)
