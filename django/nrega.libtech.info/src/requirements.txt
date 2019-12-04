@@ -6,7 +6,7 @@ botocore==1.5.39
 bs4==0.0.1
 Django==1.11
 django-storages==1.5.2
-djangorestframework==3.6.4
+djangorestframework==3.9.1
 docutils==0.13.1
 EasyProcess==0.2.3
 httplib2==0.10.3
