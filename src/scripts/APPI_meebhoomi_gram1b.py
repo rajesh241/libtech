@@ -106,7 +106,7 @@ def fetch_captcha(logger, cookies=None, url=None):
     return pytesseract.image_to_string(Image.open(filename))
 
 
-def fetch_appi_gram1b_report(logger, driver, dirname=None, url=None, district_name=None, mandal_name=None, village_name=None):
+def fetch_appi_gram1b_report(logger, driver, html_source=None, cookies=None, dirname=None, url=None, district_name=None, mandal_name=None, village_name=None):
     if not district_name:
         district_name = 'శ్రీకాకుళం'
 
@@ -118,44 +118,14 @@ def fetch_appi_gram1b_report(logger, driver, dirname=None, url=None, district_na
 
     captcha_text = ''
     
-    filename = '%s/%s_%s_%s_parent.html' % (dirname, district_name, mandal_name, village_name)
+    filename = '%s/%s_%s_%s_rejected_payments.html' % (dirname, district_name, mandal_name, village_name)
     if os.path.exists(filename):
         logger.info('File already donwnloaded. Skipping [%s]' % filename)
         return 'SUCCESS'
 
-    try:
-        logger.info("Fetching...[%s]" % url)
-        driver.get(url)
-        # time.sleep(5)
-        
-        logger.info('Waiting for the base page to load...')
-        elem = WebDriverWait(driver, 10).until(
-          EC.presence_of_element_located((By.ID, "ContentPlaceHolder1_txtCaptcha"))
-        )
-    except Exception as e:
-        logger.error('Exception on WebDriverWait(10) - EXCEPT[%s:%s]' % (type(e), e))
-        return 'FAILURE'
-        
-    html_source = driver.page_source.replace('<head>',
-                                                 '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
-    logger.debug("HTML Fetched [%s]" % html_source)
-    
-    with open(filename, 'w') as html_file:
-        logger.info('Writing [%s]' % filename)
-        html_file.write(html_source)
-
     bs = BeautifulSoup(html_source, 'html.parser')
-        
-    cookies = driver.get_cookies()
-    logger.info('Cookies[%s]' % cookies)
-    logger.info('Cookie -> Session ID[%s]' % cookies[0]['value'])
 
     try:
-
-        # elem = driver.find_element_by_id('ctl00_MainContent_ddlDistrict')
-        # elem = driver.find_element_by_name('ctl00$MainContent$ddlDistrict')
-        # elem.send_keys(district_name)
-
         select = Select(driver.find_element_by_id('ContentPlaceHolder1_ddlDist'))
         select.select_by_visible_text(district_name)
         # elem.click()
@@ -233,7 +203,6 @@ def fetch_appi_gram1b_report(logger, driver, dirname=None, url=None, district_na
         html_source = driver.page_source.replace('<head>',
                                                  '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
         logger.debug("HTML Fetched [%s]" % html_source)
-        filename = '%s/%s_%s_%s_rejected_payments.html' % (dirname, district_name, mandal_name, village_name)
         with open(filename, 'w') as html_file:
             logger.info('Writing [%s]' % filename)
             html_file.write(html_source)
@@ -249,9 +218,9 @@ def fetch_appi_gram1b_report(logger, driver, dirname=None, url=None, district_na
     except Exception as e:
         logger.error('Exception for captcha_id[%s] - EXCEPT[%s:%s]' % (captcha_text, type(e), e))
         return 'FAILURE'
-
         
     return 'SUCCESS'
+
 
 def fetch_appi_reports(logger, dirname=None, url=None):
     logger.info('Fetch the captcha_ids into dir[%s]' % dirname)
@@ -265,16 +234,41 @@ def fetch_appi_reports(logger, dirname=None, url=None):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise    
+
+    filename = '%s/parent.html' % (dirname)
+
+    try:
+        logger.info("Fetching...[%s]" % url)
+        driver.get(url)
+        # time.sleep(5)
+        
+        logger.info('Waiting for the base page to load...')
+        elem = WebDriverWait(driver, 10).until(
+          EC.presence_of_element_located((By.ID, "ContentPlaceHolder1_txtCaptcha"))
+        )
+    except Exception as e:
+        logger.error('Exception on WebDriverWait(10) - EXCEPT[%s:%s]' % (type(e), e))
+        return 'FAILURE'
+        
+    html_source = driver.page_source.replace('<head>',
+                                                 '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+    logger.debug("HTML Fetched [%s]" % html_source)
+    
+    with open(filename, 'w') as html_file:
+        logger.info('Writing [%s]' % filename)
+        html_file.write(html_source)
+        
+    cookies = driver.get_cookies()
+    logger.info('Cookies[%s]' % cookies)
+    logger.info('Cookie -> Session ID[%s]' % cookies[0]['value'])
     
     if True:
-        result = fetch_appi_gram1b_report(logger, driver, dirname=dirname, url=url)
+        result = fetch_appi_gram1b_report(logger, driver, html_source=html_source, cookies=cookies, dirname=dirname, url=url)
         driverFinalize(driver)
         displayFinalize(display)
         #process_cleanup(logger)
         return 'SUCCESS'
 
-    # This part can go eventual - FIXME  ---vvv
-    
     url = 'http://n.libtech.info:8000/api/panchayats/?bid=%s' % block_id
     
     try:
