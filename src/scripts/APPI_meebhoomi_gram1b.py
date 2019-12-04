@@ -101,12 +101,12 @@ def fetch_captcha(logger, cookies=None, url=None):
         logger.info('Writing [%s]' % filename)
         html_file.write(response.content)
 
-    check_output(['convert', filename, '-resample', '60', filename]) # 35 is actual height. 60 seems to work
+    check_output(['convert', filename, '-resample', '35', filename])
 
     return pytesseract.image_to_string(Image.open(filename))
 
 
-def fetch_appi_gram1b_report(logger, driver, html_source=None, cookies=None, dirname=None, url=None, district_name=None, mandal_name=None, village_name=None):
+def fetch_appi_gram1b_report(logger, driver, bs=None, cookies=None, dirname=None, url=None, district_name=None, mandal_name=None, village_name=None):
     if not district_name:
         district_name = 'శ్రీకాకుళం'
 
@@ -123,8 +123,7 @@ def fetch_appi_gram1b_report(logger, driver, html_source=None, cookies=None, dir
         logger.info('File already donwnloaded. Skipping [%s]' % filename)
         return 'SUCCESS'
 
-    bs = BeautifulSoup(html_source, 'html.parser')
-
+    timeout = 2
     try:
         select = Select(driver.find_element_by_id('ContentPlaceHolder1_ddlDist'))
         select.select_by_visible_text(district_name)
@@ -153,6 +152,7 @@ def fetch_appi_gram1b_report(logger, driver, html_source=None, cookies=None, dir
         logger.info('Fetching URL[%s]' % url)
 
         captcha_text = fetch_captcha(logger, cookies, url)
+        time.sleep(timeout)
         logger.info('Captcha Text[%s]' % captcha_text)
         
         elem = driver.find_element_by_id('ContentPlaceHolder1_txtCaptcha')
@@ -172,7 +172,7 @@ def fetch_appi_gram1b_report(logger, driver, html_source=None, cookies=None, dir
             #time.sleep(2)
         else:
             logger.error("Handlers gone wrong [" + str(driver.window_handles) + 'captcha_id %s' % captcha_text + "]")
-            driver.save_screenshot('./logs/button_'+captcha_text+'.png')
+            driver.save_screenshot('./button_'+captcha_text+'.png')
             return 'FAILURE'
     except Exception as e:
         logger.error('Exception for Captcha[%s] - EXCEPT[%s:%s]' % (captcha_text, type(e), e))
@@ -258,12 +258,14 @@ def fetch_appi_reports(logger, dirname=None, url=None):
         logger.info('Writing [%s]' % filename)
         html_file.write(html_source)
         
+    bs = BeautifulSoup(html_source, 'html.parser')
+
     cookies = driver.get_cookies()
     logger.info('Cookies[%s]' % cookies)
     logger.info('Cookie -> Session ID[%s]' % cookies[0]['value'])
     
     if True:
-        result = fetch_appi_gram1b_report(logger, driver, html_source=html_source, cookies=cookies, dirname=dirname, url=url)
+        result = fetch_appi_gram1b_report(logger, driver, bs=bs, cookies=cookies, dirname=dirname, url=url)
         driverFinalize(driver)
         displayFinalize(display)
         #process_cleanup(logger)
