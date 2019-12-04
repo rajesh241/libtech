@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 from PIL import Image
+from subprocess import check_output
 
 import os
 CUR_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -36,7 +37,7 @@ import pandas as pd
 
 timeout = 3
 directory = 'reports'
-url = 'https://meebhoomi.ap.gov.in/ROR.aspx'
+base_url = 'https://meebhoomi.ap.gov.in/'
 
 #############
 # Functions
@@ -100,10 +101,12 @@ def fetch_captcha(logger, cookies=None, url=None):
         logger.info('Writing [%s]' % filename)
         html_file.write(response.content)
 
+    check_output(['convert', filename, '-resample', '60', filename]) # 35 is actual height. 60 seems to work
+
     return pytesseract.image_to_string(Image.open(filename))
 
 
-def fetch_appi_report(logger, driver, dirname=None, url=None, district_name=None, mandal_name=None, village_name=None):
+def fetch_appi_gram1b_report(logger, driver, dirname=None, url=None, district_name=None, mandal_name=None, village_name=None):
     if not district_name:
         district_name = 'శ్రీకాకుళం'
 
@@ -118,26 +121,36 @@ def fetch_appi_report(logger, driver, dirname=None, url=None, district_name=None
     filename = '%s/%s_%s_%s_parent.html' % (dirname, district_name, mandal_name, village_name)
     if os.path.exists(filename):
         logger.info('File already donwnloaded. Skipping [%s]' % filename)
-        # return 'SUCCESS'
+        return 'SUCCESS'
 
     try:
         logger.info("Fetching...[%s]" % url)
         driver.get(url)
-        time.sleep(10)
-
-        html_source = driver.page_source.replace('<head>',
-                                                 '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
-        logger.debug("HTML Fetched [%s]" % html_source)
-    
-        with open(filename, 'w') as html_file:
-            logger.info('Writing [%s]' % filename)
-            html_file.write(html_source)
-
-        bs = BeautifulSoup(html_source, 'html.parser')
-
+        # time.sleep(5)
         
-        cookies = driver.get_cookies()
-        logger.info('Cookies[%s]' % cookies)
+        logger.info('Waiting for the base page to load...')
+        elem = WebDriverWait(driver, 10).until(
+          EC.presence_of_element_located((By.ID, "ContentPlaceHolder1_txtCaptcha"))
+        )
+    except Exception as e:
+        logger.error('Exception on WebDriverWait(10) - EXCEPT[%s:%s]' % (type(e), e))
+        return 'FAILURE'
+        
+    html_source = driver.page_source.replace('<head>',
+                                                 '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+    logger.debug("HTML Fetched [%s]" % html_source)
+    
+    with open(filename, 'w') as html_file:
+        logger.info('Writing [%s]' % filename)
+        html_file.write(html_source)
+
+    bs = BeautifulSoup(html_source, 'html.parser')
+        
+    cookies = driver.get_cookies()
+    logger.info('Cookies[%s]' % cookies)
+    logger.info('Cookie -> Session ID[%s]' % cookies[0]['value'])
+
+    try:
 
         # elem = driver.find_element_by_id('ctl00_MainContent_ddlDistrict')
         # elem = driver.find_element_by_name('ctl00$MainContent$ddlDistrict')
@@ -164,16 +177,13 @@ def fetch_appi_report(logger, driver, dirname=None, url=None, district_name=None
 
         imgs = bs.findAll("img")
         img = imgs[3]
-        logger.info('Yippie [%s]' % img.attrs)
+        logger.debug('Yippie [%s]' % img.attrs)
 
-        src = img['src']
-
-        logger.info('Captcha URL[%s]' % cookies[0]['value'])
-
-        url = 'https://meebhoomi.ap.gov.in/' + src
+        url = base_url + img['src']
         logger.info('Fetching URL[%s]' % url)
 
         captcha_text = fetch_captcha(logger, cookies, url)
+        logger.info('Captcha Text[%s]' % captcha_text)
         
         elem = driver.find_element_by_id('ContentPlaceHolder1_txtCaptcha')
         elem.send_keys(captcha_text)
@@ -257,7 +267,7 @@ def fetch_appi_reports(logger, dirname=None, url=None):
             raise    
     
     if True:
-        result = fetch_appi_report(logger, driver, dirname=dirname, url=url)
+        result = fetch_appi_gram1b_report(logger, driver, dirname=dirname, url=url)
         driverFinalize(driver)
         displayFinalize(display)
         #process_cleanup(logger)
@@ -546,6 +556,8 @@ class TestSuite(unittest.TestCase):
 
     def test_fetch_appi_report(self):
         count = 0
+        url = base_url + 'ROR.aspx'
+
         while True:
             count += 1
             result = fetch_appi_reports(self.logger, dirname=directory, url=url)
