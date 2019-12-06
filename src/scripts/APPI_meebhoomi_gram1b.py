@@ -28,7 +28,7 @@ from wrappers.sn import driverInitialize, driverFinalize, displayInitialize, dis
 
 import psutil
 import pandas as pd
-
+import json
 
 
 #######################
@@ -70,15 +70,25 @@ def process_cleanup(logger):
     os.system('cd /tmp; pkill firefox; pkill Xvfb; rm -rf rust_mozprofile.* tmp*')
     logger.info('Process Cleanup Ends')
 
+
+def fetch_lookup(logger, url=None, cookies=None, headers=None, data=None):
+    logger.info('Fetching URL[%s]...' % url)
+    response = requests.post(url, headers=headers, cookies=cookies, data=data)
+    logger.info(response.content)
+    
+    data = pd.read_json(response.content)
+    if data['d'].empty:
+        logger.error('Why empty?')
+        #exit(0)
+    df = pd.DataFrame(data['d'].tolist(), columns=['name', 'value'])
+
+    lookup = df.set_index('value').to_dict('dict')['name']
+    logger.debug(lookup)
+
+    return lookup
+
     
 def fetch_captcha(logger, cookies=None, url=None):
-    import requests
-
-    cookies = {
-        'hibext_instdsigdipv2': '1',
-        'ASP.NET_SessionId': cookies[0]['value'],
-    }    
-
     headers = {
         'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0',
         'Accept': 'image/webp,*/*',
@@ -107,6 +117,12 @@ def fetch_captcha(logger, cookies=None, url=None):
 
 
 def fetch_appi_gram1b_report(logger, driver, bs=None, cookies=None, dirname=None, url=None, district_name=None, mandal_name=None, village_name=None):
+    if not dirname:
+        dirname = directory
+
+    if not url:
+        url = base_url + 'ROR.aspx'
+    
     if not district_name:
         district_name = 'శ్రీకాకుళం'
 
@@ -120,10 +136,10 @@ def fetch_appi_gram1b_report(logger, driver, bs=None, cookies=None, dirname=None
     
     filename = '%s/%s_%s_%s_rejected_payments.html' % (dirname, district_name, mandal_name, village_name)
     if os.path.exists(filename):
-        logger.info('File already donwnloaded. Skipping [%s]' % filename)
+        logger.info('File already downloaded. Skipping [%s]' % filename)
         return 'SUCCESS'
 
-    timeout = 2
+    #timeout = 2
     try:
         select = Select(driver.find_element_by_id('ContentPlaceHolder1_ddlDist'))
         select.select_by_visible_text(district_name)
@@ -264,17 +280,84 @@ def fetch_appi_reports(logger, dirname=None, url=None):
 
     cookies = driver.get_cookies()
     logger.info('Cookies[%s]' % cookies)
-    logger.info('Cookie -> Session ID[%s]' % cookies[0]['value'])
+    logger.debug('Cookie -> Session ID[%s]' % cookies[0]['value'])
     
+    cookies = {
+        'hibext_instdsigdipv2': '1',
+        'ASP.NET_SessionId': cookies[0]['value'],
+    }
+
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0',
+        'Accept': '*/*',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/json; charset=utf-8',
+        'Origin': 'https://meebhoomi.ap.gov.in',
+        'Connection': 'keep-alive',
+        'Referer': 'https://meebhoomi.ap.gov.in/ROR.aspx',
+        'DNT': '1',
+    }
+
+    data = '{"knownCategoryValues":"","category":"District"}'
+    
+    '''
     url = base_url
 
-    '''
     try:
         logger.info('Requesting URL[%s]' % url)
         response = requests.get(url, timeout=timeout, cookies=cookies)
     except Exception as e:
         logger.error('Caught Exception[%s]' % e) 
     '''
+    filename = '%s/district.json' % directory
+    if os.path.exists(filename):
+        logger.info('File already downloaded. Reading [%s]...' % filename)
+        with open(filename) as json_file:
+            district_lookup = json.load(json_file)
+    else:
+        url = base_url + 'UtilityWebService.asmx/GetDistricts'
+        district_lookup = fetch_lookup(logger, url=url, cookies=cookies, headers=headers, data=data)
+
+        with open(filename, 'w') as json_file:
+            logger.info('Writing [%s]' % filename)
+            json_file.write(json.dumps(district_lookup))
+    logger.info(district_lookup)
+
+    for district_no, district_name in district_lookup.items():
+        logger.info('Fetch Mandals for District[%s] = [%s]' % (district_name, district_no))
+        url = base_url + 'UtilityWebService.asmx/GetMandals'
+        data = '{"knownCategoryValues":"District:%s;","category":"Mandal"}' % (district_no)
+        logger.info('With Data[%s]' % data)
+
+        mandal_lookup = fetch_lookup(logger, url=url, cookies=cookies, headers=headers, data=data)
+        logger.info(mandal_lookup)
+        filename = '%s/%s_%s_mandal_list.json' % (directory, district_no, district_name)
+        with open(filename, 'w') as json_file:
+            logger.info('Writing [%s]' % filename)
+            json_file.write(json.dumps(mandal_lookup))
+
+        url = base_url + 'UtilityWebService.asmx/GetVillages'
+        for mandal_no, mandal_name in mandal_lookup.items():
+            logger.info('Fetch Villages for Mandal[%s] = [%s]' % (mandal_name, mandal_no))
+            data = '{"knownCategoryValues":"District:%s;Mandal:%02s;","category":"Mandal"}' % (district_no, mandal_no)
+            logger.info('With Data[%s]' % data)
+
+            village_lookup = fetch_lookup(logger, url=url, cookies=cookies, headers=headers, data=data)
+            logger.info(village_lookup)
+            filename = '%s/%s_%s_village_list.json' % (directory, district_name, mandal_name)
+            with open(filename, 'w') as json_file:
+                logger.info('Writing [%s]' % filename)
+                json_file.write(json.dumps(village_lookup))
+
+
+    '''
+            for village_no, village_name in village_lookup.items():
+                logger.info('Fetch rejected payment report for District[%s] > Mandal[%s] > Village[%s]' % (district_name, mandal_name, village_name))
+                result = fetch_appi_gram1b_report(logger, driver, bs=bs, cookies=cookies,
+                                                  district_name=district_name.strip(),
+                                                  mandal_name=mandal_name.strip(),
+                                                  village_name=village_name.strip())
 
     if False:
         result = fetch_appi_gram1b_report(logger, driver, bs=bs, cookies=cookies, dirname=dirname, url=url)
@@ -289,7 +372,8 @@ def fetch_appi_reports(logger, dirname=None, url=None):
         retries -= 1
         if result == 'SUCCESS':
             break
-
+    '''
+    
     driverFinalize(driver) 
     displayFinalize(display)
     return 'SUCCESS'
