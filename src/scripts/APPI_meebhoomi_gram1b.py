@@ -71,7 +71,42 @@ def process_cleanup(logger):
     logger.info('Process Cleanup Ends')
 
 
-def fetch_lookup(logger, url=None, cookies=None, headers=None, data=None):
+def fetch_parent(logger, driver, url=None):
+    if not url:
+        url = base_url + 'ROR.aspx'
+    filename = '%s/parent.html' % (directory)
+    logger.info("Fetching...[%s]" % url)
+
+    try:
+        driver.get(url)
+        # time.sleep(5)
+        
+        logger.info('Waiting for the base page to load...')
+        elem = WebDriverWait(driver, 10).until(
+          EC.presence_of_element_located((By.ID, "ContentPlaceHolder1_txtCaptcha"))
+        )
+    except Exception as e:
+        logger.error('Exception on WebDriverWait(10) - EXCEPT[%s:%s]' % (type(e), e))
+        return 'FAILURE'
+        
+    html_source = driver.page_source.replace('<head>',
+                                                 '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+    logger.debug("HTML Fetched [%s]" % html_source)
+    
+    with open(filename, 'w') as html_file:
+        logger.info('Writing [%s]' % filename)
+        html_file.write(html_source)
+        
+    return BeautifulSoup(html_source, 'html.parser')
+
+
+def fetch_lookup(logger, filename, url=None, cookies=None, headers=None, data=None):
+    if os.path.exists(filename):
+        logger.info('File already downloaded. Reading [%s]...' % filename)
+        with open(filename) as json_file:
+            lookup = json.load(json_file)
+        return lookup
+    
     logger.info('Fetching URL[%s]...' % url)
     response = requests.post(url, headers=headers, cookies=cookies, data=data)
     logger.info(response.content)
@@ -85,6 +120,10 @@ def fetch_lookup(logger, url=None, cookies=None, headers=None, data=None):
     lookup = df.set_index('value').to_dict('dict')['name']
     logger.debug(lookup)
 
+    with open(filename, 'w') as json_file:
+        logger.info('Writing [%s]' % filename)
+        json_file.write(json.dumps(lookup))
+        
     return lookup
 
     
@@ -111,12 +150,14 @@ def fetch_captcha(logger, cookies=None, url=None):
         logger.info('Writing [%s]' % filename)
         html_file.write(response.content)
 
-    check_output(['convert', filename, '-resample', '35', filename])
+    check_output(['convert', filename, '-resample', '60', filename])
 
-    return pytesseract.image_to_string(Image.open(filename))
+    #return pytesseract.image_to_string(Image.open(filename), lang='eng', config='--psm 10 --oem 3 -c tessedit_char_whitelist=0123456789')
+    return pytesseract.image_to_string(Image.open(filename), lang='eng', config='digits')
 
 
-def fetch_appi_gram1b_report(logger, driver, bs=None, cookies=None, dirname=None, url=None, district_name=None, mandal_name=None, village_name=None):
+def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=None, district_name=None, mandal_name=None, village_name=None):
+    logger.info('Verify District[%s] > Mandal[%s] > Village[%s]' % (district_name, mandal_name, village_name))
     if not dirname:
         dirname = directory
 
@@ -139,7 +180,9 @@ def fetch_appi_gram1b_report(logger, driver, bs=None, cookies=None, dirname=None
         logger.info('File already downloaded. Skipping [%s]' % filename)
         return 'SUCCESS'
 
-    #timeout = 2
+    bs = fetch_parent(logger, driver)
+    
+    timeout = 2
     try:
         select = Select(driver.find_element_by_id('ContentPlaceHolder1_ddlDist'))
         select.select_by_visible_text(district_name)
@@ -161,7 +204,13 @@ def fetch_appi_gram1b_report(logger, driver, bs=None, cookies=None, dirname=None
 
 
         imgs = bs.findAll("img")
-        img = imgs[3]
+        logger.info('imgs[%s]' % imgs)
+        logger.info('no of images = %s!' % len(imgs))
+        if len(imgs) < 4:
+            img = imgs[1]
+            #return 'FAILURE'
+        else:
+            img = imgs[3]
         logger.debug('Yippie [%s]' % img.attrs)
 
         url = base_url + img['src']
@@ -182,21 +231,23 @@ def fetch_appi_gram1b_report(logger, driver, bs=None, cookies=None, dirname=None
         
         parent_handle = driver.current_window_handle
         logger.info("Handles : %s" % driver.window_handles + "Number : %d" % len(driver.window_handles))
-        
-        if len(driver.window_handles) == 2:
-            driver.switch_to.window(driver.window_handles[-1])
-            #time.sleep(2)
-        else:
-            logger.error("Handlers gone wrong [" + str(driver.window_handles) + 'captcha_id %s' % captcha_text + "]")
-            driver.save_screenshot('./button_'+captcha_text+'.png')
-            alert = driver.switch_to_alert()
-            alert.accept()
-            return 'FAILURE'
     except Exception as e:
         logger.error('Exception for Captcha[%s] - EXCEPT[%s:%s]' % (captcha_text, type(e), e))
         time.sleep(10)
         return 'FAILURE'
-
+        
+    if len(driver.window_handles) == 2:
+        driver.switch_to.window(driver.window_handles[-1])
+        #time.sleep(2)
+    else:
+        logger.error("Handlers gone wrong [" + str(driver.window_handles) + 'captcha_id %s' % captcha_text + "]")
+        driver.save_screenshot('./button_'+captcha_text+'.png')
+        try:
+            alert = driver.switch_to.alert  # driver.switch_to_alert()
+            alert.accept()
+        except:
+            logger.warning('No ALERT')
+        return 'FAILURE'
     try:
         logger.info('Waiting for the dialog box to open')
         elem = WebDriverWait(driver, timeout).until(
@@ -204,6 +255,8 @@ def fetch_appi_gram1b_report(logger, driver, bs=None, cookies=None, dirname=None
         )
     except (WebDriverException) as e:
         logger.critical('Not found for captcha_id[%s] - EXCEPT[%s:%s]' % (captcha_text, type(e), e))
+        driver.close()
+        driver.switch_to.window(parent_handle)
         return 'ABORT'
     except TimeoutException as e:
         logger.error('Timeout waiting for dialog box - EXCEPT[%s:%s]' % (type(e), e))
@@ -241,11 +294,11 @@ def fetch_appi_gram1b_report(logger, driver, bs=None, cookies=None, dirname=None
 
 
 def fetch_appi_reports(logger, dirname=None, url=None):
-    logger.info('Fetch the captcha_ids into dir[%s]' % dirname)
+    logger.info('Fetch the Gram 1B reports into dir[%s]' % dirname)
 
-    display = displayInitialize(1)
-    #driver = driverInitialize(timeout=3, options='--headless') # driverInitialize(path='/opt/firefox/', timeout=3)
-    driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
+    display = displayInitialize(0)
+    driver = driverInitialize(timeout=3, options='--headless') # driverInitialize(path='/opt/firefox/', timeout=3)
+    #driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
     
     try:
         os.makedirs(dirname)
@@ -253,30 +306,17 @@ def fetch_appi_reports(logger, dirname=None, url=None):
         if e.errno != errno.EEXIST:
             raise    
 
-    filename = '%s/parent.html' % (dirname)
+    #driver.get(base_url)
+    fetch_parent(logger, driver)
+    '''
+    url = base_url
 
     try:
-        logger.info("Fetching...[%s]" % url)
-        driver.get(url)
-        # time.sleep(5)
-        
-        logger.info('Waiting for the base page to load...')
-        elem = WebDriverWait(driver, 10).until(
-          EC.presence_of_element_located((By.ID, "ContentPlaceHolder1_txtCaptcha"))
-        )
+        logger.info('Requesting URL[%s]' % url)
+        response = requests.get(url, timeout=timeout, cookies=cookies)
     except Exception as e:
-        logger.error('Exception on WebDriverWait(10) - EXCEPT[%s:%s]' % (type(e), e))
-        return 'FAILURE'
-        
-    html_source = driver.page_source.replace('<head>',
-                                                 '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
-    logger.debug("HTML Fetched [%s]" % html_source)
-    
-    with open(filename, 'w') as html_file:
-        logger.info('Writing [%s]' % filename)
-        html_file.write(html_source)
-        
-    bs = BeautifulSoup(html_source, 'html.parser')
+        logger.error('Caught Exception[%s]' % e) 
+    '''
 
     cookies = driver.get_cookies()
     logger.info('Cookies[%s]' % cookies)
@@ -301,63 +341,40 @@ def fetch_appi_reports(logger, dirname=None, url=None):
 
     data = '{"knownCategoryValues":"","category":"District"}'
     
-    '''
-    url = base_url
-
-    try:
-        logger.info('Requesting URL[%s]' % url)
-        response = requests.get(url, timeout=timeout, cookies=cookies)
-    except Exception as e:
-        logger.error('Caught Exception[%s]' % e) 
-    '''
     filename = '%s/district.json' % directory
-    if os.path.exists(filename):
-        logger.info('File already downloaded. Reading [%s]...' % filename)
-        with open(filename) as json_file:
-            district_lookup = json.load(json_file)
-    else:
-        url = base_url + 'UtilityWebService.asmx/GetDistricts'
-        district_lookup = fetch_lookup(logger, url=url, cookies=cookies, headers=headers, data=data)
-
-        with open(filename, 'w') as json_file:
-            logger.info('Writing [%s]' % filename)
-            json_file.write(json.dumps(district_lookup))
+    district_url = base_url + 'UtilityWebService.asmx/GetDistricts'
+    district_lookup = fetch_lookup(logger, filename, url=district_url, cookies=cookies, headers=headers, data=data)
     logger.info(district_lookup)
 
+    mandal_url = base_url + 'UtilityWebService.asmx/GetMandals'
     for district_no, district_name in district_lookup.items():
         logger.info('Fetch Mandals for District[%s] = [%s]' % (district_name, district_no))
-        url = base_url + 'UtilityWebService.asmx/GetMandals'
         data = '{"knownCategoryValues":"District:%s;","category":"Mandal"}' % (district_no)
         logger.info('With Data[%s]' % data)
 
-        mandal_lookup = fetch_lookup(logger, url=url, cookies=cookies, headers=headers, data=data)
-        logger.info(mandal_lookup)
         filename = '%s/%s_%s_mandal_list.json' % (directory, district_no, district_name)
-        with open(filename, 'w') as json_file:
-            logger.info('Writing [%s]' % filename)
-            json_file.write(json.dumps(mandal_lookup))
+        mandal_lookup = fetch_lookup(logger, filename, url=mandal_url, cookies=cookies, headers=headers, data=data)
+        logger.info(mandal_lookup)
 
-        url = base_url + 'UtilityWebService.asmx/GetVillages'
+        village_url = base_url + 'UtilityWebService.asmx/GetVillages'
         for mandal_no, mandal_name in mandal_lookup.items():
             logger.info('Fetch Villages for Mandal[%s] = [%s]' % (mandal_name, mandal_no))
             data = '{"knownCategoryValues":"District:%s;Mandal:%02s;","category":"Mandal"}' % (district_no, mandal_no)
             logger.info('With Data[%s]' % data)
 
-            village_lookup = fetch_lookup(logger, url=url, cookies=cookies, headers=headers, data=data)
-            logger.info(village_lookup)
             filename = '%s/%s_%s_village_list.json' % (directory, district_name, mandal_name)
-            with open(filename, 'w') as json_file:
-                logger.info('Writing [%s]' % filename)
-                json_file.write(json.dumps(village_lookup))
+            village_lookup = fetch_lookup(logger, filename, url=village_url, cookies=cookies, headers=headers, data=data)
+            logger.info(village_lookup)
 
-
-    '''
             for village_no, village_name in village_lookup.items():
-                logger.info('Fetch rejected payment report for District[%s] > Mandal[%s] > Village[%s]' % (district_name, mandal_name, village_name))
-                result = fetch_appi_gram1b_report(logger, driver, bs=bs, cookies=cookies,
+                logger.info('Fetch Gram 1B Report for District[%s] > Mandal[%s] > Village[%s]' % (district_name, mandal_name, village_name))
+                result = fetch_appi_gram1b_report(logger, driver, cookies=cookies,
                                                   district_name=district_name.strip(),
                                                   mandal_name=mandal_name.strip(),
                                                   village_name=village_name.strip())
+    '''
+                if result != 'SUCCESS':
+                    return result
 
     if False:
         result = fetch_appi_gram1b_report(logger, driver, bs=bs, cookies=cookies, dirname=dirname, url=url)
@@ -376,7 +393,7 @@ def fetch_appi_reports(logger, dirname=None, url=None):
     
     driverFinalize(driver) 
     displayFinalize(display)
-    return 'SUCCESS'
+    return result # 'SUCCESS'
 
 def parse_appi_report(logger, filename=None, panchayat_name=None, village_name=None, captcha_text=None):
     logger.info('Parse the RN6 HTML file')
@@ -650,8 +667,9 @@ class TestSuite(unittest.TestCase):
 
         while True:
             count += 1
+            self.logger.info('Beginning the download for the nth time, where n=%d' % count)
             result = fetch_appi_reports(self.logger, dirname=directory, url=url)
-            if result == 'SUCCESS' or count == 1:
+            if result == 'SUCCESS' or count == 100:
                 break
         self.assertEqual(result, 'SUCCESS')
 
