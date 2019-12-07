@@ -39,6 +39,9 @@ timeout = 3
 directory = 'reports'
 base_url = 'https://meebhoomi.ap.gov.in/'
 
+village_list = [('విశాఖపట్నం', 'అచ్యుతాపురం', 'జోగన్నపాలెం'), ('విశాఖపట్నం', 'అనంతగిరి', 'నిన్నిమామిడి'), ('విశాఖపట్నం', 'అనందపురం', 'ముచ్చెర్ల')]
+
+
 #############
 # Functions
 #############
@@ -137,11 +140,6 @@ def fetch_captcha(logger, cookies=None, url=None):
         'DNT': '1',
     }
 
-    if False:
-        params = (
-            ('guid', '36430b43-9bb6-40e4-97b3-1b37a9d31ae5'),
-        )
-
     #response = requests.get('https://meebhoomi.ap.gov.in/CaptchaImage.axd', headers=headers, params=params, cookies=cookies)
     response = requests.get(url, headers=headers, cookies=cookies)
     
@@ -150,10 +148,11 @@ def fetch_captcha(logger, cookies=None, url=None):
         logger.info('Writing [%s]' % filename)
         html_file.write(response.content)
 
-    check_output(['convert', filename, '-resample', '60', filename])
+    check_output(['convert', filename, '-resample', '35', filename])
 
-    #return pytesseract.image_to_string(Image.open(filename), lang='eng', config='--psm 10 --oem 3 -c tessedit_char_whitelist=0123456789')
-    return pytesseract.image_to_string(Image.open(filename), lang='eng', config='digits')
+    return pytesseract.image_to_string(Image.open(filename), lang='eng', config='--psm 10 --oem 3 -c tessedit_char_whitelist=0123456789')
+    #return pytesseract.image_to_string(Image.open(filename), lang='eng', config='-c tessedit_char_whitelist=0123456789')
+
 
 
 def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=None, district_name=None, mandal_name=None, village_name=None):
@@ -182,7 +181,7 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
 
     bs = fetch_parent(logger, driver)
     
-    timeout = 2
+    #timeout = 2
     try:
         select = Select(driver.find_element_by_id('ContentPlaceHolder1_ddlDist'))
         select.select_by_visible_text(district_name)
@@ -219,6 +218,9 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
         captcha_text = fetch_captcha(logger, cookies, url)
         time.sleep(timeout)
         logger.info('Captcha Text[%s]' % captcha_text)
+        if len(captcha_text) != 5 or not captcha_text.isdigit():
+            logger.warning('Incorrect Captcha length[%s]' % len(captcha_text))
+            return 'FAILURE'
         
         elem = driver.find_element_by_id('ContentPlaceHolder1_txtCaptcha')
         elem.send_keys(captcha_text)
@@ -228,16 +230,47 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
         logger.info('Clicking Submit')
         elem = driver.find_element_by_id('ContentPlaceHolder1_btn_go')
         elem.click()
+        time.sleep(timeout)
         
-        parent_handle = driver.current_window_handle
-        logger.info("Handles : %s" % driver.window_handles + "Number : %d" % len(driver.window_handles))
     except Exception as e:
         logger.error('Exception for Captcha[%s] - EXCEPT[%s:%s]' % (captcha_text, type(e), e))
         time.sleep(10)
         return 'FAILURE'
+
+    try:
+        WebDriverWait(driver, 3).until(EC.alert_is_present(),
+                                   'Timed out waiting for PA creation ' +
+                                   'confirmation popup to appear.')
+
+        alert = driver.switch_to.alert
+        alert.accept()
+        logger.warning('Handled Alert!')
+        return 'FAILURE'
+    except TimeoutException:
+        logger.warning('Time Out waiting for ALERT')
+    except Exception as e:
+        logger.error('Exception during wait for alert captcha_id[%s] - EXCEPT[%s:%s]' % (captcha_text, type(e), e))
+        
+    if False:
+        try:
+            alert = driver.switch_to.alert  # driver.switch_to_alert()
+            alert.accept()
+        except:
+            logger.warning('No ALERT around Submit')
+            
+    parent_handle = driver.current_window_handle
+    #logger.info("Handles : %s" % driver.window_handles + "Number : %d" % len(driver.window_handles))
+    logger.info("Handles : [%s]    Number : [%d]" % (driver.window_handles, len(driver.window_handles)))
         
     if len(driver.window_handles) == 2:
-        driver.switch_to.window(driver.window_handles[-1])
+        logger.info('Switching Window...')
+        try:
+            alert = driver.switch_to.alert  # driver.switch_to_alert()
+            alert.accept()
+        except:
+            logger.warning('No ALERT Around Handles')
+        driver.switch_to.window(driver.window_handles[1])
+        logger.info('Switched!!!')
         #time.sleep(2)
     else:
         logger.error("Handlers gone wrong [" + str(driver.window_handles) + 'captcha_id %s' % captcha_text + "]")
@@ -270,6 +303,12 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
         driver.switch_to.window(parent_handle)
         return 'ABORT'
 
+    if True:
+        try:
+            alert = driver.switch_to.alert  # driver.switch_to_alert()
+            alert.accept()
+        except:
+            logger.warning('No ALERT around dumping html')
     try:
         html_source = driver.page_source.replace('<head>',
                                                  '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
@@ -296,9 +335,9 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
 def fetch_appi_reports(logger, dirname=None, url=None):
     logger.info('Fetch the Gram 1B reports into dir[%s]' % dirname)
 
-    display = displayInitialize(0)
-    driver = driverInitialize(timeout=3, options='--headless') # driverInitialize(path='/opt/firefox/', timeout=3)
-    #driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
+    display = displayInitialize(1)
+    #driver = driverInitialize(timeout=3, options='--headless') # driverInitialize(path='/opt/firefox/', timeout=3)
+    driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
     
     try:
         os.makedirs(dirname)
@@ -348,6 +387,8 @@ def fetch_appi_reports(logger, dirname=None, url=None):
 
     mandal_url = base_url + 'UtilityWebService.asmx/GetMandals'
     for district_no, district_name in district_lookup.items():
+        if district_no != '3':
+            continue
         logger.info('Fetch Mandals for District[%s] = [%s]' % (district_name, district_no))
         data = '{"knownCategoryValues":"District:%s;","category":"Mandal"}' % (district_no)
         logger.info('With Data[%s]' % data)
@@ -372,10 +413,10 @@ def fetch_appi_reports(logger, dirname=None, url=None):
                                                   district_name=district_name.strip(),
                                                   mandal_name=mandal_name.strip(),
                                                   village_name=village_name.strip())
-    '''
-                if result != 'SUCCESS':
+                if result == 'ABORT':
                     return result
 
+    '''
     if False:
         result = fetch_appi_gram1b_report(logger, driver, bs=bs, cookies=cookies, dirname=dirname, url=url)
         driverFinalize(driver)
@@ -394,6 +435,41 @@ def fetch_appi_reports(logger, dirname=None, url=None):
     driverFinalize(driver) 
     displayFinalize(display)
     return result # 'SUCCESS'
+
+
+def fetch_reports_for(logger, dirname=None, url=None, villages=None):
+    logger.info('Fetch the Gram 1B reports into dir[%s]' % dirname)
+
+    display = displayInitialize(1)
+    driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
+    
+    try:
+        os.makedirs(dirname)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise    
+
+    fetch_parent(logger, driver)
+
+    cookies = driver.get_cookies()
+    logger.info('Cookies[%s]' % cookies)
+    logger.debug('Cookie -> Session ID[%s]' % cookies[0]['value'])
+    
+    cookies = {
+        'hibext_instdsigdipv2': '1',
+        'ASP.NET_SessionId': cookies[0]['value'],
+    }
+
+    for (district_name, mandal_name, village_name) in villages:
+        logger.info('Fetch Gram 1B Report for District[%s] > Mandal[%s] > Village[%s]' % (district_name, mandal_name, village_name))
+        result = fetch_appi_gram1b_report(logger, driver, cookies=cookies,
+                                          district_name=district_name.strip(),
+                                          mandal_name=mandal_name.strip(),
+                                          village_name=village_name.strip())    
+    driverFinalize(driver) 
+    displayFinalize(display)
+    return result # 'SUCCESS'
+
 
 def parse_appi_report(logger, filename=None, panchayat_name=None, village_name=None, captcha_text=None):
     logger.info('Parse the RN6 HTML file')
@@ -671,6 +747,12 @@ class TestSuite(unittest.TestCase):
             result = fetch_appi_reports(self.logger, dirname=directory, url=url)
             if result == 'SUCCESS' or count == 100:
                 break
+        self.assertEqual(result, 'SUCCESS')
+
+    @unittest.skip('Skipping direct command approach')
+    def test_fetch_appi_report_for(self):
+        url = base_url + 'ROR.aspx'
+        result = fetch_reports_for(self.logger, dirname=directory, url=url, villages=village_list)
         self.assertEqual(result, 'SUCCESS')
 
     @unittest.skip('Skipping direct command approach')
