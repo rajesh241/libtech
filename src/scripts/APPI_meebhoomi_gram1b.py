@@ -342,7 +342,6 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
     
     captcha_text = ''
     
-    # filename = '%s/%s_%s_%s_rejected_payments.html' % (dirname, district_no, mandal_no, village_no)
     logger.info('Verifying File [%s]' % filename)
     if os.path.exists(filename):
         logger.info('File already downloaded. Skipping [%s]' % filename)
@@ -354,29 +353,24 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
     try:
         select = Select(driver.find_element_by_id('ContentPlaceHolder1_ddlDist'))
         select.select_by_value(district_no)
-        # elem.click()
         logger.info('Selected District [%s]' % district_no)
         time.sleep(timeout)
 
         select = Select(driver.find_element_by_id('ContentPlaceHolder1_ddlMandals'))
         select.select_by_value(mandal_no)
-        # elem.click()
         logger.info('Selected Mandal [%s]' % mandal_no)
         time.sleep(timeout)
 
         select = Select(driver.find_element_by_id('ContentPlaceHolder1_ddlVillageName'))
         select.select_by_value(village_no)
-        # elem.click()
         logger.info('Selected Village [%s]' % village_no)
         time.sleep(timeout)
 
-
         imgs = bs.findAll("img")
-        logger.info('imgs[%s]' % imgs)
+        logger.debug('imgs[%s]' % imgs)
         logger.info('no of images = %s!' % len(imgs))
         if len(imgs) < 4:
             img = imgs[1]
-            #return 'FAILURE'
         else:
             img = imgs[3]
         logger.debug('Yippie [%s]' % img.attrs)
@@ -388,7 +382,7 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
         time.sleep(timeout)
         logger.info('Captcha Text[%s]' % captcha_text)
         if len(captcha_text) != 5 or not captcha_text.isdigit():
-            logger.warning('Incorrect Captcha length[%s]' % len(captcha_text))
+            logger.warning('Incorrect Captcha length[%s] or non digit data' % len(captcha_text))
             return 'FAILURE'
         
         elem = driver.find_element_by_id('ContentPlaceHolder1_txtCaptcha')
@@ -403,20 +397,19 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
         
     except Exception as e:
         logger.error('Exception for Captcha[%s] - EXCEPT[%s:%s]' % (captcha_text, type(e), e))
-        time.sleep(10)
+        time.sleep(timeout)
         return 'FAILURE'
 
     try:
-        WebDriverWait(driver, 3).until(EC.alert_is_present(),
-                                   'Timed out waiting for PA creation ' +
-                                   'confirmation popup to appear.')
+        WebDriverWait(driver, timeout).until(EC.alert_is_present(),
+                                   'Timed out testing if alert is there')
 
         alert = driver.switch_to.alert
         alert.accept()
         logger.warning('Handled Alert!')
         return 'FAILURE'
     except TimeoutException:
-        logger.warning('Time Out waiting for ALERT')
+        logger.debug('Time Out waiting for ALERT')
     except Exception as e:
         logger.error('Exception during wait for alert captcha_id[%s] - EXCEPT[%s:%s]' % (captcha_text, type(e), e))
         
@@ -433,22 +426,12 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
         
     if len(driver.window_handles) == 2:
         logger.info('Switching Window...')
-        try:
-            alert = driver.switch_to.alert  # driver.switch_to_alert()
-            alert.accept()
-        except:
-            logger.warning('No ALERT Around Handles')
         driver.switch_to.window(driver.window_handles[1])
         logger.info('Switched!!!')
         #time.sleep(2)
     else:
         logger.error("Handlers gone wrong [" + str(driver.window_handles) + 'captcha_id %s' % captcha_text + "]")
         driver.save_screenshot('./button_'+captcha_text+'.png')
-        try:
-            alert = driver.switch_to.alert  # driver.switch_to_alert()
-            alert.accept()
-        except:
-            logger.warning('No ALERT')
         return 'FAILURE'
     try:
         logger.info('Waiting for the dialog box to open')
@@ -472,12 +455,6 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
         driver.switch_to.window(parent_handle)
         return 'ABORT'
 
-    if True:
-        try:
-            alert = driver.switch_to.alert  # driver.switch_to_alert()
-            alert.accept()
-        except:
-            logger.warning('No ALERT around dumping html')
     try:
         html_source = driver.page_source.replace('<head>',
                                                  '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
@@ -578,12 +555,6 @@ def fetch_appi_reports(logger, dirname=None, url=None):
 
             for village_no, village_name in village_lookup.items():
                 logger.info('Fetch Gram 1B Report for District[%s] > Mandal[%s] > Village[%s]' % (district_name, mandal_name, village_name))
-                '''
-                result = fetch_appi_gram1b_report(logger, driver, cookies=cookies,
-                                                  district_name=district_name.strip(),
-                                                  mandal_name=mandal_name.strip(),
-                                                  village_name=village_name.strip())
-                '''
                 filename = '%s/%s_%s_%s_rejected_payments.html' % (dirname, district_name, mandal_name, village_name)                
                 result = fetch_appi_gram1b_report(logger, driver, cookies=cookies,
                                                   district_no=district_no,
@@ -591,23 +562,10 @@ def fetch_appi_reports(logger, dirname=None, url=None):
                                                   village_no=village_no,
                                                   filename=filename)
                 if result == 'ABORT':
+                    logger.critical('Aborting Mission!')
+                    driverFinalize(driver) 
+                    displayFinalize(display)
                     return result
-
-    '''
-    if False:
-        result = fetch_appi_gram1b_report(logger, driver, bs=bs, cookies=cookies, dirname=dirname, url=url)
-        driverFinalize(driver)
-        displayFinalize(display)
-        #process_cleanup(logger)
-        return 'SUCCESS'
-
-    retries = 3
-    while True and retries:
-        result = fetch_appi_gram1b_report(logger, driver, bs=bs, cookies=cookies, dirname=dirname, url=url)
-        retries -= 1
-        if result == 'SUCCESS':
-            break
-    '''
     
     driverFinalize(driver) 
     displayFinalize(display)
