@@ -36,7 +36,7 @@ import json
 #######################
 
 timeout = 3
-directory = 'reports'
+directory = '/home/mayank/libtech/src/scripts/reports'
 base_url = 'https://meebhoomi.ap.gov.in/'
 
 village_list = [('విశాఖపట్నం', 'అచ్యుతాపురం', 'జోగన్నపాలెం'), ('విశాఖపట్నం', 'అనంతగిరి', 'నిన్నిమామిడి'), ('విశాఖపట్నం', 'అనందపురం', 'ముచ్చెర్ల')]
@@ -175,6 +175,7 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
     captcha_text = ''
     
     filename = '%s/%s_%s_%s_rejected_payments.html' % (dirname, district_name, mandal_name, village_name)
+    logger.info('Verifying File [%s]' % filename)
     if os.path.exists(filename):
         logger.info('File already downloaded. Skipping [%s]' % filename)
         return 'SUCCESS'
@@ -335,9 +336,9 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
 def fetch_appi_reports(logger, dirname=None, url=None):
     logger.info('Fetch the Gram 1B reports into dir[%s]' % dirname)
 
-    display = displayInitialize(1)
-    #driver = driverInitialize(timeout=3, options='--headless') # driverInitialize(path='/opt/firefox/', timeout=3)
-    driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
+    display = displayInitialize(0)
+    driver = driverInitialize(timeout=3, options='--headless') # driverInitialize(path='/opt/firefox/', timeout=3)
+    #driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
     
     try:
         os.makedirs(dirname)
