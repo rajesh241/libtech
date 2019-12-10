@@ -36,7 +36,8 @@ import json
 #######################
 
 timeout = 3
-directory = '/home/mayank/libtech/src/scripts/reports'
+#directory = '/home/mayank/libtech/src/scripts/reports'
+directory = '/home/mayank/libtech/src/scripts/Vishakhapatnam'
 base_url = 'https://meebhoomi.ap.gov.in/'
 
 village_list = [('విశాఖపట్నం', 'అచ్యుతాపురం', 'జోగన్నపాలెం'), ('విశాఖపట్నం', 'అనంతగిరి', 'నిన్నిమామిడి'), ('విశాఖపట్నం', 'అనందపురం', 'ముచ్చెర్ల')]
@@ -89,8 +90,8 @@ def fetch_parent(logger, driver, url=None):
           EC.presence_of_element_located((By.ID, "ContentPlaceHolder1_txtCaptcha"))
         )
     except Exception as e:
-        logger.error('Exception on WebDriverWait(10) - EXCEPT[%s:%s]' % (type(e), e))
-        return 'FAILURE'
+        logger.critical('Exception on WebDriverWait(10) - EXCEPT[%s:%s]' % (type(e), e))
+        return 'ABORT'
         
     html_source = driver.page_source.replace('<head>',
                                                  '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
@@ -387,13 +388,11 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
         
         elem = driver.find_element_by_id('ContentPlaceHolder1_txtCaptcha')
         elem.send_keys(captcha_text)
-        time.sleep(timeout)
         elem.click()
 
         logger.info('Clicking Submit')
         elem = driver.find_element_by_id('ContentPlaceHolder1_btn_go')
         elem.click()
-        time.sleep(timeout)
         
     except Exception as e:
         logger.error('Exception for Captcha[%s] - EXCEPT[%s:%s]' % (captcha_text, type(e), e))
@@ -413,13 +412,6 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
     except Exception as e:
         logger.error('Exception during wait for alert captcha_id[%s] - EXCEPT[%s:%s]' % (captcha_text, type(e), e))
         
-    if False:
-        try:
-            alert = driver.switch_to.alert  # driver.switch_to_alert()
-            alert.accept()
-        except:
-            logger.warning('No ALERT around Submit')
-            
     parent_handle = driver.current_window_handle
     #logger.info("Handles : %s" % driver.window_handles + "Number : %d" % len(driver.window_handles))
     logger.info("Handles : [%s]    Number : [%d]" % (driver.window_handles, len(driver.window_handles)))
@@ -533,6 +525,7 @@ def fetch_appi_reports(logger, dirname=None, url=None):
 
     mandal_url = base_url + 'UtilityWebService.asmx/GetMandals'
     for district_no, district_name in district_lookup.items():
+        district_name = district_name.strip()
         if district_no != '3':
             continue
         logger.info('Fetch Mandals for District[%s] = [%s]' % (district_name, district_no))
@@ -545,6 +538,7 @@ def fetch_appi_reports(logger, dirname=None, url=None):
 
         village_url = base_url + 'UtilityWebService.asmx/GetVillages'
         for mandal_no, mandal_name in mandal_lookup.items():
+            mandal_name = mandal_name.strip()
             logger.info('Fetch Villages for Mandal[%s] = [%s]' % (mandal_name, mandal_no))
             data = '{"knownCategoryValues":"District:%s;Mandal:%02s;","category":"Mandal"}' % (district_no, mandal_no)
             logger.info('With Data[%s]' % data)
@@ -554,6 +548,7 @@ def fetch_appi_reports(logger, dirname=None, url=None):
             logger.info(village_lookup)
 
             for village_no, village_name in village_lookup.items():
+                village_name = village_name.strip()
                 logger.info('Fetch Gram 1B Report for District[%s] > Mandal[%s] > Village[%s]' % (district_name, mandal_name, village_name))
                 filename = '%s/%s_%s_%s_rejected_payments.html' % (dirname, district_name, mandal_name, village_name)                
                 result = fetch_appi_gram1b_report(logger, driver, cookies=cookies,
