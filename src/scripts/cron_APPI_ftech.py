@@ -6,7 +6,7 @@ import psutil
 
 #print('Running the CRON')
 
-script_name = 'APPI_meebhoomi_gram1b.py' # 'python3 APPI_meebhoomi_gram1b.py'
+script_name = 'APPI_fetch.py' # 'python3 APPI_meebhoomi_gram1b.py'
 
 #filename = '/home/mayank/libtech/src/scripts/nohup.out'
 filename = '/tmp/appi.log'

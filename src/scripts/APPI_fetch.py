@@ -30,6 +30,12 @@ import psutil
 import pandas as pd
 import json
 
+# For crawler.py
+
+from slugify import slugify
+import csv
+import urllib.parse as urlparse
+
 
 #######################
 # Global Declarations
@@ -41,7 +47,7 @@ directory = '/home/mayank/libtech/src/scripts/AllDistricts'
 base_url = 'https://meebhoomi.ap.gov.in/'
 
 village_list = [('విశాఖపట్నం', 'అచ్యుతాపురం', 'జోగన్నపాలెం'), ('విశాఖపట్నం', 'అనంతగిరి', 'నిన్నిమామిడి'), ('విశాఖపట్నం', 'అనందపురం', 'ముచ్చెర్ల')]
-skip_district = ['3'.]
+skip_district = ['3',]
 
 
 #############
@@ -293,7 +299,7 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
     return 'SUCCESS'
 
 
-def fetch_appi_reports(logger, dirname=None, url=None):
+def fetch_gram_1b_reports(logger, dirname=None, url=None):
     logger.info('Fetch the Gram 1B reports into dir[%s]' % dirname)
 
     display = displayInitialize(0)
@@ -391,7 +397,7 @@ def fetch_appi_reports(logger, dirname=None, url=None):
     return result # 'SUCCESS'
 
 
-def fetch_reports_for(logger, dirname=None, url=None, villages=None):
+def fetch_gram_1b_reports_for(logger, dirname=None, url=None, villages=None):
     logger.info('Fetch the Gram 1B reports into dir[%s]' % dirname)
 
     display = displayInitialize(1)
@@ -425,7 +431,7 @@ def fetch_reports_for(logger, dirname=None, url=None, villages=None):
     return result # 'SUCCESS'
 
 
-def parse_appi_report(logger, filename=None, panchayat_name=None, village_name=None, captcha_text=None):
+def parse_gram_1b_report(logger, filename=None, panchayat_name=None, village_name=None, captcha_text=None):
     logger.info('Parse the 1B HTML file')
 
     try:
@@ -533,7 +539,7 @@ def parse_appi_report(logger, filename=None, panchayat_name=None, village_name=N
 
     return data
 
-def dump_appi_reports(logger, dirname=None):
+def dump_gram_1b_reports(logger, dirname=None):
     #from datetime import datetime
 
     logger.info('Dump the RN6 HTMLs into [%s]' % dirname)
@@ -683,6 +689,106 @@ def dump_appi_reports(logger, dirname=None):
 
     return 'SUCCESS'
 
+
+class Crawler():
+    def setup_method(self, method):
+        self.vars = {}
+        self.display = displayInitialize(0)
+        self.driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
+    
+    def teardown_method(self, method):
+        driverFinalize(self.driver) 
+        displayFinalize(self.display)
+      
+    def wait_for_window(self, timeout = 2):
+        time.sleep(round(timeout / 1000))
+        wh_now = self.driver.window_handles
+        wh_then = self.vars["window_handles"]
+        if len(wh_now) > len(wh_then):
+            return set(wh_now).difference(set(wh_then)).pop()
+  
+    def runCrawl(self,logger):
+        self.driver.get("https://ysrrythubharosa.ap.gov.in/RBApp/RB/Login")
+        self.driver.set_window_size(550, 696)
+        input()
+        self.driver.get("https://ysrrythubharosa.ap.gov.in/RBApp/Reports/RBDistrictPaymentAbstract")
+        time.sleep(3)
+        self.vars["window_handles"] = self.driver.window_handles
+        self.driver.find_element(By.LINK_TEXT, "విశాఖపట్నం").click()
+        self.vars["win9760"] = self.wait_for_window(2000)
+        self.driver.switch_to.window(self.vars["win9760"])
+        self.vars["window_handles"] = self.driver.window_handles
+        time.sleep(3)
+        self.driver.find_element(By.LINK_TEXT, "జి.మాడుగుల").click()
+        self.vars["win3091"] = self.wait_for_window(2000)
+        self.driver.switch_to.window(self.vars["win3091"])
+        self.driver.get("https://ysrrythubharosa.ap.gov.in/RBApp/Reports/PaymentvillReport")
+        time.sleep(3)
+        villageXPath="//select[1]"
+        villageSelect=Select(self.driver.find_element_by_xpath(villageXPath))
+        landXpath="//select[2]"
+        landXpath="//*/select[@ng-model='landtypemdl']"
+        landSelect=Select(self.driver.find_element_by_xpath(landXpath))
+        landList=[]
+        for o in landSelect.options[1:]:
+            p={}
+            p['name']=o.text
+            p['value']=o.get_attribute('value')
+            landList.append(p)
+            buttonXPath='//input[@value="submit"]' # "//button[1]"
+            logger.info(landList)
+
+        statusDF=pd.read_csv("status.csv",index_col=0)
+        filteredDF=statusDF[ (statusDF['status'] == 'pending') & (statusDF['inProgress'] == 0)]
+        if len(filteredDF) > 0:
+            curIndex=filteredDF.index[0]
+        else:
+            curIndex=None
+            statusDF.loc[curIndex,'inProgress'] = 1
+            statusDF.to_csv("status.csv")
+            distName="vishakapatnam"
+            blockName="gmadagula"
+        while curIndex is not None:
+            row=filteredDF.loc[curIndex]
+            villageName=row['villageName']   
+            value=str(row['villageCode'])
+            villageSelect.select_by_value(value)
+            villageDFs=[]
+        for p1 in landList:
+            landValue=p1.get("value")
+            landType=p1.get("name")
+            logger.info(f"vilageName {villageName} land Type {landType}")
+            landSelect.select_by_value(landValue)
+            time.sleep(2)
+            btnElem=self.driver.find_element_by_xpath(buttonXPath)
+            self.driver.execute_script("arguments[0].click();", btnElem)
+            time.sleep(3)
+            myhtml = self.driver.page_source
+            dfs=pd.read_html(myhtml) 
+            df=dfs[0]
+            df['villageName']=villageName
+            df['villageNameEng']=slugify(villageName)
+            df['villageCode']=value
+            df['districtName']=distName
+            df['blockName']=blockName
+            villageDFs.append(df)
+        if len(villageDFs) > 0:
+            villageDF=pd.concat(villageDFs)
+        else:
+            colHeaders=["districtName","blockName","villageName"]
+            villageDF=pd.DataFrame([ [] ],columns=colHeaders)
+            csvFileName=f"data/csv/{distName}_{blockName}_{slugify(villageName)}.csv"
+            villageDF.to_csv(csvFileName)
+            statusDF=pd.read_csv("status.csv",index_col=0)
+            filteredDF=statusDF[ (statusDF['status'] == 'pending') & (statusDF['inProgress'] == 0)]
+        if len(filteredDF) > 0:
+            curIndex=filteredDF.index[0]
+        else:
+            curIndex=None
+            statusDF.loc[curIndex,'inProgress'] = 1
+            statusDF.to_csv("status.csv")
+
+  
 class TestSuite(unittest.TestCase):
     def setUp(self):
         self.logger = loggerFetch('info')
@@ -691,7 +797,8 @@ class TestSuite(unittest.TestCase):
     def tearDown(self):
         self.logger.info('...END PROCESSING')
 
-    def test_fetch_appi_report(self):
+    @unittest.skip('Skipping direct command approach')
+    def test_fetch_gram_1b_report(self):
         count = 0
         url = base_url + 'ROR.aspx'
 
@@ -704,15 +811,22 @@ class TestSuite(unittest.TestCase):
         self.assertEqual(result, 'SUCCESS')
 
     @unittest.skip('Skipping direct command approach')
-    def test_fetch_appi_report_for(self):
+    def test_fetch_gram_1b_report_for(self):
         url = base_url + 'ROR.aspx'
         result = fetch_reports_for(self.logger, dirname=directory, url=url, villages=village_list)
         self.assertEqual(result, 'SUCCESS')
 
     @unittest.skip('Skipping direct command approach')
-    def test_dump_appi_report(self):
-        result = dump_appi_reports(self.logger, dirname=directory)
+    def test_dump_gram_1b_report(self):
+        result = dump_gram_1b_reports(self.logger, dirname=directory)
         self.assertEqual(result, 'SUCCESS')
+
+    def test_crawler(self):
+        self.logger.info("Running Crawler Tests")
+        myCrawler=Crawler()
+        method="a"
+        myCrawler.setup_method(method)
+        myCrawler.runCrawl(self.logger)
         
 if __name__ == '__main__':
     unittest.main()
