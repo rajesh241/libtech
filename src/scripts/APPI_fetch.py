@@ -18,6 +18,7 @@ from selenium.common.exceptions import NoSuchElementException, SessionNotCreated
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.keys import Keys
 
 import requests
 import time
@@ -48,6 +49,7 @@ base_url = 'https://meebhoomi.ap.gov.in/'
 
 village_list = [('విశాఖపట్నం', 'అచ్యుతాపురం', 'జోగన్నపాలెం'), ('విశాఖపట్నం', 'అనంతగిరి', 'నిన్నిమామిడి'), ('విశాఖపట్నం', 'అనందపురం', 'ముచ్చెర్ల')]
 skip_district = ['3',]
+is_visible = True
 
 
 #############
@@ -302,7 +304,7 @@ def fetch_appi_gram1b_report(logger, driver, cookies=None, dirname=None, url=Non
 def fetch_gram_1b_reports(logger, dirname=None, url=None):
     logger.info('Fetch the Gram 1B reports into dir[%s]' % dirname)
 
-    display = displayInitialize(0)
+    display = displayInitialize(is_visible)
     driver = driverInitialize(timeout=3, options='--headless') # driverInitialize(path='/opt/firefox/', timeout=3)
     #driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
     
@@ -400,7 +402,7 @@ def fetch_gram_1b_reports(logger, dirname=None, url=None):
 def fetch_gram_1b_reports_for(logger, dirname=None, url=None, villages=None):
     logger.info('Fetch the Gram 1B reports into dir[%s]' % dirname)
 
-    display = displayInitialize(1)
+    display = displayInitialize(is_visible)
     driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
     
     try:
@@ -693,7 +695,7 @@ def dump_gram_1b_reports(logger, dirname=None):
 class Crawler():
     def setup_method(self, method):
         self.vars = {}
-        self.display = displayInitialize(0)
+        self.display = displayInitialize(is_visible)
         self.driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
     
     def teardown_method(self, method):
@@ -709,7 +711,29 @@ class Crawler():
   
     def runCrawl(self,logger):
         self.driver.get("https://ysrrythubharosa.ap.gov.in/RBApp/RB/Login")
-        self.driver.set_window_size(550, 696)
+        time.sleep(3)
+
+        user = '9959905843'
+        elem = self.driver.find_element_by_xpath('//input[@type="text"]')
+        logger.info('Entering User[%s]' % user)
+        elem.send_keys(user)
+
+        password = '9959905843'
+        elem = self.driver.find_element_by_xpath('//input[@type="password"]')
+        logger.info('Entering Password[%s]' % password)
+        elem.send_keys(password)
+
+        captcha_text = '12345'
+        elem = self.driver.find_element_by_xpath('(//input[@type="text"])[2]')
+        logger.info('Entering Captcha_Text[%s]' % captcha_text)
+        elem.send_keys(captcha_text)
+
+        login_button = '(//button[@type="button"])[2]'
+
+        elem = self.driver.find_element_by_xpath(login_button)
+        logger.info('Clicking Login Button')
+        #elem.click()
+        
         input()
         self.driver.get("https://ysrrythubharosa.ap.gov.in/RBApp/Reports/RBDistrictPaymentAbstract")
         time.sleep(3)
@@ -735,8 +759,8 @@ class Crawler():
             p['name']=o.text
             p['value']=o.get_attribute('value')
             landList.append(p)
-            buttonXPath='//input[@value="submit"]' # "//button[1]"
-            logger.info(landList)
+        #buttonXPath="//button[1]"
+        logger.info(landList)
 
         statusDF=pd.read_csv("status.csv",index_col=0)
         filteredDF=statusDF[ (statusDF['status'] == 'pending') & (statusDF['inProgress'] == 0)]
@@ -744,47 +768,79 @@ class Crawler():
             curIndex=filteredDF.index[0]
         else:
             curIndex=None
-            statusDF.loc[curIndex,'inProgress'] = 1
-            statusDF.to_csv("status.csv")
-            distName="vishakapatnam"
-            blockName="gmadagula"
+        statusDF.loc[curIndex,'inProgress'] = 1
+        statusDF.to_csv("status.csv")
+        distName="vishakapatnam"
+        blockName="gmadagula"
         while curIndex is not None:
             row=filteredDF.loc[curIndex]
-            villageName=row['villageName']   
+            villageName=row['villageName']     
             value=str(row['villageCode'])
-            villageSelect.select_by_value(value)
+            try:
+                villageSelect.select_by_value(value)
+            except Exception as e:
+                logger.error('Exception during villageSelect for villageName[%s] - EXCEPT[%s:%s]' % (villageName, type(e), e))
+                elem = self.driver.switch_to.active_element
+                elem.send_keys(Keys.RETURN)
+                #button = self.driver.find_element_by_xpath("//button[@value='OK']").click() # .driver.find_element_by_css_selector(".swal2-header").click()
+                #button.click()
+                logger.warning('Clicked for Village!')
+                break
             villageDFs=[]
-        for p1 in landList:
-            landValue=p1.get("value")
-            landType=p1.get("name")
-            logger.info(f"vilageName {villageName} land Type {landType}")
-            landSelect.select_by_value(landValue)
-            time.sleep(2)
-            btnElem=self.driver.find_element_by_xpath(buttonXPath)
-            self.driver.execute_script("arguments[0].click();", btnElem)
-            time.sleep(3)
-            myhtml = self.driver.page_source
-            dfs=pd.read_html(myhtml) 
-            df=dfs[0]
-            df['villageName']=villageName
-            df['villageNameEng']=slugify(villageName)
-            df['villageCode']=value
-            df['districtName']=distName
-            df['blockName']=blockName
-            villageDFs.append(df)
-        if len(villageDFs) > 0:
-            villageDF=pd.concat(villageDFs)
-        else:
-            colHeaders=["districtName","blockName","villageName"]
-            villageDF=pd.DataFrame([ [] ],columns=colHeaders)
+            for p1 in landList:
+                landValue=p1.get("value")
+                landType=p1.get("name")
+                logger.info(f"vilageName {villageName} land Type {landType}")
+                try:
+                    landSelect.select_by_value(landValue)
+                except Exception as e:
+                    logger.error('Exception during landSelect for landValue[%s] - EXCEPT[%s:%s]' % (landValue, type(e), e))
+                    elem = self.driver.switch_to.active_element
+                    elem.send_keys(Keys.RETURN)
+                    #button = self.driver.find_element_by_xpath("//button[@value='OK']").click() # .driver.find_element_by_css_selector(".swal2-header").click()
+                    #button = self.driver.find_element_by_css_selector(".swal2-header").click()
+                    #button.click()
+                    logger.warning('Clicked for landValue!')
+                    continue
+                    
+                time.sleep(2)
+
+                self.driver.find_element_by_xpath('//input[@value="submit"]').click()
+                try:
+                    WebDriverWait(self.driver, timeout).until(EC.alert_is_present(),
+                                               'Timed out testing if alert is there')
+                    alert = self.driver.switch_to.alert
+                    alert.accept()
+                    logger.warning('Handled Alert!')
+                    continue
+                except TimeoutException:
+                    logger.debug('Time Out waiting for ALERT')
+                except Exception as e:
+                    logger.error('Exception during wait - EXCEPT[%s:%s]' % (type(e), e))
+                
+                time.sleep(3)
+                myhtml = self.driver.page_source
+                dfs=pd.read_html(myhtml) 
+                df=dfs[0]
+                df['villageName']=villageName
+                df['villageNameEng']=slugify(villageName)
+                df['villageCode']=value
+                df['districtName']=distName
+                df['blockName']=blockName
+                villageDFs.append(df)
+            if len(villageDFs) > 0:
+                villageDF=pd.concat(villageDFs)
+            else:
+                colHeaders=["districtName","blockName","villageName"]
+                villageDF=pd.DataFrame([ [] ],columns=colHeaders)
             csvFileName=f"data/csv/{distName}_{blockName}_{slugify(villageName)}.csv"
             villageDF.to_csv(csvFileName)
             statusDF=pd.read_csv("status.csv",index_col=0)
             filteredDF=statusDF[ (statusDF['status'] == 'pending') & (statusDF['inProgress'] == 0)]
-        if len(filteredDF) > 0:
-            curIndex=filteredDF.index[0]
-        else:
-            curIndex=None
+            if len(filteredDF) > 0:
+                curIndex=filteredDF.index[0]
+            else:
+                curIndex=None
             statusDF.loc[curIndex,'inProgress'] = 1
             statusDF.to_csv("status.csv")
 
