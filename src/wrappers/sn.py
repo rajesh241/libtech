@@ -45,9 +45,13 @@ def argsFetch():
   args = vars(parser.parse_args())
   return args
 
-def displayInitialize(isVisible=None):
+def displayInitialize(isVisible=0, isDisabled=False):
+  if isDisabled:
+    return None
+  
   if not isVisible:
     isVisible = visible
+    
   from pyvirtualdisplay import Display
   
   display = Display(visible=isVisible, size=size) # size=(600, 400))
@@ -55,6 +59,9 @@ def displayInitialize(isVisible=None):
   return display
 
 def displayFinalize(display):
+  if not display:
+    return
+  
   display.stop()
 
 def vDisplayInitialize(isVisible=0):

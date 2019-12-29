@@ -695,7 +695,7 @@ def dump_gram_1b_reports(logger, dirname=None):
 class Crawler():
     def setup_method(self, method):
         self.vars = {}
-        self.display = displayInitialize(is_visible)
+        self.display = displayInitialize(isDisabled = True)
         self.driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
     
     def teardown_method(self, method):
