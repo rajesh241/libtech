@@ -695,7 +695,7 @@ def dump_gram_1b_reports(logger, dirname=None):
 class Crawler():
     def setup_method(self, method):
         self.vars = {}
-        self.display = displayInitialize(isDisabled = True)
+        self.display = displayInitialize(isDisabled = True, isVisible = is_visible)
         self.driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
     
     def teardown_method(self, method):
@@ -710,7 +710,9 @@ class Crawler():
             return set(wh_now).difference(set(wh_then)).pop()
   
     def runCrawl(self,logger):
-        self.driver.get("https://ysrrythubharosa.ap.gov.in/RBApp/RB/Login")
+        url = 'https://ysrrythubharosa.ap.gov.in/RBApp/RB/Login'
+        logger.info('Fetching URL[%s]' % url)
+        self.driver.get(url)
         time.sleep(3)
 
         user = '9959905843'
@@ -724,6 +726,17 @@ class Crawler():
         elem.send_keys(password)
 
         captcha_text = '12345'
+        self.driver.save_screenshot('./captcha_'+captcha_text+'.png')
+
+        captcha_img = self.driver.find_element_by_id("captchdis").screenshot_as_png
+        filename = 'captcha.png'
+        with open(filename, 'wb') as html_file:
+            logger.info('Writing [%s]' % filename)
+            html_file.write(captcha_img)
+
+        check_output(['convert', filename, '-resample', '40', filename])
+        captcha_text = pytesseract.image_to_string(Image.open(filename), lang='eng') #, config='--psm 10 --oem 3 -c tessedit_char_whitelist=0123456789')
+        
         elem = self.driver.find_element_by_xpath('(//input[@type="text"])[2]')
         logger.info('Entering Captcha_Text[%s]' % captcha_text)
         elem.send_keys(captcha_text)
@@ -746,7 +759,16 @@ class Crawler():
         self.driver.find_element(By.LINK_TEXT, "జి.మాడుగుల").click()
         self.vars["win3091"] = self.wait_for_window(2000)
         self.driver.switch_to.window(self.vars["win3091"])
-        self.driver.get("https://ysrrythubharosa.ap.gov.in/RBApp/Reports/PaymentvillReport")
+        while(True):
+            result = self.runCrawlForPaymentvillReport(logger)
+            if result == 'SUCCESS':
+                break
+
+        
+    def runCrawlForPaymentvillReport(self,logger):
+        url = 'https://ysrrythubharosa.ap.gov.in/RBApp/Reports/PaymentvillReport'
+        logger.info('Fetching URL[%s]' % url)
+        self.driver.get(url)
         time.sleep(3)
         villageXPath="//select[1]"
         villageSelect=Select(self.driver.find_element_by_xpath(villageXPath))
@@ -763,6 +785,7 @@ class Crawler():
         logger.info(landList)
 
         statusDF=pd.read_csv("status.csv",index_col=0)
+        #logger.info(statusDF)
         filteredDF=statusDF[ (statusDF['status'] == 'pending') & (statusDF['inProgress'] == 0)]
         if len(filteredDF) > 0:
             curIndex=filteredDF.index[0]
@@ -776,20 +799,25 @@ class Crawler():
             row=filteredDF.loc[curIndex]
             villageName=row['villageName']     
             value=str(row['villageCode'])
+            land_type = ''
             try:
                 villageSelect.select_by_value(value)
             except Exception as e:
                 logger.error('Exception during villageSelect for villageName[%s] - EXCEPT[%s:%s]' % (villageName, type(e), e))
+                '''
                 elem = self.driver.switch_to.active_element
                 elem.send_keys(Keys.RETURN)
                 #button = self.driver.find_element_by_xpath("//button[@value='OK']").click() # .driver.find_element_by_css_selector(".swal2-header").click()
                 #button.click()
                 logger.warning('Clicked for Village!')
-                break
+                '''
+                logger.warning('Skipping Village[%s] after landValue[%s]' % (villageName, land_type))
+                return 'FAILURE'
             villageDFs=[]
             for p1 in landList:
                 landValue=p1.get("value")
                 landType=p1.get("name")
+                land_type = landType
                 logger.info(f"vilageName {villageName} land Type {landType}")
                 try:
                     landSelect.select_by_value(landValue)
@@ -843,7 +871,8 @@ class Crawler():
                 curIndex=None
             statusDF.loc[curIndex,'inProgress'] = 1
             statusDF.to_csv("status.csv")
-
+            
+        return 'SUCCESS'
   
 class TestSuite(unittest.TestCase):
     def setUp(self):
