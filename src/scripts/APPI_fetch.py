@@ -51,7 +51,6 @@ village_list = [('విశాఖపట్నం', 'అచ్యుతాపు�
 skip_district = ['3',]
 is_visible = True
 
-status_file = 'status.csv'
 
 #############
 # Functions
@@ -695,6 +694,14 @@ def dump_gram_1b_reports(logger, dirname=None):
 
 class Crawler():
     def setup_method(self, method):
+        self.status_file = 'status.csv'
+        self.dir = 'data/csv'
+        try:
+            os.makedirs(self.dir)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise    
+        
         self.vars = {}
         self.display = displayInitialize(isDisabled = False, isVisible = is_visible)
         self.driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
@@ -790,7 +797,7 @@ class Crawler():
         #buttonXPath="//button[1]"
         logger.info(landList)
 
-        statusDF=pd.read_csv(status_file,index_col=0)
+        statusDF=pd.read_csv(self.status_file,index_col=0)
         #logger.info(statusDF)
         filteredDF=statusDF[ (statusDF['status'] == 'pending') & (statusDF['inProgress'] == 0)]
         if len(filteredDF) > 0:
@@ -800,7 +807,7 @@ class Crawler():
             logger.info('No more requests to process')
             return 'SUCCESS'
         statusDF.loc[curIndex,'inProgress'] = 1
-        statusDF.to_csv(status_file)
+        statusDF.to_csv(self.status_file)
         distName="vishakapatnam"
         blockName="gmadagula"
         while curIndex is not None:
@@ -808,27 +815,33 @@ class Crawler():
             villageName=row['villageName']
             value=str(row['villageCode'])
             land_type = ''
+            remarks = 'Tainted '
             try:
                 villageSelect.select_by_value(value)
             except Exception as e:
-                logger.error('Exception during villageSelect for villageName[%s] - EXCEPT[%s:%s]' % (villageName, type(e), e))
-                logger.warning('Skipping Village[%s] after landValue[%s]' % (villageName, land_type))
+                logger.error(f'Exception during select of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
                 statusDF.loc[curIndex,'inProgress'] = 0
-                statusDF.to_csv(status_file)
+                #remarks += f'Village[{villageName}]'
+                #statusDF.loc[curIndex,'remarks'] = remarks 
+                statusDF.to_csv(self.status_file)
+                logger.warning(f'Skipping Village[{villageName}]')
                 return 'FAILURE'
             villageDFs=[]
             for p1 in landList:
                 landValue=p1.get("value")
                 landType=p1.get("name")
                 land_type = landType
-                logger.info(f"villageName {villageName}, {slugify(villageName)} land Type {landType}")
+                logger.info(f"villageName[{villageName}, {slugify(villageName)}] landType[{landType}]")
                 try:
                     landSelect.select_by_value(landValue)
+                    logger.info('Clicked for landValue!')
                 except Exception as e:
-                    logger.error('Exception during landSelect for landValue[%s] of Village[%s, %s] - EXCEPT[%s:%s]' % (landValue, villageName, slugify(villageName), type(e), e))
+                    logger.error(f'Exception during landSelect for landType[{landType}] of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
                     elem = self.driver.switch_to.active_element
                     elem.send_keys(Keys.RETURN)
-                    logger.warning('Clicked for landValue!')
+                    remarks += f'{landType}, '
+                    statusDF.loc[curIndex,'remarks'] = remarks 
+                    statusDF.to_csv(self.status_file)
                     continue
                     
                 time.sleep(2)
@@ -862,16 +875,16 @@ class Crawler():
             else:
                 colHeaders=["districtName","blockName","villageName"]
                 villageDF=pd.DataFrame([ [] ],columns=colHeaders)
-            csvFileName=f"data/csv/{distName}_{blockName}_{slugify(villageName)}.csv"
+            csvFileName=f"{self.dir}/{distName}_{blockName}_{slugify(villageName)}.csv"
             logger.info('Writing to [%s]' % csvFileName)
             villageDF.to_csv(csvFileName)
-            statusDF=pd.read_csv(status_file, index_col=0)
+            statusDF=pd.read_csv(self.status_file, index_col=0)
             filteredDF=statusDF[ (statusDF['status'] == 'pending') & (statusDF['inProgress'] == 0)]
             if len(filteredDF) > 0:
                 curIndex=filteredDF.index[0]
                 statusDF.loc[curIndex,'inProgress'] = 1
-                logger.info(f'Writing to [{status_file}]')
-                statusDF.to_csv(status_file)
+                logger.info(f'Writing to [{self.status_file}]')
+                statusDF.to_csv(self.status_file)
             else:
                 curIndex=None
             
