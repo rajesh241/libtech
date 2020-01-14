@@ -51,6 +51,7 @@ village_list = [('విశాఖపట్నం', 'అచ్యుతాపు�
 skip_district = ['3',]
 is_visible = True
 
+status_file = 'status.csv'
 
 #############
 # Functions
@@ -695,7 +696,7 @@ def dump_gram_1b_reports(logger, dirname=None):
 class Crawler():
     def setup_method(self, method):
         self.vars = {}
-        self.display = displayInitialize(isDisabled = True, isVisible = is_visible)
+        self.display = displayInitialize(isDisabled = False, isVisible = is_visible)
         self.driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
     
     def teardown_method(self, method):
@@ -747,7 +748,8 @@ class Crawler():
         logger.info('Clicking Login Button')
         #elem.click()
         
-        input()
+        time.sleep(10)
+        # input()
         self.driver.get("https://ysrrythubharosa.ap.gov.in/RBApp/Reports/RBDistrictPaymentAbstract")
         time.sleep(3)
         self.vars["window_handles"] = self.driver.window_handles
@@ -771,7 +773,11 @@ class Crawler():
         self.driver.get(url)
         time.sleep(3)
         villageXPath="//select[1]"
-        villageSelect=Select(self.driver.find_element_by_xpath(villageXPath))
+        try:
+            villageSelect=Select(self.driver.find_element_by_xpath(villageXPath))
+        except Exception as e:
+            logger.error(f'Exception during villageSelect for {villageXPath} - EXCEPT[{type(e)}, {e}]')
+            return 'FAILURE'
         landXpath="//select[2]"
         landXpath="//*/select[@ng-model='landtypemdl']"
         landSelect=Select(self.driver.find_element_by_xpath(landXpath))
@@ -784,54 +790,49 @@ class Crawler():
         #buttonXPath="//button[1]"
         logger.info(landList)
 
-        statusDF=pd.read_csv("status.csv",index_col=0)
+        statusDF=pd.read_csv(status_file,index_col=0)
         #logger.info(statusDF)
         filteredDF=statusDF[ (statusDF['status'] == 'pending') & (statusDF['inProgress'] == 0)]
         if len(filteredDF) > 0:
             curIndex=filteredDF.index[0]
         else:
             curIndex=None
+            logger.info('No more requests to process')
+            return 'SUCCESS'
         statusDF.loc[curIndex,'inProgress'] = 1
-        statusDF.to_csv("status.csv")
+        statusDF.to_csv(status_file)
         distName="vishakapatnam"
         blockName="gmadagula"
         while curIndex is not None:
             row=filteredDF.loc[curIndex]
-            villageName=row['villageName']     
+            villageName=row['villageName']
             value=str(row['villageCode'])
             land_type = ''
             try:
                 villageSelect.select_by_value(value)
             except Exception as e:
                 logger.error('Exception during villageSelect for villageName[%s] - EXCEPT[%s:%s]' % (villageName, type(e), e))
-                '''
-                elem = self.driver.switch_to.active_element
-                elem.send_keys(Keys.RETURN)
-                #button = self.driver.find_element_by_xpath("//button[@value='OK']").click() # .driver.find_element_by_css_selector(".swal2-header").click()
-                #button.click()
-                logger.warning('Clicked for Village!')
-                '''
                 logger.warning('Skipping Village[%s] after landValue[%s]' % (villageName, land_type))
+                statusDF.loc[curIndex,'inProgress'] = 0
+                statusDF.to_csv(status_file)
                 return 'FAILURE'
             villageDFs=[]
             for p1 in landList:
                 landValue=p1.get("value")
                 landType=p1.get("name")
                 land_type = landType
-                logger.info(f"vilageName {villageName} land Type {landType}")
+                logger.info(f"villageName {villageName}, {slugify(villageName)} land Type {landType}")
                 try:
                     landSelect.select_by_value(landValue)
                 except Exception as e:
-                    logger.error('Exception during landSelect for landValue[%s] - EXCEPT[%s:%s]' % (landValue, type(e), e))
+                    logger.error('Exception during landSelect for landValue[%s] of Village[%s, %s] - EXCEPT[%s:%s]' % (landValue, villageName, slugify(villageName), type(e), e))
                     elem = self.driver.switch_to.active_element
                     elem.send_keys(Keys.RETURN)
-                    #button = self.driver.find_element_by_xpath("//button[@value='OK']").click() # .driver.find_element_by_css_selector(".swal2-header").click()
-                    #button = self.driver.find_element_by_css_selector(".swal2-header").click()
-                    #button.click()
                     logger.warning('Clicked for landValue!')
                     continue
                     
                 time.sleep(2)
+                logger.info(f"Selected vilageName {villageName}, {slugify(villageName)} land Type {landType}")
 
                 self.driver.find_element_by_xpath('//input[@value="submit"]').click()
                 try:
@@ -862,15 +863,17 @@ class Crawler():
                 colHeaders=["districtName","blockName","villageName"]
                 villageDF=pd.DataFrame([ [] ],columns=colHeaders)
             csvFileName=f"data/csv/{distName}_{blockName}_{slugify(villageName)}.csv"
+            logger.info('Writing to [%s]' % csvFileName)
             villageDF.to_csv(csvFileName)
-            statusDF=pd.read_csv("status.csv",index_col=0)
+            statusDF=pd.read_csv(status_file, index_col=0)
             filteredDF=statusDF[ (statusDF['status'] == 'pending') & (statusDF['inProgress'] == 0)]
             if len(filteredDF) > 0:
                 curIndex=filteredDF.index[0]
+                statusDF.loc[curIndex,'inProgress'] = 1
+                logger.info(f'Writing to [{status_file}]')
+                statusDF.to_csv(status_file)
             else:
                 curIndex=None
-            statusDF.loc[curIndex,'inProgress'] = 1
-            statusDF.to_csv("status.csv")
             
         return 'SUCCESS'
   
@@ -912,6 +915,7 @@ class TestSuite(unittest.TestCase):
         method="a"
         myCrawler.setup_method(method)
         myCrawler.runCrawl(self.logger)
+        myCrawler.teardown_method(method)
         
 if __name__ == '__main__':
     unittest.main()
