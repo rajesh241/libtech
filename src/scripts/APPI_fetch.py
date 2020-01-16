@@ -696,6 +696,8 @@ class Crawler():
     def setup_method(self, method):
         self.status_file = 'status.csv'
         self.dir = 'data/csv'
+        self.block = "జి.మాడుగుల"
+        self.district = "విశాఖపట్నం"
         try:
             os.makedirs(self.dir)
         except OSError as e:
@@ -733,6 +735,7 @@ class Crawler():
         logger.info('Entering Password[%s]' % password)
         elem.send_keys(password)
 
+        '''
         captcha_text = '12345'
         self.driver.save_screenshot('./captcha_'+captcha_text+'.png')
 
@@ -748,24 +751,26 @@ class Crawler():
         elem = self.driver.find_element_by_xpath('(//input[@type="text"])[2]')
         logger.info('Entering Captcha_Text[%s]' % captcha_text)
         elem.send_keys(captcha_text)
-
+        '''
         login_button = '(//button[@type="button"])[2]'
 
         elem = self.driver.find_element_by_xpath(login_button)
         logger.info('Clicking Login Button')
         #elem.click()
         
-        time.sleep(10)
-        # input()
-        self.driver.get("https://ysrrythubharosa.ap.gov.in/RBApp/Reports/RBDistrictPaymentAbstract")
+        #time.sleep(15)
+        input()
+        url = 'https://ysrrythubharosa.ap.gov.in/RBApp/Reports/RBDistrictPaymentAbstract'
+        logger.info('Fetching URL[%s]' % url)
+        self.driver.get(url)
         time.sleep(3)
         self.vars["window_handles"] = self.driver.window_handles
-        self.driver.find_element(By.LINK_TEXT, "విశాఖపట్నం").click()
+        self.driver.find_element(By.LINK_TEXT, self.district).click()
         self.vars["win9760"] = self.wait_for_window(2000)
         self.driver.switch_to.window(self.vars["win9760"])
         self.vars["window_handles"] = self.driver.window_handles
         time.sleep(3)
-        self.driver.find_element(By.LINK_TEXT, "జి.మాడుగుల").click()
+        self.driver.find_element(By.LINK_TEXT, self.block).click()
         self.vars["win3091"] = self.wait_for_window(2000)
         self.driver.switch_to.window(self.vars["win3091"])
         while(True):
@@ -808,25 +813,22 @@ class Crawler():
             return 'SUCCESS'
         statusDF.loc[curIndex,'inProgress'] = 1
         statusDF.to_csv(self.status_file)
-        distName="vishakapatnam"
-        blockName="gmadagula"
         while curIndex is not None:
             row=filteredDF.loc[curIndex]
             villageName=row['villageName']
             value=str(row['villageCode'])
             land_type = ''
-            remarks = 'Tainted '
             try:
                 villageSelect.select_by_value(value)
+                #time.sleep(3)
             except Exception as e:
                 logger.error(f'Exception during select of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
                 statusDF.loc[curIndex,'inProgress'] = 0
-                #remarks += f'Village[{villageName}]'
-                #statusDF.loc[curIndex,'remarks'] = remarks 
                 statusDF.to_csv(self.status_file)
                 logger.warning(f'Skipping Village[{villageName}]')
                 return 'FAILURE'
             villageDFs=[]
+            csv_prev = ''
             for p1 in landList:
                 landValue=p1.get("value")
                 landType=p1.get("name")
@@ -834,51 +836,63 @@ class Crawler():
                 logger.info(f"villageName[{villageName}, {slugify(villageName)}] landType[{landType}]")
                 try:
                     landSelect.select_by_value(landValue)
-                    logger.info('Clicked for landValue!')
+                    #logger.info(f"Clicked successfully! vilageName {villageName}, {slugify(villageName)} land Type {landType}")
                 except Exception as e:
                     logger.error(f'Exception during landSelect for landType[{landType}] of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
                     elem = self.driver.switch_to.active_element
                     elem.send_keys(Keys.RETURN)
-                    remarks += f'{landType}, '
-                    statusDF.loc[curIndex,'remarks'] = remarks 
+                    statusDF.loc[curIndex, landType] = 'failed'
                     statusDF.to_csv(self.status_file)
+                    #time.sleep(3)
                     continue
                     
                 time.sleep(2)
-                logger.info(f"Selected vilageName {villageName}, {slugify(villageName)} land Type {landType}")
 
-                self.driver.find_element_by_xpath('//input[@value="submit"]').click()
                 try:
-                    WebDriverWait(self.driver, timeout).until(EC.alert_is_present(),
-                                               'Timed out testing if alert is there')
-                    alert = self.driver.switch_to.alert
-                    alert.accept()
-                    logger.warning('Handled Alert!')
-                    continue
-                except TimeoutException:
-                    logger.debug('Time Out waiting for ALERT')
+                    self.driver.find_element_by_xpath('//input[@value="submit"]').click()
+                    logger.info(f"Submit clicked for vilageName[{villageName}], {slugify(villageName)}] landType[{landType}]")
+                    time.sleep(3)
+                    elem = self.driver.switch_to.active_element
+                    elem.send_keys(Keys.RETURN)
+                    time.sleep(3)
+                    myhtml = self.driver.page_source
+                    dfs=pd.read_html(myhtml)
+                    logger.info(myhtml)
+                    df=dfs[0]
+                    if csv_prev == df.to_csv('.csv'):  # This is not fool proof hack
+                        logger.warning(f'Alert Taken care of for landSelect for landType[{landType}] of Village[{villageName}, {slugify(villageName)}]')
+                        statusDF.loc[curIndex, landType] = 'failed'
+                        statusDF.to_csv(self.status_file)
+                        continue
                 except Exception as e:
-                    logger.error('Exception during wait - EXCEPT[%s:%s]' % (type(e), e))
-                
-                time.sleep(3)
+                    logger.error(f'Exception during landSelect for landType[{landType}] of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
+
                 myhtml = self.driver.page_source
-                dfs=pd.read_html(myhtml) 
+                dfs=pd.read_html(myhtml)
                 df=dfs[0]
-                df['villageName']=villageName
-                df['villageNameEng']=slugify(villageName)
-                df['villageCode']=value
-                df['districtName']=distName
-                df['blockName']=blockName
+                csv_prev = df.to_csv('.csv')
+                df['village_name_tel']=villageName
+                df['village_code']=value
+                df['district_name_tel']=self.district
+                df['mandal_name_tel']=self.block
+                df['land_type']=landType
                 villageDFs.append(df)
+                statusDF.loc[curIndex, landType] = 'done'
+                statusDF.to_csv(self.status_file)
+                
             if len(villageDFs) > 0:
                 villageDF=pd.concat(villageDFs)
             else:
-                colHeaders=["districtName","blockName","villageName"]
+                colHeaders=["district_name_tel","block_name_tel","village_name_tel"]
                 villageDF=pd.DataFrame([ [] ],columns=colHeaders)
-            csvFileName=f"{self.dir}/{distName}_{blockName}_{slugify(villageName)}.csv"
+            csvFileName=f"{self.dir}/{self.district}_{self.block}_{villageName}.csv"
             logger.info('Writing to [%s]' % csvFileName)
-            villageDF.to_csv(csvFileName)
+            villageDF.to_csv(csvFileName, index=False)
+            statusDF.loc[curIndex,'status'] = 'done'
+            statusDF.loc[curIndex,'inProgress'] = 0
             statusDF=pd.read_csv(self.status_file, index_col=0)
+            # return 'FAILURE'
+            
             filteredDF=statusDF[ (statusDF['status'] == 'pending') & (statusDF['inProgress'] == 0)]
             if len(filteredDF) > 0:
                 curIndex=filteredDF.index[0]
