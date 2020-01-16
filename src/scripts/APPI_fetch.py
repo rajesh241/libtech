@@ -758,21 +758,24 @@ class Crawler():
         logger.info('Clicking Login Button')
         #elem.click()
         
-        #time.sleep(15)
-        input()
+        time.sleep(15)
+        #input()
         url = 'https://ysrrythubharosa.ap.gov.in/RBApp/Reports/RBDistrictPaymentAbstract'
         logger.info('Fetching URL[%s]' % url)
         self.driver.get(url)
-        time.sleep(3)
+        #time.sleep(3)
         self.vars["window_handles"] = self.driver.window_handles
-        self.driver.find_element(By.LINK_TEXT, self.district).click()
+        #self.driver.find_element(By.LINK_TEXT, self.district).click()
+        WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.LINK_TEXT, self.district))).click()
         self.vars["win9760"] = self.wait_for_window(2000)
         self.driver.switch_to.window(self.vars["win9760"])
         self.vars["window_handles"] = self.driver.window_handles
-        time.sleep(3)
-        self.driver.find_element(By.LINK_TEXT, self.block).click()
+        #time.sleep(3)
+        #self.driver.find_element(By.LINK_TEXT, self.block).click()
+        WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.LINK_TEXT, self.block))).click()
         self.vars["win3091"] = self.wait_for_window(2000)
         self.driver.switch_to.window(self.vars["win3091"])
+        time.sleep(3)
         while(True):
             result = self.runCrawlForPaymentvillReport(logger)
             if result == 'SUCCESS':
@@ -828,7 +831,6 @@ class Crawler():
                 logger.warning(f'Skipping Village[{villageName}]')
                 return 'FAILURE'
             villageDFs=[]
-            csv_prev = ''
             for p1 in landList:
                 landValue=p1.get("value")
                 landType=p1.get("name")
@@ -836,41 +838,39 @@ class Crawler():
                 logger.info(f"villageName[{villageName}, {slugify(villageName)}] landType[{landType}]")
                 try:
                     landSelect.select_by_value(landValue)
-                    #logger.info(f"Clicked successfully! vilageName {villageName}, {slugify(villageName)} land Type {landType}")
                 except Exception as e:
                     logger.error(f'Exception during landSelect for landType[{landType}] of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
                     elem = self.driver.switch_to.active_element
                     elem.send_keys(Keys.RETURN)
                     statusDF.loc[curIndex, landType] = 'failed'
                     statusDF.to_csv(self.status_file)
-                    #time.sleep(3)
+                    time.sleep(1)
                     continue
                     
-                time.sleep(2)
-
                 try:
                     self.driver.find_element_by_xpath('//input[@value="submit"]').click()
                     logger.info(f"Submit clicked for vilageName[{villageName}], {slugify(villageName)}] landType[{landType}]")
-                    time.sleep(3)
-                    elem = self.driver.switch_to.active_element
-                    elem.send_keys(Keys.RETURN)
-                    time.sleep(3)
                     myhtml = self.driver.page_source
                     dfs=pd.read_html(myhtml)
-                    logger.info(myhtml)
-                    df=dfs[0]
-                    if csv_prev == df.to_csv('.csv'):  # This is not fool proof hack
-                        logger.warning(f'Alert Taken care of for landSelect for landType[{landType}] of Village[{villageName}, {slugify(villageName)}]')
-                        statusDF.loc[curIndex, landType] = 'failed'
-                        statusDF.to_csv(self.status_file)
-                        continue
+                    logger.debug(myhtml)
+                    filename = slugify(landType) + '.html'
+                    logger.info('Writing to [%s]' % filename)
+                    dfs[0].to_html(filename)
+                    WebDriverWait(self.driver, 2).until(EC.element_to_be_clickable((By.XPATH, "//button[@class='swal2-confirm swal2-styled']"))).click()
+                    statusDF.loc[curIndex, landType] = 'failed'
+                    statusDF.to_csv(self.status_file)
+                    logger.info(f'Skipping for landType[{landType}] of Village[{villageName}]')
+                    continue
                 except Exception as e:
-                    logger.error(f'Exception during landSelect for landType[{landType}] of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
+                    logger.info(f'Moving Ahead for landType[{landType}] of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
 
-                myhtml = self.driver.page_source
+                try:
+                    myhtml = self.driver.page_source
+                except Exception as e:
+                    logger.error(f'When reading HTML source landType[{landType}] of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
+                    
                 dfs=pd.read_html(myhtml)
                 df=dfs[0]
-                csv_prev = df.to_csv('.csv')
                 df['village_name_tel']=villageName
                 df['village_code']=value
                 df['district_name_tel']=self.district
@@ -879,25 +879,27 @@ class Crawler():
                 villageDFs.append(df)
                 statusDF.loc[curIndex, landType] = 'done'
                 statusDF.to_csv(self.status_file)
+                logger.info(f'Adding the table for village[{villageName}] and type[{landType}]')
                 
             if len(villageDFs) > 0:
                 villageDF=pd.concat(villageDFs)
             else:
-                colHeaders=["district_name_tel","block_name_tel","village_name_tel"]
-                villageDF=pd.DataFrame([ [] ],columns=colHeaders)
+                colHeaders = ['S No', 'Name Of Beneficiary', 'Father Name', 'PSS Name', 'Katha Number', 'Aadhaar', 'Bank Name', 'Bank Account Number(Last 4 Digits)', 'Status,Remarks', 'village_name_tel', 'village_code', 'district_name_tel', 'mandal_name_tel', 'land_type']
+                villageDF=pd.DataFrame(columns = colHeaders)
+
             csvFileName=f"{self.dir}/{self.district}_{self.block}_{villageName}.csv"
             logger.info('Writing to [%s]' % csvFileName)
             villageDF.to_csv(csvFileName, index=False)
             statusDF.loc[curIndex,'status'] = 'done'
             statusDF.loc[curIndex,'inProgress'] = 0
-            statusDF=pd.read_csv(self.status_file, index_col=0)
-            # return 'FAILURE'
+            logger.info(f'Updating [{self.status_file}]')
+            statusDF.to_csv(self.status_file)
             
+            statusDF=pd.read_csv(self.status_file, index_col=0)            
             filteredDF=statusDF[ (statusDF['status'] == 'pending') & (statusDF['inProgress'] == 0)]
             if len(filteredDF) > 0:
                 curIndex=filteredDF.index[0]
                 statusDF.loc[curIndex,'inProgress'] = 1
-                logger.info(f'Writing to [{self.status_file}]')
                 statusDF.to_csv(self.status_file)
             else:
                 curIndex=None
