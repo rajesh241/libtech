@@ -693,10 +693,10 @@ def dump_gram_1b_reports(logger, dirname=None):
 
 
 class Crawler():
-    def setup_method(self, method):
+    def __init__(self):
         self.status_file = 'status.csv'
         self.dir = 'data/csv'
-        self.block = "జి.మాడుగుల"
+        self.mandal = "జి.మాడుగుల"
         self.district = "విశాఖపట్నం"
         try:
             os.makedirs(self.dir)
@@ -705,10 +705,10 @@ class Crawler():
                 raise    
         
         self.vars = {}
-        self.display = displayInitialize(isDisabled = False, isVisible = is_visible)
+        self.display = displayInitialize(isDisabled = True, isVisible = is_visible)
         self.driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
     
-    def teardown_method(self, method):
+    def __del__(self):
         driverFinalize(self.driver) 
         displayFinalize(self.display)
       
@@ -718,8 +718,14 @@ class Crawler():
         wh_then = self.vars["window_handles"]
         if len(wh_now) > len(wh_then):
             return set(wh_now).difference(set(wh_then)).pop()
-  
-    def runCrawl(self,logger):
+
+    def runCrawl(self,logger, district=None, mandal=None):
+        if not district:
+            district = self.district
+
+        if not mandal:
+            mandal = self.mandal
+        
         url = 'https://ysrrythubharosa.ap.gov.in/RBApp/RB/Login'
         logger.info('Fetching URL[%s]' % url)
         self.driver.get(url)
@@ -758,31 +764,49 @@ class Crawler():
         logger.info('Clicking Login Button')
         #elem.click()
         
-        time.sleep(15)
-        #input()
+        #time.sleep(15)
+        input()
         url = 'https://ysrrythubharosa.ap.gov.in/RBApp/Reports/RBDistrictPaymentAbstract'
         logger.info('Fetching URL[%s]' % url)
         self.driver.get(url)
         #time.sleep(3)
         self.vars["window_handles"] = self.driver.window_handles
-        #self.driver.find_element(By.LINK_TEXT, self.district).click()
-        WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.LINK_TEXT, self.district))).click()
+        #self.driver.find_element(By.LINK_TEXT, district).click()
+        WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.LINK_TEXT, district))).click()
+
+        '''
+        html_source = self.driver.page_source.replace('<head>',
+                                                 '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
+        logger.debug("HTML Fetched [%s]" % html_source)
+        filename = f'{self.dir}/{district}.html'
+        with open(filename, 'w') as html_file:
+            logger.info('Writing [%s]' % filename)
+            html_file.write(html_source)
+        
+        districts_df = pd.read_html(html_source)
+        districts_df[0].to_csv
+        bs = BeautifulSoup(html_source, 'html.parser')
+        table = bs.find('table', attrs={'id':'tblreject'})
+        logger.info(table)
+        exit(0)
+        '''
+        
         self.vars["win9760"] = self.wait_for_window(2000)
         self.driver.switch_to.window(self.vars["win9760"])
         self.vars["window_handles"] = self.driver.window_handles
         #time.sleep(3)
-        #self.driver.find_element(By.LINK_TEXT, self.block).click()
-        WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.LINK_TEXT, self.block))).click()
+        #self.driver.find_element(By.LINK_TEXT, mandal).click()
+        WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.LINK_TEXT, mandal))).click()
         self.vars["win3091"] = self.wait_for_window(2000)
         self.driver.switch_to.window(self.vars["win3091"])
         time.sleep(3)
         while(True):
-            result = self.runCrawlForPaymentvillReport(logger)
+            result = self.crawlPaymentvillReport(logger, district, mandal)
             if result == 'SUCCESS':
                 break
 
         
-    def runCrawlForPaymentvillReport(self,logger):
+    def crawlPaymentvillReport(self,logger, district=None, mandal=None):
         url = 'https://ysrrythubharosa.ap.gov.in/RBApp/Reports/PaymentvillReport'
         logger.info('Fetching URL[%s]' % url)
         self.driver.get(url)
@@ -838,16 +862,6 @@ class Crawler():
                 logger.info(f"villageName[{villageName}, {slugify(villageName)}] landType[{landType}]")
                 try:
                     landSelect.select_by_value(landValue)
-                except Exception as e:
-                    logger.error(f'Exception during landSelect for landType[{landType}] of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
-                    elem = self.driver.switch_to.active_element
-                    elem.send_keys(Keys.RETURN)
-                    statusDF.loc[curIndex, landType] = 'failed'
-                    statusDF.to_csv(self.status_file)
-                    time.sleep(1)
-                    continue
-                    
-                try:
                     self.driver.find_element_by_xpath('//input[@value="submit"]').click()
                     logger.info(f"Submit clicked for vilageName[{villageName}], {slugify(villageName)}] landType[{landType}]")
                     myhtml = self.driver.page_source
@@ -856,6 +870,16 @@ class Crawler():
                     filename = slugify(landType) + '.html'
                     logger.info('Writing to [%s]' % filename)
                     dfs[0].to_html(filename)
+                except Exception as e:
+                    logger.error(f'Exception during select for landType[{landType}] of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
+                    elem = self.driver.switch_to.active_element
+                    elem.send_keys(Keys.RETURN)
+                    statusDF.loc[curIndex, landType] = 'failed'
+                    statusDF.to_csv(self.status_file)
+                    time.sleep(1)
+                    continue
+                    
+                try:
                     WebDriverWait(self.driver, 2).until(EC.element_to_be_clickable((By.XPATH, "//button[@class='swal2-confirm swal2-styled']"))).click()
                     statusDF.loc[curIndex, landType] = 'failed'
                     statusDF.to_csv(self.status_file)
@@ -873,8 +897,8 @@ class Crawler():
                 df=dfs[0]
                 df['village_name_tel']=villageName
                 df['village_code']=value
-                df['district_name_tel']=self.district
-                df['mandal_name_tel']=self.block
+                df['district_name_tel']=district
+                df['mandal_name_tel']=mandal
                 df['land_type']=landType
                 villageDFs.append(df)
                 statusDF.loc[curIndex, landType] = 'done'
@@ -887,7 +911,7 @@ class Crawler():
                 colHeaders = ['S No', 'Name Of Beneficiary', 'Father Name', 'PSS Name', 'Katha Number', 'Aadhaar', 'Bank Name', 'Bank Account Number(Last 4 Digits)', 'Status,Remarks', 'village_name_tel', 'village_code', 'district_name_tel', 'mandal_name_tel', 'land_type']
                 villageDF=pd.DataFrame(columns = colHeaders)
 
-            csvFileName=f"{self.dir}/{self.district}_{self.block}_{villageName}.csv"
+            csvFileName=f"{self.dir}/{district}_{mandal}_{villageName}.csv"
             logger.info('Writing to [%s]' % csvFileName)
             villageDF.to_csv(csvFileName, index=False)
             statusDF.loc[curIndex,'status'] = 'done'
@@ -940,11 +964,10 @@ class TestSuite(unittest.TestCase):
 
     def test_crawler(self):
         self.logger.info("Running Crawler Tests")
-        myCrawler=Crawler()
-        method="a"
-        myCrawler.setup_method(method)
-        myCrawler.runCrawl(self.logger)
-        myCrawler.teardown_method(method)
+        # Start a RhythuBharosa Crawl
+        rb = Crawler()
+        rb.runCrawl(self.logger)
+        del rb
         
 if __name__ == '__main__':
     unittest.main()
