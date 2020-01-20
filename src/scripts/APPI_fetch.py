@@ -12,6 +12,7 @@ sys.path.insert(0, ROOT_DIR)
 
 import errno
 import pytesseract
+import cv2
 
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, SessionNotCreatedException, TimeoutException, WebDriverException
@@ -705,7 +706,7 @@ class Crawler():
                 raise    
         
         self.vars = {}
-        self.display = displayInitialize(isDisabled = True, isVisible = is_visible)
+        self.display = displayInitialize(isDisabled = False, isVisible = is_visible)
         self.driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
     
     def __del__(self):
@@ -741,37 +742,55 @@ class Crawler():
         logger.info('Entering Password[%s]' % password)
         elem.send_keys(password)
 
-        '''
-        captcha_text = '12345'
-        self.driver.save_screenshot('./captcha_'+captcha_text+'.png')
+        logger.info('Waiting for Captcha...')
+        WebDriverWait(self.driver, 15).until(EC.element_to_be_clickable((By.ID, "captchdis")))
 
+        captcha_text = '12345'
+        fname = 'captcha.png'
+        self.driver.save_screenshot(fname)
+        img = Image.open(fname)
+        # box = (815, 455, 905, 495)   Captcha Box
+        box = (830, 470, 905, 485)   # Captcha text only
+        area = img.crop(box)
+        filename = 'cropped_' + fname 
+        area.save(filename, 'PNG')
+
+        '''
         captcha_img = self.driver.find_element_by_id("captchdis").screenshot_as_png
         filename = 'captcha.png'
         with open(filename, 'wb') as html_file:
             logger.info('Writing [%s]' % filename)
             html_file.write(captcha_img)
+        '''
 
-        check_output(['convert', filename, '-resample', '40', filename])
-        captcha_text = pytesseract.image_to_string(Image.open(filename), lang='eng') #, config='--psm 10 --oem 3 -c tessedit_char_whitelist=0123456789')
+        img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+        img = cv2.resize(img, None, fx=10, fy=10, interpolation=cv2.INTER_LINEAR)
+        img = cv2.medianBlur(img, 9)
+        th, img = cv2.threshold(img, 185, 255, cv2.THRESH_BINARY)
+        filename = 'processed_captcha.png'
+        cv2.imwrite(filename, img)
+        fname = 'converted_captcha.png'
+        check_output(['convert', filename, '-resample', '10', fname])
+        captcha_text = pytesseract.image_to_string(Image.open(filename), lang='eng', config='--psm 8  --dpi 300 -c tessedit_char_whitelist=ABCDEF0123456789')
+        logger.info(captcha_text)
+        captcha_text = pytesseract.image_to_string(Image.open(fname), lang='eng', config='--psm 8  --dpi 300 -c tessedit_char_whitelist=ABCDEF0123456789')
+        logger.info(captcha_text)
         
         elem = self.driver.find_element_by_xpath('(//input[@type="text"])[2]')
         logger.info('Entering Captcha_Text[%s]' % captcha_text)
         elem.send_keys(captcha_text)
-        '''
+
         login_button = '(//button[@type="button"])[2]'
 
         elem = self.driver.find_element_by_xpath(login_button)
         logger.info('Clicking Login Button')
-        #elem.click()
+        elem.click()
+        time.sleep(2)
         
-        #time.sleep(15)
-        input()
         url = 'https://ysrrythubharosa.ap.gov.in/RBApp/Reports/RBDistrictPaymentAbstract'
         logger.info('Fetching URL[%s]' % url)
         self.driver.get(url)
-        #time.sleep(3)
         self.vars["window_handles"] = self.driver.window_handles
-        #self.driver.find_element(By.LINK_TEXT, district).click()
         WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.LINK_TEXT, district))).click()
 
         '''
@@ -794,12 +813,11 @@ class Crawler():
         self.vars["win9760"] = self.wait_for_window(2000)
         self.driver.switch_to.window(self.vars["win9760"])
         self.vars["window_handles"] = self.driver.window_handles
-        #time.sleep(3)
-        #self.driver.find_element(By.LINK_TEXT, mandal).click()
         WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.LINK_TEXT, mandal))).click()
         self.vars["win3091"] = self.wait_for_window(2000)
         self.driver.switch_to.window(self.vars["win3091"])
         time.sleep(3)
+        
         while(True):
             result = self.crawlPaymentvillReport(logger, district, mandal)
             if result == 'SUCCESS':
