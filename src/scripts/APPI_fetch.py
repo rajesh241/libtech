@@ -706,7 +706,7 @@ class Crawler():
                 raise    
         
         self.vars = {}
-        self.display = displayInitialize(isDisabled = False, isVisible = is_visible)
+        self.display = displayInitialize(isDisabled = True, isVisible = is_visible)
         self.driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
     
     def __del__(self):
@@ -742,56 +742,71 @@ class Crawler():
         logger.info('Entering Password[%s]' % password)
         elem.send_keys(password)
 
-        logger.info('Waiting for Captcha...')
-        WebDriverWait(self.driver, 15).until(EC.element_to_be_clickable((By.ID, "captchdis")))
-
-        captcha_text = '12345'
-        fname = 'captcha.png'
-        self.driver.save_screenshot(fname)
-        img = Image.open(fname)
-        # box = (815, 455, 905, 495)   Captcha Box
-        box = (830, 470, 905, 485)   # Captcha text only
-        area = img.crop(box)
-        filename = 'cropped_' + fname 
-        area.save(filename, 'PNG')
-
-        '''
-        captcha_img = self.driver.find_element_by_id("captchdis").screenshot_as_png
-        filename = 'captcha.png'
-        with open(filename, 'wb') as html_file:
-            logger.info('Writing [%s]' % filename)
-            html_file.write(captcha_img)
-        '''
-
-        img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
-        img = cv2.resize(img, None, fx=10, fy=10, interpolation=cv2.INTER_LINEAR)
-        img = cv2.medianBlur(img, 9)
-        th, img = cv2.threshold(img, 185, 255, cv2.THRESH_BINARY)
-        filename = 'processed_captcha.png'
-        cv2.imwrite(filename, img)
-        fname = 'converted_captcha.png'
-        check_output(['convert', filename, '-resample', '10', fname])
-        captcha_text = pytesseract.image_to_string(Image.open(filename), lang='eng', config='--psm 8  --dpi 300 -c tessedit_char_whitelist=ABCDEF0123456789')
-        logger.info(captcha_text)
-        captcha_text = pytesseract.image_to_string(Image.open(fname), lang='eng', config='--psm 8  --dpi 300 -c tessedit_char_whitelist=ABCDEF0123456789')
-        logger.info(captcha_text)
-        
-        elem = self.driver.find_element_by_xpath('(//input[@type="text"])[2]')
-        logger.info('Entering Captcha_Text[%s]' % captcha_text)
-        elem.send_keys(captcha_text)
-
-        login_button = '(//button[@type="button"])[2]'
-
-        elem = self.driver.find_element_by_xpath(login_button)
-        logger.info('Clicking Login Button')
-        elem.click()
-        time.sleep(2)
+        retries = 0
+        while True and retries < 3:
+            logger.info('Waiting for Captcha...')
+            #input()
+            WebDriverWait(self.driver, 15).until(EC.element_to_be_clickable((By.ID, "captchdis")))
+            time.sleep(3)
+            
+            captcha_text = '12345'
+            fname = 'captcha.png'
+            self.driver.save_screenshot(fname)
+            img = Image.open(fname)
+            # box = (815, 455, 905, 495)   Captcha Box
+            box = (830, 470, 905, 485)   # Captcha text only
+            area = img.crop(box)
+            filename = 'cropped_' + fname 
+            area.save(filename, 'PNG')
+            
+            '''
+            captcha_img = self.driver.find_element_by_id("captchdis").screenshot_as_png
+            filename = 'captcha.png'
+            with open(filename, 'wb') as html_file:
+                logger.info('Writing [%s]' % filename)
+                html_file.write(captcha_img)
+            '''
+            
+            img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+            img = cv2.resize(img, None, fx=10, fy=10, interpolation=cv2.INTER_LINEAR)
+            img = cv2.medianBlur(img, 9)
+            th, img = cv2.threshold(img, 185, 255, cv2.THRESH_BINARY)
+            filename = 'processed_captcha.png'
+            cv2.imwrite(filename, img)
+            fname = 'converted_captcha.png'
+            check_output(['convert', filename, '-resample', '10', fname])
+            captcha_text = pytesseract.image_to_string(Image.open(filename), lang='eng', config='--psm 8  --dpi 300 -c tessedit_char_whitelist=ABCDEF0123456789')
+            logger.info(captcha_text)
+            captcha_text = pytesseract.image_to_string(Image.open(fname), lang='eng', config='--psm 8  --dpi 300 -c tessedit_char_whitelist=ABCDEF0123456789')
+            logger.info(captcha_text)
+            
+            elem = self.driver.find_element_by_xpath('(//input[@type="text"])[2]')
+            logger.info('Entering Captcha_Text[%s]' % captcha_text)
+            elem.send_keys(captcha_text)
+            
+            login_button = '(//button[@type="button"])[2]'
+            
+            elem = self.driver.find_element_by_xpath(login_button)
+            logger.info('Clicking Login Button')
+            elem.click()
+            #time.sleep(2)
+            try:
+                WebDriverWait(self.driver, 2).until(EC.element_to_be_clickable((By.XPATH, "//button[@class='swal2-confirm swal2-styled']"))).click()
+                logger.info(f'Invalid Captcha [{captcha_text}]')
+                retries += 1                
+                WebDriverWait(self.driver, 2).until(EC.element_to_be_clickable((By.LINK_TEXT, 'Refresh'))).click()
+                continue
+            except TimeoutException:
+                logger.info(f'Valid Captcha [{captcha_text}]')
+                break
+            except Exception as e:
+                logger.error(f'Error guessing [{captcha_text}] - EXCEPT[{type(e)}, {e}]')
         
         url = 'https://ysrrythubharosa.ap.gov.in/RBApp/Reports/RBDistrictPaymentAbstract'
         logger.info('Fetching URL[%s]' % url)
         self.driver.get(url)
         self.vars["window_handles"] = self.driver.window_handles
-        WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.LINK_TEXT, district))).click()
+        WebDriverWait(self.driver, 15).until(EC.element_to_be_clickable((By.LINK_TEXT, district))).click()
 
         '''
         html_source = self.driver.page_source.replace('<head>',
@@ -813,7 +828,7 @@ class Crawler():
         self.vars["win9760"] = self.wait_for_window(2000)
         self.driver.switch_to.window(self.vars["win9760"])
         self.vars["window_handles"] = self.driver.window_handles
-        WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.LINK_TEXT, mandal))).click()
+        WebDriverWait(self.driver, 15).until(EC.element_to_be_clickable((By.LINK_TEXT, mandal))).click()
         self.vars["win3091"] = self.wait_for_window(2000)
         self.driver.switch_to.window(self.vars["win3091"])
         time.sleep(3)
@@ -906,22 +921,41 @@ class Crawler():
                 except Exception as e:
                     logger.info(f'Moving Ahead for landType[{landType}] of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
 
-                try:
-                    myhtml = self.driver.page_source
-                except Exception as e:
-                    logger.error(f'When reading HTML source landType[{landType}] of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
-                    
-                dfs=pd.read_html(myhtml)
-                df=dfs[0]
-                df['village_name_tel']=villageName
-                df['village_code']=value
-                df['district_name_tel']=district
-                df['mandal_name_tel']=mandal
-                df['land_type']=landType
-                villageDFs.append(df)
-                statusDF.loc[curIndex, landType] = 'done'
-                statusDF.to_csv(self.status_file)
-                logger.info(f'Adding the table for village[{villageName}] and type[{landType}]')
+                while True:
+                    try:
+                        #WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.LINK_TEXT, 'Name Of Beneficiary')))
+                        WebDriverWait(self.driver, 3).until(EC.element_to_be_clickable((By.XPATH, "//input[@class='btn btn-primary']")))
+                        logger.info(f'Found Data')
+                        myhtml = self.driver.page_source
+                    except Exception as e:
+                        logger.error(f'When reading HTML source landType[{landType}] of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
+                        
+                    dfs=pd.read_html(myhtml)
+                    df=dfs[0]
+                    df['village_name_tel']=villageName
+                    df['village_code']=value
+                    df['district_name_tel']=district
+                    df['mandal_name_tel']=mandal
+                    df['land_type']=landType
+                    villageDFs.append(df)
+                    statusDF.loc[curIndex, landType] = 'done'
+                    statusDF.to_csv(self.status_file)
+                    logger.info(f'Adding the table for village[{villageName}] and type[{landType}]')
+
+                    try:
+                        elem = WebDriverWait(self.driver, 3).until(EC.element_to_be_clickable((By.LINK_TEXT, '›')))
+                        parent = elem.find_element_by_xpath('..')
+                        logger.info(f'parent[{parent.get_attribute("class")}] elem[{elem.get_attribute("class")}]')
+                        if 'disabled' in parent.get_attribute("class"):
+                            logger.info(f'Disabled so end here!')
+                            break
+                        else:
+                            elem.click()
+                            time.sleep(5)
+                            continue
+                    except Exception as e:
+                        logger.info(f'No pagination here!')
+                        break
                 
             if len(villageDFs) > 0:
                 villageDF=pd.concat(villageDFs)
