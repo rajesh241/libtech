@@ -832,11 +832,17 @@ class Crawler():
         self.vars["win3091"] = self.wait_for_window(2000)
         self.driver.switch_to.window(self.vars["win3091"])
         time.sleep(3)
-        
-        while(True):
+
+        retries = 0
+        while(True and retries < 3):
             result = self.crawlPaymentvillReport(logger, district, mandal)
             if result == 'SUCCESS':
-                break
+                return result
+            retries += 1
+            logger.warning(f'Attempt {retries} after a FAILURE...')
+            time.sleep(3)
+
+        return 'FAILURE'
 
         
     def crawlPaymentvillReport(self,logger, district=None, mandal=None):
@@ -895,8 +901,10 @@ class Crawler():
                 logger.info(f"villageName[{villageName}, {slugify(villageName)}] landType[{landType}]")
                 try:
                     landSelect.select_by_value(landValue)
+                    # time.sleep(2) # Mynk
                     self.driver.find_element_by_xpath('//input[@value="submit"]').click()
                     logger.info(f"Submit clicked for vilageName[{villageName}], {slugify(villageName)}] landType[{landType}]")
+                    # time.sleep(2) # Mynk
                     myhtml = self.driver.page_source
                     dfs=pd.read_html(myhtml)
                     logger.debug(myhtml)
@@ -905,15 +913,18 @@ class Crawler():
                     dfs[0].to_html(filename)
                 except Exception as e:
                     logger.error(f'Exception during select for landType[{landType}] of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
-                    elem = self.driver.switch_to.active_element
-                    elem.send_keys(Keys.RETURN)
-                    statusDF.loc[curIndex, landType] = 'failed'
+                    statusDF.loc[curIndex,'inProgress'] = 0
                     statusDF.to_csv(self.status_file)
-                    time.sleep(1)
-                    continue
+                    logger.warning(f'Skipping at landSelect level Village[{villageName}]')
+                    return 'FAILURE'
                     
                 try:
-                    WebDriverWait(self.driver, 2).until(EC.element_to_be_clickable((By.XPATH, "//button[@class='swal2-confirm swal2-styled']"))).click()
+                    if landValue == 1:
+                        timeout = 2
+                    else:
+                        timeout = 5
+                    logger.debug(f'Timeout value is {timeout}')
+                    WebDriverWait(self.driver, timeout).until(EC.element_to_be_clickable((By.XPATH, "//button[@class='swal2-confirm swal2-styled']"))).click()
                     statusDF.loc[curIndex, landType] = 'failed'
                     statusDF.to_csv(self.status_file)
                     logger.info(f'Skipping for landType[{landType}] of Village[{villageName}]')
@@ -924,14 +935,20 @@ class Crawler():
                 while True:
                     try:
                         #WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.LINK_TEXT, 'Name Of Beneficiary')))
-                        WebDriverWait(self.driver, 3).until(EC.element_to_be_clickable((By.XPATH, "//input[@class='btn btn-primary']")))
+                        WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.XPATH, "//input[@class='btn btn-primary']")))
                         logger.info(f'Found Data')
                         myhtml = self.driver.page_source
                     except Exception as e:
                         logger.error(f'When reading HTML source landType[{landType}] of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
+                        statusDF.loc[curIndex,'inProgress'] = 0
+                        statusDF.to_csv(self.status_file)
+                        logger.warning(f'Skipping at HTML read level Village[{villageName}]')
+                        return 'FAILURE'
                         
                     dfs=pd.read_html(myhtml)
                     df=dfs[0]
+                    #logger.info('Before')
+                    #logger.info(f'{df}')
                     df['village_name_tel']=villageName
                     df['village_code']=value
                     df['district_name_tel']=district
@@ -941,6 +958,7 @@ class Crawler():
                     statusDF.loc[curIndex, landType] = 'done'
                     statusDF.to_csv(self.status_file)
                     logger.info(f'Adding the table for village[{villageName}] and type[{landType}]')
+                    #logger.info(f'{df}')
 
                     try:
                         elem = WebDriverWait(self.driver, 3).until(EC.element_to_be_clickable((By.LINK_TEXT, '›')))
