@@ -720,12 +720,15 @@ class Crawler():
         if len(wh_now) > len(wh_then):
             return set(wh_now).difference(set(wh_then)).pop()
 
-    def runCrawl(self,logger, district=None, mandal=None):
+    def runCrawl(self,logger, district=None, mandal=None, report_type=None):
         if not district:
             district = self.district
 
         if not mandal:
             mandal = self.mandal
+
+        if not report_type:
+            report_type = 'status'
         
         url = 'https://ysrrythubharosa.ap.gov.in/RBApp/RB/Login'
         logger.info('Fetching URL[%s]' % url)
@@ -758,15 +761,7 @@ class Crawler():
             area = img.crop(box)
             filename = 'cropped_' + fname 
             area.save(filename, 'PNG')
-            
-            '''
-            captcha_img = self.driver.find_element_by_id("captchdis").screenshot_as_png
-            filename = 'captcha.png'
-            with open(filename, 'wb') as html_file:
-                logger.info('Writing [%s]' % filename)
-                html_file.write(captcha_img)
-            '''
-            
+                        
             img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
             img = cv2.resize(img, None, fx=10, fy=10, interpolation=cv2.INTER_LINEAR)
             img = cv2.medianBlur(img, 9)
@@ -775,21 +770,16 @@ class Crawler():
             cv2.imwrite(filename, img)
             fname = 'converted_captcha.png'
             check_output(['convert', filename, '-resample', '10', fname])
-            captcha_text = pytesseract.image_to_string(Image.open(filename), lang='eng', config='--psm 8  --dpi 300 -c tessedit_char_whitelist=ABCDEF0123456789')
-            logger.info(captcha_text)
             captcha_text = pytesseract.image_to_string(Image.open(fname), lang='eng', config='--psm 8  --dpi 300 -c tessedit_char_whitelist=ABCDEF0123456789')
-            logger.info(captcha_text)
             
             elem = self.driver.find_element_by_xpath('(//input[@type="text"])[2]')
             logger.info('Entering Captcha_Text[%s]' % captcha_text)
             elem.send_keys(captcha_text)
             
-            login_button = '(//button[@type="button"])[2]'
-            
+            login_button = '(//button[@type="button"])[2]'            
             elem = self.driver.find_element_by_xpath(login_button)
             logger.info('Clicking Login Button')
             elem.click()
-            #time.sleep(2)
             try:
                 WebDriverWait(self.driver, 2).until(EC.element_to_be_clickable((By.XPATH, "//button[@class='swal2-confirm swal2-styled']"))).click()
                 logger.info(f'Invalid Captcha [{captcha_text}]')
@@ -807,23 +797,6 @@ class Crawler():
         self.driver.get(url)
         self.vars["window_handles"] = self.driver.window_handles
         WebDriverWait(self.driver, 15).until(EC.element_to_be_clickable((By.LINK_TEXT, district))).click()
-
-        '''
-        html_source = self.driver.page_source.replace('<head>',
-                                                 '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>')
-        logger.debug("HTML Fetched [%s]" % html_source)
-        filename = f'{self.dir}/{district}.html'
-        with open(filename, 'w') as html_file:
-            logger.info('Writing [%s]' % filename)
-            html_file.write(html_source)
-        
-        districts_df = pd.read_html(html_source)
-        districts_df[0].to_csv
-        bs = BeautifulSoup(html_source, 'html.parser')
-        table = bs.find('table', attrs={'id':'tblreject'})
-        logger.info(table)
-        exit(0)
-        '''
         
         self.vars["win9760"] = self.wait_for_window(2000)
         self.driver.switch_to.window(self.vars["win9760"])
@@ -833,9 +806,13 @@ class Crawler():
         self.driver.switch_to.window(self.vars["win3091"])
         time.sleep(3)
 
+        crawl_function = self.crawlPaymentvillReport
+        if report_type == 'status':
+            crawl_function = self.crawlStatusUpdateReport
+        
         retries = 0
         while(True and retries < 3):
-            result = self.crawlStatusUpdateReport(logger, district, mandal)
+            result = crawl_function(logger, district, mandal)
             if result == 'SUCCESS':
                 return result
             retries += 1
@@ -1031,53 +1008,53 @@ class Crawler():
             villageName = row['villageName']
             villageCode = str(row['villageCode'])
             kathaNo = str(row['kathaNo'])
-            try:
-                if villageCode != prev_village:
-                    villageSelect.select_by_value(villageCode)
-
-                elem = self.driver.find_element_by_xpath('//input[@type="text"]')
-                logger.info(f'Entering kathaNo[{kathaNo}]')
-                elem.clear()
-                elem.send_keys(kathaNo)
-                #time.sleep(1)
+            filename=f"{self.dir}/{district}_{mandal}_{villageName}_{kathaNo}.csv"                          
+            if os.path.exists(filename):
+                logger.info('File already downloaded. Reading [%s]...' % filename)
+                df = pd.read_csv(filename)
+            else:
+                try:
+                    if villageCode != prev_village:
+                        villageSelect.select_by_value(villageCode)
                 
-                self.driver.find_element_by_xpath('//input[@value="submit"]').click()
-                logger.info(f'Submit clicked for vilageName[{villageName}], {slugify(villageName)}] kathaNo[{kathaNo}]')
-
-                time.sleep(1)
-                #WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.LINK_TEXT, kathaNo)))
-                myhtml = self.driver.page_source
-            except Exception as e:
-                logger.error(f'Exception during select of Village[{villageName}, {slugify(villageName)}]  kathaNo[{kathaNo}] - EXCEPT[{type(e)}, {e}]')
-                statusDF.loc[curIndex,'status'] = 'failed'
-                statusDF.loc[curIndex,'inProgress'] = 0
-                statusDF.to_csv(self.status_file)
-                #logger.warning(f'Skipping Village[{villageName}]')
-                #exit(0)
-                #continue
-                return 'FAILURE'
-
-            if True:
+                    elem = self.driver.find_element_by_xpath('//input[@type="text"]')
+                    logger.info(f'Entering kathaNo[{kathaNo}]')
+                    elem.clear()
+                    elem.send_keys(kathaNo)
+                    #time.sleep(1)
+                    
+                    self.driver.find_element_by_xpath('//input[@value="submit"]').click()
+                    logger.info(f'Submit clicked for vilageName[{villageName}], {slugify(villageName)}] kathaNo[{kathaNo}]')
+                
+                    time.sleep(1)
+                    #WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.LINK_TEXT, kathaNo)))
+                    myhtml = self.driver.page_source
+                except Exception as e:
+                    logger.error(f'Exception during select of Village[{villageName}, {slugify(villageName)}]  kathaNo[{kathaNo}] - EXCEPT[{type(e)}, {e}]')
+                    statusDF.loc[curIndex,'status'] = 'failed'
+                    statusDF.loc[curIndex,'inProgress'] = 0
+                    statusDF.to_csv(self.status_file)
+                    #logger.warning(f'Skipping Village[{villageName}]')
+                    #exit(0)
+                    #continue
+                    return 'FAILURE'
+                
                 dfs=pd.read_html(myhtml)
                 df=dfs[0]
-                logger.info('Before')
-                logger.info(f'{df}')
                 df['village_name_tel']=villageName
                 df['village_code']=villageCode
                 df['district_name_tel']=district
                 df['mandal_name_tel']=mandal
                 df['katha_no']=kathaNo
-                #if kathaNo != str(df['Katha Number']):
-                #    logger.critical(f"Need to check village[{villageName}] for Katha Number[{df['Katha Number']}] and kathaNo[{kathaNo}]")
-                villageDFs.append(df)
-                statusDF.loc[curIndex, 'status'] = 'done'
-                statusDF.loc[curIndex,'inProgress'] = 0
-                statusDF.to_csv(self.status_file)
-                logger.info(f'Adding the table for village[{villageName}] and kathaNo[{kathaNo}]')
-                logger.info(f'{df}')
-                csvFileName=f"{self.dir}/{district}_{mandal}_{villageName}_{kathaNo}.csv"                
-                logger.info('Writing to [%s]' % csvFileName)
-                df.to_csv(csvFileName, index=False)
+                logger.info('Writing to [%s]' % filename)
+                df.to_csv(filename, index=False)
+                
+            logger.info(f'{df}')
+            villageDFs.append(df)
+            statusDF.loc[curIndex, 'status'] = 'done'
+            statusDF.loc[curIndex,'inProgress'] = 0
+            statusDF.to_csv(self.status_file)
+            logger.info(f'Adding the table for village[{villageName}] and kathaNo[{kathaNo}]')
 
             statusDF=pd.read_csv(self.status_file, index_col=0)            
             filteredDF=statusDF[ (statusDF['status'] == 'pending') & (statusDF['inProgress'] == 0)]
@@ -1095,9 +1072,9 @@ class Crawler():
             colHeaders = ['S No', 'Name Of Beneficiary', 'Father Name', 'PSS Name', 'Katha Number', 'Aadhaar', 'Bank Name', 'Bank Account Number(Last 4 Digits)', 'Status,Remarks', 'village_name_tel', 'village_code', 'district_name_tel', 'mandal_name_tel', 'land_type']
             villageDF=pd.DataFrame(columns = colHeaders)
         
-        csvFileName=f"{self.dir}/{district}.csv"
-        logger.info('Writing to [%s]' % csvFileName)
-        villageDF.to_csv(csvFileName, index=False)
+        filename=f"{self.dir}/{district}.csv"
+        logger.info('Writing to [%s]' % filename)
+        villageDF.to_csv(filename, index=False)
                     
         return 'SUCCESS'
   
@@ -1137,7 +1114,7 @@ class TestSuite(unittest.TestCase):
         self.logger.info("Running Crawler Tests")
         # Start a RhythuBharosa Crawl
         rb = Crawler()
-        rb.runCrawl(self.logger)
+        rb.runCrawl(self.logger, report_type='status')
         del rb
         
 if __name__ == '__main__':
