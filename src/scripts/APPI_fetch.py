@@ -706,7 +706,7 @@ class Crawler():
                 raise    
         
         self.vars = {}
-        self.display = displayInitialize(isDisabled = True, isVisible = is_visible)
+        self.display = displayInitialize(isDisabled = False, isVisible = is_visible)
         self.driver = driverInitialize(timeout=3) # driverInitialize(path='/opt/firefox/', timeout=3)
     
     def __del__(self):
@@ -835,7 +835,7 @@ class Crawler():
 
         retries = 0
         while(True and retries < 3):
-            result = self.crawlPaymentvillReport(logger, district, mandal)
+            result = self.crawlStatusUpdateReport(logger, district, mandal)
             if result == 'SUCCESS':
                 return result
             retries += 1
@@ -998,6 +998,107 @@ class Crawler():
             else:
                 curIndex=None
             
+        return 'SUCCESS'
+  
+    def crawlStatusUpdateReport(self,logger, district=None, mandal=None):
+        url = 'https://ysrrythubharosa.ap.gov.in/RBApp/Reports/Statusupdate'
+        logger.info('Fetching URL[%s]' % url)
+        self.driver.get(url)
+        time.sleep(3)
+        villageXPath="//select[1]"
+        try:
+            villageSelect=Select(self.driver.find_element_by_xpath(villageXPath))
+        except Exception as e:
+            logger.error(f'Exception during villageSelect for {villageXPath} - EXCEPT[{type(e)}, {e}]')
+            return 'FAILURE'
+        
+        statusDF=pd.read_csv(self.status_file,index_col=0)
+        #logger.info(statusDF)
+        filteredDF=statusDF[ (statusDF['status'] == 'pending') & (statusDF['inProgress'] == 0)]
+        if len(filteredDF) > 0:
+            curIndex=filteredDF.index[0]
+        else:
+            curIndex=None
+            logger.info('No more requests to process')
+            return 'SUCCESS'
+        statusDF.loc[curIndex,'inProgress'] = 1
+        statusDF.to_csv(self.status_file)
+        prev_village = ''
+        villageDFs=[]
+        
+        while curIndex is not None:
+            row = filteredDF.loc[curIndex]
+            villageName = row['villageName']
+            villageCode = str(row['villageCode'])
+            kathaNo = str(row['kathaNo'])
+            try:
+                if villageCode != prev_village:
+                    villageSelect.select_by_value(villageCode)
+
+                elem = self.driver.find_element_by_xpath('//input[@type="text"]')
+                logger.info(f'Entering kathaNo[{kathaNo}]')
+                elem.clear()
+                elem.send_keys(kathaNo)
+                #time.sleep(1)
+                
+                self.driver.find_element_by_xpath('//input[@value="submit"]').click()
+                logger.info(f'Submit clicked for vilageName[{villageName}], {slugify(villageName)}] kathaNo[{kathaNo}]')
+
+                time.sleep(1)
+                #WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.LINK_TEXT, kathaNo)))
+                myhtml = self.driver.page_source
+            except Exception as e:
+                logger.error(f'Exception during select of Village[{villageName}, {slugify(villageName)}]  kathaNo[{kathaNo}] - EXCEPT[{type(e)}, {e}]')
+                statusDF.loc[curIndex,'status'] = 'failed'
+                statusDF.loc[curIndex,'inProgress'] = 0
+                statusDF.to_csv(self.status_file)
+                #logger.warning(f'Skipping Village[{villageName}]')
+                #exit(0)
+                #continue
+                return 'FAILURE'
+
+            if True:
+                dfs=pd.read_html(myhtml)
+                df=dfs[0]
+                logger.info('Before')
+                logger.info(f'{df}')
+                df['village_name_tel']=villageName
+                df['village_code']=villageCode
+                df['district_name_tel']=district
+                df['mandal_name_tel']=mandal
+                df['katha_no']=kathaNo
+                #if kathaNo != str(df['Katha Number']):
+                #    logger.critical(f"Need to check village[{villageName}] for Katha Number[{df['Katha Number']}] and kathaNo[{kathaNo}]")
+                villageDFs.append(df)
+                statusDF.loc[curIndex, 'status'] = 'done'
+                statusDF.loc[curIndex,'inProgress'] = 0
+                statusDF.to_csv(self.status_file)
+                logger.info(f'Adding the table for village[{villageName}] and kathaNo[{kathaNo}]')
+                logger.info(f'{df}')
+                csvFileName=f"{self.dir}/{district}_{mandal}_{villageName}_{kathaNo}.csv"                
+                logger.info('Writing to [%s]' % csvFileName)
+                df.to_csv(csvFileName, index=False)
+
+            statusDF=pd.read_csv(self.status_file, index_col=0)            
+            filteredDF=statusDF[ (statusDF['status'] == 'pending') & (statusDF['inProgress'] == 0)]
+            if len(filteredDF) > 0:
+                curIndex=filteredDF.index[0]
+                statusDF.loc[curIndex,'inProgress'] = 1
+                statusDF.to_csv(self.status_file)
+            else:
+                curIndex=None
+            prev_village = villageCode
+
+        if len(villageDFs) > 0:
+            villageDF=pd.concat(villageDFs)
+        else: # FIXME
+            colHeaders = ['S No', 'Name Of Beneficiary', 'Father Name', 'PSS Name', 'Katha Number', 'Aadhaar', 'Bank Name', 'Bank Account Number(Last 4 Digits)', 'Status,Remarks', 'village_name_tel', 'village_code', 'district_name_tel', 'mandal_name_tel', 'land_type']
+            villageDF=pd.DataFrame(columns = colHeaders)
+        
+        csvFileName=f"{self.dir}/{district}.csv"
+        logger.info('Writing to [%s]' % csvFileName)
+        villageDF.to_csv(csvFileName, index=False)
+                    
         return 'SUCCESS'
   
 class TestSuite(unittest.TestCase):
