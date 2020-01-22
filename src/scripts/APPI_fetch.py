@@ -878,16 +878,8 @@ class Crawler():
                 logger.info(f"villageName[{villageName}, {slugify(villageName)}] landType[{landType}]")
                 try:
                     landSelect.select_by_value(landValue)
-                    # time.sleep(2) # Mynk
                     self.driver.find_element_by_xpath('//input[@value="submit"]').click()
                     logger.info(f"Submit clicked for vilageName[{villageName}], {slugify(villageName)}] landType[{landType}]")
-                    # time.sleep(2) # Mynk
-                    myhtml = self.driver.page_source
-                    dfs=pd.read_html(myhtml)
-                    logger.debug(myhtml)
-                    filename = slugify(landType) + '.html'
-                    logger.info('Writing to [%s]' % filename)
-                    dfs[0].to_html(filename)
                 except Exception as e:
                     logger.error(f'Exception during select for landType[{landType}] of Village[{villageName}, {slugify(villageName)}] - EXCEPT[{type(e)}, {e}]')
                     statusDF.loc[curIndex,'inProgress'] = 0
