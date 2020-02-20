@@ -85,12 +85,20 @@ class CEOKarnataka():
             driverFinalize(self.driver) 
             displayFinalize(self.display)
 
+    def fetch_district_list(self, logger):
+        return ['31', '32', '33', '34']
+
     def fetch_draft_rolls(self, logger):
-        self.fetch_ac_list(logger, district='31')
-        self.fetch_ac_list(logger, district='32')
-        self.fetch_ac_list(logger, district='33')
-        self.fetch_ac_list(logger, district='34')
-        
+        for district in self.fetch_district_list(logger):
+            for ac_no in self.fetch_ac_list(logger, district=district):
+                for part_no in self.fetch_part_list(logger, district, ac_no):
+                    filename=f'{self.dir}/{district}_{ac_no}_{part_no}.pdf'
+                    url = f'http://ceo.karnataka.gov.in/draftroll_2020/English/AC{ac_no}/S10A{ac_no}P{part_no}.pdf'
+                    cmd = f'curl -L -o {filename} {url}'
+                    logger.info(f'Executing cmd[{cmd}]...')
+                    os.system(cmd)
+                    logger.info(f'Fetched the Draft Roll [{filename}]')
+
     def fetch_ac_list(self, logger, district=None):
         # http://ceo.karnataka.gov.in/draftroll_2020/AC_List_B3.aspx?DistNo=31
         url = self.url + f'AC_List_B3.aspx?DistNo={district}'
@@ -108,8 +116,7 @@ class CEOKarnataka():
         logger.info(f'Writing [{filename}]') 
         df.to_csv(filename, index=False)
 
-        for ac_no in df['AC NO'].to_list():
-            self.fetch_part_list(logger, district, ac_no)
+        return df['AC NO'].to_list()
             
     def fetch_part_list(self, logger, district=None, ac_no=None):
         # http://ceo.karnataka.gov.in/draftroll_2020/Part_List_2019.aspx?ACNO=154
@@ -128,13 +135,7 @@ class CEOKarnataka():
         logger.info(f'Writing [{filename}]') 
         df.to_csv(filename, index=False)
 
-        for part_no in df['Part NO'].to_list():
-            filename=f'{self.dir}/{district}_{ac_no}_{part_no}.pdf'
-            url = f'http://ceo.karnataka.gov.in/draftroll_2020/English/AC{ac_no}/S10A{ac_no}P{part_no}.pdf'
-            cmd = f'curl -L -o {filename} {url}'
-            logger.info(f'Executing cmd[{cmd}]...')
-            os.system(cmd)
-            logger.info(f'Fetched the Draft Roll [{filename}]')
+        return df['Part NO'].to_list()
             
     def crawl_fs_report(self, logger, circle=None, fps=None):
         driver = self.driver
