@@ -85,9 +85,6 @@ class CEOKarnataka():
             driverFinalize(self.driver) 
             displayFinalize(self.display)
 
-    def fetch_district_list(self, logger):
-        return ['31', '32', '33', '34']
-
     def pdf2text(self, logger, filename):
         return 'SUCCESS'
 
@@ -109,6 +106,9 @@ class CEOKarnataka():
         if convert:
             self.pdf2text(logger, filename)
         
+    def fetch_district_list(self, logger):
+        return ['31', '32', '33', '34']
+
     def fetch_draft_rolls(self, logger):
         for district in self.fetch_district_list(logger):
             for ac_no in self.fetch_ac_list(logger, district=district):
@@ -169,6 +169,7 @@ class TestSuite(unittest.TestCase):
         # Fetch Draft Rolls from http://ceo.karnataka.gov.in/
         ck = CEOKarnataka()
         ck.fetch_draft_roll(self.logger, district='31', ac_no='154', part_no='3')
+        ck.fetch_draft_roll(self.logger, district='31', ac_no='154', part_no='7')
         del ck
         
         
