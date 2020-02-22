@@ -85,8 +85,61 @@ class CEOKarnataka():
             driverFinalize(self.driver) 
             displayFinalize(self.display)
 
-    def pdf2text(self, logger, filename):
-        return 'SUCCESS'
+    def pdf2text(self, logger, pdf_file):
+        filename = pdf_file.replace('.pdf', '.txt')
+        if os.path.exists(filename):
+            logger.info(f'File already downloaded. Reading [{filename}]...')
+            with open(filename) as txt_file:
+                text = txt_file.read()
+            return text
+                    
+        dirname = filename.strip('.txt')
+        page_file = f'{dirname}/page'
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+            # Revisit
+            cmd = f'pdftoppm -png -r 300 -freetype yes {pdf_file} {page_file}'
+            logger.info(f'Executing cmd[{cmd}]...')
+            os.system(cmd)
+
+        logger.debug(os.listdir(dirname))
+        for png_file in os.listdir(dirname):
+            if not png_file.endswith('.png'):  # Only needed during debugging
+                continue
+            img = f'{dirname}/{png_file}'
+            #if img.endswith('-01.png') or img.endswith('-02.png'):
+            if img.endswith('-02.png'):
+                continue
+            if os.path.exists(img.replace('.png', '.txt')):
+                continue
+            cmd = f'tesseract {img} {img.strip(".png")} --dpi 300'
+            logger.info(f'Executing cmd[{cmd}]...')
+            os.system(cmd)
+
+        cmd = f'''cat {page_file}-*.txt | grep -v '^$' | 
+            grep -v 'Assembly Constituency' | 
+            grep -v 'Section No and Name' | 
+            grep -v '^Part number : ' | grep -v '^ ' | 
+            grep -v 'Available' | grep -v 'Date of Publication:' > \
+            {filename}'''
+        logger.info(f'Executing cmd[{cmd}]...')
+        os.system(cmd)
+
+        #exit(0)
+        
+        #cmd = f'rm -rfv {dirname}'
+        aap_location = '/media/mayank/FOOTAGE1/AAP_BBMP_FILEs'
+        cmd = f'mv -v {dirname} {aap_location}/'
+        logger.info(f'Executing cmd[{cmd}]...')
+        os.system(cmd)
+        cmd = f'ln -s {aap_location}/{dirname} .'
+        logger.info(f'Executing cmd[{cmd}]...')
+        os.system(cmd)
+        
+        logger.info(f'Reading [{filename}]...')
+        with open(filename) as txt_file:
+            text = txt_file.read()
+        return text
 
     def fetch_draft_roll(self, logger, district, ac_no, part_no, convert=None):
         filename=f'{self.dir}/{district}_{ac_no}_{part_no}.pdf'
@@ -113,7 +166,7 @@ class CEOKarnataka():
         for district in self.fetch_district_list(logger):
             for ac_no in self.fetch_ac_list(logger, district=district):
                 for part_no in self.fetch_part_list(logger, district, ac_no):
-                    self.fetch_draft_roll(logger, district, ac_no, part_no)
+                    self.fetch_draft_roll(logger, district, ac_no, part_no, convert=True)
 
     def fetch_ac_list(self, logger, district=None):
         filename=f'{self.dir}/{district}.html'
@@ -168,8 +221,8 @@ class TestSuite(unittest.TestCase):
         self.logger.info("Running test for Food Security Report")
         # Fetch Draft Rolls from http://ceo.karnataka.gov.in/
         ck = CEOKarnataka()
-        ck.fetch_draft_roll(self.logger, district='31', ac_no='154', part_no='3')
-        ck.fetch_draft_roll(self.logger, district='31', ac_no='154', part_no='7')
+        ck.fetch_draft_roll(self.logger, district='31', ac_no='154', part_no='3', convert=True)
+        #ck.fetch_draft_roll(self.logger, district='31', ac_no='154', part_no='7')
         del ck
         
         
