@@ -88,66 +88,32 @@ class CEOKarnataka():
     def fetch_district_list(self, logger):
         return ['31', '32', '33', '34']
 
+    def fetch_draft_roll(self, logger, district, ac_no, part_no):
+        filename=f'{self.dir}/{district}_{ac_no}_{part_no}.pdf'
+        url = f'http://ceo.karnataka.gov.in/draftroll_2020/English/AC{ac_no}/S10A{ac_no}P{part_no}.pdf'
+        cmd = f'curl -L -o {filename} {url}'
+        logger.info(f'Executing cmd[{cmd}]...')
+        os.system(cmd)
+        logger.info(f'Fetched the Draft Roll [{filename}]')
+        
     def fetch_draft_rolls(self, logger):
         for district in self.fetch_district_list(logger):
             for ac_no in self.fetch_ac_list(logger, district=district):
                 for part_no in self.fetch_part_list(logger, district, ac_no):
-                    filename=f'{self.dir}/{district}_{ac_no}_{part_no}.pdf'
-                    url = f'http://ceo.karnataka.gov.in/draftroll_2020/English/AC{ac_no}/S10A{ac_no}P{part_no}.pdf'
-                    cmd = f'curl -L -o {filename} {url}'
-                    logger.info(f'Executing cmd[{cmd}]...')
-                    os.system(cmd)
-                    logger.info(f'Fetched the Draft Roll [{filename}]')
+                    self.fetch_draft_roll(logger, district, ac_no, part_no)
 
     def fetch_ac_list(self, logger, district=None):
         filename=f'{self.dir}/{district}.html'
-        if os.path.exists(filename):
-            logger.info(f'File already downloaded. Reading [{filename}]...')            
-            with open(filename) as html_file:
-                html_source = html_file.read()
-        else:
-            # http://ceo.karnataka.gov.in/draftroll_2020/AC_List_B3.aspx?DistNo=31
-            url = self.url + f'AC_List_B3.aspx?DistNo={district}'
-            logger.info(f'Fetching URL[{url}]')
-            response = requests.get(url)
-            html_source = response.content
-            with open(filename, 'wb') as html_file:
-                logger.info(f'Writing file[{filename}]')
-                html_file.write(html_source)
-
-        df = pd.read_html(html_source)[1]
-        logger.debug(f'{df}')
-        filename = filename.replace('.html', '.csv')
-        logger.info(f'Writing [{filename}]') 
-        df.to_csv(filename, index=False)
-
-        return df['AC NO'].to_list()
+        url = self.url + f'AC_List_B3.aspx?DistNo={district}'
+        type = 'AC NO'
+        return self.fetch_lookup(logger, url, filename, type)
             
     def fetch_part_list(self, logger, district=None, ac_no=None):
         filename=f'{self.dir}/{district}_{ac_no}.html'
-        if os.path.exists(filename):
-            logger.info(f'File already downloaded. Reading [{filename}]...')            
-            with open(filename) as html_file:
-                html_source = html_file.read()
-        else:
-            # http://ceo.karnataka.gov.in/draftroll_2020/Part_List_2019.aspx?ACNO=154
-            url = self.url + f'Part_List_2019.aspx?ACNO={ac_no}'
-            logger.info(f'Fetching URL[{url}]')
-            response = requests.get(url)
-            html_source = response.content
-            with open(filename, 'wb') as html_file:
-                logger.info(f'Writing file[{filename}]')
-                html_file.write(html_source)
+        url = self.url + f'Part_List_2019.aspx?ACNO={ac_no}'
+        type = 'Part NO'
+        return self.fetch_lookup(logger, url, filename, type)
 
-        df = pd.read_html(html_source)[1]
-        logger.debug(f'{df}')
-        filename = filename.replace('.html', '.csv')
-        logger.info(f'Writing [{filename}]') 
-        df.to_csv(filename, index=False)
-
-        return df['Part NO'].to_list()
-
-    # The below function could reduce duplication above but... 
     def fetch_lookup(self, logger, url, filename, type):
         if os.path.exists(filename):
             logger.info(f'File already downloaded. Reading [{filename}]...')
@@ -169,7 +135,7 @@ class CEOKarnataka():
 
         return df[type].to_list()
 
-    
+
 class TestSuite(unittest.TestCase):
     def setUp(self):
         self.logger = logger_fetch('info')
