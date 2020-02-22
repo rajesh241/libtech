@@ -88,13 +88,26 @@ class CEOKarnataka():
     def fetch_district_list(self, logger):
         return ['31', '32', '33', '34']
 
-    def fetch_draft_roll(self, logger, district, ac_no, part_no):
+    def pdf2text(self, logger, filename):
+        return 'SUCCESS'
+
+    def fetch_draft_roll(self, logger, district, ac_no, part_no, convert=None):
         filename=f'{self.dir}/{district}_{ac_no}_{part_no}.pdf'
-        url = f'http://ceo.karnataka.gov.in/draftroll_2020/English/AC{ac_no}/S10A{ac_no}P{part_no}.pdf'
-        cmd = f'curl -L -o {filename} {url}'
-        logger.info(f'Executing cmd[{cmd}]...')
-        os.system(cmd)
-        logger.info(f'Fetched the Draft Roll [{filename}]')
+        if os.path.exists(filename):
+            logger.info(f'File already downloaded. Converting [{filename}]...')
+            '''
+            with open(filename) as html_file:
+                html_source = html_file.read()
+            '''
+        else:
+            url = f'http://ceo.karnataka.gov.in/draftroll_2020/English/AC{ac_no}/S10A{ac_no}P{part_no}.pdf'
+            cmd = f'curl -L -o {filename} {url}'
+            logger.info(f'Executing cmd[{cmd}]...')
+            os.system(cmd)
+            logger.info(f'Fetched the Draft Roll [{filename}]')
+
+        if convert:
+            self.pdf2text(logger, filename)
         
     def fetch_draft_rolls(self, logger):
         for district in self.fetch_district_list(logger):
@@ -151,12 +164,13 @@ class TestSuite(unittest.TestCase):
         ck.fetch_draft_rolls(self.logger)
         del ck
         
-    def test_crawl_draft_rolls(self):
+    def test_fetch_draft_roll(self):
         self.logger.info("Running test for Food Security Report")
         # Fetch Draft Rolls from http://ceo.karnataka.gov.in/
-        ck = CEOKarnataka(is_selenium=True)
-        ck.crawl_fs_report(self.logger, circle='01020048', fps='100300400015')
+        ck = CEOKarnataka()
+        ck.fetch_draft_roll(self.logger, district='31', ac_no='154', part_no='3')
         del ck
+        
         
         
 if __name__ == '__main__':
