@@ -32,7 +32,10 @@ def loggerSetLevel(logger, level):
     raise ValueError('Invalid log level: %s' % level)
   else:
     logger.setLevel(numeric_level)
-  
+
+def logger_fetch(level=None):
+  return loggerFetch(level)
+    
 def loggerFetch(level=None):
   logger = logging.getLogger(__name__)
 

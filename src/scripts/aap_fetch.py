@@ -92,9 +92,14 @@ class CEOKarnataka():
             with open(filename) as txt_file:
                 text = txt_file.read()
             return text
-                    
+
+        '''
+        aap_location = '/media/mayank/FOOTAGE1/AAP_BBMP_FILEs'
+        basename = os.path.basename(filename).strip('.txt')
+        dirname = f'{aap_location}/{basename}'
+        '''
         dirname = filename.strip('.txt')
-        page_file = f'{dirname}/page'
+        page_file = os.path.join(dirname, 'page') # f'{dirname}/page'
         if not os.path.exists(dirname):
             os.makedirs(dirname)
             # Revisit
@@ -106,7 +111,7 @@ class CEOKarnataka():
         for png_file in os.listdir(dirname):
             if not png_file.endswith('.png'):  # Only needed during debugging
                 continue
-            img = f'{dirname}/{png_file}'
+            img = os.path.join(dirname, png_file) # f'{dirname}/{png_file}'
             #if img.endswith('-01.png') or img.endswith('-02.png'):
             if img.endswith('-02.png'):
                 continue
@@ -122,19 +127,20 @@ class CEOKarnataka():
             grep -v '^Part number : ' | grep -v '^ ' | 
             grep -v 'Available' | grep -v 'Date of Publication:' > \
             {filename}'''
+        cmd = f'''cat {page_file}-*.txt > {filename}'''
         logger.info(f'Executing cmd[{cmd}]...')
         os.system(cmd)
 
         #exit(0)
-        
+        '''
         #cmd = f'rm -rfv {dirname}'
-        aap_location = '/media/mayank/FOOTAGE1/AAP_BBMP_FILEs'
         cmd = f'mv -v {dirname} {aap_location}/'
         logger.info(f'Executing cmd[{cmd}]...')
         os.system(cmd)
         cmd = f'ln -s {aap_location}/{dirname} .'
         logger.info(f'Executing cmd[{cmd}]...')
         os.system(cmd)
+        '''
         
         logger.info(f'Reading [{filename}]...')
         with open(filename) as txt_file:
@@ -142,7 +148,7 @@ class CEOKarnataka():
         return text
 
     def fetch_draft_roll(self, logger, district, ac_no, part_no, convert=None):
-        filename=f'{self.dir}/{district}_{ac_no}_{part_no}.pdf'
+        filename=os.path.join(f'{self.dir}', f'{district}_{ac_no}_{part_no}.pdf')
         if os.path.exists(filename):
             logger.info(f'File already downloaded. Converting [{filename}]...')
             '''
@@ -160,7 +166,7 @@ class CEOKarnataka():
             self.pdf2text(logger, filename)
         
     def fetch_district_list(self, logger):
-        return ['31', '32', '33', '34']
+        return ['31']
 
     def fetch_draft_rolls(self, logger):
         for district in self.fetch_district_list(logger):
@@ -169,13 +175,13 @@ class CEOKarnataka():
                     self.fetch_draft_roll(logger, district, ac_no, part_no, convert=True)
 
     def fetch_ac_list(self, logger, district=None):
-        filename=f'{self.dir}/{district}.html'
+        filename = os.path.join(self.dir, f'{district}.html')
         url = self.url + f'AC_List_B3.aspx?DistNo={district}'
         type = 'AC NO'
         return self.fetch_lookup(logger, url, filename, type)
             
     def fetch_part_list(self, logger, district=None, ac_no=None):
-        filename=f'{self.dir}/{district}_{ac_no}.html'
+        filename = os.path.join(f'{self.dir}', f'{district}_{ac_no}.html')
         url = self.url + f'Part_List_2019.aspx?ACNO={ac_no}'
         type = 'Part NO'
         return self.fetch_lookup(logger, url, filename, type)
@@ -221,7 +227,7 @@ class TestSuite(unittest.TestCase):
         self.logger.info("Running test for Food Security Report")
         # Fetch Draft Rolls from http://ceo.karnataka.gov.in/
         ck = CEOKarnataka()
-        ck.fetch_draft_roll(self.logger, district='31', ac_no='154', part_no='3', convert=True)
+        ck.fetch_draft_roll(self.logger, district='32', ac_no='151', part_no='37', convert=True)
         #ck.fetch_draft_roll(self.logger, district='31', ac_no='154', part_no='7')
         del ck
         
