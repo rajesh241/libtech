@@ -92,8 +92,20 @@ class CEOKarnataka():
             displayFinalize(self.display)
         self.logger.info(f'Destructor({type(self).__name__})')
 
-    def pdf2text(self, pdf_file):
+    def google_vision_scan(self, pdf_file):
         logger = self.logger
+
+        return 'Hello World!'
+        
+    def pdf2text(self, pdf_file, use_google_vision=None):
+        logger = self.logger
+
+        if not use_google_vision:
+            use_google_vision = False  # Default for now FIXME
+            
+        if use_google_vision:
+            return google_vision_scan(pdf_file)
+        
         filename = pdf_file.replace('.pdf', '.txt')
         if os.path.exists(filename):
             logger.info(f'File already downloaded. Reading [{filename}]...')
@@ -246,7 +258,7 @@ class TestSuite(unittest.TestCase):
         # Fetch Draft Rolls from http://ceo.karnataka.gov.in/
         ck = CEOKarnataka(logger=self.logger)
         ck.fetch_draft_roll(district='32', ac_no='151', part_no='115', convert=True)
-        #ck.fetch_draft_roll(self.logger, district='31', ac_no='154', part_no='7')
+        #ck.fetch_draft_roll(district='31', ac_no='154', part_no='7')
         del ck
         
 if __name__ == '__main__':
