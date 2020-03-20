@@ -70,12 +70,9 @@ class CEOKarnataka():
         logger.info(f'Constructor({type(self).__name__})')
         self.url = 'http://ceo.karnataka.gov.in/draftroll_2020/'
         self.status_file = 'status.csv'
-        self.dir = 'Karnataka'
-        try:
+        self.dir = 'Test' # 'Karnataka'
+        if not os.path.exists(self.dir):
             os.makedirs(self.dir)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
 
         self.is_selenium = False
         if is_selenium:
@@ -94,6 +91,26 @@ class CEOKarnataka():
 
     def google_vision_scan(self, pdf_file):
         logger = self.logger
+        logger.info(f'Scanning file[{pdf_file}]')
+        import re
+        from google.cloud import vision
+        from google.cloud import storage
+        from google.protobuf import json_format
+ 
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'/home/mayank/libtech/src/scripts/aap-bbmp-creds.json'
+        project = 'AAP-BBMP'
+        bucket_name = 'draft-rolls'
+       
+        print(storage)
+        storage_client = storage.Client()
+        print(storage_client)
+        bucket = storage_client.get_bucket(bucket_name)
+        print(bucket)
+        blob = bucket.blob(pdf_file)
+        print(blob)
+        print(blob.upload_from_filename(pdf_file))
+
+        filename = pdf_file.replace('.pdf', '.txt')
 
         return 'Hello World!'
         
@@ -101,7 +118,7 @@ class CEOKarnataka():
         logger = self.logger
 
         if not use_google_vision:
-            use_google_vision = False  # Default for now FIXME
+            use_google_vision = True  # Default for now FIXME
             
         if use_google_vision:
             return self.google_vision_scan(pdf_file)
