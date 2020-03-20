@@ -104,8 +104,13 @@ class CEOKarnataka():
             use_google_vision = False  # Default for now FIXME
             
         if use_google_vision:
-            return google_vision_scan(pdf_file)
+            return self.google_vision_scan(pdf_file)
+        else:
+            return self.tesseract_scan(pdf_file)
         
+    def tesseract_scan(self, pdf_file):
+        logger = self.logger
+
         filename = pdf_file.replace('.pdf', '.txt')
         if os.path.exists(filename):
             logger.info(f'File already downloaded. Reading [{filename}]...')
