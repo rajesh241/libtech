@@ -41,6 +41,14 @@ import csv
 import urllib.parse as urlparse
 
 
+# For Google Cloud
+
+use_google_vision = True
+
+from google.cloud import vision
+from google.cloud import storage
+from google.protobuf import json_format
+
 #######################
 # Global Declarations
 #######################
@@ -48,13 +56,6 @@ import urllib.parse as urlparse
 timeout = 3
 is_mynk = True
 is_virtual = True
-
-
-#############
-# Functions
-#############
-
-
 
 
 #############
@@ -70,7 +71,7 @@ class CEOKarnataka():
         logger.info(f'Constructor({type(self).__name__})')
         self.url = 'http://ceo.karnataka.gov.in/draftroll_2020/'
         self.status_file = 'status.csv'
-        self.dir = 'Test' # 'Karnataka'
+        self.dir = 'Karnataka'
         if not os.path.exists(self.dir):
             os.makedirs(self.dir)
 
@@ -83,6 +84,12 @@ class CEOKarnataka():
             self.driver = driverInitialize(timeout=3)
             #self.driver = driverInitialize(path='/opt/firefox/', timeout=3)
 
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'./aap-bbmp-creds.json'
+        self.project = 'AAP-BBMP'
+        self.bucket_name = 'draft-rolls'
+        self.storage_client = storage.Client()
+        self.vision_client =  vision.ImageAnnotatorClient()
+
     def __del__(self):
         if self.is_selenium:
             driverFinalize(self.driver) 
@@ -93,22 +100,18 @@ class CEOKarnataka():
         logger = self.logger
         logger.info(f'Scanning file[{pdf_file}]')
         import re
-        from google.cloud import vision
-        from google.cloud import storage
-        from google.protobuf import json_format
  
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'/home/mayank/libtech/src/scripts/aap-bbmp-creds.json'
-        project = 'AAP-BBMP'
-        bucket_name = 'draft-rolls'
-       
-        storage_client = storage.Client()
-        bucket = storage_client.get_bucket(bucket_name)
+        project = self.project
+        bucket_name = self.bucket_name
+
+        storage_client = self.storage_client
+        bucket = storage_client.get_bucket(self.bucket_name)
         logger.info(f'Uploading file[{pdf_file}] to {bucket}...')
         blob = bucket.blob(pdf_file)
         blob.upload_from_filename(pdf_file)
 
         logger.info(f'Begin scanning file[{pdf_file}]...')
-        client = vision.ImageAnnotatorClient()
+        client = self.vision_client
         
         batch_size = 100
         mime_type = 'application/pdf'
@@ -132,13 +135,13 @@ class CEOKarnataka():
         
         #storage_client = storage.Client()
         match = re.match(r'gs://([^/]+)/(.+)', gcs_destination_uri)
-        bucket_name = match.group(1)
+        #bucket_name = match.group(1)
         prefix = match.group(2)
         bucket = storage_client.get_bucket(bucket_name)
         
         # List object with the given prefix
         blob_list = list(bucket.list_blobs(prefix=prefix))
-        print('Output files:')
+        logger.info('Output files:')
         for blob in blob_list:
             print(blob.name)
         
@@ -146,26 +149,23 @@ class CEOKarnataka():
         json_string = output.download_as_string()
         response = json_format.Parse(json_string, vision.types.AnnotateFileResponse())
         
-        buffer = ''
+        text = ''
         for page_response in response.responses:
             annotation = page_response.full_text_annotation
-            #print('Page text:')
-            #print(annotation.text)
-            buffer += annotation.text + '\n'
+            logger.debug('Page text:')
+            logger.debug(annotation.text)
+            text += annotation.text + '\n'
         
-        filename = pdf_file.replace('.pdf', '.txt')
-        with open(filename, 'w') as html_file:
+        filename = pdf_file.replace('.pdf', '.txt').replace('Karnataka', 'Test')
+        with open(filename, 'w') as txt_file:
             print(f'Writing file[{filename}]')
-            html_file.write(buffer)
+            txt_file.write(text)
 
-        return buffer
+        return text
 
     def pdf2text(self, pdf_file, use_google_vision=None):
         logger = self.logger
 
-        if not use_google_vision:
-            use_google_vision = True  # Default for now FIXME
-            
         if use_google_vision:
             return self.google_vision_scan(pdf_file)
         else:
@@ -239,9 +239,18 @@ class CEOKarnataka():
             text = txt_file.read()
         return text
 
-    def fetch_draft_roll(self, district, ac_no, part_no, convert=None):
+    def fetch_draft_roll(self, district, ac_no, part_no, convert=None, use_google_vision=None):
         logger = self.logger
+        
         filename=os.path.join(f'{self.dir}', f'{district}_{ac_no}_{part_no}.pdf')
+        # Discard once done - FIXME
+        part_id = int(part_no)
+        ac_id = int(ac_no)
+        if False:
+            if not(part_id < 30 and ac_id == 154):
+                logger.info(f'Skipping {filename}...')
+                return
+        
         if os.path.exists(filename):
             logger.info(f'File already downloaded. Converting [{filename}]...')
             '''
@@ -256,11 +265,11 @@ class CEOKarnataka():
             logger.info(f'Fetched the Draft Roll [{filename}]')
 
         if convert:
-            self.pdf2text(filename)
+            self.pdf2text(filename, use_google_vision)
         
     def fetch_district_list(self):
         logger = self.logger
-        return ['32']
+        return ['31']
 
     def fetch_draft_rolls(self):
         logger = self.logger
@@ -325,9 +334,14 @@ class TestSuite(unittest.TestCase):
         self.logger.info("TestCase: UnitTest - fetch_draft_roll(district, ac_no, part_no)")
         # Fetch Draft Rolls from http://ceo.karnataka.gov.in/
         ck = CEOKarnataka(logger=self.logger)
-        ck.fetch_draft_roll(district='32', ac_no='151', part_no='115', convert=True)
+        ck.fetch_draft_roll(district='32', ac_no='151', part_no='115', convert=True, use_google_vision=use_google_vision)
         #ck.fetch_draft_roll(district='31', ac_no='154', part_no='7')
         del ck
-        
+
+
+#############
+# Functions
+#############
+
 if __name__ == '__main__':
     unittest.main()
