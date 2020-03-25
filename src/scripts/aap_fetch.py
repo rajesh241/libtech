@@ -48,6 +48,8 @@ use_google_vision = True
 from google.cloud import vision
 from google.cloud import storage
 from google.protobuf import json_format
+import re
+
 
 #######################
 # Global Declarations
@@ -99,8 +101,14 @@ class CEOKarnataka():
     def google_vision_scan(self, pdf_file):
         logger = self.logger
         logger.info(f'Scanning file[{pdf_file}]')
-        import re
  
+        filename = pdf_file.replace('.pdf', '.txt').replace('Karnataka', 'Test')
+        if os.path.exists(filename):
+            logger.info(f'File already downloaded. Reading [{filename}]...')
+            with open(filename) as txt_file:
+                text = txt_file.read()
+            return text
+        
         project = self.project
         bucket_name = self.bucket_name
 
@@ -156,9 +164,8 @@ class CEOKarnataka():
             logger.debug(annotation.text)
             text += annotation.text + '\n'
         
-        filename = pdf_file.replace('.pdf', '.txt').replace('Karnataka', 'Test')
         with open(filename, 'w') as txt_file:
-            print(f'Writing file[{filename}]')
+            logger.info(f'Writing file[{filename}]')
             txt_file.write(text)
 
         return text
@@ -246,7 +253,7 @@ class CEOKarnataka():
         # Discard once done - FIXME
         part_id = int(part_no)
         ac_id = int(ac_no)
-        if False:
+        if True:
             if not(part_id < 30 and ac_id == 154):
                 logger.info(f'Skipping {filename}...')
                 return
@@ -265,7 +272,7 @@ class CEOKarnataka():
             logger.info(f'Fetched the Draft Roll [{filename}]')
 
         if convert:
-            self.pdf2text(filename, use_google_vision)
+            self.pdf2text(filename, use_google_vision=True)
         
     def fetch_district_list(self):
         logger = self.logger
