@@ -273,17 +273,111 @@ class CEOKarnataka():
 
         if convert:
             self.pdf2text(filename, use_google_vision=True)
+
+    def parse_draft_roll(self, district, ac_no, part_no, convert=None, use_google_vision=None):
+        logger = self.logger
+        
+        filename=os.path.join(f'{self.dir}', f'{district}_{ac_no}_{part_no}/page-01.txt')
+        filename = f'/media/mayank/FOOTAGE1/AAP_BBMP_FILEs/{district}_{ac_no}_{part_no}/page-01.txt'
+        # Discard once done - FIXME
+        part_id = int(part_no)
+        ac_id = int(ac_no)
+        if False:
+            if not(part_id < 30 and ac_id == 154):
+                logger.info(f'Skipping {filename}...')
+                return None
+
+        if os.path.exists(filename):
+            logger.info(f'File already downloaded. Parsing [{filename}]...')
+            with open(filename, 'r') as file_handle:
+                page1 = file_handle.read()
+
+            row = {}
+
+            #search_pattern = 'Constituency is located : (\d+\s*-.*\n*.*)'
+            search_pattern = 'Constituency is located :\s*(\d+\s*-.*\n*.*)'
+            pc_str = re.search(search_pattern, page1).group(1)
+            row['Parliamentary Constituency'] = pc = re.sub('\n', '', pc_str)
+            logger.info(f'Parliamentary Constituency [{pc}]')
+
+            search_pattern = 'No. Name and Reservation Status of Assembly Constituency\s*: (\d+ -.*\n*.*)'
+            ac_str = re.search(search_pattern, page1).group(1)
+            ac = row['Assembly Constituency'] = re.sub('\s', '', ac_str)
+            logger.info(f'Assembly Constituency [{ac}]')
+
+            search_pattern = 'No. Name and Reservation Status of Assembly Constituency\s*: (\d+ -.*\n*.*)'
+            match = re.search(search_pattern, page1)
+            ward_no = row['Ward No'] = match.group(1).replace('\n', ' ').replace('  ', ' ')
+            logger.info(f'Ward No [{ward_no}]')
+
+            search_pattern = '\(Male/Female/General\)\n*(\d+-.*)'
+            match = re.search(search_pattern, page1)
+            if not match:
+                search_pattern = 'No. and Name of Polling Station :.*\n*(\d+-.*)'
+                search_pattern = '(\d+-\s*[a-zA-Z\s]+)'
+                search_pattern = f'({part_no}-\s*[a-zA-Z\s]+)'
+                #logger.info(search_pattern)
+                match = re.search(search_pattern, page1)
+            row['Part No'] = part_no = match.group(1)
+            logger.info(f'Part No[{part_no}]')
+
+            #'Serial No. Serial No. Male Female Third Gender Total\n1 786 398 388 0 786'
+            #search_pattern = 'Serial No. Serial No. Male Female Third Gender Total\n(\d+ \d+ \d+ \d+ \d+ \d+)'
+            search_pattern = '(\d+ \d+ \d+ \d+ \d+ \d+)'
+            match = re.search(search_pattern, page1)
+            if not match:
+                search_pattern = 'Serial No. Serial No. Male Female Third Gender Total\n(\d+ \d+ \d+ \d+ \d+)'
+                match = re.search(search_pattern, page1)
+            if not match:
+                logger.warning(f'Could not find gender stats for file[{filename}]')
+                return None
+            stats = match.group(1).split(' ')
+            logger.debug(stats)
+            if len(stats) <6:
+                men = row['Male'] = 0
+                women = row['Female'] = stats[2]
+                third = row['Third Gender'] = stats[3]
+                TOTAL = row['Total'] = stats[4]
+                total = int(men) + int(women) + int(third)
+            else:
+                men = row['Male'] = stats[2]
+                women = row['Female'] = stats[3]
+                third = row['Third Gender'] = stats[4]
+                TOTAL = row['Total'] = stats[5]
+                total = int(men) + int(women) + int(third)
+            logger.info(f'men[{men}] women[{women}] third[{third}] total[{total}] TOTAL[{TOTAL}]')
+            if stats[1] != stats[-1]:
+                exit(-1)
+
+        return row
         
     def fetch_district_list(self):
         logger = self.logger
         return ['31']
 
-    def fetch_draft_rolls(self):
+    def fetch_draft_rolls(self, is_parse=None):
         logger = self.logger
-        for district in self.fetch_district_list():
-            for ac_no in self.fetch_ac_list(district=district):
-                for part_no in self.fetch_part_list(district, ac_no):
-                    self.fetch_draft_roll(district, ac_no, part_no, convert=True)
+        buffer = []
+
+        try: 
+            for district in self.fetch_district_list():
+                for ac_no in self.fetch_ac_list(district=district):
+                    for part_no in self.fetch_part_list(district, ac_no):
+                        if is_parse:
+                            row = self.parse_draft_roll(district, ac_no, part_no)
+                            if not row:
+                                raise
+                            buffer.append(row)
+                        else:
+                            self.fetch_draft_roll(district, ac_no, part_no, convert=True)
+        except:
+            pass
+
+        if len(buffer) > 0:
+            filename = '/tmp/test.json' 
+            with open(filename, 'w') as file_handle:
+                logger.info(f'Writing file[{filename}]')
+                json.dump(buffer, file_handle)
 
     def fetch_ac_list(self, district=None):
         logger = self.logger        
@@ -345,6 +439,21 @@ class TestSuite(unittest.TestCase):
         #ck.fetch_draft_roll(district='31', ac_no='154', part_no='7')
         del ck
 
+    def test_parse_draft_roll(self):
+        self.logger.info("TestCase: UnitTest - parse_draft_roll(district, ac_no, part_no)")
+        # Parse Draft Rolls from http://ceo.karnataka.gov.in/
+        ck = CEOKarnataka(logger=self.logger)
+        ck.parse_draft_roll(district='32', ac_no='151', part_no='115', convert=True, use_google_vision=use_google_vision)
+        #ck.parse_draft_roll(district='31', ac_no='154', part_no='7')
+        del ck
+
+    def test_parse_draft_rolls(self):
+        self.logger.info("TestCase: E2E - parse_draft_rolls()")
+        # Parse Draft Rolls from http://ceo.karnataka.gov.in/
+        ck = CEOKarnataka(logger=self.logger)
+        ck.fetch_draft_rolls(is_parse=True)
+        del ck
+        
 
 #############
 # Functions
