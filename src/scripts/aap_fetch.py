@@ -59,6 +59,7 @@ timeout = 3
 is_mynk = True
 is_virtual = True
 
+SKIP = [(31, 162, 179),]
 
 #############
 # Classes
@@ -280,19 +281,31 @@ class CEOKarnataka():
         filename=os.path.join(f'{self.dir}', f'{district}_{ac_no}_{part_no}/page-01.txt')
         filename = f'/media/mayank/FOOTAGE1/AAP_BBMP_FILEs/{district}_{ac_no}_{part_no}/page-01.txt'
         # Discard once done - FIXME
-        part_id = int(part_no)
+        district_id = int(district)
         ac_id = int(ac_no)
+        part_id = int(part_no)
+        logger.info(f'Attempting district[{district_id}] > ac[{ac_id}] > part[{part_id}]')
+        row = {
+            'District ID': district_id,
+            'AC ID': ac_id,
+            'Part ID': part_id,
+        }
+        logger.info(f'Attempting for row[{row}]')
         if False:
             if not(part_id < 30 and ac_id == 154):
                 logger.info(f'Skipping {filename}...')
                 return None
-
+        else:
+            if (district_id, ac_id, part_id) in SKIP:
+                logger.info(f'Skipping {filename}...')
+                return {'Missed': True}
         if os.path.exists(filename):
             logger.info(f'File already downloaded. Parsing [{filename}]...')
             with open(filename, 'r') as file_handle:
                 page1 = file_handle.read()
 
-            row = {}
+            if len(page1) == 0:
+                return {'Missed': True}
 
             #search_pattern = 'Constituency is located : (\d+\s*-.*\n*.*)'
             search_pattern = 'Constituency is located :\s*(\d+\s*-.*\n*.*)'
@@ -305,21 +318,29 @@ class CEOKarnataka():
             ac = row['Assembly Constituency'] = re.sub('\s', '', ac_str)
             logger.info(f'Assembly Constituency [{ac}]')
 
-            search_pattern = 'No. Name and Reservation Status of Assembly Constituency\s*: (\d+ -.*\n*.*)'
+            search_pattern = '>\s*(\d+)\s*-(.*)'
             match = re.search(search_pattern, page1)
-            ward_no = row['Ward No'] = match.group(1).replace('\n', ' ').replace('  ', ' ')
-            logger.info(f'Ward No [{ward_no}]')
+            if not match:
+                search_pattern = 'Ward No : \s*(\d+\s*-.*)'
+                match = re.search(search_pattern, page1)
+            if not match:
+                ward_no = row['Ward No'] = '<MISSED>'
+                ward_name = row['Ward Name'] = '<MISSED>'
+            else:
+                ward_no = row['Ward No'] = match.group(1)
+                ward_name = row['Ward Name'] = match.group(2)
+            logger.info(f'Ward No [{ward_no}] and Name[{ward_name}]')
 
             search_pattern = '\(Male/Female/General\)\n*(\d+-.*)'
             match = re.search(search_pattern, page1)
             if not match:
                 search_pattern = 'No. and Name of Polling Station :.*\n*(\d+-.*)'
                 search_pattern = '(\d+-\s*[a-zA-Z\s]+)'
-                search_pattern = f'({part_no}-\s*[a-zA-Z\s]+)'
+                search_pattern = f'({part_no}-\s*\d*[a-zA-Z\s]+)'
                 #logger.info(search_pattern)
                 match = re.search(search_pattern, page1)
-            row['Part No'] = part_no = match.group(1)
-            logger.info(f'Part No[{part_no}]')
+            row['Part No & Name'] = part_no = match.group(1)
+            logger.info(f'Part No & No[{part_no}]')
 
             #'Serial No. Serial No. Male Female Third Gender Total\n1 786 398 388 0 786'
             #search_pattern = 'Serial No. Serial No. Male Female Third Gender Total\n(\d+ \d+ \d+ \d+ \d+ \d+)'
@@ -330,25 +351,25 @@ class CEOKarnataka():
                 match = re.search(search_pattern, page1)
             if not match:
                 logger.warning(f'Could not find gender stats for file[{filename}]')
-                return None
-            stats = match.group(1).split(' ')
+                stats = []
+            else:
+                stats = match.group(1).split(' ')
             logger.debug(stats)
-            if len(stats) <6:
-                men = row['Male'] = 0
-                women = row['Female'] = stats[2]
-                third = row['Third Gender'] = stats[3]
-                TOTAL = row['Total'] = stats[4]
-                total = int(men) + int(women) + int(third)
+            if len(stats) < 6:
+                men = row['Male'] = '<MISSED>'
+                women = row['Female'] = '<MISSED>'
+                third = row['Third Gender'] = '<MISSED>'
+                TOTAL = row['Total'] = '<MISSED>'
+                total = '<MISSED>'
             else:
                 men = row['Male'] = stats[2]
                 women = row['Female'] = stats[3]
                 third = row['Third Gender'] = stats[4]
                 TOTAL = row['Total'] = stats[5]
                 total = int(men) + int(women) + int(third)
+                if stats[1] != stats[-1]:
+                    logger.warning(f'Messed gender stats for file[{filename}]')
             logger.info(f'men[{men}] women[{women}] third[{third}] total[{total}] TOTAL[{TOTAL}]')
-            if stats[1] != stats[-1]:
-                exit(-1)
-
         return row
         
     def fetch_district_list(self):
@@ -359,7 +380,8 @@ class CEOKarnataka():
         logger = self.logger
         buffer = []
 
-        try: 
+        #if True:
+        try:
             for district in self.fetch_district_list():
                 for ac_no in self.fetch_ac_list(district=district):
                     for part_no in self.fetch_part_list(district, ac_no):
@@ -370,14 +392,21 @@ class CEOKarnataka():
                             buffer.append(row)
                         else:
                             self.fetch_draft_roll(district, ac_no, part_no, convert=True)
-        except:
-            pass
-
+        #'''
+        except Exception as e:
+            logger.warning(f'Parse failed with Exception[{e}]')
+        #'''
         if len(buffer) > 0:
-            filename = '/tmp/test.json' 
+            filename = '/tmp/aggregate.json' 
             with open(filename, 'w') as file_handle:
                 logger.info(f'Writing file[{filename}]')
                 json.dump(buffer, file_handle)
+
+            df = pd.read_json(filename)
+            logger.debug(df.head())
+            filename = filename.replace('.json', '.csv')
+            logger.info(f'Writing file[{filename}]')
+            df.to_csv(filename, index=False)
 
     def fetch_ac_list(self, district=None):
         logger = self.logger        
