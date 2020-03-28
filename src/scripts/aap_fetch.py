@@ -273,8 +273,16 @@ class CEOKarnataka():
         if convert:
             self.pdf2text(filename, use_google_vision=True)
 
-    def parse_draft_roll(self, district, ac_no, part_no, convert=None, use_google_vision=None):
+    def parse_draft_roll(self, district, ac_no, part_no, convert=None, use_google_vision=None, filename=None):
         logger = self.logger
+
+        if filename:
+            search_pattern = f'/media/mayank/FOOTAGE1/AAP_BBMP_FILEs/(\d+)_(\d+)_(\d+)/page-01.txt'
+            search_pattern = f'(\d+)_(\d+)_(\d+)'
+            match = re.search(search_pattern, filename)
+            district = match.group(1)
+            ac_no = match.group(2)
+            part_no = match.group(3)
         
         filename=os.path.join(f'{self.dir}', f'{district}_{ac_no}_{part_no}/page-01.txt')
         filename = f'/media/mayank/FOOTAGE1/AAP_BBMP_FILEs/{district}_{ac_no}_{part_no}/page-01.txt'
@@ -287,6 +295,7 @@ class CEOKarnataka():
             'District ID': district_id,
             'AC ID': ac_id,
             'Part ID': part_id,
+            'Status': 'Done'
         }
         logger.info(f'Attempting for row[{row}]')
         if False:
@@ -299,7 +308,8 @@ class CEOKarnataka():
                 page1 = file_handle.read()
 
             if len(page1) == 0:
-                row['Missed'] = True
+                logger.error(f'Empty file[{filename}]')
+                row['Status'] = 'Failed'
                 return row
 
             #search_pattern = 'Constituency is located : (\d+\s*-.*\n*.*)'
@@ -310,6 +320,7 @@ class CEOKarnataka():
             pc_name = row['Parliamentary Constituency Name'] = re.sub('\n', '', pc_name).strip()
             logger.info(f'Parliamentary Constituency [{pc_no},{pc_name}]')
 
+            #search_pattern = 'No. Name and Reservation Status of Assembly Constituency\s*: (\d+) -(.*\n*.*\n*.*\n*.*)\s*Part'
             search_pattern = 'No. Name and Reservation Status of Assembly Constituency\s*: (\d+) -(.*\n*.*)'
             match = re.search(search_pattern, page1)
             ac = row['Assembly Constituency No'] = match.group(1)
@@ -320,6 +331,31 @@ class CEOKarnataka():
                 logger.warning(f'{ac} != {ac_no} for file[{filename}]')
                 exit(-1)
 
+            '''
+            search_pattern = 'Name of Polling Station'
+            match = re.search(search_pattern, page1)
+            if not match:
+                search_pattern = 'Polling Station Details'
+                match = re.search(search_pattern, page1)
+            '''
+            part_buffer = page1[match.start():]
+            search_pattern = '\(Male/Female/General\)\n*\d+\s*-\s*(.*)'
+            match = re.search(search_pattern, part_buffer)
+            if not match:
+                #search_pattern = 'No. and Name of Polling Station :.*\n*(\d+-.*)'
+                #search_pattern = '(\d+-\s*[a-zA-Z\s]+)'
+                search_pattern = f'{part_no}\s*-\s*(\d*[a-zA-Z\s]+)'
+                search_pattern = f'{part_no}\s*-\s*(.+)'
+                logger.info(search_pattern)
+                match = re.search(search_pattern, part_buffer)
+            row['Part No'] = part_no
+            if not match:
+                part_name = row['Part Name'] = '<MISSED>'
+                row['Status'] = 'Failed'
+            else:
+                row['Part Name'] = part_name = match.group(1)
+            logger.info(f'Part Name[{part_no, part_name}]')
+
             search_pattern = '>\s*(\d+)\s*-(.*)'
             match = re.search(search_pattern, page1)
             if not match:
@@ -328,26 +364,11 @@ class CEOKarnataka():
             if not match:
                 ward_no = row['Ward No'] = '<MISSED>'
                 ward_name = row['Ward Name'] = '<MISSED>'
+                row['Status'] = 'Failed'                
             else:
                 ward_no = row['Ward No'] = match.group(1)
                 ward_name = row['Ward Name'] = match.group(2)
             logger.info(f'Ward No [{ward_no}] and Name[{ward_name}]')
-
-            search_pattern = 'Polling Station Details'
-            match = re.search(search_pattern, page1)
-            part_buffer = page1[match.start():]            
-            search_pattern = '\(Male/Female/General\)\n*\d+\s*-\s*(.*)'
-            match = re.search(search_pattern, part_buffer)
-            if not match:
-                #search_pattern = 'No. and Name of Polling Station :.*\n*(\d+-.*)'
-                #search_pattern = '(\d+-\s*[a-zA-Z\s]+)'
-                search_pattern = f'{part_no}\s*-\s*(\d*[a-zA-Z\s]+)'
-                search_pattern = f'{part_no}\s*-\s*(.+)'
-                logger.debug(search_pattern)
-                match = re.search(search_pattern, part_buffer)
-            row['Part No'] = part_no
-            row['Part Name'] = part_name = match.group(1)
-            logger.info(f'Part Name[{part_no, part_name}]')
 
             #'Serial No. Serial No. Male Female Third Gender Total\n1 786 398 388 0 786'
             #search_pattern = 'Serial No. Serial No. Male Female Third Gender Total\n(\d+ \d+ \d+ \d+ \d+ \d+)'
@@ -368,6 +389,7 @@ class CEOKarnataka():
                 third = row['Third Gender'] = '<MISSED>'
                 TOTAL = row['Total'] = '<MISSED>'
                 total = '<MISSED>'
+                row['Status'] = 'Failed'
             else:
                 men = row['Male'] = stats[2]
                 women = row['Female'] = stats[3]
@@ -391,10 +413,22 @@ class CEOKarnataka():
                 for part_no in self.fetch_part_list(district, ac_no):
                     self.fetch_draft_roll(district, ac_no, part_no, convert=True)
 
-    def parse_draft_rolls(self):
+    def parse_draft_rolls_brute_force(self):
         logger = self.logger
         buffer = []
 
+        if brute_force:
+            for filename in os.listdir(''):
+                row = self.parse_draft_roll(district, ac_no, part_no)
+                if not row:
+                    return buffer
+                buffer.append(row)
+
+        return buffer
+        
+    def parse_draft_rolls_drill_down(self):
+        logger = self.logger
+        buffer = []
         try:
             '''
             print('Ingore')
@@ -409,6 +443,17 @@ class CEOKarnataka():
                         buffer.append(row)
         except Exception as e:
             logger.warning(f'Parse failed with Exception[{e}]')
+
+        return buffer
+
+
+    def parse_draft_rolls(self, brute_force=None):
+        logger = self.logger
+
+        if brute_force:
+            buffer = self.parse_draft_rolls_brute_force()
+        else:
+            buffer = self.parse_draft_rolls_drill_down()
 
         if len(buffer) > 0:
             filename = '/tmp/aggregate.json' 
