@@ -356,18 +356,23 @@ class CEOKarnataka():
                 row['Part Name'] = part_name = match.group(1)
             logger.info(f'Part Name[{part_no, part_name}]')
 
-            search_pattern = '>\s*(\d+)\s*-(.*)'
+            search_pattern = '(>\s*)(\d+)\s*-(.*)'
             match = re.search(search_pattern, page1)
             if not match:
-                search_pattern = 'Ward No : \s*(\d+)\s*-(.*)'
+                search_pattern = 'Ward No( : \s*)(\d+)\s*-(.*)'
+                match = re.search(search_pattern, page1)
+            if not match:
+                #search_pattern = 'Ward No : \s*(\d+)\s*-(.*)'
+                search_pattern = 'Ward No(.|\n)*?:\s*(\d+)\s*-(.*)'
                 match = re.search(search_pattern, page1)
             if not match:
                 ward_no = row['Ward No'] = '<MISSED>'
                 ward_name = row['Ward Name'] = '<MISSED>'
-                row['Status'] = 'Failed'                
+                row['Status'] = 'Failed'
             else:
-                ward_no = row['Ward No'] = match.group(1)
-                ward_name = row['Ward Name'] = match.group(2)
+                ward_no = row['Ward No'] = match.group(2)
+                ward_name = row['Ward Name'] = match.group(3)
+                
             logger.info(f'Ward No [{ward_no}] and Name[{ward_name}]')
 
             #'Serial No. Serial No. Male Female Third Gender Total\n1 786 398 388 0 786'
