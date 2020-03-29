@@ -273,7 +273,7 @@ class CEOKarnataka():
         if convert:
             self.pdf2text(filename, use_google_vision=True)
 
-    def parse_draft_roll(self, district, ac_no, part_no, convert=None, use_google_vision=None, filename=None):
+    def parse_draft_roll(self, district=None, ac_no=None, part_no=None, filename=None):
         logger = self.logger
 
         if filename:
@@ -283,6 +283,7 @@ class CEOKarnataka():
             district = match.group(1)
             ac_no = match.group(2)
             part_no = match.group(3)
+            logger.info(f'Attempting file[{filename}]')
         
         filename=os.path.join(f'{self.dir}', f'{district}_{ac_no}_{part_no}/page-01.txt')
         filename = f'/media/mayank/FOOTAGE1/AAP_BBMP_FILEs/{district}_{ac_no}_{part_no}/page-01.txt'
@@ -292,9 +293,9 @@ class CEOKarnataka():
         part_id = int(part_no)
         logger.info(f'Attempting district[{district_id}] > ac[{ac_id}] > part[{part_id}]')
         row = {
-            'District ID': district_id,
-            'AC ID': ac_id,
-            'Part ID': part_id,
+            'District ID': str(district_id),
+            'AC ID': str(ac_id),
+            'Part ID': str(part_id),
             'Status': 'Done'
         }
         logger.info(f'Attempting for row[{row}]')
@@ -316,12 +317,13 @@ class CEOKarnataka():
             search_pattern = 'Constituency is located\s*:\s*(\d+)\s*-(.*\n*.*)'
             pc_no = re.search(search_pattern, page1).group(1)
             pc_name = re.search(search_pattern, page1).group(2)
-            row['Parliamentary Constituency No'] = pc_no
+            row['Parliamentary Constituency No'] = str(pc_no)
             pc_name = row['Parliamentary Constituency Name'] = re.sub('\n', '', pc_name).strip()
             logger.info(f'Parliamentary Constituency [{pc_no},{pc_name}]')
 
             #search_pattern = 'No. Name and Reservation Status of Assembly Constituency\s*: (\d+) -(.*\n*.*\n*.*\n*.*)\s*Part'
             search_pattern = 'No. Name and Reservation Status of Assembly Constituency\s*: (\d+) -(.*\n*.*)'
+            search_pattern = 'No. Name and Reservation Status of Assembly.*\s*: (\d+) -(.*\n*.*)'
             match = re.search(search_pattern, page1)
             ac = row['Assembly Constituency No'] = match.group(1)
             ac_str = match.group(2)
@@ -356,6 +358,14 @@ class CEOKarnataka():
                 row['Part Name'] = part_name = match.group(1)
             logger.info(f'Part Name[{part_no, part_name}]')
 
+            search_pattern = 'No. and name of sections in the part(.|\n)*999. NRI'
+            match = re.search(search_pattern, page1)
+            if match:
+                sections = row['Section Names'] = match.group()
+            else:
+                sections = row['Section Names'] = '<MISSED>'
+            logger.info(f'Sections [{sections}]')
+            
             search_pattern = '(>\s*)(\d+)\s*-(.*)'
             match = re.search(search_pattern, page1)
             if not match:
@@ -422,12 +432,25 @@ class CEOKarnataka():
         logger = self.logger
         buffer = []
 
-        if brute_force:
-            for filename in os.listdir(''):
-                row = self.parse_draft_roll(district, ac_no, part_no)
-                if not row:
-                    return buffer
-                buffer.append(row)
+        list_filename = '/tmp/files.txt'
+
+        if not os.path.exists(list_filename):
+            cmd = f'ls /media/mayank/FOOTAGE1/AAP_BBMP_FILEs/*/page-01.txt > {list_filename}'
+            logger.info(f'Executing cmd[{cmd}]...')
+            os.system(cmd)
+
+        with open(list_filename, 'r') as file_handle:
+            logger.info(f'Reading [{list_filename}]...')
+            files = file_handle.read()
+
+        for filename in files.split('\n'):
+            if not filename:
+                continue
+            logger.info(f'Parsing file[{filename}]')
+            row = self.parse_draft_roll(filename=filename)
+            if not row:
+                return buffer
+            buffer.append(row)
 
         return buffer
         
@@ -452,8 +475,11 @@ class CEOKarnataka():
         return buffer
 
 
-    def parse_draft_rolls(self, brute_force=None):
+    def parse_draft_rolls(self, brute_force=None, filename=None):
         logger = self.logger
+
+        if not filename:
+            filename = '/tmp/aggregate.json'             
 
         if brute_force:
             buffer = self.parse_draft_rolls_brute_force()
@@ -461,7 +487,6 @@ class CEOKarnataka():
             buffer = self.parse_draft_rolls_drill_down()
 
         if len(buffer) > 0:
-            filename = '/tmp/aggregate.json' 
             with open(filename, 'w') as file_handle:
                 logger.info(f'Writing file[{filename}]')
                 json.dump(buffer, file_handle)
@@ -544,7 +569,7 @@ class TestSuite(unittest.TestCase):
         self.logger.info("TestCase: E2E - parse_draft_rolls()")
         # Parse Draft Rolls from http://ceo.karnataka.gov.in/
         ck = CEOKarnataka(logger=self.logger)
-        ck.parse_draft_rolls()
+        ck.parse_draft_rolls(brute_force=True, filename='/tmp/all.json')
         del ck
         
 
