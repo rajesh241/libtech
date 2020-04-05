@@ -43,7 +43,7 @@ import urllib.parse as urlparse
 
 # For Google Cloud
 
-use_google_vision = True
+use_google_vision = False
 
 from google.cloud import vision
 from google.cloud import storage
@@ -71,6 +71,7 @@ class CEOKarnataka():
             logger = self.logger = logger_fetch('info')
         logger.info(f'Constructor({type(self).__name__})')
         self.url = 'http://ceo.karnataka.gov.in/draftroll_2020/'
+	#self.url = 'http://ceo.karnataka.gov.in/finalrolls_2020/.aspx'
         self.status_file = 'status.csv'
         self.dir = 'Karnataka'
         if not os.path.exists(self.dir):
@@ -196,8 +197,9 @@ class CEOKarnataka():
         page_file = os.path.join(dirname, 'page') # f'{dirname}/page'
         if not os.path.exists(dirname):
             os.makedirs(dirname)
-            # Revisit
-            cmd = f'pdftoppm -png -r 300 -freetype yes {pdf_file} {page_file}'
+            # Revisit Added -singlefile to do just first page
+            # cmd = f'pdftoppm -png -r 300 -freetype yes {pdf_file} {page_file}'
+            cmd = f'pdftoppm -png -singlefile -r 300 -freetype yes {pdf_file} {page_file}'
             logger.info(f'Executing cmd[{cmd}]...')
             os.system(cmd)
 
@@ -252,10 +254,6 @@ class CEOKarnataka():
         # Discard once done - FIXME
         part_id = int(part_no)
         ac_id = int(ac_no)
-        if True:
-            if not(part_id < 30 and ac_id == 154):
-                logger.info(f'Skipping {filename}...')
-                return
         
         if os.path.exists(filename):
             logger.info(f'File already downloaded. Converting [{filename}]...')
@@ -271,7 +269,7 @@ class CEOKarnataka():
             logger.info(f'Fetched the Draft Roll [{filename}]')
 
         if convert:
-            self.pdf2text(filename, use_google_vision=True)
+            self.pdf2text(filename, use_google_vision=use_google_vision)
 
     def parse_draft_roll(self, district=None, ac_no=None, part_no=None, filename=None):
         logger = self.logger
@@ -418,7 +416,7 @@ class CEOKarnataka():
         
     def fetch_district_list(self):
         logger = self.logger
-        return ['31']
+        return ['34']
 
     def fetch_draft_rolls(self):
         logger = self.logger
