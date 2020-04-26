@@ -43,7 +43,7 @@ import urllib.parse as urlparse
 
 # For Google Cloud
 
-use_google_vision = False
+use_google_vision = True
 
 from google.cloud import vision
 from google.cloud import storage
@@ -70,10 +70,10 @@ class CEOKarnataka():
         else:
             logger = self.logger = logger_fetch('info')
         logger.info(f'Constructor({type(self).__name__})')
-        self.url = 'http://ceo.karnataka.gov.in/draftroll_2020/'
-	#self.url = 'http://ceo.karnataka.gov.in/finalrolls_2020/.aspx'
+        #self.url = 'http://ceo.karnataka.gov.in/draftroll_2020/'
+        self.url = 'http://ceo.karnataka.gov.in/finalrolls_2020/'
         self.status_file = 'status.csv'
-        self.dir = 'Karnataka'
+        self.dir = 'BBMP_Final'
         if not os.path.exists(self.dir):
             os.makedirs(self.dir)
 
@@ -195,16 +195,33 @@ class CEOKarnataka():
         else:
             dirname = filename.strip('.txt')
         page_file = os.path.join(dirname, 'page') # f'{dirname}/page'
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
+        if False and (not os.path.exists(dirname)):
+            #os.makedirs(dirname)
+            dest_file = page_file.replace('/page', '_page-01')
+            logger.info(dest_file)
+            exit(-1)
             # Revisit Added -singlefile to do just first page
             # cmd = f'pdftoppm -png -r 300 -freetype yes {pdf_file} {page_file}'
             cmd = f'pdftoppm -png -singlefile -r 300 -freetype yes {pdf_file} {page_file}'
             logger.info(f'Executing cmd[{cmd}]...')
             os.system(cmd)
 
-        logger.debug(os.listdir(dirname))
-        for png_file in os.listdir(dirname):
+        dest_file = page_file.replace('/page', '_page-01')
+        logger.info(dest_file)
+        img = f'{dest_file}.png'
+        logger.debug(img)
+        if not os.path.exists(img):
+            cmd = f'pdftoppm -png -singlefile -r 300 -freetype yes {pdf_file} {dest_file}'
+            logger.info(f'Executing cmd[{cmd}]...')
+            os.system(cmd)
+        
+        cmd = f'tesseract {img} {dest_file} --dpi 300'
+        logger.info(f'Executing cmd[{cmd}]...')
+        os.system(cmd)
+
+        #logger.debug(os.listdir(dirname))
+        #for png_file in os.listdir(dirname):
+        if False:
             if not png_file.endswith('.png'):  # Only needed during debugging
                 continue
             img = os.path.join(dirname, png_file) # f'{dirname}/{png_file}'
@@ -226,10 +243,11 @@ class CEOKarnataka():
             grep -v 'Available' | grep -v 'Date of Publication:' > \
             {filename}'''
         cmd = f'''cat {page_file}-*.txt > {filename}'''
+        cmd = f'''cp {dest_file}.txt {filename}'''
         logger.info(f'Executing cmd[{cmd}]...')
+        os.system(cmd)
         return ''
         '''
-        os.system(cmd)
 
         #exit(0)
 
@@ -284,7 +302,7 @@ class CEOKarnataka():
             logger.info(f'Attempting file[{filename}]')
         
         filename=os.path.join(f'{self.dir}', f'{district}_{ac_no}_{part_no}/page-01.txt')
-        filename = f'/media/mayank/FOOTAGE1/AAP_BBMP_FILEs/{district}_{ac_no}_{part_no}/page-01.txt'
+        filename = f'/media/mayank/FOOTAGE1/AAP_BBMP_FILEs/{district}_{ac_no}_{part_no}_page-01.txt'
         # Discard once done - FIXME
         district_id = int(district)
         ac_id = int(ac_no)
@@ -323,24 +341,31 @@ class CEOKarnataka():
             search_pattern = 'No. Name and Reservation Status of Assembly Constituency\s*: (\d+) -(.*\n*.*)'
             search_pattern = 'No. Name and Reservation Status of Assembly.*\s*: (\d+) -(.*\n*.*)'
             match = re.search(search_pattern, page1)
-            ac = row['Assembly Constituency No'] = match.group(1)
-            ac_str = match.group(2)
-            ac_name = row['Assembly Constituency Name'] = re.sub('\s', '', ac_str)
-            logger.info(f'Assembly Constituency [{ac} == {ac_no},{ac_name}]')
-            if str(ac_no) != ac:
-                logger.warning(f'{ac} != {ac_no} for file[{filename}]')
-                exit(-1)
+            if match:
+                ac = row['Assembly Constituency No'] = match.group(1)
+                ac_str = match.group(2)
+                ac_name = row['Assembly Constituency Name'] = re.sub('\s', '', ac_str)
+                logger.info(f'Assembly Constituency [{ac} == {ac_no},{ac_name}]')
+                if str(ac_no) != ac:
+                    logger.warning(f'{ac} != {ac_no} for file[{filename}]')
+                    exit(-1)
+            else:
+                ac = row['Assembly Constituency No'] = '<MISSED>'
+                ac_name = row['Assembly Constituency Name'] = '<MISSED>'
+                logger.info(f'Assembly Constituency [{ac} == {ac_no},{ac_name}]')
 
-            '''
-            search_pattern = 'Name of Polling Station'
-            match = re.search(search_pattern, page1)
             if not match:
-                search_pattern = 'Polling Station Details'
+                search_pattern = 'Name of Polling Station'
                 match = re.search(search_pattern, page1)
-            '''
-            part_buffer = page1[match.start():]
-            search_pattern = '\(Male/Female/General\)\n*\d+\s*-\s*(.*)'
-            match = re.search(search_pattern, part_buffer)
+                if not match:
+                    search_pattern = 'Polling Station Details'
+                    match = re.search(search_pattern, page1)
+
+            if match:
+                part_buffer = page1[match.start():]
+                search_pattern = '\(Male/Female/General\)\n*\d+\s*-\s*(.*)'
+                match = re.search(search_pattern, part_buffer)
+
             if not match:
                 #search_pattern = 'No. and Name of Polling Station :.*\n*(\d+-.*)'
                 #search_pattern = '(\d+-\s*[a-zA-Z\s]+)'
@@ -416,15 +441,15 @@ class CEOKarnataka():
         
     def fetch_district_list(self):
         logger = self.logger
-        return ['34']
+        return ['31', '32', '33', '34']
 
-    def fetch_draft_rolls(self):
+    def fetch_draft_rolls(self, convert=None, use_google_vision=None):
         logger = self.logger
 
         for district in self.fetch_district_list():
             for ac_no in self.fetch_ac_list(district=district):
                 for part_no in self.fetch_part_list(district, ac_no):
-                    self.fetch_draft_roll(district, ac_no, part_no, convert=True)
+                    self.fetch_draft_roll(district, ac_no, part_no, convert=convert, use_google_vision=use_google_vision)
 
     def parse_draft_rolls_brute_force(self):
         logger = self.logger
@@ -433,7 +458,8 @@ class CEOKarnataka():
         list_filename = '/tmp/files.txt'
 
         if not os.path.exists(list_filename):
-            cmd = f'ls /media/mayank/FOOTAGE1/AAP_BBMP_FILEs/*/page-01.txt > {list_filename}'
+            #cmd = f'ls /media/mayank/FOOTAGE1/AAP_BBMP_FILEs/*/page-01.txt > {list_filename}'
+            cmd = f'ls /media/mayank/FOOTAGE1/AAP_BBMP_FILEs/*_page-01.txt > {list_filename}'
             logger.info(f'Executing cmd[{cmd}]...')
             os.system(cmd)
 
@@ -500,13 +526,15 @@ class CEOKarnataka():
         filename = os.path.join(self.dir, f'{district}.html')
         url = self.url + f'AC_List_B3.aspx?DistNo={district}'
         type = 'AC NO'
+        logger.info(f'Fetching AC list for file{filename} and type[{type}]')
         return self.fetch_lookup(url, filename, type)
             
     def fetch_part_list(self, district=None, ac_no=None):
         logger = self.logger        
         filename = os.path.join(f'{self.dir}', f'{district}_{ac_no}.html')
-        url = self.url + f'Part_List_2019.aspx?ACNO={ac_no}'
-        type = 'Part NO'
+        url = self.url + f'Part_List.aspx?ACNO={ac_no}'
+        type = 'Part No'
+        logger.info(f'Fetching Part list for file{filename} and type[{type}]')
         return self.fetch_lookup(url, filename, type)
 
     def fetch_lookup(self, url, filename, type):
@@ -528,7 +556,7 @@ class CEOKarnataka():
         filename = filename.replace('.html', '.csv')
         logger.info(f'Writing [{filename}]') 
         df.to_csv(filename, index=False)
-
+        logger.info(df.head())
         return df[type].to_list()
 
 
@@ -544,15 +572,16 @@ class TestSuite(unittest.TestCase):
         self.logger.info("TestCase: E2E - fetch_draft_rolls()")
         # Fetch Draft Rolls from http://ceo.karnataka.gov.in/
         ck = CEOKarnataka(logger=self.logger)
-        ck.fetch_draft_rolls()
+        ck.fetch_draft_rolls(convert=True, use_google_vision=use_google_vision)
         del ck
         
     def test_fetch_draft_roll(self):
         self.logger.info("TestCase: UnitTest - fetch_draft_roll(district, ac_no, part_no)")
         # Fetch Draft Rolls from http://ceo.karnataka.gov.in/
         ck = CEOKarnataka(logger=self.logger)
-        ck.fetch_draft_roll(district='32', ac_no='151', part_no='115', convert=True, use_google_vision=use_google_vision)
-        #ck.fetch_draft_roll(district='31', ac_no='154', part_no='7')
+        #ck.fetch_draft_roll(district='32', ac_no='151', part_no='115', convert=True, use_google_vision=use_google_vision)
+        ck.fetch_draft_roll(district='31', ac_no='154', part_no='5', convert=True, use_google_vision=use_google_vision)
+        ck.fetch_draft_roll(district='34', ac_no='155', part_no='232', convert=True, use_google_vision=use_google_vision)
         del ck
 
     def test_parse_draft_roll(self):
