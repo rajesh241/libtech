@@ -56,7 +56,7 @@ import re
 #######################
 
 timeout = 3
-is_mynk = True
+is_mynk = False
 is_virtual = True
 
 #############
@@ -86,9 +86,9 @@ class CEOKarnataka():
             self.driver = driverInitialize(timeout=3)
             #self.driver = driverInitialize(path='/opt/firefox/', timeout=3)
 
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'./aap-bbmp-creds.json'
-        self.project = 'AAP-BBMP'
-        self.bucket_name = 'draft-rolls'
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'./bbmp_aap.json'
+        self.project = 'BBMP-OCR'
+        self.bucket_name = 'test_aap'
         self.storage_client = storage.Client()
         self.vision_client =  vision.ImageAnnotatorClient()
 
