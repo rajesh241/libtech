@@ -86,9 +86,9 @@ class CEOKarnataka():
             self.driver = driverInitialize(timeout=3)
             #self.driver = driverInitialize(path='/opt/firefox/', timeout=3)
 
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'./bbmp_aap.json'
-        self.project = 'BBMP-OCR'
-        self.bucket_name = 'test_aap'
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'./ranu_aap_bbmp.json'
+        self.project = 'AAP-BBMP' # 'BBMP-OCR'
+        self.bucket_name = 'bbmp_bucket' # 'test_aap'
         self.storage_client = storage.Client()
         self.vision_client =  vision.ImageAnnotatorClient()
 
@@ -98,7 +98,28 @@ class CEOKarnataka():
             displayFinalize(self.display)
         self.logger.info(f'Destructor({type(self).__name__})')
 
-    def google_vision_scan(self, pdf_file):
+    def gcs_delete(self, dirname=None):
+        logger = self.logger
+
+        if not dirname:
+            dirname = self.dir
+        
+        logger.info(f'Scanning files in the dir [{dirname}]')
+         
+        project = self.project
+        bucket_name = self.bucket_name
+
+        storage_client = self.storage_client
+        bucket = storage_client.get_bucket(self.bucket_name)
+        logger.info(f'Listing files in [{dirname}] on {bucket} @ GCS...')
+        blobs = bucket.list_blobs(prefix=dirname)
+        for blob in blobs:
+            logger.debug(blob.name)
+            if '.json' in blob.name:
+                logger.info(f'To Delete file[{blob.name}]')
+                blob.delete()
+
+    def google_vision_scan(self, pdf_file, upload_only=False):
         logger = self.logger
         logger.info(f'Scanning file[{pdf_file}]')
  
@@ -114,9 +135,18 @@ class CEOKarnataka():
 
         storage_client = self.storage_client
         bucket = storage_client.get_bucket(self.bucket_name)
-        logger.info(f'Uploading file[{pdf_file}] to {bucket}...')
+        logger.info(f'Uploading file[{pdf_file}] to {bucket} on GCS...')
         blob = bucket.blob(pdf_file)
-        blob.upload_from_filename(pdf_file)
+        status = blob.exists()
+        if not status:
+            logger.info(f'File[{pdf_file}] not on GCS[{status}]. Uploading now...')
+            blob.upload_from_filename(pdf_file)
+        else:
+            logger.info(f'File[{pdf_file}] already on GCS[{status}]. Scanning the same.')
+
+        if upload_only:
+            logger.info(f'File[{pdf_file}] uploaded on GCS')            
+            return
 
         logger.info(f'Begin scanning file[{pdf_file}]...')
         client = self.vision_client
@@ -151,11 +181,13 @@ class CEOKarnataka():
         blob_list = list(bucket.list_blobs(prefix=prefix))
         logger.info('Output files:')
         for blob in blob_list:
-            print(blob.name)
+            logger.info(blob.name)
         
         output = blob_list[0]
         json_string = output.download_as_string()
         response = json_format.Parse(json_string, vision.types.AnnotateFileResponse())
+        logger.info(f'Deleting blog[${output.name}]...')
+        output.delete()
         
         text = ''
         for page_response in response.responses:
@@ -441,7 +473,8 @@ class CEOKarnataka():
         
     def fetch_district_list(self):
         logger = self.logger
-        return ['31', '32', '33', '34']
+        #return ['31', '32', '33', '34']
+        return ['34']
 
     def fetch_draft_rolls(self, convert=None, use_google_vision=None):
         logger = self.logger
@@ -580,8 +613,9 @@ class TestSuite(unittest.TestCase):
         # Fetch Draft Rolls from http://ceo.karnataka.gov.in/
         ck = CEOKarnataka(logger=self.logger)
         #ck.fetch_draft_roll(district='32', ac_no='151', part_no='115', convert=True, use_google_vision=use_google_vision)
+        #ck.fetch_draft_roll(district='31', ac_no='154', part_no='1', convert=True, use_google_vision=use_google_vision)
         ck.fetch_draft_roll(district='31', ac_no='154', part_no='5', convert=True, use_google_vision=use_google_vision)
-        ck.fetch_draft_roll(district='34', ac_no='155', part_no='232', convert=True, use_google_vision=use_google_vision)
+        #ck.fetch_draft_roll(district='34', ac_no='155', part_no='232', convert=True, use_google_vision=use_google_vision)
         del ck
 
     def test_parse_draft_roll(self):
@@ -599,6 +633,13 @@ class TestSuite(unittest.TestCase):
         ck.parse_draft_rolls(brute_force=True, filename='/tmp/all.json')
         del ck
         
+    def test_gcs_list(self):
+        self.logger.info("TestCase: UnitTest - gcs_delete(district, ac_no, part_no)")
+        # Parse Draft Rolls from http://ceo.karnataka.gov.in/
+        ck = CEOKarnataka(logger=self.logger)
+        ck.gcs_delete('BBMP_Final')
+        #ck.parse_draft_roll(district='31', ac_no='154', part_no='7')
+        del ck
 
 #############
 # Functions
