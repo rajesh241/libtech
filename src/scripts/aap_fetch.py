@@ -44,6 +44,7 @@ import urllib.parse as urlparse
 # For Google Cloud
 
 use_google_vision = True
+use_kannada = False
 
 from google.cloud import vision
 from google.cloud import storage
@@ -73,7 +74,7 @@ class CEOKarnataka():
         #self.url = 'http://ceo.karnataka.gov.in/draftroll_2020/'
         self.url = 'http://ceo.karnataka.gov.in/finalrolls_2020/'
         self.status_file = 'status.csv'
-        self.dir = 'BBMP_Final'
+        self.dir = 'BBMP' # 'BBMP_Final'
         if not os.path.exists(self.dir):
             os.makedirs(self.dir)
 
@@ -186,7 +187,7 @@ class CEOKarnataka():
         output = blob_list[0]
         json_string = output.download_as_string()
         response = json_format.Parse(json_string, vision.types.AnnotateFileResponse())
-        logger.info(f'Deleting blog[${output.name}]...')
+        logger.info(f'Deleting blob[${output.name}]...')
         output.delete()
         
         text = ''
@@ -297,8 +298,11 @@ class CEOKarnataka():
             text = txt_file.read()
         return text
 
-    def fetch_draft_roll(self, district, ac_no, part_no, convert=None, use_google_vision=None):
+    def fetch_draft_roll(self, district, ac_no, part_no, convert=None, use_google_vision=None, kannada=None):
         logger = self.logger
+
+        if use_kannada:
+            kannada = True
         
         filename=os.path.join(f'{self.dir}', f'{district}_{ac_no}_{part_no}.pdf')
         # Discard once done - FIXME
@@ -312,11 +316,20 @@ class CEOKarnataka():
                 html_source = html_file.read()
             '''
         else:
-            url = f'http://ceo.karnataka.gov.in/draftroll_2020/English/AC{ac_no}/S10A{ac_no}P{part_no}.pdf'
+            url = self.url + f'English/MR/AC{ac_no}/S10A{ac_no}P{part_no}.pdf'
+            if kannada:
+                # url = f'http://ceo.karnataka.gov.in/finalrolls_2020/CodeCaputer1.aspx?field1=./Kannada/MR/AC{ac_no}/S10A{ac_no}P{part_no}.pdf' # &field2={ac_no}&field3=0001'
+                # f'http://ceo.karnataka.gov.in/finalrolls_2020/Kannada/MR/AC211/S10A211P1.pdf'
+                url = url.replace('/English/', '/Kannada/')
             cmd = f'curl -L -o {filename} {url}'
-            logger.info(f'Executing cmd[{cmd}]...')
-            os.system(cmd)
-            logger.info(f'Fetched the Draft Roll [{filename}]')
+            if ac_no == '218':
+                logger.info(f'Executing cmd[{cmd}]...')
+                os.system(cmd)
+                logger.info(f'Fetched the Final Roll [{filename}]')
+            else:
+                logger.info(f'Executing cmd[{cmd}]...')
+                os.system(cmd)
+                logger.info(f'Fetched the Final Roll [{filename}]')
 
         if convert:
             self.pdf2text(filename, use_google_vision=use_google_vision)
@@ -473,8 +486,12 @@ class CEOKarnataka():
         
     def fetch_district_list(self):
         logger = self.logger
-        #return ['31', '32', '33', '34']
-        return ['34']
+        return ['31', '32', '33', '34']
+        # First four are Mysore district and rest are Kodagu
+        # districts = ['217', '218', '216', '215', '210', '211', '212', ]
+        # logger.info(f'Districts chosen: [{districts[:1]}]')
+        # return districts[:1]
+        #return ['28']
 
     def fetch_draft_rolls(self, convert=None, use_google_vision=None):
         logger = self.logger
@@ -559,7 +576,7 @@ class CEOKarnataka():
         filename = os.path.join(self.dir, f'{district}.html')
         url = self.url + f'AC_List_B3.aspx?DistNo={district}'
         type = 'AC NO'
-        logger.info(f'Fetching AC list for file{filename} and type[{type}]')
+        logger.info(f'Fetching AC list for file[{filename}] and type[{type}]')
         return self.fetch_lookup(url, filename, type)
             
     def fetch_part_list(self, district=None, ac_no=None):
@@ -605,7 +622,8 @@ class TestSuite(unittest.TestCase):
         self.logger.info("TestCase: E2E - fetch_draft_rolls()")
         # Fetch Draft Rolls from http://ceo.karnataka.gov.in/
         ck = CEOKarnataka(logger=self.logger)
-        ck.fetch_draft_rolls(convert=True, use_google_vision=use_google_vision)
+        #ck.fetch_draft_rolls(convert=True, use_google_vision=use_google_vision)
+        ck.fetch_draft_rolls(convert=False, use_google_vision=use_google_vision)
         del ck
         
     def test_fetch_draft_roll(self):
