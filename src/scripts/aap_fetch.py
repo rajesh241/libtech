@@ -187,7 +187,7 @@ class CEOKarnataka():
         output = blob_list[0]
         json_string = output.download_as_string()
         response = json_format.Parse(json_string, vision.types.AnnotateFileResponse())
-        logger.info(f'Deleting blob[${output.name}]...')
+        logger.info(f'Deleting blob[{output.name}]...')
         output.delete()
         
         text = ''
@@ -207,7 +207,7 @@ class CEOKarnataka():
         logger = self.logger
 
         if use_google_vision:
-            return self.google_vision_scan(pdf_file)
+            return self.google_vision_scan(pdf_file, upload_only=True)
         else:
             return self.tesseract_scan(pdf_file)
         
@@ -322,14 +322,9 @@ class CEOKarnataka():
                 # f'http://ceo.karnataka.gov.in/finalrolls_2020/Kannada/MR/AC211/S10A211P1.pdf'
                 url = url.replace('/English/', '/Kannada/')
             cmd = f'curl -L -o {filename} {url}'
-            if ac_no == '218':
-                logger.info(f'Executing cmd[{cmd}]...')
-                os.system(cmd)
-                logger.info(f'Fetched the Final Roll [{filename}]')
-            else:
-                logger.info(f'Executing cmd[{cmd}]...')
-                os.system(cmd)
-                logger.info(f'Fetched the Final Roll [{filename}]')
+            logger.info(f'Executing cmd[{cmd}]...')
+            os.system(cmd)
+            logger.info(f'Fetched the Final Roll [{filename}]')
 
         if convert:
             self.pdf2text(filename, use_google_vision=use_google_vision)
@@ -623,7 +618,7 @@ class TestSuite(unittest.TestCase):
         # Fetch Draft Rolls from http://ceo.karnataka.gov.in/
         ck = CEOKarnataka(logger=self.logger)
         #ck.fetch_draft_rolls(convert=True, use_google_vision=use_google_vision)
-        ck.fetch_draft_rolls(convert=False, use_google_vision=use_google_vision)
+        ck.fetch_draft_rolls(convert=True, use_google_vision=use_google_vision)
         del ck
         
     def test_fetch_draft_roll(self):
