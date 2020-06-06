@@ -45,6 +45,7 @@ import urllib.parse as urlparse
 
 use_google_vision = True
 use_kannada = False
+UPLOAD_ONLY = False
 
 from google.cloud import vision
 from google.cloud import storage
@@ -87,9 +88,9 @@ class CEOKarnataka():
             self.driver = driverInitialize(timeout=3)
             #self.driver = driverInitialize(path='/opt/firefox/', timeout=3)
 
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'./ranu_aap_bbmp.json'
-        self.project = 'AAP-BBMP' # 'BBMP-OCR'
-        self.bucket_name = 'bbmp_bucket' # 'test_aap'
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'./aap.bangaluru.json'
+        self.project = 'BBMP-OCR'
+        self.bucket_name = 'aap_bangaluru' # 'bbmp_bucket' # 'test_aap'
         self.storage_client = storage.Client()
         self.vision_client =  vision.ImageAnnotatorClient()
 
@@ -207,7 +208,7 @@ class CEOKarnataka():
         logger = self.logger
 
         if use_google_vision:
-            return self.google_vision_scan(pdf_file, upload_only=True)
+            return self.google_vision_scan(pdf_file, upload_only=UPLOAD_ONLY)
         else:
             return self.tesseract_scan(pdf_file)
         
@@ -252,22 +253,22 @@ class CEOKarnataka():
         logger.info(f'Executing cmd[{cmd}]...')
         os.system(cmd)
 
-        #logger.debug(os.listdir(dirname))
-        #for png_file in os.listdir(dirname):
         if False:
-            if not png_file.endswith('.png'):  # Only needed during debugging
-                continue
-            img = os.path.join(dirname, png_file) # f'{dirname}/{png_file}'
-            if not img.endswith('-01.png'):   # Only for now Mynk #FIXME
-                continue
-            #if img.endswith('-01.png') or img.endswith('-02.png'):
-            if img.endswith('-02.png'):
-                continue
-            if os.path.exists(img.replace('.png', '.txt')):
-                continue
-            cmd = f'tesseract {img} {img.strip(".png")} --dpi 300'
-            logger.info(f'Executing cmd[{cmd}]...')
-            os.system(cmd)
+            #logger.debug(os.listdir(dirname))
+            for png_file in os.listdir(dirname):
+                if not png_file.endswith('.png'):  # Only needed during debugging
+                    continue
+                img = os.path.join(dirname, png_file) # f'{dirname}/{png_file}'
+                if not img.endswith('-01.png'):   # Only for now Mynk #FIXME
+                    continue
+                #if img.endswith('-01.png') or img.endswith('-02.png'):
+                if img.endswith('-02.png'):
+                    continue
+                if os.path.exists(img.replace('.png', '.txt')):
+                    continue
+                cmd = f'tesseract {img} {img.strip(".png")} --dpi 300'
+                logger.info(f'Executing cmd[{cmd}]...')
+                os.system(cmd)
 
         cmd = f'''cat {page_file}-*.txt | grep -v '^$' | 
             grep -v 'Assembly Constituency' | 
@@ -481,7 +482,8 @@ class CEOKarnataka():
         
     def fetch_district_list(self):
         logger = self.logger
-        return ['31', '32', '33', '34']
+        # return ['31', '32', '33', '34']
+        return ['31']
         # First four are Mysore district and rest are Kodagu
         # districts = ['217', '218', '216', '215', '210', '211', '212', ]
         # logger.info(f'Districts chosen: [{districts[:1]}]')
