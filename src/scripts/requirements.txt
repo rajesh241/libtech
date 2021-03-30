@@ -4,7 +4,7 @@ bs4==0.0.1
 cachetools==4.1.0
 certifi==2019.11.28
 chardet==3.0.4
-Django==3.0.1
+Django==3.0.12
 EasyProcess==0.2.8
 google-api-core==1.17.0
 google-auth==1.14.1
