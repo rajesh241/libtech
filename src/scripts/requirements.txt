@@ -18,7 +18,7 @@ idna==2.8
 image==1.5.27
 lxml==4.4.2
 numpy==1.17.4
-opencv-python==4.1.2.30
+opencv-python==4.2.0.32
 pandas==0.25.3
 Pillow==6.2.1
 protobuf==3.11.3
