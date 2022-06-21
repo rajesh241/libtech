@@ -17,7 +17,7 @@ grpcio==1.28.1
 idna==2.8
 image==1.5.27
 lxml==4.4.2
-numpy==1.17.4
+numpy==1.22.0
 opencv-python==4.1.2.30
 pandas==0.25.3
 Pillow==6.2.1
