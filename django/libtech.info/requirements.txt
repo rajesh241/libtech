@@ -27,7 +27,7 @@ jupyter-console==4.1.1
 jupyter-core==4.1.0
 MarkupSafe==0.23
 mistune==0.7.2
-mod-wsgi==4.5.2
+mod-wsgi==4.9.3
 mod-wsgi-httpd==2.4.12.6
 nbconvert==4.2.0
 nbformat==4.0.1
